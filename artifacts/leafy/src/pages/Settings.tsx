@@ -31,8 +31,15 @@ export default function Settings() {
         </h3>
         <Card className="border-border/50">
           <CardContent className="p-0 divide-y divide-border/50">
-            <SettingsRow label="Nome utente" value="Marco" />
-            <SettingsRow label="Email" value="marco@leafy.app" />
+            <div className="flex items-center gap-4 p-4">
+              <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-primary/20 shadow-md shrink-0">
+                <img src={`${import.meta.env.BASE_URL}images/avatar.png`} alt="Avatar" className="w-full h-full object-cover" />
+              </div>
+              <div>
+                <p className="font-display font-bold text-lg text-foreground">Marco</p>
+                <p className="text-sm text-muted-foreground">marco@leafy.app</p>
+              </div>
+            </div>
             <SettingsRow label="Livello" value="Argento" />
             <SettingsRow label="ID utente" value="#00001" />
           </CardContent>
