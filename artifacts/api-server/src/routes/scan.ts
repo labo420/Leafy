@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { eq, and } from "drizzle-orm";
 import { db, usersTable, receiptsTable, challengeProgressTable, challengesTable } from "@workspace/db";
 import { ScanReceiptBody, ScanReceiptResponse } from "@workspace/api-zod";
-import { parseReceiptText, hashImage } from "../lib/scanner";
+import { parseReceiptText, hashImage, extractTextViaGoogleVision, calculateLevel } from "../lib/scanner";
 import { getOrCreateUser } from "./profile";
 
 const router: IRouter = Router();
@@ -42,7 +42,19 @@ router.post("/scan", async (req, res): Promise<void> => {
     return;
   }
 
-  const textToAnalyze = rawText || DEMO_TEXT + " " + (storeName || "");
+  const oldLevel = calculateLevel(user.totalPoints).level;
+
+  let textToAnalyze = rawText || "";
+  if (!textToAnalyze) {
+    const visionText = await extractTextViaGoogleVision(imageBase64);
+    if (visionText) {
+      textToAnalyze = visionText;
+      console.log("[Vision OCR] Testo estratto:", textToAnalyze.slice(0, 200));
+    } else {
+      textToAnalyze = DEMO_TEXT + " " + (storeName || "");
+    }
+  }
+
   const foundItems = parseReceiptText(textToAnalyze);
 
   const totalPoints = foundItems.reduce((sum, item) => sum + item.points, 0);
@@ -126,17 +138,30 @@ router.post("/scan", async (req, res): Promise<void> => {
     newBadges.push({ id: "first_scan", name: "Prima Scansione", emoji: "🌟", category: "Bio", earnedAt: new Date() });
   }
 
-  res.json(ScanReceiptResponse.parse({
-    receiptId: receipt.id,
-    pointsEarned: totalPoints,
-    totalPoints: newTotalPoints,
-    greenItemsFound: foundItems,
-    badges: newBadges,
-    challengesUpdated: updatedChallengeNames,
-    message: totalPoints > 0
-      ? `Ottimo! Hai guadagnato ${totalPoints} punti Leafy! 🌿`
-      : "Nessun prodotto green trovato in questo scontrino. Prova a comprare prodotti Bio o Km 0!",
-  }));
+  const newLevel = calculateLevel(newTotalPoints).level;
+  const leveledUp = newLevel !== oldLevel;
+
+  let message = totalPoints > 0
+    ? `Ottimo! Hai guadagnato ${totalPoints} punti Leafy! 🌿`
+    : "Nessun prodotto green trovato. Prova a comprare prodotti Bio o Km 0!";
+  if (leveledUp) {
+    message = `Livello aumentato! Sei ora ${newLevel}! 🎉 +${totalPoints} punti`;
+  }
+
+  res.json({
+    ...ScanReceiptResponse.parse({
+      receiptId: receipt.id,
+      pointsEarned: totalPoints,
+      totalPoints: newTotalPoints,
+      greenItemsFound: foundItems,
+      badges: newBadges,
+      challengesUpdated: updatedChallengeNames,
+      message,
+    }),
+    leveledUp,
+    newLevel: leveledUp ? newLevel : undefined,
+    usingRealOcr: !!process.env.GOOGLE_CLOUD_VISION_API_KEY,
+  });
 });
 
 export default router;

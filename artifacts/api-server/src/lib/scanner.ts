@@ -129,3 +129,38 @@ export function generateReferralCode(): string {
 export function generateVoucherCode(): string {
   return "VCH-" + Math.random().toString(36).substring(2, 10).toUpperCase();
 }
+
+export async function extractTextViaGoogleVision(base64: string): Promise<string | null> {
+  const apiKey = process.env.GOOGLE_CLOUD_VISION_API_KEY;
+  if (!apiKey) return null;
+
+  try {
+    const response = await fetch(
+      `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          requests: [
+            {
+              image: { content: base64 },
+              features: [{ type: "TEXT_DETECTION", maxResults: 1 }],
+            },
+          ],
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      console.error("Google Vision API error:", response.status, await response.text());
+      return null;
+    }
+
+    const data = await response.json();
+    const text = data.responses?.[0]?.fullTextAnnotation?.text;
+    return text || null;
+  } catch (err) {
+    console.error("Google Vision API request failed:", err);
+    return null;
+  }
+}

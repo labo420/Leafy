@@ -17,13 +17,57 @@ export default function Scan() {
 
   const scanMutation = useScanReceipt({
     mutation: {
-      onSuccess: () => {
+      onSuccess: (result) => {
         queryClient.invalidateQueries({ queryKey: getGetProfileQueryKey() });
         setShowCelebration(true);
-        toast.success("Scontrino analizzato con successo!");
+
+        const r = result as typeof result & { leveledUp?: boolean; newLevel?: string; usingRealOcr?: boolean };
+
+        if (r.leveledUp && r.newLevel) {
+          toast.success(`🎉 Livello aumentato! Sei ora ${r.newLevel}!`, {
+            description: `Complimenti! Continua così per sbloccare premi esclusivi.`,
+            duration: 6000,
+          });
+        } else if (r.pointsEarned > 0) {
+          toast.success(`🌿 +${r.pointsEarned} punti guadagnati!`, {
+            description: `${r.greenItemsFound.length} prodott${r.greenItemsFound.length === 1 ? "o green" : "i green"} rilevat${r.greenItemsFound.length === 1 ? "o" : "i"}.`,
+          });
+        } else {
+          toast("Scontrino analizzato", {
+            description: "Nessun prodotto green trovato stavolta. Prova con Bio, Km 0, Vegano...",
+            icon: "📋",
+          });
+        }
+
+        if (r.challengesUpdated && r.challengesUpdated.length > 0) {
+          setTimeout(() => {
+            r.challengesUpdated.forEach((name) => {
+              toast.success(`🏆 Sfida completata: ${name}!`, {
+                description: "Hai guadagnato punti bonus!",
+                duration: 5000,
+              });
+            });
+          }, 1200);
+        }
+
+        if (r.badges && r.badges.length > 0) {
+          setTimeout(() => {
+            r.badges.forEach((b) => {
+              toast.success(`${b.emoji} Badge sbloccato: ${b.name}!`, {
+                description: "Nuovo traguardo raggiunto!",
+                duration: 5000,
+              });
+            });
+          }, 2400);
+        }
+
+        if (r.usingRealOcr) {
+          toast("📸 OCR attivo", { description: "Testo estratto dall'immagine con Google Vision.", duration: 3000 });
+        }
       },
       onError: (error) => {
-        toast.error("Errore durante l'analisi: " + (error.data?.error || "Riprova più tardi"));
+        const msg = (error as { data?: { error?: string } }).data?.error || "Riprova più tardi";
+        toast.error("Errore durante l'analisi", { description: msg });
       }
     }
   });
@@ -163,10 +207,10 @@ export default function Scan() {
         />
 
         <div className="mt-8 space-y-4">
-          <div className="flex items-start gap-3 bg-blue-50/50 p-4 rounded-2xl border border-blue-100">
-            <AlertCircle className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-            <p className="text-xs text-blue-800 leading-relaxed">
-              Il sistema simula l'analisi. Cerca parole come <span className="font-semibold">Bio, Senza Plastica, Vegano, Equo</span> per assegnare i punti.
+          <div className="flex items-start gap-3 bg-emerald-50/60 p-4 rounded-2xl border border-emerald-100">
+            <AlertCircle className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+            <p className="text-xs text-emerald-900 leading-relaxed">
+              Analisi parole chiave attiva. Cerca prodotti come <span className="font-semibold">Bio, Senza Plastica, Vegano, Equo, Km 0, DOP</span> per guadagnare punti.
             </p>
           </div>
 

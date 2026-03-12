@@ -1,8 +1,14 @@
-# Workspace
+# Leafy — Sustainability Loyalty Platform
 
 ## Overview
 
-pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti scansionano scontrini della spesa, guadagnano punti per prodotti green (Bio, Km 0, Plastic-free, Fairtrade, Vegano, DOP/IGP), salgono di livello (Bronzo/Argento/Oro/Platino) e riscattano voucher nel marketplace.
+
+**Utente demo hardcoded**: ID=1 (auth da aggiungere in futuro con Google/Facebook OAuth).
+
+**Admin panel**: `/admin` — password `leafy2026` (o env var `ADMIN_PASSWORD`).
+
+**OCR Google Vision**: Se `GOOGLE_CLOUD_VISION_API_KEY` è impostato, le immagini vengono analizzate con Google Vision. Altrimenti fallback su keyword matching sul testo.
 
 ## Stack
 

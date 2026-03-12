@@ -7,6 +7,7 @@ import vouchersRouter from "./vouchers";
 import challengesRouter from "./challenges";
 import leaderboardRouter from "./leaderboard";
 import productsRouter from "./products";
+import adminRouter from "./admin";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use(vouchersRouter);
 router.use(challengesRouter);
 router.use(leaderboardRouter);
 router.use(productsRouter);
+router.use(adminRouter);
 
 export default router;
