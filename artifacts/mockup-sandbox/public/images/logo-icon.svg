@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect x="0" y="0" width="512" height="512" rx="112" ry="112" fill="#2D6A4F"/>
+  <!-- L letter -->
+  <text x="256" y="360" font-family="'DM Sans', 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="300" fill="white" text-anchor="middle">L</text>
+  <!-- Leaf accent top-right -->
+  <g transform="translate(320, 120)">
+    <ellipse cx="25" cy="25" rx="22" ry="28" fill="#52B788" opacity="0.8"/>
+    <path d="M 25 2 Q 35 16 33 35 Q 32 42 25 46 Q 18 42 17 35 Q 15 16 25 2" fill="white"/>
+    <path d="M 25 12 L 25 36" stroke="#2D6A4F" stroke-width="1" opacity="0.3"/>
+  </g>
+</svg>
