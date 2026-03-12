@@ -29,17 +29,17 @@ type Challenge = {
 function useAdminApi(password: string) {
   const headers = { "Content-Type": "application/json", "X-Admin-Password": password };
 
-  const get = async <T>(path: string): Promise<T> => {
+  const get = async <T,>(path: string): Promise<T> => {
     const r = await fetch(`${API_BASE}/${path}`, { headers });
     if (!r.ok) throw new Error(await r.text());
     return r.json();
   };
-  const post = async <T>(path: string, body: unknown): Promise<T> => {
+  const post = async <T,>(path: string, body: unknown): Promise<T> => {
     const r = await fetch(`${API_BASE}/${path}`, { method: "POST", headers, body: JSON.stringify(body) });
     if (!r.ok) throw new Error(await r.text());
     return r.json();
   };
-  const put = async <T>(path: string, body: unknown): Promise<T> => {
+  const put = async <T,>(path: string, body: unknown): Promise<T> => {
     const r = await fetch(`${API_BASE}/${path}`, { method: "PUT", headers, body: JSON.stringify(body) });
     if (!r.ok) throw new Error(await r.text());
     return r.json();
