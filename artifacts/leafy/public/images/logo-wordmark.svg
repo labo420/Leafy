@@ -1,12 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80">
-  <g transform="translate(8, 8)">
-    <g transform="translate(0, 12)">
-      <path d="M28 4C28 4 8 14 4 34C2 44 4 52 10 56C10 56 6 36 28 4Z" fill="#52B788" opacity="0.9"/>
-      <path d="M28 4C28 4 38 20 32 40C28 50 20 54 14 52C14 52 30 44 28 4Z" fill="#2D6A4F"/>
-      <line x1="16" y1="50" x2="26" y2="10" stroke="#2D6A4F" stroke-width="1.5" opacity="0.4"/>
-      <line x1="10" y1="40" x2="22" y2="24" stroke="#52B788" stroke-width="1" opacity="0.3"/>
-      <line x1="12" y1="48" x2="24" y2="32" stroke="#52B788" stroke-width="1" opacity="0.3"/>
-    </g>
-    <text x="44" y="52" font-family="'DM Sans', 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="48" fill="#2D6A4F" letter-spacing="-2">Leafy</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 90" width="360" height="90">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@800&amp;display=swap');
+    </style>
+  </defs>
+  <g>
+    <image href="leaf-mark.png" x="12" y="24" width="42" height="42" preserveAspectRatio="xMidYMid meet"/>
+    <text x="68" y="66" font-family="'DM Sans', 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="54" fill="#2D6A4F" letter-spacing="-1.5">Leafy</text>
   </g>
 </svg>
