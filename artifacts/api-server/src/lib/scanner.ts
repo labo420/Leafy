@@ -1,0 +1,131 @@
+import crypto from "crypto";
+
+export type GreenCategory = "Bio" | "Km 0" | "Senza Plastica" | "Equo Solidale" | "Vegano" | "Artigianale" | "DOP/IGP";
+
+export interface FoundItem {
+  name: string;
+  category: GreenCategory;
+  points: number;
+  emoji: string;
+}
+
+const KEYWORD_RULES: Array<{ keywords: string[]; category: GreenCategory; points: number; emoji: string }> = [
+  {
+    keywords: ["bio", "biologico", "biologica", "biologici", "organic", "organico"],
+    category: "Bio",
+    points: 15,
+    emoji: "🌱",
+  },
+  {
+    keywords: ["km 0", "km0", "chilometro zero", "filiera corta", "locale", "prodotto locale"],
+    category: "Km 0",
+    points: 12,
+    emoji: "📍",
+  },
+  {
+    keywords: ["senza plastica", "plastic free", "plasticfree", "zero plastica", "biodegradabile", "compostabile"],
+    category: "Senza Plastica",
+    points: 20,
+    emoji: "♻️",
+  },
+  {
+    keywords: ["fairtrade", "fair trade", "equo solidale", "commercio equo", "equosolidale"],
+    category: "Equo Solidale",
+    points: 18,
+    emoji: "❤️",
+  },
+  {
+    keywords: ["vegan", "vegano", "vegana", "vegani", "100% vegetale", "plant based", "plant-based"],
+    category: "Vegano",
+    points: 12,
+    emoji: "🌿",
+  },
+  {
+    keywords: ["artigianale", "artigianali", "fatto a mano", "artigiano", "produzione propria"],
+    category: "Artigianale",
+    points: 8,
+    emoji: "🏺",
+  },
+  {
+    keywords: ["dop", "igp", "stg", "denominazione di origine", "indicazione geografica"],
+    category: "DOP/IGP",
+    points: 10,
+    emoji: "🏷️",
+  },
+];
+
+export function parseReceiptText(text: string): FoundItem[] {
+  const normalized = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const foundItems: FoundItem[] = [];
+  const usedKeywords = new Set<string>();
+
+  for (const rule of KEYWORD_RULES) {
+    for (const keyword of rule.keywords) {
+      const normalizedKeyword = keyword.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      if (normalized.includes(normalizedKeyword) && !usedKeywords.has(rule.category)) {
+        usedKeywords.add(rule.category);
+        foundItems.push({
+          name: keyword.charAt(0).toUpperCase() + keyword.slice(1),
+          category: rule.category,
+          points: rule.points,
+          emoji: rule.emoji,
+        });
+        break;
+      }
+    }
+  }
+
+  return foundItems;
+}
+
+export function hashImage(base64: string): string {
+  return crypto.createHash("sha256").update(base64.substring(0, 1000)).digest("hex");
+}
+
+export function calculateImpact(greenItemsCount: number, categories: string[]): {
+  co2: number;
+  plastic: number;
+  water: number;
+} {
+  let co2 = 0;
+  let plastic = 0;
+  let water = 0;
+
+  for (const cat of categories) {
+    if (cat === "Bio") { co2 += 0.3; water += 50; }
+    if (cat === "Km 0") { co2 += 0.5; water += 20; }
+    if (cat === "Senza Plastica") { plastic += 0.05; }
+    if (cat === "Vegano") { co2 += 0.8; water += 100; }
+    if (cat === "Equo Solidale") { co2 += 0.1; }
+  }
+
+  return {
+    co2: Math.round(co2 * 100) / 100,
+    plastic: Math.round(plastic * 1000) / 1000,
+    water: Math.round(water),
+  };
+}
+
+export function calculateLevel(points: number): {
+  level: "Bronzo" | "Argento" | "Oro" | "Platino";
+  nextLevelPoints: number;
+  progressPercent: number;
+} {
+  if (points < 500) {
+    return { level: "Bronzo", nextLevelPoints: 500, progressPercent: Math.round((points / 500) * 100) };
+  } else if (points < 2000) {
+    return { level: "Argento", nextLevelPoints: 2000, progressPercent: Math.round(((points - 500) / 1500) * 100) };
+  } else if (points < 5000) {
+    return { level: "Oro", nextLevelPoints: 5000, progressPercent: Math.round(((points - 2000) / 3000) * 100) };
+  } else {
+    return { level: "Platino", nextLevelPoints: 5000, progressPercent: 100 };
+  }
+}
+
+export function generateReferralCode(): string {
+  return "LEAFY-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+}
+
+export function generateVoucherCode(): string {
+  return "VCH-" + Math.random().toString(36).substring(2, 10).toUpperCase();
+}
