@@ -1,0 +1,14 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "MEXShWkQ6ypOfgc70QCR4"
+uri = "file://artifacts/leafy/public/images/logo-wordmark.svg"
+type = "image"
+title = "Leafy Wordmark Logo"
+
+[[outputs]]
+id = "AyhS6LJEmoC9xCxo08ozY"
+uri = "file://artifacts/leafy/public/images/logo-icon.svg"
+type = "image"
+title = "Leafy App Icon Logo"
