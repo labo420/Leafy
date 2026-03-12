@@ -1,102 +1,256 @@
 # Leafy — Sustainability Loyalty Platform
 
-## Overview
+## Panoramica del Progetto
 
-Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti scansionano scontrini della spesa, guadagnano punti per prodotti green (Bio, Km 0, Plastic-free, Fairtrade, Vegano, DOP/IGP), salgono di livello (Bronzo/Argento/Oro/Platino) e riscattano voucher nel marketplace.
+Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti scansionano scontrini della spesa, guadagnano punti per prodotti green (Bio, Km 0, Plastic-free, Fairtrade, Vegano, DOP/IGP), salgono di livello (Bronzo → Argento → Oro → Platino), completano sfide mensili, competono in classifiche e riscattano voucher nel marketplace.
 
-**Utente demo hardcoded**: ID=1 (auth da aggiungere in futuro con Google/Facebook OAuth).
+**Stato attuale**: App funzionante con dati demo. Auth rinviata — utente demo hardcoded ID=1.
 
-**Admin panel**: `/admin` — password `leafy2026` (o env var `ADMIN_PASSWORD`).
+---
 
-**OCR Google Vision**: Se `GOOGLE_CLOUD_VISION_API_KEY` è impostato, le immagini vengono analizzate con Google Vision. Altrimenti fallback su keyword matching sul testo.
+## Environment Variables / Secrets Necessari
 
-## Stack
+| Variabile | Obbligatoria | Descrizione |
+|-----------|-------------|-------------|
+| `DATABASE_URL` | ✅ Sì | PostgreSQL connection string (fornita automaticamente da Replit) |
+| `GOOGLE_CLOUD_VISION_API_KEY` | Consigliata | Google Vision API per OCR scontrini. Senza, usa keyword matching. |
+| `ADMIN_PASSWORD` | No | Password pannello admin. Default: `leafy2026` |
 
-- **Monorepo tool**: pnpm workspaces
-- **Node.js version**: 24
-- **Package manager**: pnpm
-- **TypeScript version**: 5.9
-- **API framework**: Express 5
-- **Database**: PostgreSQL + Drizzle ORM
-- **Validation**: Zod (`zod/v4`), `drizzle-zod`
-- **API codegen**: Orval (from OpenAPI spec)
-- **Build**: esbuild (CJS bundle)
+Per impostare i secrets su Replit: **Tools → Secrets**.
 
-## Structure
+---
 
-```text
-artifacts-monorepo/
-├── artifacts/              # Deployable applications
-│   └── api-server/         # Express API server
-├── lib/                    # Shared libraries
-│   ├── api-spec/           # OpenAPI spec + Orval codegen config
-│   ├── api-client-react/   # Generated React Query hooks
-│   ├── api-zod/            # Generated Zod schemas from OpenAPI
-│   └── db/                 # Drizzle ORM schema + DB connection
-├── scripts/                # Utility scripts (single workspace package)
-│   └── src/                # Individual .ts scripts, run via `pnpm --filter @workspace/scripts run <script>`
-├── pnpm-workspace.yaml     # pnpm workspace (artifacts/*, lib/*, lib/integrations/*, scripts)
-├── tsconfig.base.json      # Shared TS options (composite, bundler resolution, es2022)
-├── tsconfig.json           # Root TS project references
-└── package.json            # Root package with hoisted devDeps
+## Come Avviare il Progetto
+
+### Dev (Development)
+
+```bash
+# Installa dipendenze
+pnpm install
+
+# Avvia il DB (eseguito automaticamente da Replit)
+pnpm --filter @workspace/db run push
+
+# Avvia l'API server (porta 8080)
+pnpm --filter @workspace/api-server run dev
+
+# Avvia il frontend Leafy (porta da PORT env var)
+pnpm --filter @workspace/leafy run dev
 ```
 
-## TypeScript & Composite Projects
+I workflow Replit gestiscono questi comandi automaticamente.
 
-Every package extends `tsconfig.base.json` which sets `composite: true`. The root `tsconfig.json` lists all packages as project references. This means:
+### Build Produzione
 
-- **Always typecheck from the root** — run `pnpm run typecheck` (which runs `tsc --build --emitDeclarationOnly`). This builds the full dependency graph so that cross-package imports resolve correctly. Running `tsc` inside a single package will fail if its dependencies haven't been built yet.
-- **`emitDeclarationOnly`** — we only emit `.d.ts` files during typecheck; actual JS bundling is handled by esbuild/tsx/vite...etc, not `tsc`.
-- **Project references** — when package A depends on package B, A's `tsconfig.json` must list B in its `references` array. `tsc --build` uses this to determine build order and skip up-to-date packages.
+```bash
+PORT=80 BASE_PATH=/ pnpm --filter @workspace/leafy run build
+pnpm --filter @workspace/api-server run build
+# Poi avviare: node artifacts/api-server/dist/index.cjs
+```
 
-## Root Scripts
+Il frontend viene servito come file statici dall'API server in produzione (Express serva `artifacts/leafy/dist/public/`).
 
-- `pnpm run build` — runs `typecheck` first, then recursively runs `build` in all packages that define it
-- `pnpm run typecheck` — runs `tsc --build --emitDeclarationOnly` using project references
+---
 
-## Packages
+## Stack Tecnologico
 
-### `artifacts/api-server` (`@workspace/api-server`)
+| Layer | Tecnologia |
+|-------|-----------|
+| Monorepo | pnpm workspaces |
+| Node.js | v24 |
+| TypeScript | 5.9 (composite projects) |
+| API Framework | Express 5 |
+| Database | PostgreSQL + Drizzle ORM |
+| Validation | Zod v4, drizzle-zod |
+| API Codegen | Orval (da OpenAPI spec) |
+| Frontend | React + Vite + Tailwind v4 |
+| UI Components | shadcn/ui |
+| Animazioni | Framer Motion |
+| State/Query | TanStack React Query |
+| Routing | Wouter |
+| Fonts | DM Sans (display), Inter (body) |
+| Build | esbuild (CJS), Vite |
 
-Express 5 API server. Routes live in `src/routes/` and use `@workspace/api-zod` for request and response validation and `@workspace/db` for persistence.
+---
 
-- Entry: `src/index.ts` — reads `PORT`, starts Express
-- App setup: `src/app.ts` — mounts CORS, JSON/urlencoded parsing, routes at `/api`
-- Routes: `src/routes/index.ts` mounts sub-routers; `src/routes/health.ts` exposes `GET /health` (full path: `/api/health`)
-- Depends on: `@workspace/db`, `@workspace/api-zod`
-- `pnpm --filter @workspace/api-server run dev` — run the dev server
-- `pnpm --filter @workspace/api-server run build` — production esbuild bundle (`dist/index.cjs`)
-- Build bundles an allowlist of deps (express, cors, pg, drizzle-orm, zod, etc.) and externalizes the rest
+## Struttura del Monorepo
 
-### `lib/db` (`@workspace/db`)
+```text
+workspace/
+├── artifacts/
+│   ├── api-server/          # Express 5 API server
+│   │   ├── src/
+│   │   │   ├── app.ts       # Express app, CORS, routes mount, static serving
+│   │   │   ├── index.ts     # Entry point — legge PORT, avvia server
+│   │   │   ├── routes/      # Sub-router per ogni dominio
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── profile.ts
+│   │   │   │   ├── receipts.ts
+│   │   │   │   ├── scan.ts      # OCR + keyword parser + level detection
+│   │   │   │   ├── challenges.ts
+│   │   │   │   ├── leaderboard.ts
+│   │   │   │   ├── marketplace.ts
+│   │   │   │   └── admin.ts     # Admin panel backend (password protected)
+│   │   │   └── lib/
+│   │   │       └── scanner.ts   # Google Vision OCR + fallback keyword matching
+│   │   └── package.json
+│   ├── leafy/               # Frontend React/Vite
+│   │   ├── src/
+│   │   │   ├── App.tsx          # Router principale, route setup
+│   │   │   ├── index.css        # Tema Leafy (CSS variables)
+│   │   │   ├── pages/
+│   │   │   │   ├── Home.tsx         # Dashboard: punti, progress ring, impatto
+│   │   │   │   ├── Scan.tsx         # Camera + upload scontrino
+│   │   │   │   ├── History.tsx      # Storico scontrini
+│   │   │   │   ├── Marketplace.tsx  # Voucher e premi
+│   │   │   │   ├── Profile.tsx      # Profilo utente, sfide, badge
+│   │   │   │   ├── Settings.tsx     # Impostazioni account
+│   │   │   │   └── Admin.tsx        # Pannello admin (/admin)
+│   │   │   └── components/
+│   │   │       ├── layout/
+│   │   │       │   ├── AppLayout.tsx   # Shell layout con BottomNav
+│   │   │       │   └── BottomNav.tsx   # Nav bar fissa in basso (fixed)
+│   │   │       └── shared/
+│   │   │           ├── LevelProgress.tsx  # Cerchio SVG progress animato
+│   │   │           └── Onboarding.tsx     # Modal primo accesso (4 step)
+│   │   └── package.json
+│   └── mockup-sandbox/      # Sandbox mockup per canvas Replit
+│       └── src/components/mockups/leafy-variants/
+│           ├── NotteVerde.tsx   # Variante A: dark mode eco-luxury
+│           └── Oceano.tsx       # Variante B: teal fresco
+├── lib/
+│   ├── api-spec/            # OpenAPI 3.1 spec + Orval config
+│   ├── api-client-react/    # React Query hooks generati (useGetProfile, ecc.)
+│   ├── api-zod/             # Zod schemas generati dall'OpenAPI
+│   └── db/                  # Drizzle ORM schema + connessione PostgreSQL
+├── scripts/                 # Script di utilità
+├── pnpm-workspace.yaml
+├── tsconfig.base.json       # TS options condivise (composite, bundler, es2022)
+└── tsconfig.json            # Root project references
+```
 
-Database layer using Drizzle ORM with PostgreSQL. Exports a Drizzle client instance and schema models.
+---
 
-- `src/index.ts` — creates a `Pool` + Drizzle instance, exports schema
-- `src/schema/index.ts` — barrel re-export of all models
-- `src/schema/<modelname>.ts` — table definitions with `drizzle-zod` insert schemas (no models definitions exist right now)
-- `drizzle.config.ts` — Drizzle Kit config (requires `DATABASE_URL`, automatically provided by Replit)
-- Exports: `.` (pool, db, schema), `./schema` (schema only)
+## Pagine e Route Frontend
 
-Production migrations are handled by Replit when publishing. In development, we just use `pnpm --filter @workspace/db run push`, and we fallback to `pnpm --filter @workspace/db run push-force`.
+| Route | Pagina | Descrizione |
+|-------|--------|-------------|
+| `/` | `Home.tsx` | Dashboard principale: punti, cerchio livello, impatto |
+| `/scan` | `Scan.tsx` | Scanner scontrino (camera + upload) |
+| `/storico` | `History.tsx` | Lista scontrini scansionati |
+| `/marketplace` | `Marketplace.tsx` | Voucher e premi riscattabili |
+| `/profilo` | `Profile.tsx` | Profilo, sfide, badge, invita amici |
+| `/impostazioni` | `Settings.tsx` | Impostazioni account, notifiche, privacy |
+| `/admin` | `Admin.tsx` | Pannello admin (non usa AppLayout) |
 
-### `lib/api-spec` (`@workspace/api-spec`)
+---
 
-Owns the OpenAPI 3.1 spec (`openapi.yaml`) and the Orval config (`orval.config.ts`). Running codegen produces output into two sibling packages:
+## API Endpoints Principali
 
-1. `lib/api-client-react/src/generated/` — React Query hooks + fetch client
-2. `lib/api-zod/src/generated/` — Zod schemas
+Base URL: `/api`
 
-Run codegen: `pnpm --filter @workspace/api-spec run codegen`
+| Endpoint | Descrizione |
+|----------|-------------|
+| `GET /api/profile` | Profilo utente demo (ID=1) |
+| `GET /api/impact` | Statistiche impatto ambientale |
+| `POST /api/scan` | Scansiona scontrino (base64 img → punti) |
+| `GET /api/receipts` | Lista scontrini |
+| `GET /api/challenges` | Sfide mensili attive |
+| `GET /api/leaderboard` | Classifica utenti |
+| `GET /api/marketplace/vouchers` | Lista voucher disponibili |
+| `POST /api/marketplace/vouchers/:id/redeem` | Riscatta voucher |
+| `GET /api/admin/*` | Rotte admin (header `x-admin-password` richiesto) |
 
-### `lib/api-zod` (`@workspace/api-zod`)
+---
 
-Generated Zod schemas from the OpenAPI spec (e.g. `HealthCheckResponse`). Used by `api-server` for response validation.
+## Funzionalità Implementate
 
-### `lib/api-client-react` (`@workspace/api-client-react`)
+- **Scanner scontrini**: Upload foto → Google Vision OCR → estrazione prodotti green → assegnazione punti
+- **Sistema punti e livelli**: Bronzo / Argento / Oro / Platino con progress ring animato
+- **Sfide mensili**: Completamento sfide con progress bar e ricompense
+- **Leaderboard**: Classifica utenti con badge di posizione
+- **Marketplace**: Voucher riscattabili con punti
+- **Badge/Achievements**: Collezione badge per categoria
+- **Onboarding**: Modal 4-step al primo accesso (localStorage)
+- **Admin panel**: `/admin` con stats, CRUD voucher/sfide (password: `leafy2026`)
+- **Impostazioni**: `/impostazioni` con toggle notifiche, privacy, lingua
+- **Design**: Tema verde foresta + menta + ambra su crema (CSS variables in `index.css`)
+- **Bottom nav fissa**: `position: fixed` con indicatore animato (Framer Motion)
 
-Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHealthCheck`, `healthCheck`).
+---
 
-### `scripts` (`@workspace/scripts`)
+## Dettagli Tecnici Importanti
 
-Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.
+### Express 5 — Wildcard Route Fix
+In Express 5, `app.get("*", ...)` genera errore `pathToRegexp`. Usare sempre:
+```ts
+app.get(/(.*)/,  handler)  // ✅ Corretto per Express 5
+```
+
+### Zod / Orval Date Bug
+Orval con `useDates: true` genera schemi Zod che si aspettano oggetti `Date`, **non** stringhe ISO. Non chiamare `.toISOString()` prima di passare dati a `.parse()`.
+
+### Utente Demo
+`getOrCreateUser()` in `lib/scanner.ts` restituisce sempre ID=1. Nessun sistema auth in produzione (da implementare con Google/Facebook OAuth).
+
+### OCR Scontrini
+File: `artifacts/api-server/src/lib/scanner.ts`
+- Tenta prima Google Vision API (`GOOGLE_CLOUD_VISION_API_KEY`)
+- Fallback: keyword matching su testo (Bio, Km 0, Senza Plastica, Equo Solidale, Vegano, DOP/IGP)
+
+### Database Migrations
+In sviluppo: `pnpm --filter @workspace/db run push`
+In produzione su Replit: gestite automaticamente al deploy.
+
+### TypeScript Composite
+- Typechecking da root: `pnpm run typecheck`
+- Non eseguire `tsc` dentro un singolo pacchetto (fallisce se deps non sono buildate)
+
+---
+
+## Design Tokens (index.css)
+
+```css
+--background: 75 25% 96%;      /* Crema chiaro */
+--foreground: 158 25% 14%;     /* Charcoal scuro */
+--primary: 153 40% 30%;        /* Verde foresta */
+--secondary: 152 42% 52%;      /* Menta */
+--accent: 27 87% 67%;          /* Ambra/oro */
+--muted: 105 20% 90%;          /* Salvia pallido */
+--card: 0 0% 100%;             /* Bianco */
+--radius: 1rem;
+```
+
+Fonts: `DM Sans` (display/titoli), `Inter` (body).
+
+---
+
+## Varianti Design sul Canvas Replit
+
+Sul canvas Replit ci sono 3 iframe affiancati per il confronto estetico:
+1. **Originale** — App live (`/profilo` live)
+2. **Notte Verde** — Dark mode, sfondo `#0d1f16`, glassmorphism cards
+3. **Oceano** — Teal/azzurro `#0B7EA3`, sfondo `#f0f9ff`, font Poppins
+
+Per vederle: Canvas → zoom out per vedere tutti e 3 i frame.
+
+---
+
+## Comandi Utili
+
+```bash
+# Installa tutto
+pnpm install
+
+# Push schema DB (dev)
+pnpm --filter @workspace/db run push
+
+# Codegen API (dopo modifiche a openapi.yaml)
+pnpm --filter @workspace/api-spec run codegen
+
+# Typecheck completo
+pnpm run typecheck
+
+# Build tutto
+pnpm run build
+```
