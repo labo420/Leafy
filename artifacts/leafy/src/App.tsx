@@ -12,7 +12,6 @@ import Scan from "@/pages/Scan";
 import History from "@/pages/History";
 import Marketplace from "@/pages/Marketplace";
 import Profile from "@/pages/Profile";
-import Settings from "@/pages/Settings";
 import Admin from "@/pages/Admin";
 
 const queryClient = new QueryClient({
@@ -41,7 +40,6 @@ function AppRouter() {
         <Route path="/storico" component={History} />
         <Route path="/marketplace" component={Marketplace} />
         <Route path="/profilo" component={Profile} />
-        <Route path="/impostazioni" component={Settings} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>

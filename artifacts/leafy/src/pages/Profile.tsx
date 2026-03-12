@@ -4,7 +4,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Copy, Target, Award, Trophy, Info, Settings, LogOut } from "lucide-react";
-import { Link } from "wouter";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 
@@ -43,9 +42,9 @@ export default function Profile() {
         <div className="flex justify-between items-start relative z-10">
           <h1 className="font-display font-bold text-3xl text-primary-foreground">Profilo</h1>
           <div className="flex gap-2">
-            <Link href="/impostazioni" className="w-10 h-10 rounded-full bg-black/10 flex items-center justify-center text-white backdrop-blur-md">
+            <button className="w-10 h-10 rounded-full bg-black/10 flex items-center justify-center text-white backdrop-blur-md">
               <Settings className="w-5 h-5" />
-            </Link>
+            </button>
           </div>
         </div>
       </div>

@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" width="512" height="512">
-  <defs>
-    <filter id="toWhite" color-interpolation-filters="sRGB">
-      <feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0"/>
-    </filter>
-  </defs>
-  <rect x="0" y="0" width="512" height="512" rx="112" ry="112" fill="#2D6A4F"/>
-  <image x="106" y="86" width="300" height="340" href="leaf-mark.png" preserveAspectRatio="xMidYMid meet" filter="url(#toWhite)"/>
-</svg>
