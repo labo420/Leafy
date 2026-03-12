@@ -5,6 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Onboarding } from "@/components/shared/Onboarding";
 import NotFound from "@/pages/not-found";
+import { useAuth } from "@workspace/replit-auth-web";
+import { Leaf } from "lucide-react";
 
 // Pages
 import Home from "@/pages/Home";
@@ -23,6 +25,47 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+function LoginScreen() {
+  const { login } = useAuth();
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-6">
+      <div className="flex flex-col items-center gap-6 max-w-xs w-full">
+        <div className="w-20 h-20 rounded-3xl bg-primary flex items-center justify-center shadow-lg">
+          <Leaf className="w-10 h-10 text-primary-foreground" />
+        </div>
+        <div className="text-center">
+          <h1 className="font-display font-bold text-3xl text-foreground mb-2">Leafy</h1>
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            Scansiona gli scontrini, guadagna punti per i prodotti sostenibili e scala la classifica verde.
+          </p>
+        </div>
+        <button
+          onClick={login}
+          className="w-full py-3.5 px-6 bg-primary text-primary-foreground font-semibold rounded-2xl shadow-md hover:opacity-90 active:scale-95 transition-all text-base"
+        >
+          Accedi con Replit
+        </button>
+        <p className="text-xs text-muted-foreground text-center">
+          Accedendo accetti i nostri Termini di Servizio e la Privacy Policy.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function LoadingScreen() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center animate-pulse">
+          <Leaf className="w-8 h-8 text-primary" />
+        </div>
+        <p className="text-sm text-muted-foreground">Caricamento…</p>
+      </div>
+    </div>
+  );
+}
 
 function AppRouter() {
   const [location] = useLocation();
@@ -48,23 +91,34 @@ function AppRouter() {
   );
 }
 
+function AuthGate() {
+  const { isLoading, isAuthenticated } = useAuth();
+
+  if (isLoading) return <LoadingScreen />;
+  if (!isAuthenticated) return <LoginScreen />;
+
+  return (
+    <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+      <AppRouter />
+    </WouterRouter>
+  );
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <AppRouter />
-        </WouterRouter>
-        <Toaster 
-          position="top-center" 
-          toastOptions={{ 
-            style: { 
+        <AuthGate />
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            style: {
               borderRadius: '1rem',
               border: '1px solid hsl(var(--border) / 0.5)',
               background: 'hsl(var(--card))',
               color: 'hsl(var(--foreground))',
-            } 
-          }} 
+            }
+          }}
         />
       </TooltipProvider>
     </QueryClientProvider>

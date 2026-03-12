@@ -208,6 +208,18 @@ export interface GreenProduct {
   description: string;
 }
 
+export interface AuthUser {
+  id: string;
+  email?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  profileImageUrl?: string | null;
+}
+
+export interface AuthUserEnvelope {
+  user: AuthUser | null;
+}
+
 export type GetVouchersParams = {
   category?: string;
 };
@@ -226,4 +238,8 @@ export const GetLeaderboardType = {
 
 export type GetProductsParams = {
   category?: string;
+};
+
+export type BeginBrowserLoginParams = {
+  returnTo?: string;
 };

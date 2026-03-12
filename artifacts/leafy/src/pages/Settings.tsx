@@ -5,19 +5,26 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, Bell, Globe, Lock, Mail, ShieldCheck, Trash2, User, LogOut, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@workspace/replit-auth-web";
 
 export default function Settings() {
+  const { user, logout } = useAuth();
   const [pushNotifications, setPushNotifications] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(false);
   const [weeklyReport, setWeeklyReport] = useState(true);
   const [challengeAlerts, setChallengeAlerts] = useState(true);
 
+  const displayName = user
+    ? [user.firstName, user.lastName].filter(Boolean).join(" ") || `Utente #${user.id}`
+    : "—";
+  const displayEmail = user?.email ?? "—";
+
   const handleDeleteAccount = () => {
-    toast.error("Funzione non disponibile nella versione demo.");
+    toast.error("Funzione non ancora disponibile.");
   };
 
   const handleLogout = () => {
-    toast.success("Disconnesso con successo.");
+    logout();
   };
 
   return (
@@ -42,8 +49,8 @@ export default function Settings() {
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest px-2 mb-2">Account</p>
           <Card className="border-border/50 shadow-sm overflow-hidden">
             <CardContent className="p-0 divide-y divide-border/50">
-              <SettingsRow icon={<User className="w-4 h-4 text-primary" />} label="Nome utente" value="GuestUser" />
-              <SettingsRow icon={<Mail className="w-4 h-4 text-primary" />} label="Email" value="guest@leafy.app" />
+              <SettingsRow icon={<User className="w-4 h-4 text-primary" />} label="Nome utente" value={displayName} />
+              <SettingsRow icon={<Mail className="w-4 h-4 text-primary" />} label="Email" value={displayEmail} />
             </CardContent>
           </Card>
         </section>

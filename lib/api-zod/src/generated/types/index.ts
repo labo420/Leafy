@@ -8,7 +8,10 @@
 
 export * from "./applyReferralBody";
 export * from "./applyReferralResponse";
+export * from "./authUser";
+export * from "./authUserEnvelope";
 export * from "./badge";
+export * from "./beginBrowserLoginParams";
 export * from "./challenge";
 export * from "./errorResponse";
 export * from "./foundGreenItem";

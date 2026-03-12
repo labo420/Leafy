@@ -9,7 +9,7 @@ import {
   GetRedemptionsResponse,
 } from "@workspace/api-zod";
 import { generateVoucherCode } from "../lib/scanner";
-import { getOrCreateUser } from "./profile";
+import { requireUser } from "./profile";
 
 const router: IRouter = Router();
 
@@ -46,7 +46,9 @@ router.post("/vouchers/:id/redeem", async (req, res): Promise<void> => {
     return;
   }
 
-  const user = await getOrCreateUser();
+  const user = await requireUser(req, res);
+  if (!user) return;
+
   const [voucher] = await db.select().from(vouchersTable).where(eq(vouchersTable.id, params.data.id));
 
   if (!voucher || !voucher.isActive) {
@@ -99,8 +101,9 @@ router.post("/vouchers/:id/redeem", async (req, res): Promise<void> => {
   }));
 });
 
-router.get("/redemptions", async (_req, res): Promise<void> => {
-  const user = await getOrCreateUser();
+router.get("/redemptions", async (req, res): Promise<void> => {
+  const user = await requireUser(req, res);
+  if (!user) return;
 
   const redemptions = await db.select({
     id: redemptionsTable.id,

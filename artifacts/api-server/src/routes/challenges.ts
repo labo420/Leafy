@@ -2,12 +2,13 @@ import { Router, type IRouter } from "express";
 import { eq, and } from "drizzle-orm";
 import { db, challengesTable, challengeProgressTable } from "@workspace/db";
 import { GetChallengesResponse } from "@workspace/api-zod";
-import { getOrCreateUser } from "./profile";
+import { requireUser } from "./profile";
 
 const router: IRouter = Router();
 
-router.get("/challenges", async (_req, res): Promise<void> => {
-  const user = await getOrCreateUser();
+router.get("/challenges", async (req, res): Promise<void> => {
+  const user = await requireUser(req, res);
+  if (!user) return;
 
   const challenges = await db.select().from(challengesTable)
     .where(eq(challengesTable.isActive, true));

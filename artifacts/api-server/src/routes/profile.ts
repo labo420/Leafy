@@ -1,6 +1,6 @@
-import { Router, type IRouter } from "express";
-import { eq, sum } from "drizzle-orm";
-import { db, usersTable, receiptsTable, challengeProgressTable, challengesTable } from "@workspace/db";
+import { Router, type IRouter, type Request, type Response } from "express";
+import { eq } from "drizzle-orm";
+import { db, usersTable, receiptsTable } from "@workspace/db";
 import {
   GetProfileResponse,
   GetImpactResponse,
@@ -8,11 +8,9 @@ import {
   ApplyReferralBody,
   ApplyReferralResponse,
 } from "@workspace/api-zod";
-import { calculateLevel, generateReferralCode } from "../lib/scanner";
+import { calculateLevel } from "../lib/scanner";
 
 const router: IRouter = Router();
-
-const DEMO_USER_ID = 1;
 
 const ALL_BADGES = [
   { id: "first_scan", name: "Prima Scansione", emoji: "🌟", category: "Bio" },
@@ -27,22 +25,27 @@ const ALL_BADGES = [
   { id: "artisan_fan", name: "Fan Artigianale", emoji: "🏺", category: "Artigianale" },
 ];
 
-async function getOrCreateUser(): Promise<typeof usersTable.$inferSelect> {
-  const existing = await db.select().from(usersTable).where(eq(usersTable.id, DEMO_USER_ID));
-  if (existing.length > 0) return existing[0];
-
-  const [user] = await db.insert(usersTable).values({
-    username: "Utente Leafy",
-    email: "demo@leafy.app",
-    totalPoints: 120,
-    streak: 3,
-    referralCode: generateReferralCode(),
-  }).returning();
+export async function requireUser(
+  req: Request,
+  res: Response,
+): Promise<typeof usersTable.$inferSelect | null> {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Accesso richiesto. Effettua il login." });
+    return null;
+  }
+  const userId = parseInt(req.user.id, 10);
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
+  if (!user) {
+    res.status(401).json({ error: "Utente non trovato." });
+    return null;
+  }
   return user;
 }
 
-router.get("/profile", async (_req, res): Promise<void> => {
-  const user = await getOrCreateUser();
+router.get("/profile", async (req, res): Promise<void> => {
+  const user = await requireUser(req, res);
+  if (!user) return;
+
   const { level, nextLevelPoints, progressPercent } = calculateLevel(user.totalPoints);
 
   const receipts = await db.select().from(receiptsTable).where(eq(receiptsTable.userId, user.id));
@@ -79,8 +82,10 @@ router.get("/profile", async (_req, res): Promise<void> => {
   res.json(data);
 });
 
-router.get("/profile/impact", async (_req, res): Promise<void> => {
-  const user = await getOrCreateUser();
+router.get("/profile/impact", async (req, res): Promise<void> => {
+  const user = await requireUser(req, res);
+  if (!user) return;
+
   const receipts = await db.select().from(receiptsTable).where(eq(receiptsTable.userId, user.id));
 
   let co2 = 0, plastic = 0, water = 0, greenItems = 0;
@@ -104,8 +109,10 @@ router.get("/profile/impact", async (_req, res): Promise<void> => {
   }));
 });
 
-router.get("/profile/referral", async (_req, res): Promise<void> => {
-  const user = await getOrCreateUser();
+router.get("/profile/referral", async (req, res): Promise<void> => {
+  const user = await requireUser(req, res);
+  if (!user) return;
+
   res.json(GetReferralResponse.parse({
     code: user.referralCode,
     referralUrl: `https://leafy.app/join?ref=${user.referralCode}`,
@@ -121,7 +128,9 @@ router.post("/profile/referral", async (req, res): Promise<void> => {
     return;
   }
 
-  const user = await getOrCreateUser();
+  const user = await requireUser(req, res);
+  if (!user) return;
+
   if (parsed.data.code === user.referralCode) {
     res.status(400).json({ error: "Non puoi usare il tuo stesso codice referral." });
     return;
@@ -139,5 +148,4 @@ router.post("/profile/referral", async (req, res): Promise<void> => {
   }));
 });
 
-export { getOrCreateUser };
 export default router;

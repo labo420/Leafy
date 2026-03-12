@@ -1,15 +1,17 @@
 import { Router, type IRouter } from "express";
-import { db, usersTable, receiptsTable } from "@workspace/db";
+import { db, usersTable } from "@workspace/db";
 import { GetLeaderboardResponse, GetLeaderboardQueryParams } from "@workspace/api-zod";
-import { getOrCreateUser } from "./profile";
+import { requireUser } from "./profile";
 
 const router: IRouter = Router();
 
 router.get("/leaderboard", async (req, res): Promise<void> => {
   const queryParams = GetLeaderboardQueryParams.safeParse(req.query);
-  const type = queryParams.success ? queryParams.data.type ?? "points" : "points";
+  const _type = queryParams.success ? queryParams.data.type ?? "points" : "points";
 
-  const user = await getOrCreateUser();
+  const user = await requireUser(req, res);
+  if (!user) return;
+
   const allUsers = await db.select().from(usersTable);
 
   const FAKE_USERS = [

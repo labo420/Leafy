@@ -2,12 +2,13 @@ import { Router, type IRouter } from "express";
 import { eq, desc } from "drizzle-orm";
 import { db, receiptsTable } from "@workspace/db";
 import { GetReceiptsResponse, GetReceiptResponse, GetReceiptParams } from "@workspace/api-zod";
-import { getOrCreateUser } from "./profile";
+import { requireUser } from "./profile";
 
 const router: IRouter = Router();
 
-router.get("/receipts", async (_req, res): Promise<void> => {
-  const user = await getOrCreateUser();
+router.get("/receipts", async (req, res): Promise<void> => {
+  const user = await requireUser(req, res);
+  if (!user) return;
 
   const receipts = await db.select().from(receiptsTable)
     .where(eq(receiptsTable.userId, user.id))
@@ -33,7 +34,9 @@ router.get("/receipts/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const user = await getOrCreateUser();
+  const user = await requireUser(req, res);
+  if (!user) return;
+
   const [receipt] = await db.select().from(receiptsTable)
     .where(eq(receiptsTable.id, params.data.id));
 

@@ -3,7 +3,7 @@ import { eq, and } from "drizzle-orm";
 import { db, usersTable, receiptsTable, challengeProgressTable, challengesTable } from "@workspace/db";
 import { ScanReceiptBody, ScanReceiptResponse } from "@workspace/api-zod";
 import { parseReceiptText, hashImage, extractTextViaGoogleVision, calculateLevel } from "../lib/scanner";
-import { getOrCreateUser } from "./profile";
+import { requireUser } from "./profile";
 
 const router: IRouter = Router();
 
@@ -26,7 +26,9 @@ router.post("/scan", async (req, res): Promise<void> => {
     return;
   }
 
-  const user = await getOrCreateUser();
+  const user = await requireUser(req, res);
+  if (!user) return;
+
   const { imageBase64, storeName, purchaseDate, rawText } = parsed.data;
 
   const imageHash = hashImage(imageBase64);

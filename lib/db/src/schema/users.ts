@@ -1,9 +1,10 @@
-import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
 export const usersTable = pgTable("users", {
   id: serial("id").primaryKey(),
+  replitId: varchar("replit_id").unique(),
   username: text("username").notNull().default("Utente Leafy"),
   email: text("email").notNull().default("demo@leafy.app"),
   totalPoints: integer("total_points").notNull().default(0),
