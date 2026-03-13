@@ -1,16 +1,18 @@
-import React from "react";
+import React, { useState, useRef } from "react";
 import { useGetProfile, useGetChallenges } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Copy, Target, Award, Trophy, Info, Settings } from "lucide-react";
+import { Copy, Target, Award, Trophy, Info, Settings, Camera } from "lucide-react";
 import { Link } from "wouter";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 
 export default function Profile() {
-  const { data: profile } = useGetProfile();
+  const { data: profile, refetch } = useGetProfile();
   const { data: challenges } = useGetChallenges();
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const p = profile || {
     id: 1, username: "GuestUser", email: "guest@leafy.app", totalPoints: 1250, 
@@ -30,6 +32,41 @@ export default function Profile() {
   const copyReferral = () => {
     navigator.clipboard.writeText("LEAFY-" + p.username.toUpperCase());
     toast.success("Codice invito copiato!");
+  };
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Immagine troppo grande (max 2MB).");
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (evt) => {
+        const base64 = evt.target?.result as string;
+        const res = await fetch("/api/profile/image", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ imageData: base64 }),
+        });
+
+        if (!res.ok) throw new Error("Errore nell'upload");
+        
+        await refetch();
+        toast.success("Immagine aggiornata!");
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      toast.error("Errore nell'upload dell'immagine.");
+    } finally {
+      setUploadingImage(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
   return (
@@ -56,8 +93,30 @@ export default function Profile() {
         {/* Profile Card */}
         <Card className="border-transparent shadow-xl overflow-visible">
           <CardContent className="p-6 flex flex-col items-center text-center overflow-visible">
-            <div className="w-24 h-24 rounded-full border-4 border-background shadow-lg overflow-hidden -mt-16 mb-4 bg-muted">
-              <img src={`${import.meta.env.BASE_URL}images/avatar.png`} alt="User avatar" className="w-full h-full object-cover" />
+            <div className="relative">
+              <div className="w-24 h-24 rounded-full border-4 border-background shadow-lg overflow-hidden -mt-16 mb-4 bg-muted">
+                <img 
+                  src={p.profileImageUrl || `${import.meta.env.BASE_URL}images/avatar.png`} 
+                  alt="User avatar" 
+                  className="w-full h-full object-cover" 
+                />
+              </div>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingImage}
+                className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white shadow-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+                title="Cambia foto profilo"
+              >
+                <Camera className="w-4 h-4" />
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                disabled={uploadingImage}
+                className="hidden"
+              />
             </div>
             <h2 className="font-display font-bold text-2xl text-foreground mb-1">{p.username}</h2>
             <p className="text-muted-foreground text-sm mb-4">{p.email}</p>

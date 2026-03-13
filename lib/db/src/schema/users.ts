@@ -8,6 +8,7 @@ export const usersTable = pgTable("users", {
   passwordHash: varchar("password_hash"),
   username: text("username").notNull().default("Utente Leafy"),
   email: text("email").notNull().default("demo@leafy.app"),
+  profileImageUrl: text("profile_image_url"),
   totalPoints: integer("total_points").notNull().default(0),
   streak: integer("streak").notNull().default(0),
   lastScanDate: timestamp("last_scan_date", { withTimezone: true }),

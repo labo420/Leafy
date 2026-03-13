@@ -62,6 +62,26 @@ router.put("/profile/username", async (req, res): Promise<void> => {
   res.json({ username: trimmed });
 });
 
+router.put("/profile/image", async (req, res): Promise<void> => {
+  const user = await requireUser(req, res);
+  if (!user) return;
+
+  const { imageData } = req.body;
+  if (!imageData || typeof imageData !== "string") {
+    res.status(400).json({ error: "Immagine non valida." });
+    return;
+  }
+
+  const MAX_SIZE = 1024 * 1024 * 2; // 2MB
+  if (imageData.length > MAX_SIZE) {
+    res.status(400).json({ error: "Immagine troppo grande (max 2MB)." });
+    return;
+  }
+
+  await db.update(usersTable).set({ profileImageUrl: imageData }).where(eq(usersTable.id, user.id));
+  res.json({ success: true });
+});
+
 router.delete("/profile/account", async (req, res): Promise<void> => {
   const user = await requireUser(req, res);
   if (!user) return;
