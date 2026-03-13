@@ -24,44 +24,42 @@ export default function Scan() {
         queryClient.invalidateQueries({ queryKey: getGetProfileQueryKey() });
         setShowCelebration(true);
 
-        const r = result as typeof result & { leveledUp?: boolean; newLevel?: string; usingRealOcr?: boolean };
-
-        if (r.leveledUp && r.newLevel) {
-          toast.success(`🎉 Livello aumentato! Sei ora ${r.newLevel}!`, {
-            description: `Complimenti! Continua così per sbloccare premi esclusivi.`,
+        if (result.leveledUp && result.newLevel) {
+          toast.success(`🎉 Livello aumentato! Sei ora ${result.newLevel}!`, {
+            description: `Continua così per sbloccare premi esclusivi.`,
             duration: 6000,
           });
-        } else if (r.pointsEarned > 0) {
-          const found = (r.greenItemsFound ?? []).length;
-          toast.success(`🌿 +${r.pointsEarned} punti guadagnati!`, {
+        } else if (result.pointsEarned > 0) {
+          const found = (result.greenItemsFound ?? []).length;
+          toast.success(`🌿 +${result.pointsEarned} punti guadagnati!`, {
             description: `${found} prodott${found === 1 ? "o green" : "i green"} rilevat${found === 1 ? "o" : "i"}.`,
           });
         } else {
-          toast("Ops, la foto è un po' sfocata, riproviamo?", {
-            description: "Assicurati che lo scontrino sia ben illuminato e leggibile.",
+          toast("Scontrino analizzato!", {
+            description: "Nessun prodotto sostenibile trovato stavolta. Prossima volta potresti guadagnare punti!",
             icon: "📋",
           });
         }
 
-        if (r.challengesUpdated && r.challengesUpdated.length > 0) {
+        if (result.challengesUpdated && result.challengesUpdated.length > 0) {
           setTimeout(() => {
-            r.challengesUpdated.forEach((name) => {
+            result.challengesUpdated.forEach((name) => {
               toast.success(`🏆 Sfida completata: ${name}!`, { description: "Hai guadagnato punti bonus!", duration: 5000 });
             });
           }, 1200);
         }
 
-        if (r.badges && r.badges.length > 0) {
+        if (result.badges && result.badges.length > 0) {
           setTimeout(() => {
-            r.badges.forEach((b) => {
+            result.badges.forEach((b) => {
               toast.success(`${b.emoji} Badge sbloccato: ${b.name}!`, { description: "Nuovo traguardo raggiunto!", duration: 5000 });
             });
           }, 2400);
         }
       },
       onError: () => {
-        toast.error("Ops, la foto è un po' sfocata, riproviamo?", {
-          description: "Assicurati che l'immagine sia nitida e ben illuminata.",
+        toast.error("Errore durante l'analisi", {
+          description: "Riprova con una foto più nitida e ben illuminata.",
         });
       }
     }

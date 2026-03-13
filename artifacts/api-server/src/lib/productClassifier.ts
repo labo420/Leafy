@@ -218,6 +218,179 @@ export async function lookupBarcode(barcode: string): Promise<BarcodeResult | nu
   }
 }
 
+interface BatchClassification {
+  name: string;
+  points: number;
+  category: string;
+  emoji: string;
+  reasoning: string;
+}
+
+export async function classifyProductsBatch(productNames: string[]): Promise<FoundItem[]> {
+  if (productNames.length === 0) return [];
+
+  const results: FoundItem[] = [];
+  const uncachedNames: string[] = [];
+  const cachedMap = new Map<string, FoundItem | null>();
+
+  for (const name of productNames) {
+    const normalized = normalizeProductName(name);
+    if (!normalized || normalized.length < 3) continue;
+
+    const cached = await db
+      .select()
+      .from(productCacheTable)
+      .where(eq(productCacheTable.productNameNormalized, normalized))
+      .limit(1);
+
+    if (cached.length > 0) {
+      const entry = cached[0];
+      cachedMap.set(name, entry.points > 0 ? {
+        name: entry.productNameOriginal,
+        category: (entry.category || "Altro") as GreenCategory,
+        points: entry.points,
+        emoji: entry.emoji,
+      } : null);
+    } else {
+      uncachedNames.push(name);
+    }
+  }
+
+  for (const [, item] of cachedMap) {
+    if (item) results.push(item);
+  }
+
+  if (uncachedNames.length === 0) return results;
+
+  try {
+    const message = await anthropic.messages.create({
+      model: "claude-haiku-4-5",
+      max_tokens: 2048,
+      messages: [
+        {
+          role: "user",
+          content: `Sei un esperto di sostenibilità. Classifica questi prodotti trovati su uno scontrino italiano.
+
+Prodotti:
+${uncachedNames.map((n, i) => `${i + 1}. ${n}`).join("\n")}
+
+Rispondi SOLO con un JSON array, uno per prodotto, nello stesso ordine:
+[
+  {"points": <0-20>, "category": <"Bio"|"Km 0"|"Vegano"|"Senza Plastica"|"Equo Solidale"|"DOP/IGP"|"Artigianale"|"Altro">, "emoji": <emoji>, "reasoning": <max 80 caratteri>},
+  ...
+]
+
+Criteri punti:
+- 0: prodotti non alimentari, prodotti ad alto impatto ambientale
+- 5-8: prodotti alimentari standard senza certificazioni
+- 10-14: frutta/verdura fresca, cereali, legumi, prodotti vegetali base
+- 15-20: bio, vegano certificato, km 0, equo solidale, DOP/IGP`,
+        },
+      ],
+    });
+
+    const text = message.content[0].type === "text" ? message.content[0].text : "[]";
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) throw new Error("No JSON array in response");
+
+    const classifications = JSON.parse(jsonMatch[0]) as BatchClassification[];
+
+    const savePromises: Promise<unknown>[] = [];
+
+    for (let i = 0; i < uncachedNames.length; i++) {
+      const name = uncachedNames[i];
+      const cls = classifications[i];
+      if (!cls) continue;
+
+      const normalized = normalizeProductName(name);
+      const points = Math.max(0, Math.min(20, cls.points ?? 0));
+      const category = cls.category ?? "Altro";
+      const emoji = cls.emoji ?? "🌿";
+      const reasoning = cls.reasoning ?? "Classificato da AI";
+
+      savePromises.push(
+        db.insert(productCacheTable).values({
+          productNameNormalized: normalized,
+          productNameOriginal: name,
+          ecoScore: null,
+          points,
+          category,
+          source: "ai",
+          reasoning,
+          emoji,
+        }).onConflictDoNothing()
+      );
+
+      if (points > 0) {
+        results.push({
+          name,
+          category: category as GreenCategory,
+          points,
+          emoji,
+        });
+      }
+    }
+
+    await Promise.allSettled(savePromises);
+  } catch (err) {
+    console.error("[classifyProductsBatch]", err);
+    for (const name of uncachedNames) {
+      results.push({ name, category: "Altro" as GreenCategory, points: 5, emoji: "🌿" });
+    }
+  }
+
+  return results;
+}
+
+export async function analyzeReceiptWithAI(imageBase64: string): Promise<string[]> {
+  try {
+    const message = await anthropic.messages.create({
+      model: "claude-haiku-4-5",
+      max_tokens: 1024,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image",
+              source: {
+                type: "base64",
+                media_type: "image/jpeg",
+                data: imageBase64,
+              },
+            },
+            {
+              type: "text",
+              text: `Sei un assistente per la lettura di scontrini italiani. Analizza questa immagine di scontrino ed estrai i nomi dei prodotti acquistati.
+
+Rispondi SOLO con un JSON array di stringhe con i nomi dei prodotti:
+["prodotto 1", "prodotto 2", "prodotto 3"]
+
+Regole:
+- Includi TUTTI i prodotti (alimentari, per la casa, igienici, ecc.) — anche quelli convenzionali
+- Escludi: totali, subtotali, IVA, sconti, date, informazioni del negozio, codici cassa
+- Normalizza le abbreviazioni (es. "PAST PENNE 500G" → "Pasta Penne", "LATT INTERA" → "Latte Intero")
+- Se l'immagine non è uno scontrino o non è leggibile, rispondi con []
+- Massimo 15 prodotti`,
+            },
+          ],
+        },
+      ],
+    });
+
+    const text = message.content[0].type === "text" ? message.content[0].text : "[]";
+    const jsonMatch = text.match(/\[[\s\S]*?\]/);
+    if (!jsonMatch) return [];
+    const products = JSON.parse(jsonMatch[0]) as unknown[];
+    return products
+      .filter((p): p is string => typeof p === "string" && p.trim().length >= 2)
+      .slice(0, 15);
+  } catch (err) {
+    console.error("[analyzeReceiptWithAI]", err);
+    return [];
+  }
+}
+
 export async function classifyProducts(productLines: string[]): Promise<FoundItem[]> {
   const results: FoundItem[] = [];
 

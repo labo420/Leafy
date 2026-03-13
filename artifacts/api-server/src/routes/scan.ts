@@ -4,7 +4,7 @@ import { db, usersTable, receiptsTable, barcodeScansTable } from "@workspace/db"
 import { ScanReceiptBody } from "@workspace/api-zod";
 import { hashImage, extractTextViaGoogleVision, calculateLevel } from "../lib/scanner";
 import { runAntiFraudChecks, approvePendingPoints } from "../lib/antiFraud";
-import { lookupBarcode } from "../lib/productClassifier";
+import { lookupBarcode, analyzeReceiptWithAI, classifyProductsBatch } from "../lib/productClassifier";
 import { requireUser } from "./profile";
 
 const router: IRouter = Router();
@@ -79,6 +79,12 @@ router.post("/scan", async (req, res): Promise<void> => {
   const lastScanDate = user.lastScanDate ? new Date(user.lastScanDate).toDateString() : null;
   const newStreak = lastScanDate === today ? user.streak : user.streak + 1;
 
+  const [currentUser] = await db
+    .select({ totalPoints: usersTable.totalPoints })
+    .from(usersTable)
+    .where(eq(usersTable.id, user.id))
+    .limit(1);
+
   await db
     .update(usersTable)
     .set({
@@ -86,6 +92,39 @@ router.post("/scan", async (req, res): Promise<void> => {
       lastScanDate: new Date(),
     })
     .where(eq(usersTable.id, user.id));
+
+  const oldLevelInfo = calculateLevel(currentUser?.totalPoints ?? 0);
+
+  const productNames = await analyzeReceiptWithAI(imageBase64);
+  const greenItems = productNames.length > 0 ? await classifyProductsBatch(productNames) : [];
+  const totalPoints = greenItems.reduce((sum, item) => sum + item.points, 0);
+
+  let leveledUp = false;
+  let newLevel: string | null = null;
+
+  if (totalPoints > 0) {
+    await db
+      .update(receiptsTable)
+      .set({
+        pointsEarned: totalPoints,
+        greenItemsCount: greenItems.length,
+        greenItemsJson: JSON.stringify(greenItems),
+        categories: greenItems.map((i) => i.category),
+      })
+      .where(eq(receiptsTable.id, receipt.id));
+
+    const [updatedUser] = await db
+      .update(usersTable)
+      .set({ totalPoints: sql`total_points + ${totalPoints}` })
+      .where(eq(usersTable.id, user.id))
+      .returning({ totalPoints: usersTable.totalPoints });
+
+    const newLevelInfo = calculateLevel(updatedUser?.totalPoints ?? 0);
+    if (oldLevelInfo.level !== newLevelInfo.level) {
+      leveledUp = true;
+      newLevel = newLevelInfo.level;
+    }
+  }
 
   const now2 = Date.now();
   if (now2 - lastPendingApprovalCheck > 60 * 60 * 1000) {
@@ -97,8 +136,21 @@ router.post("/scan", async (req, res): Promise<void> => {
     receiptId: receipt.id,
     barcodeExpiry: barcodeExpiry.toISOString(),
     storeName: receipt.storeName,
-    message: "Scontrino confermato! Ora scansiona i codici a barre dei prodotti acquistati per guadagnare punti.",
+    message: totalPoints > 0
+      ? `${greenItems.length} prodott${greenItems.length === 1 ? "o" : "i"} green trovati nella tua spesa!`
+      : "Scontrino registrato. Nessun prodotto sostenibile trovato stavolta.",
     sessionHours: BARCODE_SESSION_HOURS,
+    pointsEarned: totalPoints,
+    greenItemsFound: greenItems.map((i) => ({
+      name: i.name,
+      category: i.category,
+      points: i.points,
+      emoji: i.emoji,
+    })),
+    leveledUp,
+    newLevel,
+    badges: [] as Array<{ name: string; emoji: string }>,
+    challengesUpdated: [] as string[],
   });
 });
 
