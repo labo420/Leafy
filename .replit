@@ -40,10 +40,6 @@ args = "artifacts/mockup-sandbox: web"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "artifacts/leafy-v2: web"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
 args = "artifacts/leafy-register: web"
 
 [[workflows.workflow]]
@@ -92,18 +88,6 @@ outputType = "webview"
 task = "shell.exec"
 args = "PORT=5173 BASE_PATH=/__mockup/ pnpm --filter @workspace/mockup-sandbox run dev"
 waitForPort = 5173
-
-[[workflows.workflow]]
-name = "artifacts/leafy-v2: web"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "PORT=20040 BASE_PATH=/leafy-v2/ pnpm --filter @workspace/leafy-v2 run dev"
-waitForPort = 20040
-
-[workflows.workflow.metadata]
-outputType = "webview"
 
 [[workflows.workflow]]
 name = "artifacts/leafy-register: web"

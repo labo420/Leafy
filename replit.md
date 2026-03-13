@@ -4,7 +4,7 @@
 
 Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti scansionano scontrini come prova d'acquisto, poi inquadrano i codici a barre dei prodotti per guadagnare punti basati sull'**Eco-Score** di Open Food Facts. Salgono di livello (Bronzo → Argento → Oro → Platino), completano sfide mensili e riscattano voucher nel marketplace.
 
-**Stato attuale**: App Expo React Native funzionante (SDK 54) + backend Express/PostgreSQL + admin panel web + **leafy-v2** con sistema badge a due livelli (lifetime + temporali).
+**Stato attuale**: App Expo React Native funzionante (SDK 54) + backend Express/PostgreSQL + admin panel web + frontend web con sistema badge a due livelli (lifetime + temporali).
 
 ---
 
@@ -14,8 +14,7 @@ Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti 
 |----------|------|-------------|
 | `leafy-mobile` | Expo app | App principale React Native (iOS/Android/web) |
 | `api-server` | Express 5 | Backend REST API su porta 8080 |
-| `leafy` | React/Vite | Frontend web legacy (porta 24389, preview path `/`) |
-| `leafy-v2` | React/Vite | Frontend v2 con badge a due livelli (porta 20040, preview path `/leafy-v2/`) |
+| `leafy` | React/Vite | Frontend web con sistema badge a due livelli (porta 24389, preview path `/`) |
 | `leafy-register` | React/Vite | Pannello admin web |
 | `mockup-sandbox` | Vite | Sandbox per mockup componenti su canvas |
 
