@@ -73,8 +73,9 @@ Il frontend viene servito come file statici dall'API server in produzione (Expre
 | Animazioni | Framer Motion |
 | State/Query | TanStack React Query |
 | Routing | Wouter |
+| Mobile | Expo SDK 54, React Native 0.81, expo-router 6 |
 | Auth | Passport.js (Google, Facebook), openid-client (Replit OIDC), bcryptjs |
-| Sessioni | Cookie-based (SHA256 session store custom in-memory) |
+| Sessioni | Cookie (web) + Bearer token via expo-secure-store (mobile) |
 | Fonts | DM Sans (display), Inter (body) |
 | Build | esbuild (CJS), Vite |
 
@@ -125,6 +126,21 @@ workspace/
 │   │   │           ├── LeafAnimation.tsx  # Animazione foglie post-scansione
 │   │   │           └── Onboarding.tsx     # Modal primo accesso (4 step + esplosione botanical)
 │   │   └── package.json
+│   ├── leafy-mobile/         # Expo React Native mobile app
+│   │   ├── app/
+│   │   │   ├── _layout.tsx      # Root layout, deep link handler, AuthProvider
+│   │   │   ├── login.tsx        # Login/register email + Google + Facebook
+│   │   │   └── (tabs)/
+│   │   │       ├── _layout.tsx  # Tab navigator (Home, Scan, Storico, Premi, Profilo)
+│   │   │       ├── index.tsx    # Home dashboard
+│   │   │       ├── scan.tsx     # Receipt scanner
+│   │   │       ├── storico.tsx  # Receipt history
+│   │   │       ├── marketplace.tsx # Voucher marketplace
+│   │   │       └── profilo.tsx  # User profile + logout
+│   │   ├── context/auth.tsx     # Auth context (login, register, OAuth, logout)
+│   │   ├── lib/api.ts           # apiFetch with Bearer token from SecureStore
+│   │   ├── constants/colors.ts  # Forest/green theme colors
+│   │   └── components/DevConnect.tsx # QR code overlay for Expo Go tunnel
 │   └── mockup-sandbox/      # Sandbox mockup per canvas Replit
 ├── lib/
 │   ├── api-spec/            # OpenAPI 3.1 spec + Orval config
