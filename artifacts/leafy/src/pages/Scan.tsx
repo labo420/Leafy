@@ -212,7 +212,7 @@ export default function Scan() {
             )}
           </>
         ) : (
-          <div className="flex-1 relative rounded-3xl overflow-hidden shadow-lg border border-border/50 bg-black/5">
+          <div className="relative max-h-[320px] rounded-3xl overflow-hidden shadow-lg border border-border/50 bg-black/5">
             <img src={preview} alt="Receipt preview" className="w-full h-full object-cover opacity-90" />
 
             {scanMutation.isPending && (
