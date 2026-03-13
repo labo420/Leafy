@@ -8,6 +8,14 @@ Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti 
 
 ---
 
+## Principi di Prodotto (non cancellare mai questa sezione)
+
+> **Target audience: TUTTI i consumatori, non solo chi è già "green".**
+>
+> Leafy è pensata per il pubblico più ampio possibile. Include sia chi è già vicino al mondo della sostenibilità, sia il consumatore normale che, senza saperlo, potrebbe già acquistare prodotti sostenibili. L'app non deve mai risultare elitaria, moralizzante o rivolta solo a un pubblico di nicchia eco-consapevole. Ogni scelta di design, copy, tono e funzionalità deve rispettare questo principio: **accogliere tutti, premiare le scelte green senza giudicare quelle che non lo sono.**
+
+---
+
 ## Artifacts
 
 | Artifact | Path | Descrizione |
