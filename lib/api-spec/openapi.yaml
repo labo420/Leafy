@@ -105,7 +105,7 @@ paths:
     post:
       operationId: scanReceipt
       tags: [scan]
-      summary: Scan a receipt and earn points
+      summary: Validate receipt as proof of purchase (no points awarded)
       requestBody:
         required: true
         content:
@@ -114,7 +114,7 @@ paths:
               $ref: "#/components/schemas/ScanReceiptBody"
       responses:
         "200":
-          description: Scan result with points earned
+          description: Receipt validated, barcode session started
           content:
             application/json:
               schema:
@@ -125,6 +125,69 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
+  /scan/barcode/lookup:
+    post:
+      operationId: barcodeLookup
+      tags: [scan]
+      summary: Look up product by barcode (preview, no points credited)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BarcodeScanBody"
+      responses:
+        "200":
+          description: Product preview with points to award
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BarcodeLookupResult"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /scan/barcode/confirm:
+    post:
+      operationId: barcodeConfirm
+      tags: [scan]
+      summary: Confirm barcode scan and credit points
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BarcodeScanBody"
+      responses:
+        "200":
+          description: Points credited successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BarcodeConfirmResult"
+        "400":
+          description: Session expired or duplicate barcode
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /scan/active-session:
+    get:
+      operationId: getActiveSession
+      tags: [scan]
+      summary: Get active barcode scanning session
+      responses:
+        "200":
+          description: Active session data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActiveSession"
 
   /receipts:
     get:
@@ -491,34 +554,167 @@ components:
       properties:
         receiptId:
           type: integer
-        pointsEarned:
-          type: integer
-        totalPoints:
-          type: integer
-        greenItemsFound:
-          type: array
-          items:
-            $ref: "#/components/schemas/FoundGreenItem"
-        badges:
-          type: array
-          items:
-            $ref: "#/components/schemas/Badge"
-          description: New badges earned with this scan
-        challengesUpdated:
-          type: array
-          items:
-            type: string
-          description: Challenge names that were progressed
+        barcodeExpiry:
+          type: string
+          format: date-time
+        storeName:
+          type: string
+          nullable: true
         message:
           type: string
+        sessionHours:
+          type: integer
       required:
         - receiptId
-        - pointsEarned
-        - totalPoints
-        - greenItemsFound
-        - badges
-        - challengesUpdated
+        - barcodeExpiry
         - message
+        - sessionHours
+
+    BarcodeScanBody:
+      type: object
+      properties:
+        barcode:
+          type: string
+        receiptId:
+          type: integer
+      required:
+        - barcode
+        - receiptId
+
+    BarcodeLookupResult:
+      type: object
+      properties:
+        barcode:
+          type: string
+        productName:
+          type: string
+        ecoScore:
+          type: string
+          nullable: true
+        pointsToAward:
+          type: integer
+        category:
+          type: string
+        emoji:
+          type: string
+        reasoning:
+          type: string
+        source:
+          type: string
+        remainingDailyPoints:
+          type: integer
+      required:
+        - barcode
+        - productName
+        - pointsToAward
+        - category
+        - emoji
+        - reasoning
+        - source
+        - remainingDailyPoints
+
+    BarcodeConfirmResult:
+      type: object
+      properties:
+        scanId:
+          type: integer
+        productName:
+          type: string
+        ecoScore:
+          type: string
+          nullable: true
+        pointsEarned:
+          type: integer
+        category:
+          type: string
+        emoji:
+          type: string
+        reasoning:
+          type: string
+        source:
+          type: string
+        totalPoints:
+          type: integer
+        level:
+          type: integer
+        remainingDailyPoints:
+          type: integer
+      required:
+        - scanId
+        - productName
+        - pointsEarned
+        - category
+        - emoji
+        - reasoning
+        - source
+        - totalPoints
+        - level
+        - remainingDailyPoints
+
+    BarcodeScannedItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        barcode:
+          type: string
+        productName:
+          type: string
+        ecoScore:
+          type: string
+          nullable: true
+        pointsEarned:
+          type: integer
+        category:
+          type: string
+        emoji:
+          type: string
+        reasoning:
+          type: string
+        scannedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - barcode
+        - productName
+        - pointsEarned
+        - category
+        - emoji
+
+    ActiveSession:
+      type: object
+      properties:
+        active:
+          type: boolean
+        receipt:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+            storeName:
+              type: string
+              nullable: true
+            scannedAt:
+              type: string
+              format: date-time
+            barcodeExpiry:
+              type: string
+              format: date-time
+            pointsEarned:
+              type: integer
+            greenItemsCount:
+              type: integer
+        remainingMinutes:
+          type: integer
+        barcodeScans:
+          type: array
+          items:
+            $ref: "#/components/schemas/BarcodeScannedItem"
+      required:
+        - active
+        - barcodeScans
 
     FoundGreenItem:
       type: object

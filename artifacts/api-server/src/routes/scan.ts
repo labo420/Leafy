@@ -71,6 +71,7 @@ router.post("/scan", async (req, res): Promise<void> => {
       status: "approved",
       flagReason: null,
       barcodeExpiry,
+      barcodeMode: 1,
     })
     .returning();
 

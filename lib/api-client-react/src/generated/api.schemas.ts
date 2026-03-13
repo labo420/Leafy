@@ -85,23 +85,78 @@ export interface ScanReceiptBody {
   rawText?: string | null;
 }
 
+export interface ScanResult {
+  receiptId: number;
+  barcodeExpiry: string;
+  storeName?: string | null;
+  message: string;
+  sessionHours: number;
+}
+
+export interface BarcodeScanBody {
+  barcode: string;
+  receiptId: number;
+}
+
+export interface BarcodeLookupResult {
+  barcode: string;
+  productName: string;
+  ecoScore?: string | null;
+  pointsToAward: number;
+  category: string;
+  emoji: string;
+  reasoning: string;
+  source: string;
+  remainingDailyPoints: number;
+}
+
+export interface BarcodeConfirmResult {
+  scanId: number;
+  productName: string;
+  ecoScore?: string | null;
+  pointsEarned: number;
+  category: string;
+  emoji: string;
+  reasoning: string;
+  source: string;
+  totalPoints: number;
+  level: number;
+  remainingDailyPoints: number;
+}
+
+export interface BarcodeScannedItem {
+  id: number;
+  barcode: string;
+  productName: string;
+  ecoScore?: string | null;
+  pointsEarned: number;
+  category: string;
+  emoji: string;
+  reasoning?: string;
+  scannedAt?: string;
+}
+
+export type ActiveSessionReceipt = {
+  id?: number;
+  storeName?: string | null;
+  scannedAt?: string;
+  barcodeExpiry?: string;
+  pointsEarned?: number;
+  greenItemsCount?: number;
+} | null;
+
+export interface ActiveSession {
+  active: boolean;
+  receipt?: ActiveSessionReceipt;
+  remainingMinutes?: number;
+  barcodeScans: BarcodeScannedItem[];
+}
+
 export interface FoundGreenItem {
   name: string;
   category: string;
   points: number;
   emoji: string;
-}
-
-export interface ScanResult {
-  receiptId: number;
-  pointsEarned: number;
-  totalPoints: number;
-  greenItemsFound: FoundGreenItem[];
-  /** New badges earned with this scan */
-  badges: Badge[];
-  /** Challenge names that were progressed */
-  challengesUpdated: string[];
-  message: string;
 }
 
 export interface Receipt {

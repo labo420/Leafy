@@ -6,11 +6,17 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./activeSession";
+export * from "./activeSessionReceipt";
 export * from "./applyReferralBody";
 export * from "./applyReferralResponse";
 export * from "./authUser";
 export * from "./authUserEnvelope";
 export * from "./badge";
+export * from "./barcodeConfirmResult";
+export * from "./barcodeLookupResult";
+export * from "./barcodeScanBody";
+export * from "./barcodeScannedItem";
 export * from "./beginBrowserLoginParams";
 export * from "./challenge";
 export * from "./errorResponse";

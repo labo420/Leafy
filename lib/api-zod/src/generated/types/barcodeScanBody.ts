@@ -6,10 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface ScanResult {
+export interface BarcodeScanBody {
+  barcode: string;
   receiptId: number;
-  barcodeExpiry: Date;
-  storeName?: string | null;
-  message: string;
-  sessionHours: number;
 }

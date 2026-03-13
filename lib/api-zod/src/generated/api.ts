@@ -75,7 +75,7 @@ export const ApplyReferralResponse = zod.object({
 });
 
 /**
- * @summary Scan a receipt and earn points
+ * @summary Validate receipt as proof of purchase (no points awarded)
  */
 export const ScanReceiptBody = zod.object({
   imageBase64: zod.string().describe("Base64 encoded receipt image"),
@@ -89,31 +89,83 @@ export const ScanReceiptBody = zod.object({
 
 export const ScanReceiptResponse = zod.object({
   receiptId: zod.number(),
+  barcodeExpiry: zod.date(),
+  storeName: zod.string().nullish(),
+  message: zod.string(),
+  sessionHours: zod.number(),
+});
+
+/**
+ * @summary Look up product by barcode (preview, no points credited)
+ */
+export const BarcodeLookupBody = zod.object({
+  barcode: zod.string(),
+  receiptId: zod.number(),
+});
+
+export const BarcodeLookupResponse = zod.object({
+  barcode: zod.string(),
+  productName: zod.string(),
+  ecoScore: zod.string().nullish(),
+  pointsToAward: zod.number(),
+  category: zod.string(),
+  emoji: zod.string(),
+  reasoning: zod.string(),
+  source: zod.string(),
+  remainingDailyPoints: zod.number(),
+});
+
+/**
+ * @summary Confirm barcode scan and credit points
+ */
+export const BarcodeConfirmBody = zod.object({
+  barcode: zod.string(),
+  receiptId: zod.number(),
+});
+
+export const BarcodeConfirmResponse = zod.object({
+  scanId: zod.number(),
+  productName: zod.string(),
+  ecoScore: zod.string().nullish(),
   pointsEarned: zod.number(),
+  category: zod.string(),
+  emoji: zod.string(),
+  reasoning: zod.string(),
+  source: zod.string(),
   totalPoints: zod.number(),
-  greenItemsFound: zod.array(
+  level: zod.number(),
+  remainingDailyPoints: zod.number(),
+});
+
+/**
+ * @summary Get active barcode scanning session
+ */
+export const GetActiveSessionResponse = zod.object({
+  active: zod.boolean(),
+  receipt: zod
+    .object({
+      id: zod.number().optional(),
+      storeName: zod.string().nullish(),
+      scannedAt: zod.date().optional(),
+      barcodeExpiry: zod.date().optional(),
+      pointsEarned: zod.number().optional(),
+      greenItemsCount: zod.number().optional(),
+    })
+    .nullish(),
+  remainingMinutes: zod.number().optional(),
+  barcodeScans: zod.array(
     zod.object({
-      name: zod.string(),
+      id: zod.number(),
+      barcode: zod.string(),
+      productName: zod.string(),
+      ecoScore: zod.string().nullish(),
+      pointsEarned: zod.number(),
       category: zod.string(),
-      points: zod.number(),
       emoji: zod.string(),
+      reasoning: zod.string().optional(),
+      scannedAt: zod.date().optional(),
     }),
   ),
-  badges: zod
-    .array(
-      zod.object({
-        id: zod.string(),
-        name: zod.string(),
-        emoji: zod.string(),
-        category: zod.string(),
-        earnedAt: zod.date().nullish(),
-      }),
-    )
-    .describe("New badges earned with this scan"),
-  challengesUpdated: zod
-    .array(zod.string())
-    .describe("Challenge names that were progressed"),
-  message: zod.string(),
 });
 
 /**

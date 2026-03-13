@@ -17,9 +17,13 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  ActiveSession,
   ApplyReferralBody,
   ApplyReferralResponse,
   AuthUserEnvelope,
+  BarcodeConfirmResult,
+  BarcodeLookupResult,
+  BarcodeScanBody,
   BeginBrowserLoginParams,
   Challenge,
   ErrorResponse,
@@ -427,7 +431,7 @@ export const useApplyReferral = <
 };
 
 /**
- * @summary Scan a receipt and earn points
+ * @summary Validate receipt as proof of purchase (no points awarded)
  */
 export const getScanReceiptUrl = () => {
   return `/api/scan`;
@@ -490,7 +494,7 @@ export type ScanReceiptMutationBody = BodyType<ScanReceiptBody>;
 export type ScanReceiptMutationError = ErrorType<ErrorResponse>;
 
 /**
- * @summary Scan a receipt and earn points
+ * @summary Validate receipt as proof of purchase (no points awarded)
  */
 export const useScanReceipt = <
   TError = ErrorType<ErrorResponse>,
@@ -511,6 +515,253 @@ export const useScanReceipt = <
 > => {
   return useMutation(getScanReceiptMutationOptions(options));
 };
+
+/**
+ * @summary Look up product by barcode (preview, no points credited)
+ */
+export const getBarcodeLookupUrl = () => {
+  return `/api/scan/barcode/lookup`;
+};
+
+export const barcodeLookup = async (
+  barcodeScanBody: BarcodeScanBody,
+  options?: RequestInit,
+): Promise<BarcodeLookupResult> => {
+  return customFetch<BarcodeLookupResult>(getBarcodeLookupUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(barcodeScanBody),
+  });
+};
+
+export const getBarcodeLookupMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof barcodeLookup>>,
+    TError,
+    { data: BodyType<BarcodeScanBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof barcodeLookup>>,
+  TError,
+  { data: BodyType<BarcodeScanBody> },
+  TContext
+> => {
+  const mutationKey = ["barcodeLookup"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof barcodeLookup>>,
+    { data: BodyType<BarcodeScanBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return barcodeLookup(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type BarcodeLookupMutationResult = NonNullable<
+  Awaited<ReturnType<typeof barcodeLookup>>
+>;
+export type BarcodeLookupMutationBody = BodyType<BarcodeScanBody>;
+export type BarcodeLookupMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Look up product by barcode (preview, no points credited)
+ */
+export const useBarcodeLookup = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof barcodeLookup>>,
+    TError,
+    { data: BodyType<BarcodeScanBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof barcodeLookup>>,
+  TError,
+  { data: BodyType<BarcodeScanBody> },
+  TContext
+> => {
+  return useMutation(getBarcodeLookupMutationOptions(options));
+};
+
+/**
+ * @summary Confirm barcode scan and credit points
+ */
+export const getBarcodeConfirmUrl = () => {
+  return `/api/scan/barcode/confirm`;
+};
+
+export const barcodeConfirm = async (
+  barcodeScanBody: BarcodeScanBody,
+  options?: RequestInit,
+): Promise<BarcodeConfirmResult> => {
+  return customFetch<BarcodeConfirmResult>(getBarcodeConfirmUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(barcodeScanBody),
+  });
+};
+
+export const getBarcodeConfirmMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof barcodeConfirm>>,
+    TError,
+    { data: BodyType<BarcodeScanBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof barcodeConfirm>>,
+  TError,
+  { data: BodyType<BarcodeScanBody> },
+  TContext
+> => {
+  const mutationKey = ["barcodeConfirm"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof barcodeConfirm>>,
+    { data: BodyType<BarcodeScanBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return barcodeConfirm(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type BarcodeConfirmMutationResult = NonNullable<
+  Awaited<ReturnType<typeof barcodeConfirm>>
+>;
+export type BarcodeConfirmMutationBody = BodyType<BarcodeScanBody>;
+export type BarcodeConfirmMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Confirm barcode scan and credit points
+ */
+export const useBarcodeConfirm = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof barcodeConfirm>>,
+    TError,
+    { data: BodyType<BarcodeScanBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof barcodeConfirm>>,
+  TError,
+  { data: BodyType<BarcodeScanBody> },
+  TContext
+> => {
+  return useMutation(getBarcodeConfirmMutationOptions(options));
+};
+
+/**
+ * @summary Get active barcode scanning session
+ */
+export const getGetActiveSessionUrl = () => {
+  return `/api/scan/active-session`;
+};
+
+export const getActiveSession = async (
+  options?: RequestInit,
+): Promise<ActiveSession> => {
+  return customFetch<ActiveSession>(getGetActiveSessionUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetActiveSessionQueryKey = () => {
+  return [`/api/scan/active-session`] as const;
+};
+
+export const getGetActiveSessionQueryOptions = <
+  TData = Awaited<ReturnType<typeof getActiveSession>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getActiveSession>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetActiveSessionQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getActiveSession>>
+  > = ({ signal }) => getActiveSession({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getActiveSession>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetActiveSessionQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getActiveSession>>
+>;
+export type GetActiveSessionQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get active barcode scanning session
+ */
+
+export function useGetActiveSession<
+  TData = Awaited<ReturnType<typeof getActiveSession>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getActiveSession>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetActiveSessionQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Get receipt scan history

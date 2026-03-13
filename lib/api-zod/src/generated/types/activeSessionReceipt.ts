@@ -6,10 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface ScanResult {
-  receiptId: number;
-  barcodeExpiry: Date;
+export type ActiveSessionReceipt = {
+  id?: number;
   storeName?: string | null;
-  message: string;
-  sessionHours: number;
-}
+  scannedAt?: Date;
+  barcodeExpiry?: Date;
+  pointsEarned?: number;
+  greenItemsCount?: number;
+} | null;
