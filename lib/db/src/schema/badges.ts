@@ -13,6 +13,7 @@ export const badgesTable = pgTable("badges", {
   description: text("description").notNull(),
   unlockHint: text("unlock_hint").notNull(),
   badgeType: badgeTypeEnum("badge_type").notNull().default("lifetime"),
+  periodKey: text("period_key"),
   targetCount: integer("target_count").notNull().default(1),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

@@ -49,7 +49,7 @@ export default function Profile() {
   const p = profile || {
     id: 1, username: "GuestUser", email: "guest@leafy.app", totalPoints: 1250,
     level: "Argento", levelProgress: 65, nextLevelPoints: 2000, streak: 5, badgesCount: 12,
-    badges: []
+    badges: [], profileImageUrl: undefined as string | undefined
   };
 
   const imp = impact || {
@@ -131,7 +131,7 @@ export default function Profile() {
             <div className="relative">
               <div className="w-24 h-24 rounded-full border-4 border-background shadow-lg overflow-hidden -mt-16 mb-4 bg-muted">
                 <img
-                  src={(p as any).profileImageUrl || `${import.meta.env.BASE_URL}images/avatar.png`}
+                  src={p.profileImageUrl || `${import.meta.env.BASE_URL}images/avatar.png`}
                   alt="User avatar"
                   className="w-full h-full object-cover"
                 />
