@@ -9,7 +9,6 @@ import { useAuth } from "@workspace/replit-auth-web";
 import { Leaf } from "lucide-react";
 import LoginPage from "@/pages/Login";
 
-// Pages
 import Home from "@/pages/Home";
 import Scan from "@/pages/Scan";
 import History from "@/pages/History";
