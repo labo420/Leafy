@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Bell, Globe, Lock, Mail, ShieldCheck, Trash2, User, LogOut, ChevronRight, Check, X } from "lucide-react";
+import { ArrowLeft, Bell, Globe, Lock, Mail, ShieldCheck, Trash2, User, LogOut, ChevronRight, Check, X, Edit } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useGetProfile } from "@workspace/api-client-react";
@@ -112,13 +112,14 @@ export default function Settings() {
               ) : (
                 <button
                   onClick={() => setEditingUsername(true)}
-                  className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted/40 transition-colors text-left"
+                  className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted/40 transition-colors text-left group"
                 >
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <User className="w-4 h-4 text-primary" />
                   </div>
                   <span className="flex-1 font-medium text-sm text-foreground">Nome utente</span>
                   <span className="text-sm text-muted-foreground">{displayName}</span>
+                  <Edit className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
                 </button>
               )}
               <SettingsRow icon={<Mail className="w-4 h-4 text-primary" />} label="Email" value={displayEmail} />
