@@ -186,7 +186,8 @@ Base URL: `/api`
 | Endpoint | Descrizione |
 |----------|-------------|
 | `POST /api/scan` | Valida scontrino come prova d'acquisto (NO punti). Restituisce receiptId + barcodeExpiry (24h) |
-| `POST /api/scan/barcode` | Scansiona codice a barre prodotto: lookup Open Food Facts, Eco-Score → punti. Richiede receiptId attivo |
+| `POST /api/scan/barcode/lookup` | Preview: cerca prodotto su Open Food Facts per barcode, restituisce nome/Eco-Score/punti da guadagnare (NO credito punti) |
+| `POST /api/scan/barcode/confirm` | Conferma: accredita i punti dopo preview. Richiede receiptId attivo |
 | `GET /api/scan/active-session` | Sessione attiva con scontrino e prodotti scansionati |
 | `GET /api/receipts` | Lista scontrini dell'utente |
 | `GET /api/receipts/:id` | Dettaglio scontrino con barcode scans e greenItems |

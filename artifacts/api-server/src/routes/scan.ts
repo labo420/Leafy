@@ -101,20 +101,20 @@ router.post("/scan", async (req, res): Promise<void> => {
   });
 });
 
-router.post("/scan/barcode", async (req, res): Promise<void> => {
+async function validateBarcodeRequest(req: any, res: any): Promise<{ user: any; receipt: any; barcode: string; receiptId: number } | null> {
   const { barcode, receiptId } = req.body;
 
   if (!barcode || typeof barcode !== "string") {
     res.status(400).json({ error: "Codice a barre mancante." });
-    return;
+    return null;
   }
   if (!receiptId || typeof receiptId !== "number") {
     res.status(400).json({ error: "ID scontrino mancante." });
-    return;
+    return null;
   }
 
   const user = await requireUser(req, res);
-  if (!user) return;
+  if (!user) return null;
 
   const [receipt] = await db
     .select()
@@ -129,12 +129,12 @@ router.post("/scan/barcode", async (req, res): Promise<void> => {
 
   if (!receipt) {
     res.status(404).json({ error: "Scontrino non trovato." });
-    return;
+    return null;
   }
 
   if (!receipt.barcodeExpiry || new Date() > new Date(receipt.barcodeExpiry)) {
     res.status(400).json({ error: "La sessione di scansione prodotti è scaduta (massimo 24 ore dallo scontrino)." });
-    return;
+    return null;
   }
 
   const [duplicate] = await db
@@ -150,8 +150,17 @@ router.post("/scan/barcode", async (req, res): Promise<void> => {
 
   if (duplicate) {
     res.status(400).json({ error: "Questo prodotto è già stato scansionato per questo scontrino." });
-    return;
+    return null;
   }
+
+  return { user, receipt, barcode: barcode.trim(), receiptId };
+}
+
+router.post("/scan/barcode/lookup", async (req, res): Promise<void> => {
+  const validated = await validateBarcodeRequest(req, res);
+  if (!validated) return;
+
+  const { user, barcode } = validated;
 
   const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const [pointsSumRow] = await db
@@ -173,7 +182,55 @@ router.post("/scan/barcode", async (req, res): Promise<void> => {
     return;
   }
 
-  const product = await lookupBarcode(barcode.trim());
+  const product = await lookupBarcode(barcode);
+
+  if (!product) {
+    res.status(404).json({ error: "Prodotto non trovato su Open Food Facts. Verifica che il codice a barre sia leggibile." });
+    return;
+  }
+
+  const pointsToAward = Math.min(product.points, remainingCap);
+
+  res.json({
+    barcode,
+    productName: product.productName,
+    ecoScore: product.ecoScore,
+    pointsToAward,
+    category: product.category,
+    emoji: product.emoji,
+    reasoning: product.reasoning,
+    source: product.source,
+    remainingDailyPoints: remainingCap,
+  });
+});
+
+router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
+  const validated = await validateBarcodeRequest(req, res);
+  if (!validated) return;
+
+  const { user, barcode, receiptId } = validated;
+
+  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const [pointsSumRow] = await db
+    .select({ total: sql<number>`coalesce(sum(points_earned), 0)::int` })
+    .from(barcodeScansTable)
+    .where(
+      and(
+        eq(barcodeScansTable.userId, user.id),
+        gte(barcodeScansTable.scannedAt, oneDayAgo),
+      ),
+    );
+
+  const pointsEarnedToday = pointsSumRow?.total ?? 0;
+  const MAX_DAILY_POINTS = 200;
+  const remainingCap = MAX_DAILY_POINTS - pointsEarnedToday;
+
+  if (remainingCap <= 0) {
+    res.status(400).json({ error: `Hai raggiunto il limite di ${MAX_DAILY_POINTS} punti al giorno. Torna domani!` });
+    return;
+  }
+
+  const product = await lookupBarcode(barcode);
 
   if (!product) {
     res.status(404).json({ error: "Prodotto non trovato. Verifica che il codice a barre sia leggibile." });
@@ -189,7 +246,7 @@ router.post("/scan/barcode", async (req, res): Promise<void> => {
       .where(
         and(
           eq(barcodeScansTable.receiptId, receiptId),
-          eq(barcodeScansTable.barcode, barcode.trim()),
+          eq(barcodeScansTable.barcode, barcode),
         ),
       )
       .limit(1);
@@ -201,7 +258,7 @@ router.post("/scan/barcode", async (req, res): Promise<void> => {
       .values({
         receiptId,
         userId: user.id,
-        barcode: barcode.trim(),
+        barcode,
         productName: product.productName,
         ecoScore: product.ecoScore,
         pointsEarned: finalPoints,

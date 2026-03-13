@@ -20,7 +20,19 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import Colors from "@/constants/colors";
 
-interface BarcodeScanResult {
+interface LookupResult {
+  barcode: string;
+  productName: string;
+  ecoScore: string | null;
+  pointsToAward: number;
+  category: string;
+  emoji: string;
+  reasoning: string;
+  source: string;
+  remainingDailyPoints: number;
+}
+
+interface ConfirmResult {
   scanId: number;
   productName: string;
   ecoScore: string | null;
@@ -40,7 +52,6 @@ interface ScannedProduct {
   pointsEarned: number;
   emoji: string;
   category: string;
-  reasoning: string;
 }
 
 const ECO_COLORS: Record<string, string> = {
@@ -50,6 +61,8 @@ const ECO_COLORS: Record<string, string> = {
   d: "#EE8100",
   e: "#E63E11",
 };
+
+type ScanPhase = "scanning" | "looking-up" | "preview" | "confirming" | "confirmed";
 
 function EcoScoreBadge({ score }: { score: string | null }) {
   if (!score) return null;
@@ -70,21 +83,41 @@ export default function BarcodeScannerScreen() {
 
   const [permission, requestPermission] = useCameraPermissions();
   const [scannedProducts, setScannedProducts] = useState<ScannedProduct[]>([]);
-  const [lastResult, setLastResult] = useState<BarcodeScanResult | null>(null);
-  const [scanning, setScanning] = useState(true);
-  const [processing, setProcessing] = useState(false);
+  const [phase, setPhase] = useState<ScanPhase>("scanning");
+  const [lookupData, setLookupData] = useState<LookupResult | null>(null);
+  const [lastConfirmed, setLastConfirmed] = useState<ConfirmResult | null>(null);
   const [cooldown, setCooldown] = useState(false);
 
   const topPadding = Platform.OS === "web" ? 20 : insets.top;
 
-  const barcodeMutation = useMutation({
+  const lookupMutation = useMutation({
     mutationFn: (barcode: string) =>
-      apiFetch<BarcodeScanResult>("/scan/barcode", {
+      apiFetch<LookupResult>("/scan/barcode/lookup", {
         method: "POST",
         body: JSON.stringify({ barcode, receiptId }),
       }),
     onSuccess: (data) => {
-      setLastResult(data);
+      setLookupData(data);
+      setPhase("preview");
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    },
+    onError: (err: Error) => {
+      setPhase("scanning");
+      setCooldown(true);
+      setTimeout(() => setCooldown(false), 2000);
+      Alert.alert("Attenzione", err.message ?? "Errore nella ricerca del prodotto");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    },
+  });
+
+  const confirmMutation = useMutation({
+    mutationFn: (barcode: string) =>
+      apiFetch<ConfirmResult>("/scan/barcode/confirm", {
+        method: "POST",
+        body: JSON.stringify({ barcode, receiptId }),
+      }),
+    onSuccess: (data) => {
+      setLastConfirmed(data);
       setScannedProducts((prev) => [
         {
           barcode: data.productName,
@@ -93,40 +126,49 @@ export default function BarcodeScannerScreen() {
           pointsEarned: data.pointsEarned,
           emoji: data.emoji,
           category: data.category,
-          reasoning: data.reasoning,
         },
         ...prev,
       ]);
-      setScanning(false);
-      setProcessing(false);
+      setPhase("confirmed");
+      setLookupData(null);
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       queryClient.invalidateQueries({ queryKey: ["receipts"] });
       queryClient.invalidateQueries({ queryKey: ["active-session"] });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     },
     onError: (err: Error) => {
-      setProcessing(false);
-      setScanning(true);
-      setCooldown(true);
-      setTimeout(() => setCooldown(false), 2000);
-      Alert.alert("Attenzione", err.message ?? "Errore nella scansione del codice a barre");
+      setPhase("preview");
+      Alert.alert("Errore", err.message ?? "Impossibile confermare il prodotto");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     },
   });
 
   const handleBarCodeScanned = useCallback(
     ({ data }: { data: string }) => {
-      if (processing || cooldown || !scanning) return;
-      setProcessing(true);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      barcodeMutation.mutate(data);
+      if (phase !== "scanning" || cooldown) return;
+      setPhase("looking-up");
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      lookupMutation.mutate(data);
     },
-    [processing, cooldown, scanning],
+    [phase, cooldown],
   );
 
+  const handleConfirm = () => {
+    if (!lookupData) return;
+    setPhase("confirming");
+    confirmMutation.mutate(lookupData.barcode);
+  };
+
+  const handleReject = () => {
+    setLookupData(null);
+    setPhase("scanning");
+    setCooldown(true);
+    setTimeout(() => setCooldown(false), 1500);
+  };
+
   const continueScan = () => {
-    setLastResult(null);
-    setScanning(true);
+    setLastConfirmed(null);
+    setPhase("scanning");
     setCooldown(true);
     setTimeout(() => setCooldown(false), 1500);
   };
@@ -163,21 +205,70 @@ export default function BarcodeScannerScreen() {
     );
   }
 
-  if (!scanning && lastResult) {
+  if (phase === "preview" && lookupData) {
+    return (
+      <View style={[styles.container, { paddingTop: topPadding }]}>
+        <LinearGradient colors={[Colors.forest, Colors.leaf]} style={styles.previewBanner}>
+          <Animated.View entering={FadeIn.delay(100)} style={styles.previewContent}>
+            <Text style={styles.previewEmoji}>{lookupData.emoji}</Text>
+            <Text style={styles.previewName}>{lookupData.productName}</Text>
+            <View style={styles.previewRow}>
+              <EcoScoreBadge score={lookupData.ecoScore} />
+              <Text style={styles.previewCategory}>{lookupData.category}</Text>
+            </View>
+            <Text style={styles.previewReasoning}>{lookupData.reasoning}</Text>
+            <View style={styles.previewPointsBox}>
+              <Text style={styles.previewPointsLabel}>Punti da guadagnare</Text>
+              <Text style={styles.previewPointsValue}>+{lookupData.pointsToAward}</Text>
+            </View>
+          </Animated.View>
+        </LinearGradient>
+
+        <Animated.View entering={FadeInDown.delay(200)} style={styles.previewActions}>
+          <Pressable style={styles.rejectBtn} onPress={handleReject}>
+            <Feather name="x" size={18} color={Colors.red} />
+            <Text style={styles.rejectBtnText}>Annulla</Text>
+          </Pressable>
+          <Pressable style={styles.confirmBtn} onPress={handleConfirm}>
+            <Feather name="check" size={18} color="#fff" />
+            <Text style={styles.confirmBtnText}>Conferma</Text>
+          </Pressable>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.delay(300)} style={styles.previewHintBox}>
+          <Feather name="info" size={14} color={Colors.textSecondary} />
+          <Text style={styles.previewHintText}>
+            Conferma se hai acquistato questo prodotto per ricevere i punti
+          </Text>
+        </Animated.View>
+      </View>
+    );
+  }
+
+  if (phase === "confirming") {
+    return (
+      <View style={[styles.centered, { paddingTop: topPadding }]}>
+        <ActivityIndicator size="large" color={Colors.leaf} />
+        <Text style={styles.processingFullText}>Conferma in corso...</Text>
+      </View>
+    );
+  }
+
+  if (phase === "confirmed" && lastConfirmed) {
     return (
       <View style={[styles.container, { paddingTop: topPadding }]}>
         <LinearGradient colors={[Colors.forest, Colors.leaf]} style={styles.resultBanner}>
           <Animated.View entering={FadeIn.delay(100)} style={styles.resultContent}>
-            <Text style={styles.resultEmoji}>{lastResult.emoji}</Text>
-            <Text style={styles.resultName}>{lastResult.productName}</Text>
+            <Feather name="check-circle" size={40} color="#fff" />
+            <Text style={styles.resultEmoji}>{lastConfirmed.emoji}</Text>
+            <Text style={styles.resultName}>{lastConfirmed.productName}</Text>
             <View style={styles.resultRow}>
-              <EcoScoreBadge score={lastResult.ecoScore} />
-              <Text style={styles.resultCategory}>{lastResult.category}</Text>
+              <EcoScoreBadge score={lastConfirmed.ecoScore} />
+              <Text style={styles.resultCategory}>{lastConfirmed.category}</Text>
             </View>
-            <Text style={styles.resultReasoning}>{lastResult.reasoning}</Text>
             <View style={styles.resultPointsBox}>
               <Text style={styles.resultPointsLabel}>Punti guadagnati</Text>
-              <Text style={styles.resultPointsValue}>+{lastResult.pointsEarned}</Text>
+              <Text style={styles.resultPointsValue}>+{lastConfirmed.pointsEarned}</Text>
             </View>
           </Animated.View>
         </LinearGradient>
@@ -229,7 +320,7 @@ export default function BarcodeScannerScreen() {
         style={StyleSheet.absoluteFill}
         facing="back"
         barcodeScannerSettings={{ barcodeTypes: ["ean13", "ean8", "upc_a", "upc_e", "code128", "code39"] }}
-        onBarcodeScanned={scanning && !processing && !cooldown ? handleBarCodeScanned : undefined}
+        onBarcodeScanned={phase === "scanning" && !cooldown ? handleBarCodeScanned : undefined}
       />
 
       <View style={[styles.cameraOverlay, { paddingTop: topPadding + 16 }]}>
@@ -248,7 +339,7 @@ export default function BarcodeScannerScreen() {
           <View style={[styles.corner, styles.cornerBR]} />
         </View>
 
-        {processing && (
+        {phase === "looking-up" && (
           <Animated.View entering={SlideInUp} style={styles.processingBar}>
             <ActivityIndicator size="small" color="#fff" />
             <Text style={styles.processingText}>Ricerca prodotto...</Text>
@@ -296,17 +387,34 @@ const styles = StyleSheet.create({
     alignSelf: "center", backgroundColor: "rgba(0,0,0,0.7)", borderRadius: 20, paddingHorizontal: 20, paddingVertical: 12,
   },
   processingText: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: "#fff" },
+  processingFullText: { fontSize: 18, fontFamily: "Inter_600SemiBold", color: Colors.text, marginTop: 16 },
   cameraFooter: { alignItems: "center", gap: 8, paddingTop: 16 },
   cameraHint: { fontSize: 15, fontFamily: "Inter_500Medium", color: "#fff", textShadowColor: "rgba(0,0,0,0.5)", textShadowRadius: 4 },
   summaryRow: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6 },
   summaryText: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: "#fff" },
-  resultBanner: { paddingHorizontal: 24, paddingVertical: 32, borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
+  previewBanner: { paddingHorizontal: 24, paddingVertical: 32, borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
+  previewContent: { alignItems: "center", gap: 8 },
+  previewEmoji: { fontSize: 48 },
+  previewName: { fontSize: 22, fontFamily: "Inter_700Bold", color: "#fff", textAlign: "center" },
+  previewRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  previewCategory: { fontSize: 14, fontFamily: "Inter_500Medium", color: "rgba(255,255,255,0.8)" },
+  previewReasoning: { fontSize: 13, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.7)", textAlign: "center" },
+  previewPointsBox: { backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 16, padding: 16, alignItems: "center", marginTop: 8, width: "100%" },
+  previewPointsLabel: { fontSize: 12, fontFamily: "Inter_500Medium", color: "rgba(255,255,255,0.8)", textTransform: "uppercase" },
+  previewPointsValue: { fontSize: 40, fontFamily: "Inter_700Bold", color: "#fff" },
+  previewActions: { flexDirection: "row", gap: 12, padding: 20 },
+  rejectBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: Colors.card, borderRadius: 16, paddingVertical: 16, borderWidth: 1.5, borderColor: Colors.red },
+  rejectBtnText: { fontSize: 16, fontFamily: "Inter_600SemiBold", color: Colors.red },
+  confirmBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: Colors.leaf, borderRadius: 16, paddingVertical: 16 },
+  confirmBtnText: { fontSize: 16, fontFamily: "Inter_700Bold", color: "#fff" },
+  previewHintBox: { flexDirection: "row", alignItems: "center", gap: 8, marginHorizontal: 20, backgroundColor: Colors.cardAlt, borderRadius: 12, padding: 14 },
+  previewHintText: { fontSize: 13, fontFamily: "Inter_400Regular", color: Colors.textSecondary, flex: 1 },
+  resultBanner: { paddingHorizontal: 24, paddingVertical: 28, borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
   resultContent: { alignItems: "center", gap: 8 },
-  resultEmoji: { fontSize: 48 },
-  resultName: { fontSize: 22, fontFamily: "Inter_700Bold", color: "#fff", textAlign: "center" },
+  resultEmoji: { fontSize: 40 },
+  resultName: { fontSize: 20, fontFamily: "Inter_700Bold", color: "#fff", textAlign: "center" },
   resultRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   resultCategory: { fontSize: 14, fontFamily: "Inter_500Medium", color: "rgba(255,255,255,0.8)" },
-  resultReasoning: { fontSize: 13, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.7)", textAlign: "center" },
   resultPointsBox: { backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 16, padding: 16, alignItems: "center", marginTop: 8, width: "100%" },
   resultPointsLabel: { fontSize: 12, fontFamily: "Inter_500Medium", color: "rgba(255,255,255,0.8)", textTransform: "uppercase" },
   resultPointsValue: { fontSize: 40, fontFamily: "Inter_700Bold", color: "#fff" },
