@@ -57,8 +57,8 @@ export default function LoginScreen() {
         await doRegister(email.trim(), password, username.trim());
       }
       router.replace("/(tabs)");
-    } catch (err: any) {
-      setError(err.message || "Errore di connessione. Riprova.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Errore di connessione. Riprova.");
     } finally {
       setLoading(false);
     }
