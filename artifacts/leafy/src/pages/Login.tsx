@@ -58,6 +58,12 @@ export default function LoginPage({ onSuccess }: LoginPageProps) {
         return;
       }
 
+      if (mode === "register") {
+        localStorage.removeItem("leafy_onboarded");
+      } else {
+        localStorage.setItem("leafy_onboarded", "1");
+      }
+
       onSuccess();
     } catch {
       setError("Errore di connessione. Riprova.");

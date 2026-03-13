@@ -24,7 +24,6 @@ export default function Settings() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("leafy_onboarded");
     logout();
   };
 
