@@ -118,8 +118,7 @@ export default function Profile() {
                 className="hidden"
               />
             </div>
-            <h2 className="font-display font-bold text-2xl text-foreground mb-1">{p.username}</h2>
-            <p className="text-muted-foreground text-sm mb-4">{p.email}</p>
+            <h2 className="font-display font-bold text-2xl text-foreground mb-4">{p.username}</h2>
             
             <div className="flex items-center gap-2 bg-muted/50 px-4 py-2 rounded-full">
               <Trophy className="w-4 h-4 text-accent" />
