@@ -25,7 +25,7 @@ export default function Settings() {
 
   const handleLogout = async () => {
     await logout();
-    window.location.href = "/";
+    window.location.reload();
   };
 
   return (
