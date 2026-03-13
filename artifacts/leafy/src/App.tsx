@@ -27,7 +27,6 @@ const queryClient = new QueryClient({
 });
 
 function LoginScreen() {
-  const { login } = useAuth();
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-6">
       <div className="flex flex-col items-center gap-6 max-w-xs w-full">
@@ -40,12 +39,6 @@ function LoginScreen() {
             Scansiona gli scontrini, guadagna punti per i prodotti sostenibili e scala la classifica verde.
           </p>
         </div>
-        <button
-          onClick={login}
-          className="w-full py-3.5 px-6 bg-primary text-primary-foreground font-semibold rounded-2xl shadow-md hover:opacity-90 active:scale-95 transition-all text-base"
-        >
-          Accedi con Replit
-        </button>
         <p className="text-xs text-muted-foreground text-center">
           Accedendo accetti i nostri Termini di Servizio e la Privacy Policy.
         </p>
