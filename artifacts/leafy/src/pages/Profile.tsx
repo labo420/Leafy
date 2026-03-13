@@ -54,8 +54,8 @@ export default function Profile() {
 
       <div className="px-6 -mt-16 relative z-20 space-y-6">
         {/* Profile Card */}
-        <Card className="border-transparent shadow-xl">
-          <CardContent className="p-6 flex flex-col items-center text-center">
+        <Card className="border-transparent shadow-xl overflow-visible">
+          <CardContent className="p-6 flex flex-col items-center text-center overflow-visible">
             <div className="w-24 h-24 rounded-full border-4 border-background shadow-lg overflow-hidden -mt-16 mb-4 bg-muted">
               <img src={`${import.meta.env.BASE_URL}images/avatar.png`} alt="User avatar" className="w-full h-full object-cover" />
             </div>
