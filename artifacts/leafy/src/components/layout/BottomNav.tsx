@@ -5,8 +5,8 @@ import { motion } from "framer-motion";
 
 const navItems = [
   { href: "/", icon: Home, label: "Home" },
-  { href: "/scan", icon: Camera, label: "Scan" },
   { href: "/storico", icon: ScrollText, label: "Storico" },
+  { href: "/scan", icon: Camera, label: "Scansiona", isCta: true },
   { href: "/marketplace", icon: Gift, label: "Premi" },
   { href: "/profilo", icon: User, label: "Profilo" },
 ];
@@ -20,17 +20,39 @@ export function BottomNav() {
         {navItems.map((item) => {
           const isActive = location === item.href;
           const Icon = item.icon;
-          
+
+          if (item.isCta) {
+            return (
+              <Link key={item.href} href={item.href} className="relative flex-1 flex flex-col items-center justify-center -mt-7">
+                <motion.div
+                  whileTap={{ scale: 0.9 }}
+                  className={cn(
+                    "w-16 h-16 rounded-full flex items-center justify-center shadow-lg shadow-primary/30 bg-gradient-to-br from-primary to-[#23533e] transition-transform",
+                    isActive && "ring-4 ring-primary/20"
+                  )}
+                >
+                  <Icon className="w-7 h-7 text-white" strokeWidth={2} />
+                </motion.div>
+                <span className={cn(
+                  "text-[10px] font-medium mt-1 transition-colors duration-300",
+                  isActive ? "text-primary font-bold" : "text-muted-foreground"
+                )}>
+                  {item.label}
+                </span>
+              </Link>
+            );
+          }
+
           return (
             <Link key={item.href} href={item.href} className="relative flex-1 flex flex-col items-center justify-center gap-1 group">
               {isActive && (
-                <motion.div 
+                <motion.div
                   layoutId="bottom-nav-indicator"
                   className="absolute -top-3 w-12 h-1 bg-primary rounded-full"
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 />
               )}
-              <motion.div 
+              <motion.div
                 whileTap={{ scale: 0.9 }}
                 className={cn(
                   "p-2 rounded-2xl transition-colors duration-300",

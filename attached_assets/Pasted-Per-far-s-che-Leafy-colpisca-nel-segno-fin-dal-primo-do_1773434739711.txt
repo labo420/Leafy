@@ -1,0 +1,49 @@
+Per far sì che Leafy colpisca nel segno fin dal primo download, dobbiamo costruire l'app attorno a chi la userà veramente. Nel mercato della sostenibilità, non esiste un solo tipo di consumatore, ma possiamo identificare due profili principali che faranno crescere il tuo progetto.
+
+Ecco un'analisi di mercato mirata e come tradurre queste abitudini in funzionalità concrete per lo sviluppo.
+
+1. Il Pragmatico Consapevole (Il tuo utente principale)
+Rappresenta circa il 60-70% del tuo target potenziale.
+
+Chi è: Ha tra i 30 e i 45 anni. Lavora, ha poco tempo, fa la spesa principale nei grandi supermercati (Esselunga, Carrefour) ma cerca di inserire prodotti bio, locali o con meno imballaggi quando può.
+
+Psicologia: Vuole fare la cosa giusta, ma la convenienza (di tempo e denaro) vince quasi sempre. È terrorizzato dal greenwashing (le aziende che si fingono ecologiche).
+
+Cosa odia: Le app complicate, i tutorial infiniti, i sensi di colpa se compra una bottiglia di plastica per emergenza.
+
+Come strutturare l'app per lui:
+
+Scansione fulminea: Il pulsante della fotocamera deve essere enorme e centrale. L'azione deve richiedere 3 secondi netti.
+
+Trasparenza: Quando riceve i punti, l'app deve dirgli esattamente perché (es. "Scansione completata: +20 pt per le Uova Bio, +10 pt per il detersivo ricaricabile").
+
+Nessun giudizio: Se nello scontrino ci sono 10 prodotti industriali e 1 solo bio, l'app festeggia quell'unico prodotto bio. Zero negatività.
+
+2. L'Eco-Entusiasta (Il tuo utente promotore)
+Rappresenta il 20-30%, ma è quello che parlerà dell'app agli amici.
+
+Chi è: Ha tra i 18 e i 30 anni (Gen Z o giovane Millennial). È molto informato, legge le etichette, frequenta negozi sfusi, mercati agricoli o botteghe bio.
+
+Psicologia: La sostenibilità è parte della sua identità. Ama le sfide, segue attivisti sui social e vuole vedere l'impatto reale delle sue azioni.
+
+Cosa odia: Le interfacce vecchie, i premi non coerenti (es. faticare per mesi per ottenere uno sconto su un brand di fast fashion).
+
+Come strutturare l'app per lui:
+
+Gamification e Statistiche: Vuole vedere i numeri. Una dashboard che mostra "Questo mese hai salvato l'equivalente di 3 kg di plastica e 10 kg di CO2" lo farà impazzire di gioia.
+
+Condivisione Social: Un tasto per condividere i traguardi raggiunti nelle storie di Instagram ("Ho raggiunto il livello Quercia su Leafy!").
+
+Premi etici: Per lui inseriremo i premi legati a brand molto specifici e super-sostenibili.
+
+Le regole d'oro per la UI/UX (Interfaccia e User Experience)
+Sapendo chi sono i nostri utenti, ecco le direttive da passare a chi scrive il codice:
+
+I Colori: Evita il "verde semaforo" o i colori fluo. Il target green ama i toni della terra: verde salvia, beige panna, terracotta, carta da zucchero. Danno un senso di calma, pulizia e naturalezza.
+
+Il Linguaggio (Copywriting): Deve essere incoraggiante e leggero. Invece di "Carica scontrino", usa "Analizza la tua spesa". Invece di "Errore di lettura", usa "Ops, la foto è un po' sfocata, riproviamo?".
+
+La Regola del "One-Tap": L'utente ha in mano le borse della spesa, forse è ancora nel parcheggio. Aprire l'app e scattare la foto deve richiedere un solo tocco.
+
+Il trucco psicologico: Il "Premio Immediato"
+Entrambi i profili hanno bisogno di gratificazione a breve termine. Quando si iscrivono, regala un "Bonus di Benvenuto" (es. 50 punti) solo per aver completato il profilo. Questo li avvicina psicologicamente al primo vero premio e riduce l'abbandono dell'app nei primi 3 giorni.

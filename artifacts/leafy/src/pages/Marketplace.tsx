@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Gift, Sparkles, Tag, Check, TicketPercent } from "lucide-react";
+import { Gift, Sparkles, Tag, Check, TicketPercent, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -12,11 +12,11 @@ export default function Marketplace() {
   const [activeTab, setActiveTab] = useState<"vouchers" | "my_codes">("vouchers");
   const [selectedVoucher, setSelectedVoucher] = useState<number | null>(null);
   const [codeModal, setCodeModal] = useState<{title: string, code: string} | null>(null);
-  
+
   const queryClient = useQueryClient();
   const { data: profile } = useGetProfile();
   const { data: vouchers, isLoading } = useGetVouchers();
-  
+
   const redeemMutation = useRedeemVoucher({
     mutation: {
       onSuccess: (data) => {
@@ -49,6 +49,9 @@ export default function Marketplace() {
     redeemMutation.mutate({ id });
   };
 
+  const getProgressPercent = (cost: number) => Math.min((userPoints / cost) * 100, 100);
+  const isAlmostThere = (cost: number) => userPoints < cost && getProgressPercent(cost) >= 80;
+
   return (
     <div className="p-6 pt-10 min-h-full pb-24">
       <header className="mb-6 flex items-end justify-between">
@@ -66,13 +69,13 @@ export default function Marketplace() {
       </header>
 
       <div className="flex bg-muted/50 p-1 rounded-xl mb-6">
-        <button 
+        <button
           onClick={() => setActiveTab("vouchers")}
           className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${activeTab === "vouchers" ? "bg-card shadow text-foreground" : "text-muted-foreground"}`}
         >
           Catalogo
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab("my_codes")}
           className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${activeTab === "my_codes" ? "bg-card shadow text-foreground" : "text-muted-foreground"}`}
         >
@@ -83,11 +86,18 @@ export default function Marketplace() {
       {activeTab === "vouchers" && (
         <div className="grid grid-cols-1 gap-5">
           {list.map((v) => (
-            <Card key={v.id} className="overflow-hidden border-transparent shadow-md hover:shadow-lg transition-shadow">
+            <Card key={v.id} className={`overflow-hidden border-transparent shadow-md hover:shadow-lg transition-shadow ${isAlmostThere(v.pointsCost) ? "ring-2 ring-accent/40" : ""}`}>
               <div className="bg-gradient-to-r from-accent/20 to-transparent p-4 flex justify-between items-center border-b border-border/50">
-                <Badge variant="outline" className="bg-background/80 backdrop-blur-sm border-accent/30 text-accent-foreground">
-                  <Tag className="w-3 h-3 mr-1" /> {v.category}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="bg-background/80 backdrop-blur-sm border-accent/30 text-accent-foreground">
+                    <Tag className="w-3 h-3 mr-1" /> {v.category}
+                  </Badge>
+                  {isAlmostThere(v.pointsCost) && (
+                    <Badge className="bg-accent text-accent-foreground gap-1 animate-pulse">
+                      <Zap className="w-3 h-3" /> Quasi!
+                    </Badge>
+                  )}
+                </div>
                 <span className="font-display font-bold text-2xl text-accent-foreground">{v.discount}</span>
               </div>
               <CardContent className="p-5">
@@ -97,9 +107,25 @@ export default function Marketplace() {
                     <p className="text-sm text-muted-foreground">{v.brandName}</p>
                   </div>
                 </div>
-                <p className="text-sm text-muted-foreground mb-5 line-clamp-2">{v.description}</p>
-                
-                <Button 
+                <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{v.description}</p>
+
+                {/* Progress bar toward redemption */}
+                {userPoints < v.pointsCost && (
+                  <div className="mb-4">
+                    <div className="flex justify-between text-[10px] font-semibold text-muted-foreground mb-1">
+                      <span>{new Intl.NumberFormat("it-IT").format(userPoints)} pt</span>
+                      <span>{new Intl.NumberFormat("it-IT").format(v.pointsCost)} pt</span>
+                    </div>
+                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${isAlmostThere(v.pointsCost) ? "bg-accent" : "bg-primary/40"}`}
+                        style={{ width: `${getProgressPercent(v.pointsCost)}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <Button
                   onClick={() => handleRedeem(v.id)}
                   disabled={userPoints < v.pointsCost || !v.isAvailable || redeemMutation.isPending}
                   className="w-full justify-between px-6"
@@ -128,28 +154,28 @@ export default function Marketplace() {
       <AnimatePresence>
         {codeModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               className="bg-card w-full max-w-sm rounded-3xl p-6 shadow-2xl relative overflow-hidden text-center"
             >
               <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary via-secondary to-accent" />
-              
+
               <div className="w-16 h-16 rounded-full bg-green-100 text-green-600 flex items-center justify-center mx-auto mb-4 mt-2">
                 <Check className="w-8 h-8" strokeWidth={3} />
               </div>
-              
+
               <h3 className="font-display font-bold text-2xl mb-1 text-foreground">Premio Riscattato!</h3>
               <p className="text-muted-foreground mb-6 text-sm">{codeModal.title}</p>
-              
+
               <div className="bg-muted/50 border border-border rounded-xl p-4 mb-6">
                 <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-2">Il tuo codice segreto</p>
                 <p className="font-mono font-bold text-3xl tracking-widest text-foreground select-all">
                   {codeModal.code}
                 </p>
               </div>
-              
+
               <Button onClick={() => setCodeModal(null)} className="w-full">
                 Chiudi e usa il buono
               </Button>
