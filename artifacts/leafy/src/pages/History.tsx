@@ -165,55 +165,44 @@ export default function History() {
                   </div>
                 ) : detail && detail.greenItems.length > 0 ? (
                   <>
-                    {/* Prodotti rilevati */}
+                    {/* Prodotti rilevati — griglia 2 colonne */}
                     <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
                       Prodotti green rilevati
                     </p>
-                    <div className="space-y-1.5">
+                    <div className="grid grid-cols-2 gap-1.5">
                       {detail.greenItems.map((item, idx) => (
                         <motion.div
                           key={idx}
-                          initial={{ opacity: 0, x: -8 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: idx * 0.05 }}
-                          className="flex items-center justify-between bg-muted/40 rounded-xl px-3 py-2"
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: idx * 0.04 }}
+                          className="flex items-center gap-2 bg-muted/40 rounded-xl px-2.5 py-2"
                         >
-                          <div className="flex items-center gap-2.5">
-                            <span className="text-xl">{item.emoji}</span>
-                            <div>
-                              <p className="font-semibold text-xs text-foreground leading-tight">
-                                {item.name}
-                              </p>
-                              <Badge
-                                variant={getCategoryColor(item.category)}
-                                className="text-[9px] mt-0.5 h-4"
-                              >
+                          <span className="text-lg shrink-0">{item.emoji}</span>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-[11px] text-foreground leading-tight truncate">
+                              {item.name}
+                            </p>
+                            <div className="flex items-center justify-between mt-0.5">
+                              <Badge variant={getCategoryColor(item.category)} className="text-[8px] h-3.5 px-1">
                                 {item.category}
                               </Badge>
+                              <span className="text-[10px] font-bold text-primary">+{item.points}</span>
                             </div>
-                          </div>
-                          <div className="flex items-center gap-1 text-primary font-bold text-xs">
-                            <Star className="w-3 h-3 fill-primary" />
-                            +{item.points}
                           </div>
                         </motion.div>
                       ))}
                     </div>
 
-                    {/* Totale */}
-                    <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-xl px-3 py-2">
-                      <span className="font-bold text-sm text-foreground">Totale punti</span>
-                      <span className="font-display font-bold text-lg text-primary">+{detail.pointsEarned}</span>
-                    </div>
-
-                    {/* Spiegazione logica */}
-                    <div className="bg-muted/30 rounded-xl p-3 flex gap-2">
-                      <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                      <p className="text-[11px] text-muted-foreground leading-relaxed">
-                        Cercate parole chiave:
-                        <span className="font-medium text-foreground"> bio, km 0, vegano, senza plastica, fairtrade, artigianale, DOP/IGP</span>.
-                        Ogni categoria vale punti diversi in base all'impatto ambientale.
-                      </p>
+                    {/* Totale + info in riga */}
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 flex items-center justify-between bg-primary/10 border border-primary/20 rounded-xl px-3 py-1.5">
+                        <span className="font-bold text-xs text-foreground">Totale</span>
+                        <span className="font-display font-bold text-base text-primary">+{detail.pointsEarned} pts</span>
+                      </div>
+                      <div className="bg-muted/40 rounded-xl p-1.5" title="Parole chiave cercate: bio, km 0, vegano, senza plastica, fairtrade, artigianale, DOP/IGP">
+                        <Info className="w-4 h-4 text-muted-foreground" />
+                      </div>
                     </div>
                   </>
                 ) : detail ? (
