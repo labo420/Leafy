@@ -52,7 +52,7 @@ function BadgeItem({ badge }: { badge: any }) {
 
 export default function ProfiloScreen() {
   const insets = useSafeAreaInsets();
-  const { user, logout } = useAuth();
+  const { user, refetch } = useAuth();
   const queryClient = useQueryClient();
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -92,9 +92,15 @@ export default function ProfiloScreen() {
         onPress: async () => {
           setLoggingOut(true);
           try {
-            queryClient.clear();
-            await logout();
+            const domain = process.env.EXPO_PUBLIC_DOMAIN;
+            const base = domain ? `https://${domain}` : "";
+            await fetch(`${base}/api/auth/logout`, {
+              method: "POST",
+              credentials: "include",
+            });
           } finally {
+            queryClient.clear();
+            await refetch();
             router.replace("/login");
             setLoggingOut(false);
           }

@@ -6,8 +6,7 @@ import {
   useFonts,
 } from "@expo-google-fonts/inter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import * as Linking from "expo-linking";
-import { Stack, router } from "expo-router";
+import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -16,7 +15,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { DevConnect } from "@/components/DevConnect";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { AuthProvider, useAuth } from "@/context/auth";
+import { AuthProvider } from "@/context/auth";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -25,35 +24,6 @@ const queryClient = new QueryClient({
     queries: { retry: 1, staleTime: 30_000 },
   },
 });
-
-function DeepLinkHandler() {
-  const { handleOAuthToken } = useAuth();
-
-  useEffect(() => {
-    const handleUrl = async (event: { url: string }) => {
-      try {
-        const parsed = new URL(event.url);
-        if (parsed.hostname === "auth") {
-          const sid = parsed.searchParams.get("sid");
-          if (sid) {
-            await handleOAuthToken(sid);
-            router.replace("/(tabs)");
-          }
-        }
-      } catch {}
-    };
-
-    const sub = Linking.addEventListener("url", handleUrl);
-
-    Linking.getInitialURL().then((url) => {
-      if (url) handleUrl({ url });
-    });
-
-    return () => sub.remove();
-  }, [handleOAuthToken]);
-
-  return null;
-}
 
 function RootLayoutNav() {
   return (
@@ -88,7 +58,6 @@ export default function RootLayout() {
             <KeyboardProvider>
               <AuthProvider>
                 <RootLayoutNav />
-                <DeepLinkHandler />
                 <DevConnect />
               </AuthProvider>
             </KeyboardProvider>

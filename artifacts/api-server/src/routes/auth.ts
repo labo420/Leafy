@@ -241,14 +241,6 @@ router.get("/auth/user", (req: Request, res: Response) => {
   );
 });
 
-router.get("/auth/me", (req: Request, res: Response) => {
-  res.json(
-    GetCurrentAuthUserResponse.parse({
-      user: req.isAuthenticated() ? req.user : null,
-    }),
-  );
-});
-
 // ─── POST /auth/register ─────────────────────────────────────────────────────
 
 router.post("/auth/register", async (req: Request, res: Response) => {
@@ -299,7 +291,7 @@ router.post("/auth/register", async (req: Request, res: Response) => {
   const sid = await createSession(sessionData);
   setSessionCookie(res, sid);
 
-  res.json({ user: sessionData.user, sid });
+  res.json({ user: sessionData.user });
 });
 
 // ─── POST /auth/login ────────────────────────────────────────────────────────
@@ -332,7 +324,7 @@ router.post("/auth/login", async (req: Request, res: Response) => {
   const sid = await createSession(sessionData);
   setSessionCookie(res, sid);
 
-  res.json({ user: sessionData.user, sid });
+  res.json({ user: sessionData.user });
 });
 
 // ─── GET /auth/google ────────────────────────────────────────────────────────
@@ -344,9 +336,6 @@ router.get("/auth/google", (req: Request, res: Response) => {
     res.status(503).json({ error: "Google login non configurato." });
     return;
   }
-  if (req.query.mobile === "1") {
-    res.cookie("auth_mobile", "1", { httpOnly: true, secure: true, sameSite: "lax", path: "/", maxAge: 10 * 60 * 1000 });
-  }
   passport.authenticate("google", {
     session: false,
     scope: ["openid", "email", "profile"],
@@ -355,29 +344,18 @@ router.get("/auth/google", (req: Request, res: Response) => {
 
 router.get("/auth/google/callback", (req: Request, res: Response) => {
   const callbackURL = `${getOrigin(req)}/api/auth/google/callback`;
-  const isMobile = req.query.mobile === "1" || req.cookies?.auth_mobile === "1";
   configureGoogleStrategy(callbackURL);
   passport.authenticate(
     "google",
     { session: false, failureRedirect: "/?auth_error=google" },
     async (_err: unknown, user: { id: number; email: string; username: string } | false) => {
       if (!user) {
-        if (isMobile) {
-          res.clearCookie("auth_mobile", { path: "/" });
-          res.redirect("leafy-mobile://auth?error=google");
-          return;
-        }
         res.redirect("/?auth_error=google");
         return;
       }
       const sessionData = makeLocalSession(user);
       const sid = await createSession(sessionData);
       setSessionCookie(res, sid);
-      if (isMobile) {
-        res.clearCookie("auth_mobile", { path: "/" });
-        res.redirect(`leafy-mobile://auth?sid=${sid}`);
-        return;
-      }
       res.redirect("/");
     },
   )(req, res, () => {});
@@ -392,9 +370,6 @@ router.get("/auth/facebook", (req: Request, res: Response) => {
     res.status(503).json({ error: "Facebook login non configurato." });
     return;
   }
-  if (req.query.mobile === "1") {
-    res.cookie("auth_mobile", "1", { httpOnly: true, secure: true, sameSite: "lax", path: "/", maxAge: 10 * 60 * 1000 });
-  }
   passport.authenticate("facebook", {
     session: false,
     scope: ["email"],
@@ -403,29 +378,18 @@ router.get("/auth/facebook", (req: Request, res: Response) => {
 
 router.get("/auth/facebook/callback", (req: Request, res: Response) => {
   const callbackURL = `${getOrigin(req)}/api/auth/facebook/callback`;
-  const isMobile = req.query.mobile === "1" || req.cookies?.auth_mobile === "1";
   configureFacebookStrategy(callbackURL);
   passport.authenticate(
     "facebook",
     { session: false, failureRedirect: "/?auth_error=facebook" },
     async (_err: unknown, user: { id: number; email: string; username: string } | false) => {
       if (!user) {
-        if (isMobile) {
-          res.clearCookie("auth_mobile", { path: "/" });
-          res.redirect("leafy-mobile://auth?error=facebook");
-          return;
-        }
         res.redirect("/?auth_error=facebook");
         return;
       }
       const sessionData = makeLocalSession(user);
       const sid = await createSession(sessionData);
       setSessionCookie(res, sid);
-      if (isMobile) {
-        res.clearCookie("auth_mobile", { path: "/" });
-        res.redirect(`leafy-mobile://auth?sid=${sid}`);
-        return;
-      }
       res.redirect("/");
     },
   )(req, res, () => {});

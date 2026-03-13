@@ -1,0 +1,23 @@
+packages:
+  "framer-motion": "Page transitions and gamification animations (falling leaves, pulses)"
+  "recharts": "Analytics charts for environmental impact visualization"
+  "date-fns": "Human-readable date formatting for history and challenges"
+  "clsx": "Utility class merging"
+  "tailwind-merge": "Utility class merging"
+  "sonner": "Premium toast notifications for user feedback"
+
+images:
+  - path: "artifacts/leafy/public/images/logo.png"
+    description: "Minimalist eco-friendly leaf logo mark in forest green and mint on transparent background, modern flat vector style"
+    aspect_ratio: "1:1"
+  - path: "artifacts/leafy/public/images/hero-bg.png"
+    description: "Abstract soft gradient mesh background in cream white, light mint green, and pale amber, organic flowing shapes"
+    aspect_ratio: "9:16"
+  - path: "artifacts/leafy/public/images/avatar.png"
+    description: "Cute flat illustration of a person surrounded by nature and leaves, warm colors, round avatar style"
+    aspect_ratio: "1:1"
+
+notes:
+  - App is mobile-first; desktop view will constrain the app to a mobile-sized container in the center of the screen.
+  - Using generated React Query hooks from @workspace/api-client-react.
+  - Assuming missing data returns nicely structured objects or 404s we can catch.
