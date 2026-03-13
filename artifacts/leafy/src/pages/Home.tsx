@@ -24,9 +24,12 @@ export default function Home() {
 
   const motivationalMessages = [
     `Oggi sei già un passo avanti, ${p.username}! 🌿`,
-    `Continua così, il pianeta ti ringrazia! 🌍`,
-    `Ogni scelta conta. La tua fa la differenza! 🌱`,
+    `Stai accumulando punti reali, ${p.username}! 🏆`,
+    `Ogni scontrino vale qualcosa per te. 💫`,
     `Grande slancio questa settimana, ${p.username}! ♻️`,
+    `${p.totalPoints} punti nel tuo portafoglio — continua così! 🎁`,
+    `Potresti sorprenderti di quanti punti guadagni già. 🛒`,
+    `Ogni scelta conta. La tua fa la differenza! 🌱`,
   ];
   const message = motivationalMessages[p.streak % motivationalMessages.length];
 

@@ -360,7 +360,7 @@ export default function ScanScreen() {
             {[
               { icon: "file-text" as const, text: "1. Fotografa lo scontrino come prova d'acquisto" },
               { icon: "maximize" as const, text: "2. Scansiona i codici a barre dei prodotti" },
-              { icon: "award" as const, text: "3. Guadagna punti in base all'Eco-Score" },
+              { icon: "award" as const, text: "3. Guadagna punti in base al Punteggio Verde" },
             ].map((step, i) => (
               <View key={i} style={styles.stepRow}>
                 <View style={styles.stepIcon}>

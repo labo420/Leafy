@@ -105,7 +105,7 @@ export default function Scan() {
         </motion.div>
 
         <h2 className="font-display font-bold text-3xl mb-2 text-foreground">Bravissimo!</h2>
-        <p className="text-muted-foreground mb-8">Hai fatto scelte sostenibili.</p>
+        <p className="text-muted-foreground mb-8">Ecco cosa hai guadagnato su questa spesa.</p>
 
         <Card className="w-full mb-8 border-primary/20 bg-primary/5">
           <CardContent className="p-6">

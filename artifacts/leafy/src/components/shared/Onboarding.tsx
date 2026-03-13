@@ -29,14 +29,14 @@ const steps = [
   {
     emoji: "🌿",
     title: "Benvenuto su Leafy!",
-    description: "La piattaforma che premia le tue scelte green. Ogni prodotto sostenibile che compri vale punti reali.",
+    description: "Guadagna punti reali ad ogni spesa. Scoprirai quanti prodotti sostenibili compri già — spesso senza saperlo.",
     highlight: null,
   },
   {
     emoji: "📸",
     title: "Scansiona lo scontrino",
-    description: "Fotografa il tuo scontrino dopo la spesa. Leafy riconosce i prodotti Bio, Km 0, Vegani, Plastic-free e molto altro.",
-    highlight: "Bio · Km 0 · Vegano · Senza Plastica · Fairtrade · DOP/IGP",
+    description: "Fotografa lo scontrino dopo la spesa. Leafy analizza automaticamente i tuoi prodotti — potresti sorprenderti di quanti punti guadagni già.",
+    highlight: "Potresti già comprarne: Bio · Km 0 · Vegano · Senza Plastica · Fairtrade · DOP/IGP",
   },
   {
     emoji: "⬆️",
