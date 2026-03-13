@@ -63,7 +63,7 @@ export function Onboarding() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm px-4 pb-24 pt-4"
           onClick={(e) => { if (e.target === e.currentTarget) finish(); }}
         >
           <motion.div
