@@ -2,13 +2,37 @@
 const { spawn, execSync } = require("child_process");
 const fs = require("fs");
 const http = require("http");
+const path = require("path");
 
 const TUNNEL_FILE = "/tmp/expo-tunnel-url.txt";
 const NGROK_API = "http://127.0.0.1:4040/api/tunnels";
+const NGROK_AUTH_TOKEN = "5W1bR67GNbWcXqmxZzBG1_56GezNeaX6sSRvn8npeQ8";
+
+function findNgrokBin() {
+  const candidates = [
+    path.join(__dirname, "../../../node_modules/.pnpm/@expo+ngrok-bin-linux-x64@2.3.41/node_modules/@expo/ngrok-bin-linux-x64/ngrok"),
+    path.join(__dirname, "../../node_modules/.pnpm/@expo+ngrok-bin-linux-x64@2.3.41/node_modules/@expo/ngrok-bin-linux-x64/ngrok"),
+    "/home/runner/workspace/node_modules/.pnpm/@expo+ngrok-bin-linux-x64@2.3.41/node_modules/@expo/ngrok-bin-linux-x64/ngrok",
+  ];
+  for (const c of candidates) {
+    if (fs.existsSync(c)) return c;
+  }
+  return null;
+}
 
 try {
   execSync("pkill -f ngrok || true", { stdio: "ignore" });
 } catch {}
+
+const ngrokBin = findNgrokBin();
+if (ngrokBin) {
+  try {
+    execSync(`"${ngrokBin}" authtoken ${NGROK_AUTH_TOKEN}`, { stdio: "ignore" });
+    console.log("ngrok authtoken set.");
+  } catch (e) {
+    console.warn("Failed to set ngrok authtoken:", e.message);
+  }
+}
 
 if (fs.existsSync(TUNNEL_FILE)) fs.unlinkSync(TUNNEL_FILE);
 
@@ -32,39 +56,37 @@ function pollNgrokAPI() {
   }).on("error", () => {});
 }
 
-setTimeout(() => {
-  const args = process.argv.slice(2);
-  const child = spawn("pnpm", ["exec", "expo", "start", ...args], {
-    stdio: ["inherit", "pipe", "pipe"],
-    env: process.env,
-  });
+const args = process.argv.slice(2);
+const child = spawn("pnpm", ["exec", "expo", "start", ...args], {
+  stdio: ["inherit", "pipe", "pipe"],
+  env: process.env,
+});
 
-  let tunnelFound = false;
+let tunnelFound = false;
 
-  function handleOutput(data) {
-    const text = data.toString();
-    process.stdout.write(text);
+function handleOutput(data) {
+  const text = data.toString();
+  process.stdout.write(text);
 
-    const match = text.match(/exp:\/\/[^\s]+\.exp\.direct/);
-    if (match && !tunnelFound) {
-      tunnelFound = true;
-      fs.writeFileSync(TUNNEL_FILE, match[0], "utf8");
-    }
-
-    if ((text.includes("Tunnel connected") || text.includes("Tunnel ready")) && !tunnelFound) {
-      setTimeout(() => {
-        if (!tunnelFound) {
-          pollNgrokAPI();
-          setTimeout(() => { if (!tunnelFound) pollNgrokAPI(); }, 3000);
-        }
-      }, 2000);
-    }
+  const match = text.match(/exp:\/\/[^\s]+\.exp\.direct/);
+  if (match && !tunnelFound) {
+    tunnelFound = true;
+    fs.writeFileSync(TUNNEL_FILE, match[0], "utf8");
   }
 
-  child.stdout.on("data", handleOutput);
-  child.stderr.on("data", (data) => {
-    process.stderr.write(data);
-    handleOutput(data);
-  });
-  child.on("close", (code) => process.exit(code ?? 0));
-}, 2000);
+  if ((text.includes("Tunnel connected") || text.includes("Tunnel ready")) && !tunnelFound) {
+    setTimeout(() => {
+      if (!tunnelFound) {
+        pollNgrokAPI();
+        setTimeout(() => { if (!tunnelFound) pollNgrokAPI(); }, 3000);
+      }
+    }, 2000);
+  }
+}
+
+child.stdout.on("data", handleOutput);
+child.stderr.on("data", (data) => {
+  process.stderr.write(data);
+  handleOutput(data);
+});
+child.on("close", (code) => process.exit(code ?? 0));
