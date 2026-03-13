@@ -202,22 +202,13 @@ export default function Scan() {
 
             {/* Two action strips */}
             {!hasActiveSession && (
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center justify-center gap-2 bg-card border border-border/70 rounded-2xl py-3.5 text-sm font-medium text-foreground shadow-sm hover:bg-muted/50 transition-colors"
-                >
-                  <Camera className="w-4 h-4 text-primary" />
-                  Fotocamera
-                </button>
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center justify-center gap-2 bg-card border border-border/70 rounded-2xl py-3.5 text-sm font-medium text-foreground shadow-sm hover:bg-muted/50 transition-colors"
-                >
-                  <ImageIcon className="w-4 h-4 text-primary" />
-                  Galleria
-                </button>
-              </div>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full flex items-center justify-center gap-2 bg-card border border-border/70 rounded-2xl py-3.5 text-sm font-medium text-foreground shadow-sm hover:bg-muted/50 transition-colors"
+              >
+                <ImageIcon className="w-4 h-4 text-primary" />
+                Galleria
+              </button>
             )}
           </>
         ) : (
