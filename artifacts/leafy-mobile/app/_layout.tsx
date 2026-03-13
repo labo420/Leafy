@@ -13,6 +13,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { DevConnect } from "@/components/DevConnect";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/context/auth";
 
@@ -57,6 +58,7 @@ export default function RootLayout() {
             <KeyboardProvider>
               <AuthProvider>
                 <RootLayoutNav />
+                <DevConnect />
               </AuthProvider>
             </KeyboardProvider>
           </GestureHandlerRootView>
