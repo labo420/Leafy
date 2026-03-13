@@ -4,9 +4,17 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LeafAnimation } from "@/components/shared/LeafAnimation";
-import { Camera, CheckCircle2, ArrowRight, ScanLine, ImageIcon } from "lucide-react";
+import { Camera, CheckCircle2, ArrowRight, ScanLine, ImageIcon, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+
+const FLOATING_ITEMS = [
+  { emoji: "🌿", label: "Pasta Bio", pts: "+12 pt", x: "8%",  y: "12%" },
+  { emoji: "♻️", label: "Detersivo Eco", pts: "+8 pt",  x: "58%", y: "8%"  },
+  { emoji: "🥦", label: "Verdure Km0", pts: "+15 pt", x: "5%",  y: "58%" },
+  { emoji: "🫒", label: "Olio DOP",    pts: "+10 pt", x: "62%", y: "62%" },
+  { emoji: "🌱", label: "Yogurt Vegano", pts: "+8 pt", x: "30%", y: "76%" },
+];
 
 export default function Scan() {
   const [file, setFile] = useState<File | null>(null);
@@ -143,61 +151,117 @@ export default function Scan() {
 
   return (
     <div className="p-6 pt-10 h-full flex flex-col">
-      <header className="mb-6">
-        <h1 className="font-display font-bold text-3xl text-foreground mb-1">Scansiona</h1>
-        <p className="text-muted-foreground text-sm">
-          {hasActiveSession
-            ? "Sessione attiva — scansiona i barcode dei prodotti."
-            : "Analizza la tua spesa e scopri quanti punti hai guadagnato."}
-        </p>
+      <header className="mb-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="font-display font-bold text-3xl text-foreground mb-0.5">Scansiona</h1>
+            <p className="text-muted-foreground text-sm">
+              {hasActiveSession
+                ? "Sessione attiva — scansiona i barcode dei prodotti."
+                : "Analizza la tua spesa e scopri quanti punti hai guadagnato."}
+            </p>
+          </div>
+          <div className="flex items-center gap-1.5 bg-accent/15 text-accent-foreground px-3 py-1.5 rounded-full text-xs font-semibold">
+            <Sparkles className="w-3 h-3" />
+            Fino a +150 pt
+          </div>
+        </div>
       </header>
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col gap-4">
         {!preview ? (
-          <motion.div
-            onClick={() => fileInputRef.current?.click()}
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.99 }}
-            transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            className="flex-1 relative border-2 border-dashed border-primary/25 hover:border-primary/45 bg-gradient-to-br from-primary/5 via-background to-secondary/10 hover:from-primary/10 hover:to-secondary/15 transition-all duration-300 rounded-3xl flex flex-col items-center justify-center p-8 text-center cursor-pointer group min-h-[300px] overflow-hidden"
-          >
-            {/* Decorative background rings */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-52 h-52 rounded-full border border-primary/8 absolute" />
-              <div className="w-72 h-72 rounded-full border border-primary/5 absolute" />
-            </div>
+          <>
+            {/* Hero scan zone */}
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="flex-1 relative rounded-3xl overflow-hidden cursor-pointer min-h-[300px]"
+            >
+              {/* Background gradient */}
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-secondary/5 to-accent/10" />
 
-            {/* Camera icon — layered circles */}
-            <div className="relative mb-5">
-              <div className="w-28 h-28 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center shadow-lg shadow-primary/10 group-hover:shadow-primary/25 group-hover:scale-105 transition-all duration-300">
-                <div className="w-20 h-20 rounded-full bg-background flex items-center justify-center shadow-inner">
-                  <Camera className="w-10 h-10 text-primary" />
+              {/* Subtle grid texture */}
+              <div
+                className="absolute inset-0 opacity-[0.035]"
+                style={{
+                  backgroundImage: "radial-gradient(circle, hsl(153 40% 30%) 1px, transparent 1px)",
+                  backgroundSize: "28px 28px",
+                }}
+              />
+
+              {/* Outer glow ring */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <motion.div
+                  animate={{ scale: [1, 1.08, 1], opacity: [0.15, 0.25, 0.15] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                  className="w-56 h-56 rounded-full border-2 border-primary/30"
+                />
+                <motion.div
+                  animate={{ scale: [1, 1.05, 1], opacity: [0.08, 0.15, 0.08] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+                  className="absolute w-72 h-72 rounded-full border border-primary/20"
+                />
+              </div>
+
+              {/* Floating product chips */}
+              {FLOATING_ITEMS.map((item, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: [0, -6, 0] }}
+                  transition={{
+                    opacity: { delay: 0.3 + i * 0.15, duration: 0.4 },
+                    y: { delay: i * 0.4, duration: 2.5 + i * 0.3, repeat: Infinity, ease: "easeInOut" },
+                  }}
+                  className="absolute flex items-center gap-1.5 bg-card/85 backdrop-blur-sm rounded-2xl px-2.5 py-1.5 shadow-md border border-border/50 pointer-events-none"
+                  style={{ left: item.x, top: item.y }}
+                >
+                  <span className="text-sm">{item.emoji}</span>
+                  <span className="text-xs font-medium text-foreground/75 whitespace-nowrap">{item.label}</span>
+                  <span className="text-xs font-bold text-primary whitespace-nowrap">{item.pts}</span>
+                </motion.div>
+              ))}
+
+              {/* Center camera button */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                <motion.div
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.93 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 18 }}
+                  className="w-24 h-24 rounded-full bg-primary shadow-2xl shadow-primary/40 flex items-center justify-center"
+                >
+                  <Camera className="w-11 h-11 text-white" />
+                </motion.div>
+                <div className="text-center">
+                  <p className="text-sm font-semibold text-foreground">
+                    {hasActiveSession ? "Scansiona il barcode" : "Tocca per fotografare"}
+                  </p>
+                  {!hasActiveSession && (
+                    <p className="text-xs text-muted-foreground mt-0.5">oppure carica dalla galleria</p>
+                  )}
                 </div>
               </div>
             </div>
 
-            <h3 className="font-bold text-xl mb-1.5 text-foreground">
-              {hasActiveSession ? "Scansiona il barcode" : "Carica o Scatta"}
-            </h3>
-            <p className="text-sm text-muted-foreground max-w-[210px] mb-5">
-              {hasActiveSession
-                ? "Inquadra il barcode del prodotto."
-                : "Assicurati che l'immagine sia nitida e leggibile."}
-            </p>
-
+            {/* Two action strips */}
             {!hasActiveSession && (
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 bg-background/80 backdrop-blur-sm px-3.5 py-1.5 rounded-full border border-border/60 shadow-sm text-xs font-medium text-muted-foreground">
-                  <Camera className="w-3 h-3 text-primary" />
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center justify-center gap-2 bg-card border border-border/70 rounded-2xl py-3.5 text-sm font-medium text-foreground shadow-sm hover:bg-muted/50 transition-colors"
+                >
+                  <Camera className="w-4 h-4 text-primary" />
                   Fotocamera
-                </div>
-                <div className="flex items-center gap-1.5 bg-background/80 backdrop-blur-sm px-3.5 py-1.5 rounded-full border border-border/60 shadow-sm text-xs font-medium text-muted-foreground">
-                  <ImageIcon className="w-3 h-3 text-primary" />
+                </button>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center justify-center gap-2 bg-card border border-border/70 rounded-2xl py-3.5 text-sm font-medium text-foreground shadow-sm hover:bg-muted/50 transition-colors"
+                >
+                  <ImageIcon className="w-4 h-4 text-primary" />
                   Galleria
-                </div>
+                </button>
               </div>
             )}
-          </motion.div>
+          </>
         ) : (
           <div className="flex-1 relative rounded-3xl overflow-hidden shadow-lg border border-border/50 bg-black/5">
             <img src={preview} alt="Receipt preview" className="w-full h-full object-cover opacity-90" />
@@ -206,7 +270,7 @@ export default function Scan() {
               <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center">
                 <ScanLine className="w-16 h-16 text-primary animate-pulse mb-4" />
                 <p className="font-bold text-lg text-primary animate-pulse">Analisi in corso...</p>
-                <p className="text-sm text-muted-foreground mt-2">Ricerca prodotti bio, km0...</p>
+                <p className="text-sm text-muted-foreground mt-2">Ricerca prodotti sostenibili...</p>
               </div>
             )}
 
@@ -232,16 +296,14 @@ export default function Scan() {
           onChange={handleFileChange}
         />
 
-        <div className="mt-6">
-          <Button
-            className="w-full text-lg h-14 rounded-2xl shadow-xl shadow-primary/20"
-            disabled={!preview || scanMutation.isPending}
-            onClick={handleScan}
-            isLoading={scanMutation.isPending}
-          >
-            {scanMutation.isPending ? "Analizzando..." : "Analizza la tua spesa"}
-          </Button>
-        </div>
+        <Button
+          className="w-full text-lg h-14 rounded-2xl shadow-xl shadow-primary/20"
+          disabled={!preview || scanMutation.isPending}
+          onClick={handleScan}
+          isLoading={scanMutation.isPending}
+        >
+          {scanMutation.isPending ? "Analizzando..." : "Analizza la tua spesa"}
+        </Button>
       </div>
     </div>
   );
