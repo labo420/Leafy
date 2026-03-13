@@ -55,12 +55,16 @@ const steps = [
 export function Onboarding() {
   const [visible, setVisible] = useState(false);
   const [step, setStep] = useState(0);
+  const [showConfetti, setShowConfetti] = useState(false);
   const particles = useMemo(() => generateParticles(), []);
 
   useEffect(() => {
     const done = localStorage.getItem(STORAGE_KEY);
     if (!done) {
-      const timer = setTimeout(() => setVisible(true), 600);
+      const timer = setTimeout(() => {
+        setVisible(true);
+        setShowConfetti(true);
+      }, 600);
       return () => clearTimeout(timer);
     }
   }, []);
@@ -87,8 +91,14 @@ export function Onboarding() {
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm px-4 pb-24 pt-4"
           onClick={(e) => { if (e.target === e.currentTarget) finish(); }}
         >
-          {step === 0 && (
-            <div className="fixed inset-0 pointer-events-none z-[60]">
+          {showConfetti && (
+            <motion.div
+              className="fixed inset-0 pointer-events-none z-[60]"
+              onAnimationComplete={() => setShowConfetti(false)}
+              initial={{ opacity: 1 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 1.8 }}
+            >
               {particles.map((p) => (
                 <motion.span
                   key={p.id}
@@ -111,7 +121,7 @@ export function Onboarding() {
                   {p.emoji}
                 </motion.span>
               ))}
-            </div>
+            </motion.div>
           )}
           <motion.div
             initial={{ y: 100, opacity: 0 }}
@@ -180,7 +190,7 @@ export function Onboarding() {
                 </div>
               ) : (
                 <Link href="/scan" onClick={finish}>
-                  <Button className="w-full rounded-xl h-12 text-base font-semibold shadow-lg shadow-primary/20" onClick={finish}>
+                  <Button className="w-full rounded-xl h-12 text-base font-semibold shadow-lg shadow-primary/20">
                     Scansiona il primo scontrino!
                   </Button>
                 </Link>
