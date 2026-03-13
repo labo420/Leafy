@@ -12,6 +12,7 @@ import {
   clearSession,
   getOidcConfig,
   getSessionId,
+  getSession,
   createSession,
   deleteSession,
   SESSION_COOKIE,
