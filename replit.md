@@ -4,7 +4,7 @@
 
 Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti scansionano scontrini come prova d'acquisto, poi inquadrano i codici a barre dei prodotti per guadagnare punti basati sull'**Eco-Score** di Open Food Facts. Salgono di livello (Bronzo → Argento → Oro → Platino), completano sfide mensili e riscattano voucher nel marketplace.
 
-**Stato attuale**: App Expo React Native funzionante (SDK 54) + backend Express/PostgreSQL + admin panel web.
+**Stato attuale**: App Expo React Native funzionante (SDK 54) + backend Express/PostgreSQL + admin panel web + **leafy-v2** con sistema badge a due livelli (lifetime + temporali).
 
 ---
 
@@ -14,7 +14,7 @@ Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti 
 |----------|------|-------------|
 | `leafy-mobile` | Expo app | App principale React Native (iOS/Android/web) |
 | `api-server` | Express 5 | Backend REST API su porta 8080 |
-| `leafy` | React/Vite | Frontend web (porta 24389, preview path `/`) |
+| `leafy` | React/Vite | Frontend web legacy (porta 24389, preview path `/`) |
 | `leafy-v2` | React/Vite | Frontend v2 con badge a due livelli (porta 20040, preview path `/leafy-v2/`) |
 | `leafy-register` | React/Vite | Pannello admin web |
 | `mockup-sandbox` | Vite | Sandbox per mockup componenti su canvas |
@@ -112,14 +112,16 @@ workspace/
 │   ├── api-server/          # Express 5 API server
 │   │   └── src/
 │   │       ├── routes/
-│   │       │   ├── scan.ts       # Flusso scontrino (proof-only) + barcode lookup/confirm
-│   │       │   ├── receipts.ts   # GET lista + dettaglio con barcode scans
-│   │       │   ├── auth.ts       # Login email, Google, Facebook, Replit OIDC
-│   │       │   ├── profile.ts    # Profilo utente, requireUser middleware
-│   │       │   ├── admin.ts      # Admin panel backend (password protected)
+│   │       │   ├── scan.ts         # Flusso scontrino (proof-only) + barcode lookup/confirm
+│   │       │   ├── receipts.ts     # GET lista + dettaglio con barcode scans
+│   │       │   ├── auth.ts         # Login email, Google, Facebook, Replit OIDC
+│   │       │   ├── profile.ts      # Profilo utente, requireUser middleware
+│   │       │   ├── admin.ts        # Admin panel backend (password protected)
+│   │       │   ├── badges.ts       # GET /api/badges/my — badge lifetime + temporali
 │   │       │   ├── challenges.ts
 │   │       │   ├── leaderboard.ts
 │   │       │   └── marketplace.ts
+│   │       ├── seed-badges.ts      # 15 badge seed idempotenti (per nome)
 │   │       └── lib/
 │   │           ├── productClassifier.ts  # Open Food Facts + Claude AI fallback + cache
 │   │           ├── antiFraud.ts          # 8-layer anti-frode system
@@ -137,8 +139,18 @@ workspace/
 │   │       ├── login.tsx
 │   │       └── _layout.tsx
 │   ├── leafy/               # Frontend React/Vite (web legacy)
+│   ├── leafy-v2/            # Frontend React/Vite v2 — badge system
+│   │   └── src/
+│   │       ├── pages/
+│   │       │   ├── Profile.tsx     # Pagina profilo reale (Traguardi + Sfide tabs)
+│   │       │   ├── ProfileDemo.tsx # Demo pubblica senza auth (/leafy-v2/demo)
+│   │       │   └── ...
+│   │       └── App.tsx             # /demo route prima di AuthGate (Wouter Switch)
 │   ├── leafy-register/      # Admin panel web (React/Vite)
 │   └── mockup-sandbox/      # Sandbox mockup per canvas Replit
+│       └── src/components/mockups/
+│           └── badge-demo/
+│               └── BadgeDemo.tsx   # Preview canvas badge (/__mockup/preview/badge-demo/BadgeDemo)
 ├── lib/
 │   ├── api-spec/            # OpenAPI 3.1 spec + Orval config
 │   ├── api-client-react/    # React Query hooks generati
@@ -148,6 +160,7 @@ workspace/
 │   │       ├── users.ts
 │   │       ├── receipts.ts       # incl. barcodeExpiry, barcodeMode
 │   │       ├── barcode-scans.ts  # unique(receipt_id, barcode)
+│   │       ├── badges.ts         # badges + user_badges con periodKey
 │   │       ├── product-cache.ts
 │   │       └── ...
 │   └── integrations-anthropic-ai/  # Anthropic client via Replit proxy
@@ -155,6 +168,47 @@ workspace/
 ├── tsconfig.base.json
 └── tsconfig.json
 ```
+
+---
+
+## Sistema Badge (leafy-v2)
+
+### Architettura a Due Livelli
+
+| Tipo | Tabella | Descrizione |
+|------|---------|-------------|
+| **Lifetime** | `badges` (`badge_type = 'lifetime'`) | Badge permanenti — si sbloccano una volta sola |
+| **Temporali** | `badges` (`badge_type IN ('weekly','monthly','seasonal')`) | Badge a periodo — si resettano ogni ciclo |
+
+### API Badge
+```
+GET /api/badges/my
+```
+Risponde con `{ lifetime: Badge[], temporal: TemporalBadge[] }`.
+Ogni badge ha: `id`, `name`, `emoji`, `category`, `description`, `unlockHint`, `badgeType`, `targetCount`, `unlockedAt?`, `currentProgress?`, `periodKey?`.
+
+### Seed Badge (15 badge)
+File: `artifacts/api-server/src/seed-badges.ts`
+- 10 lifetime: PRIMA VOLTA, PRODOTTO, VOLUME, LIVELLO, SOCIALE
+- 5 temporali: weekly "Eroe Settimanale", monthly "Campione del Mese", seasonal "Guerriero Invernale" ecc.
+- Idempotente: upsert per nome (non duplica a ogni restart)
+
+### Pagina Profilo (leafy-v2)
+- **Tab Traguardi**: badge lifetime — sblocati con data, locked con barra di progresso
+- **Tab Sfide**: badge temporali — attivi del periodo corrente + archivio periodi passati
+- **Route demo**: `/leafy-v2/demo` → `ProfileDemo.tsx` — dati mock, nessun auth richiesto
+
+### Route Demo (senza autenticazione)
+```tsx
+// App.tsx — /demo è prima di AuthGate nel Wouter Switch
+<WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+  <Switch>
+    <Route path="/demo" component={ProfileDemo} />
+    <Route><AuthGate /></Route>
+  </Switch>
+</WouterRouter>
+```
+Nota: sulla porta 20040 (accesso diretto) funziona. Sulla porta 80, il proxy di `leafy` (BASE_PATH=/) intercetta tutto → usa il canvas iframe o il workflow `artifacts/leafy-v2: web`.
 
 ---
 
@@ -219,6 +273,11 @@ Base URL: `/api`
 | `GET /api/scan/active-session` | Sessione barcode attiva + prodotti scansionati |
 | `GET /api/receipts` | Lista scontrini |
 | `GET /api/receipts/:id` | Dettaglio: greenItems + barcodeScans + Eco-Score |
+
+### Badge
+| Endpoint | Descrizione |
+|----------|-------------|
+| `GET /api/badges/my` | Badge dell'utente: lifetime + temporali con progresso |
 
 ### Altro
 | Endpoint | Descrizione |
@@ -286,16 +345,18 @@ Cache lookup prodotti. Chiave `barcode:{code}` per lookup da barcode.
 
 ### `badges`
 ```
-id, name, emoji, category, description, unlock_hint, badge_type (lifetime|weekly|monthly|seasonal),
-target_count, is_active, created_at
+id, name, emoji, category, description, unlock_hint,
+badge_type (lifetime|weekly|monthly|seasonal),
+target_count, period_key, is_active, created_at
 ```
-Badge type determines if badge is permanent or resets per period.
+`badge_type` determina se il badge è permanente o si resetta per periodo.
 
 ### `user_badges`
 ```
 id, user_id (FK), badge_id (FK), unlocked_at, period_key, current_progress, created_at
 ```
-`period_key` is used for temporal badges (e.g. "2025-W12", "2025-03", "2025-Q1").
+`period_key` per badge temporali (es. `"2025-W12"`, `"2025-03"`, `"2025-Q1"`).
+Unique constraint su `(user_id, badge_id, period_key)`.
 
 ### `challenges`, `challenge_progress`, `vouchers`, `redeemed_vouchers`
 Schema gestito da Drizzle ORM in `lib/db/src/schema/`.
@@ -363,6 +424,9 @@ Orval con `useDates: true` genera schemi Zod che si aspettano oggetti `Date`, **
 ### TypeScript Composite
 - Typechecking da root: `pnpm run typecheck`
 - Non eseguire `tsc` dentro un singolo pacchetto (fallisce se deps non sono buildate)
+
+### Proxy Routing (nota architetturale)
+`leafy` gira su porta 24389 con `BASE_PATH=/` — cattura tutti i path sul proxy porta 80. `leafy-v2` (porta 20040, `BASE_PATH=/leafy-v2/`) è accessibile direttamente via artifact dropdown nel preview pane. Il path `/leafy-v2/*` sulla porta 80 viene intercettato da `leafy`.
 
 ---
 
