@@ -6,21 +6,21 @@ import { Link } from "wouter";
 const STORAGE_KEY = "leafy_onboarded";
 
 const BOTANICAL_EMOJIS = ["🌿", "🍃", "🌱", "🌸", "🌺", "🌼", "🍀", "🌾", "🌻", "🌷"];
-const PARTICLE_COUNT = 40;
+const PARTICLE_COUNT = 70;
 
 function generateParticles() {
   return Array.from({ length: PARTICLE_COUNT }, (_, i) => {
     const angle = Math.random() * Math.PI * 2;
-    const distance = 120 + Math.random() * 350;
+    const distance = 160 + Math.random() * 500;
     return {
       id: i,
       emoji: BOTANICAL_EMOJIS[Math.floor(Math.random() * BOTANICAL_EMOJIS.length)],
       x: Math.cos(angle) * distance,
       y: Math.sin(angle) * distance,
       rotation: Math.random() * 720 - 360,
-      scale: 0.6 + Math.random() * 0.8,
-      delay: Math.random() * 0.3,
-      size: 16 + Math.random() * 16,
+      scale: 1.0 + Math.random() * 1.4,
+      delay: Math.random() * 0.25,
+      size: 22 + Math.random() * 22,
     };
   });
 }
@@ -107,12 +107,12 @@ export function Onboarding() {
                   animate={{
                     x: p.x,
                     y: p.y,
-                    opacity: 0,
+                    opacity: [1, 1, 1, 0],
                     scale: p.scale,
                     rotate: p.rotation,
                   }}
                   transition={{
-                    duration: 1.5,
+                    duration: 2.2,
                     delay: p.delay,
                     ease: "easeOut",
                   }}
