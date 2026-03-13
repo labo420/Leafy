@@ -136,7 +136,7 @@ export default function BarcodeScannerScreen() {
       setLastConfirmed(data);
       setScannedProducts((prev) => [
         {
-          barcode: data.productName,
+          barcode: lookupData?.barcode ?? "",
           productName: data.productName,
           ecoScore: data.ecoScore,
           pointsEarned: data.pointsEarned,
