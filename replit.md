@@ -2,9 +2,9 @@
 
 ## Panoramica del Progetto
 
-Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti scansionano scontrini della spesa, guadagnano punti per prodotti green (Bio, Km 0, Plastic-free, Fairtrade, Vegano, DOP/IGP), salgono di livello (Bronzo → Argento → Oro → Platino), completano sfide mensili, competono in classifiche e riscattano voucher nel marketplace.
+Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti scansionano scontrini della spesa, guadagnano punti per prodotti green (Bio, Km 0, Plastic-free, Fairtrade, Vegano, DOP/IGP), salgono di livello (Bronzo → Argento → Oro → Platino), completano sfide mensili e riscattano voucher nel marketplace.
 
-**Stato attuale**: App funzionante con dati demo. Auth rinviata — utente demo hardcoded ID=1.
+**Stato attuale**: App funzionante con autenticazione multi-provider reale (email/password + Google OAuth + Facebook OAuth + Replit OIDC).
 
 ---
 
@@ -13,10 +13,17 @@ Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti 
 | Variabile | Obbligatoria | Descrizione |
 |-----------|-------------|-------------|
 | `DATABASE_URL` | ✅ Sì | PostgreSQL connection string (fornita automaticamente da Replit) |
+| `GOOGLE_CLIENT_ID` | Auth Google | OAuth 2.0 Client ID da Google Cloud Console |
+| `GOOGLE_CLIENT_SECRET` | Auth Google | OAuth 2.0 Client Secret da Google Cloud Console |
+| `FACEBOOK_APP_ID` | Auth Facebook | App ID da Facebook Developers |
+| `FACEBOOK_APP_SECRET` | Auth Facebook | App Secret da Facebook Developers |
 | `GOOGLE_CLOUD_VISION_API_KEY` | Consigliata | Google Vision API per OCR scontrini. Senza, usa keyword matching. |
 | `ADMIN_PASSWORD` | No | Password pannello admin. Default: `leafy2026` |
+| `SESSION_SECRET` | Produzione | Segreto per la firma dei cookie di sessione |
 
 Per impostare i secrets su Replit: **Tools → Secrets**.
+
+> **Nota Google OAuth**: l'app è in modalità "Testing". L'utente dev deve aggiungersi come Test User in Google Cloud Console → OAuth Consent Screen → Test Users, altrimenti riceve errore 403.
 
 ---
 
@@ -28,14 +35,12 @@ Per impostare i secrets su Replit: **Tools → Secrets**.
 # Installa dipendenze
 pnpm install
 
-# Avvia il DB (eseguito automaticamente da Replit)
-pnpm --filter @workspace/db run push
+# Sincronizza schema DB (prima esecuzione o dopo modifiche allo schema)
+psql "$DATABASE_URL" -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_image_url TEXT;"
+# oppure: pnpm --filter @workspace/db run push (richiede interazione)
 
-# Avvia l'API server (porta 8080)
-pnpm --filter @workspace/api-server run dev
-
-# Avvia il frontend Leafy (porta da PORT env var)
-pnpm --filter @workspace/leafy run dev
+# Avvia tutto insieme (workflow Replit)
+PORT=8080 pnpm --filter @workspace/api-server run dev & PORT=5000 BASE_PATH=/ pnpm --filter @workspace/leafy run dev
 ```
 
 I workflow Replit gestiscono questi comandi automaticamente.
@@ -48,7 +53,7 @@ pnpm --filter @workspace/api-server run build
 # Poi avviare: node artifacts/api-server/dist/index.cjs
 ```
 
-Il frontend viene servito come file statici dall'API server in produzione (Express serva `artifacts/leafy/dist/public/`).
+Il frontend viene servito come file statici dall'API server in produzione (Express serve `artifacts/leafy/dist/public/`).
 
 ---
 
@@ -68,6 +73,8 @@ Il frontend viene servito come file statici dall'API server in produzione (Expre
 | Animazioni | Framer Motion |
 | State/Query | TanStack React Query |
 | Routing | Wouter |
+| Auth | Passport.js (Google, Facebook), openid-client (Replit OIDC), bcryptjs |
+| Sessioni | Cookie-based (SHA256 session store custom in-memory) |
 | Fonts | DM Sans (display), Inter (body) |
 | Build | esbuild (CJS), Vite |
 
@@ -82,29 +89,32 @@ workspace/
 │   │   ├── src/
 │   │   │   ├── app.ts       # Express app, CORS, routes mount, static serving
 │   │   │   ├── index.ts     # Entry point — legge PORT, avvia server
-│   │   │   ├── routes/      # Sub-router per ogni dominio
+│   │   │   ├── routes/
 │   │   │   │   ├── index.ts
-│   │   │   │   ├── profile.ts
-│   │   │   │   ├── receipts.ts
-│   │   │   │   ├── scan.ts      # OCR + keyword parser + level detection
+│   │   │   │   ├── auth.ts       # Login/register email, Google OAuth, Facebook OAuth, Replit OIDC, logout
+│   │   │   │   ├── profile.ts    # GET/PUT profilo, requireUser middleware
+│   │   │   │   ├── receipts.ts   # GET scontrini (lista + dettaglio con greenItems)
+│   │   │   │   ├── scan.ts       # POST scan: OCR + keyword parser + punti + sfide
 │   │   │   │   ├── challenges.ts
 │   │   │   │   ├── leaderboard.ts
 │   │   │   │   ├── marketplace.ts
-│   │   │   │   └── admin.ts     # Admin panel backend (password protected)
+│   │   │   │   └── admin.ts      # Admin panel backend (password protected)
 │   │   │   └── lib/
-│   │   │       └── scanner.ts   # Google Vision OCR + fallback keyword matching
+│   │   │       ├── scanner.ts    # Google Vision OCR + fallback keyword matching
+│   │   │       └── auth.ts       # Session store, getSession, createSession, clearSession
 │   │   └── package.json
 │   ├── leafy/               # Frontend React/Vite
 │   │   ├── src/
-│   │   │   ├── App.tsx          # Router principale, route setup
+│   │   │   ├── App.tsx          # Router principale, auth guard, route setup
 │   │   │   ├── index.css        # Tema Leafy (CSS variables)
 │   │   │   ├── pages/
+│   │   │   │   ├── Login.tsx        # Login/registrazione email + social (Google, Facebook)
 │   │   │   │   ├── Home.tsx         # Dashboard: punti, progress ring, impatto
-│   │   │   │   ├── Scan.tsx         # Camera + upload scontrino
-│   │   │   │   ├── History.tsx      # Storico scontrini
-│   │   │   │   ├── Marketplace.tsx  # Voucher e premi
-│   │   │   │   ├── Profile.tsx      # Profilo utente, sfide, badge
-│   │   │   │   ├── Settings.tsx     # Impostazioni account
+│   │   │   │   ├── Scan.tsx         # Camera + upload scontrino + report risultato
+│   │   │   │   ├── History.tsx      # Storico scontrini + bottom sheet dettaglio
+│   │   │   │   ├── Marketplace.tsx  # Voucher e premi riscattabili
+│   │   │   │   ├── Profile.tsx      # Profilo, foto, sfide, badge, invita amici
+│   │   │   │   ├── Settings.tsx     # Impostazioni: username, notifiche, privacy, logout, cancella account
 │   │   │   │   └── Admin.tsx        # Pannello admin (/admin)
 │   │   │   └── components/
 │   │   │       ├── layout/
@@ -112,21 +122,20 @@ workspace/
 │   │   │       │   └── BottomNav.tsx   # Nav bar fissa in basso (fixed)
 │   │   │       └── shared/
 │   │   │           ├── LevelProgress.tsx  # Cerchio SVG progress animato
-│   │   │           └── Onboarding.tsx     # Modal primo accesso (4 step)
+│   │   │           ├── LeafAnimation.tsx  # Animazione foglie post-scansione
+│   │   │           └── Onboarding.tsx     # Modal primo accesso (4 step + esplosione botanical)
 │   │   └── package.json
 │   └── mockup-sandbox/      # Sandbox mockup per canvas Replit
-│       └── src/components/mockups/leafy-variants/
-│           ├── NotteVerde.tsx   # Variante A: dark mode eco-luxury
-│           └── Oceano.tsx       # Variante B: teal fresco
 ├── lib/
 │   ├── api-spec/            # OpenAPI 3.1 spec + Orval config
-│   ├── api-client-react/    # React Query hooks generati (useGetProfile, ecc.)
+│   ├── api-client-react/    # React Query hooks generati (useGetProfile, useGetReceipt, ecc.)
 │   ├── api-zod/             # Zod schemas generati dall'OpenAPI
-│   └── db/                  # Drizzle ORM schema + connessione PostgreSQL
-├── scripts/                 # Script di utilità
+│   ├── db/                  # Drizzle ORM schema + connessione PostgreSQL
+│   └── replit-auth-web/     # Hook useAuth (login, logout, user state)
+├── scripts/
 ├── pnpm-workspace.yaml
-├── tsconfig.base.json       # TS options condivise (composite, bundler, es2022)
-└── tsconfig.json            # Root project references
+├── tsconfig.base.json
+└── tsconfig.json
 ```
 
 ---
@@ -135,29 +144,57 @@ workspace/
 
 | Route | Pagina | Descrizione |
 |-------|--------|-------------|
-| `/` | `Home.tsx` | Dashboard principale: punti, cerchio livello, impatto |
-| `/scan` | `Scan.tsx` | Scanner scontrino (camera + upload) |
-| `/storico` | `History.tsx` | Lista scontrini scansionati |
+| `/` | `Home.tsx` | Dashboard: punti, cerchio livello, impatto CO2 |
+| `/scan` | `Scan.tsx` | Scanner scontrino + report prodotti trovati |
+| `/storico` | `History.tsx` | Lista scontrini + bottom sheet dettaglio per scontrino |
 | `/marketplace` | `Marketplace.tsx` | Voucher e premi riscattabili |
-| `/profilo` | `Profile.tsx` | Profilo, sfide, badge, invita amici |
-| `/impostazioni` | `Settings.tsx` | Impostazioni account, notifiche, privacy |
+| `/profilo` | `Profile.tsx` | Profilo utente, foto, sfide, badge, codice invito |
+| `/impostazioni` | `Settings.tsx` | Username, notifiche, privacy, logout, cancella account |
 | `/admin` | `Admin.tsx` | Pannello admin (non usa AppLayout) |
 
 ---
 
-## API Endpoints Principali
+## API Endpoints
 
 Base URL: `/api`
 
+### Auth
 | Endpoint | Descrizione |
 |----------|-------------|
-| `GET /api/profile` | Profilo utente demo (ID=1) |
-| `GET /api/impact` | Statistiche impatto ambientale |
-| `POST /api/scan` | Scansiona scontrino (base64 img → punti) |
-| `GET /api/receipts` | Lista scontrini |
-| `GET /api/challenges` | Sfide mensili attive |
+| `POST /api/auth/login` | Login email/password → imposta cookie sessione |
+| `POST /api/auth/register` | Registrazione email/password |
+| `GET /api/auth/google` | Avvia OAuth Google |
+| `GET /api/auth/google/callback` | Callback OAuth Google |
+| `GET /api/auth/facebook` | Avvia OAuth Facebook |
+| `GET /api/auth/facebook/callback` | Callback OAuth Facebook |
+| `GET /api/login` | Avvia Replit OIDC |
+| `GET /api/logout` | Termina sessione → redirect `/` |
+| `GET /api/auth/user` | Restituisce utente autenticato corrente |
+
+### Profilo e Account
+| Endpoint | Descrizione |
+|----------|-------------|
+| `GET /api/profile` | Profilo utente (livello, badge, sfide) |
+| `PUT /api/profile/username` | Aggiorna nome utente (3-30 caratteri) |
+| `PUT /api/profile/image` | Aggiorna foto profilo (base64, max 2MB) |
+| `DELETE /api/profile/account` | Cancella account e tutti i dati |
+| `GET /api/profile/impact` | Statistiche impatto ambientale |
+| `GET /api/profile/referral` | Dati codice referral |
+| `POST /api/profile/referral/apply` | Applica codice referral |
+
+### Scontrini e Scan
+| Endpoint | Descrizione |
+|----------|-------------|
+| `POST /api/scan` | Scansiona scontrino (base64 img → punti + report) |
+| `GET /api/receipts` | Lista scontrini dell'utente |
+| `GET /api/receipts/:id` | Dettaglio scontrino con greenItems (keyword, categoria, punti) |
+
+### Altro
+| Endpoint | Descrizione |
+|----------|-------------|
+| `GET /api/challenges` | Sfide mensili attive con progress utente |
 | `GET /api/leaderboard` | Classifica utenti |
-| `GET /api/marketplace/vouchers` | Lista voucher disponibili |
+| `GET /api/marketplace/vouchers` | Voucher disponibili |
 | `POST /api/marketplace/vouchers/:id/redeem` | Riscatta voucher |
 | `GET /api/admin/*` | Rotte admin (header `x-admin-password` richiesto) |
 
@@ -165,42 +202,94 @@ Base URL: `/api`
 
 ## Funzionalità Implementate
 
-- **Scanner scontrini**: Upload foto → Google Vision OCR → estrazione prodotti green → assegnazione punti
-- **Sistema punti e livelli**: Bronzo / Argento / Oro / Platino con progress ring animato
-- **Sfide mensili**: Completamento sfide con progress bar e ricompense
-- **Leaderboard**: Classifica utenti con badge di posizione
-- **Marketplace**: Voucher riscattabili con punti
-- **Badge/Achievements**: Collezione badge per categoria
-- **Onboarding**: Modal 4-step al primo accesso (localStorage)
-- **Admin panel**: `/admin` con stats, CRUD voucher/sfide (password: `leafy2026`)
-- **Impostazioni**: `/impostazioni` con toggle notifiche, privacy, lingua
-- **Design**: Tema verde foresta + menta + ambra su crema (CSS variables in `index.css`)
-- **Bottom nav fissa**: `position: fixed` con indicatore animato (Framer Motion)
+### Autenticazione
+- **Email/Password**: Registrazione + login con bcryptjs (12 rounds)
+- **Google OAuth**: via Passport.js `passport-google-oauth20`
+- **Facebook OAuth**: via Passport.js `passport-facebook`
+- **Replit OIDC**: via `openid-client`
+- **Sessioni**: cookie `sid` httpOnly/secure, TTL 7 giorni, store in-memory
+- **Auth guard**: `App.tsx` mostra `Login.tsx` se non autenticato
+
+### Profilo Utente
+- **Cambio username** inline nelle Impostazioni (matita editabile)
+- **Cambio foto profilo** con upload da galleria/camera (base64 nel DB)
+- **Cancella account** con modal di conferma (azione irreversibile)
+- **Logout** funzionante per sessioni locali e OIDC
+
+### Scanner Scontrini
+- Upload foto scontrino → OCR Google Vision (se API key presente) → keyword matching
+- Report risultato post-scansione con lista prodotti green
+- **Bottom sheet dettaglio** in Storico: clicca uno scontrino per vedere prodotti rilevati, keyword, categoria, punti e spiegazione logica
+- Anti-frode: hash immagine per prevenire doppia scansione
+
+### Gamification
+- **Livelli**: Bronzo (0) → Argento (500) → Oro (2000) → Platino (5000 pts)
+- **Sfide mensili**: progress tracking per categoria, punti bonus al completamento
+- **Badge**: sbloccati in base alle attività (prima scansione, categorie, streak, punti)
+- **Streak giornaliero**: incrementa ad ogni giorno con almeno una scansione
+- **Codice invito**: +500 punti per invitante e invitato
+
+### UX e Design
+- **Onboarding**: esplosione botanical 🌿 (70 particelle) + card 4-step solo dopo prima registrazione
+- **Bottom nav fissa** con indicatore animato
+- **Tema**: verde foresta + menta + ambra su crema
+- **Admin panel**: `/admin` con stats, CRUD voucher/sfide
+
+---
+
+## Schema Database
+
+### `users`
+```
+id, replit_id, password_hash, username, email, profile_image_url,
+total_points, streak, last_scan_date, referral_code, referral_count,
+referral_points_earned, created_at, updated_at
+```
+
+### `oauth_accounts`
+```
+id, user_id (FK), provider, provider_account_id, created_at
+```
+Indice unico su `(provider, provider_account_id)`.
+
+### `receipts`
+```
+id, user_id (FK), store_name, purchase_date, image_hash, raw_text,
+points_earned, green_items_count, categories[], green_items_json, scanned_at
+```
+`green_items_json` = array JSON di `{ name, category, points, emoji }`.
+
+### `challenges`, `challenge_progress`, `vouchers`, `redeemed_vouchers`
+Schema gestito da Drizzle ORM in `lib/db/src/schema/`.
 
 ---
 
 ## Dettagli Tecnici Importanti
 
 ### Express 5 — Wildcard Route Fix
-In Express 5, `app.get("*", ...)` genera errore `pathToRegexp`. Usare sempre:
 ```ts
 app.get(/(.*)/,  handler)  // ✅ Corretto per Express 5
+// NON: app.get("*", handler)  // ❌ genera errore pathToRegexp
 ```
+
+### Autenticazione — Flusso Sessioni
+- **Login locale** (email/password, Google, Facebook): `createSession()` scrive sessione in-memory, imposta cookie `sid`
+- **Logout locale**: `clearSession()` + cancella cookie → redirect `/`
+- **Replit OIDC**: usa `access_token` reale; logout chiama endpoint OIDC session end
+
+### `profile_image_url` — Migrazione Manuale
+La colonna è stata aggiunta dopo la creazione iniziale. Se il DB non la contiene:
+```bash
+psql "$DATABASE_URL" -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_image_url TEXT;"
+```
+
+### Onboarding localStorage
+- Chiave: `leafy_onboarded`
+- Impostata a `"1"` dopo login → card non appare
+- Rimossa dopo registrazione → card appare una volta sola
 
 ### Zod / Orval Date Bug
 Orval con `useDates: true` genera schemi Zod che si aspettano oggetti `Date`, **non** stringhe ISO. Non chiamare `.toISOString()` prima di passare dati a `.parse()`.
-
-### Utente Demo
-`getOrCreateUser()` in `lib/scanner.ts` restituisce sempre ID=1. Nessun sistema auth in produzione (da implementare con Google/Facebook OAuth).
-
-### OCR Scontrini
-File: `artifacts/api-server/src/lib/scanner.ts`
-- Tenta prima Google Vision API (`GOOGLE_CLOUD_VISION_API_KEY`)
-- Fallback: keyword matching su testo (Bio, Km 0, Senza Plastica, Equo Solidale, Vegano, DOP/IGP)
-
-### Database Migrations
-In sviluppo: `pnpm --filter @workspace/db run push`
-In produzione su Replit: gestite automaticamente al deploy.
 
 ### TypeScript Composite
 - Typechecking da root: `pnpm run typecheck`
@@ -225,14 +314,11 @@ Fonts: `DM Sans` (display/titoli), `Inter` (body).
 
 ---
 
-## Varianti Design sul Canvas Replit
+## Credenziali di Test
 
-Sul canvas Replit ci sono 3 iframe affiancati per il confronto estetico:
-1. **Originale** — App live (`/profilo` live)
-2. **Notte Verde** — Dark mode, sfondo `#0d1f16`, glassmorphism cards
-3. **Oceano** — Teal/azzurro `#0B7EA3`, sfondo `#f0f9ff`, font Poppins
-
-Per vederle: Canvas → zoom out per vedere tutti e 3 i frame.
+| Utente | Email | Password |
+|--------|-------|----------|
+| Demo | `demo@test.app` | `Demo123456` |
 
 ---
 
@@ -242,8 +328,8 @@ Per vederle: Canvas → zoom out per vedere tutti e 3 i frame.
 # Installa tutto
 pnpm install
 
-# Push schema DB (dev)
-pnpm --filter @workspace/db run push
+# Aggiungi colonna mancante al DB (se necessario)
+psql "$DATABASE_URL" -c "ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_image_url TEXT;"
 
 # Codegen API (dopo modifiche a openapi.yaml)
 pnpm --filter @workspace/api-spec run codegen
