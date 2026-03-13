@@ -15,6 +15,8 @@ export const receiptsTable = pgTable("receipts", {
   categories: text("categories").array().notNull().default([]),
   greenItemsJson: text("green_items_json").notNull().default("[]"),
   scannedAt: timestamp("scanned_at", { withTimezone: true }).notNull().defaultNow(),
+  status: text("status").notNull().default("approved"),
+  flagReason: text("flag_reason"),
 });
 
 export const insertReceiptSchema = createInsertSchema(receiptsTable).omit({ id: true, scannedAt: true });

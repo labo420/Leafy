@@ -1,6 +1,7 @@
 import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
 import { eq, count, sum, desc } from "drizzle-orm";
 import { db, usersTable, receiptsTable, vouchersTable, challengesTable } from "@workspace/db";
+import { approvePendingPoints } from "../lib/antiFraud";
 
 const router: IRouter = Router();
 
@@ -137,6 +138,71 @@ router.delete("/admin/challenges/:id", requireAdmin, async (req, res): Promise<v
   if (isNaN(id)) { res.status(400).json({ error: "ID non valido." }); return; }
   await db.delete(challengesTable).where(eq(challengesTable.id, id));
   res.json({ ok: true });
+});
+
+router.get("/admin/fraud/flagged", requireAdmin, async (_req, res): Promise<void> => {
+  const flagged = await db
+    .select({
+      id: receiptsTable.id,
+      userId: receiptsTable.userId,
+      storeName: receiptsTable.storeName,
+      purchaseDate: receiptsTable.purchaseDate,
+      pointsEarned: receiptsTable.pointsEarned,
+      status: receiptsTable.status,
+      flagReason: receiptsTable.flagReason,
+      scannedAt: receiptsTable.scannedAt,
+    })
+    .from(receiptsTable)
+    .where(eq(receiptsTable.status, "flagged"))
+    .orderBy(desc(receiptsTable.scannedAt))
+    .limit(100);
+
+  const pending = await db
+    .select({
+      id: receiptsTable.id,
+      userId: receiptsTable.userId,
+      storeName: receiptsTable.storeName,
+      pointsEarned: receiptsTable.pointsEarned,
+      status: receiptsTable.status,
+      scannedAt: receiptsTable.scannedAt,
+    })
+    .from(receiptsTable)
+    .where(eq(receiptsTable.status, "pending"))
+    .orderBy(desc(receiptsTable.scannedAt))
+    .limit(100);
+
+  res.json({ flagged, pending });
+});
+
+router.post("/admin/fraud/approve-pending", requireAdmin, async (_req, res): Promise<void> => {
+  const count = await approvePendingPoints();
+  res.json({ ok: true, approved: count });
+});
+
+router.put("/admin/fraud/receipts/:id", requireAdmin, async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) { res.status(400).json({ error: "ID non valido." }); return; }
+
+  const { status } = req.body as { status?: string };
+  if (!status || !["approved", "rejected", "flagged"].includes(status)) {
+    res.status(400).json({ error: "Status non valido. Usa: approved, rejected, flagged." });
+    return;
+  }
+
+  const [updated] = await db
+    .update(receiptsTable)
+    .set({ status })
+    .where(eq(receiptsTable.id, id))
+    .returning();
+
+  if (status === "approved" && updated) {
+    await db
+      .update(usersTable)
+      .set({ totalPoints: updated.pointsEarned })
+      .where(eq(usersTable.id, updated.userId));
+  }
+
+  res.json(updated);
 });
 
 export default router;

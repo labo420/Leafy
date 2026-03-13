@@ -10,6 +10,7 @@ export const usersTable = pgTable("users", {
   email: text("email").notNull().default("demo@leafy.app"),
   profileImageUrl: text("profile_image_url"),
   totalPoints: integer("total_points").notNull().default(0),
+  pendingPoints: integer("pending_points").notNull().default(0),
   streak: integer("streak").notNull().default(0),
   lastScanDate: timestamp("last_scan_date", { withTimezone: true }),
   referralCode: text("referral_code").notNull().unique(),

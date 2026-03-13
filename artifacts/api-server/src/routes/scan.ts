@@ -3,6 +3,7 @@ import { eq, and } from "drizzle-orm";
 import { db, usersTable, receiptsTable, challengeProgressTable, challengesTable } from "@workspace/db";
 import { ScanReceiptBody, ScanReceiptResponse } from "@workspace/api-zod";
 import { parseReceiptText, hashImage, extractTextViaGoogleVision, calculateLevel } from "../lib/scanner";
+import { runAntiFraudChecks, approvePendingPoints } from "../lib/antiFraud";
 import { requireUser } from "./profile";
 
 const router: IRouter = Router();
@@ -19,6 +20,8 @@ Yogurt Vegano plant based 2,30
 Pecorino DOP 5,60
 `;
 
+let lastPendingApprovalCheck = 0;
+
 router.post("/scan", async (req, res): Promise<void> => {
   const parsed = ScanReceiptBody.safeParse(req.body);
   if (!parsed.success) {
@@ -33,121 +36,188 @@ router.post("/scan", async (req, res): Promise<void> => {
 
   const imageHash = hashImage(imageBase64);
 
-  const existing = await db.select().from(receiptsTable)
-    .where(and(
-      eq(receiptsTable.userId, user.id),
-      eq(receiptsTable.imageHash, imageHash)
-    ));
+  // ── Exact duplicate check (same user) ────────────────────────────────────
+  const [selfDuplicate] = await db
+    .select({ id: receiptsTable.id })
+    .from(receiptsTable)
+    .where(
+      and(
+        eq(receiptsTable.userId, user.id),
+        eq(receiptsTable.imageHash, imageHash),
+      ),
+    )
+    .limit(1);
 
-  if (existing.length > 0) {
-    res.status(400).json({ error: "Scontrino già scansionato in precedenza. Anti-frode attivo." });
+  if (selfDuplicate) {
+    res.status(400).json({ error: "Hai già scansionato questo scontrino in precedenza. Anti-frode attivo." });
     return;
   }
 
-  const oldLevel = calculateLevel(user.totalPoints).level;
-
+  // ── OCR / text extraction ────────────────────────────────────────────────
   let textToAnalyze = rawText || "";
   if (!textToAnalyze) {
     const visionText = await extractTextViaGoogleVision(imageBase64);
     if (visionText) {
       textToAnalyze = visionText;
-      console.log("[Vision OCR] Testo estratto:", textToAnalyze.slice(0, 200));
     } else {
       textToAnalyze = DEMO_TEXT + " " + (storeName || "");
     }
   }
 
   const foundItems = parseReceiptText(textToAnalyze);
+  const rawPoints = foundItems.reduce((sum, item) => sum + item.points, 0);
 
-  const totalPoints = foundItems.reduce((sum, item) => sum + item.points, 0);
-  const categories = [...new Set(foundItems.map(i => i.category))];
+  // ── Anti-fraud multi-layer checks ────────────────────────────────────────
+  const fraudCheck = await runAntiFraudChecks(user, imageHash, purchaseDate, rawPoints);
 
-  const [receipt] = await db.insert(receiptsTable).values({
-    userId: user.id,
-    storeName: storeName ?? null,
-    purchaseDate: purchaseDate ?? null,
-    imageHash,
-    rawText: textToAnalyze,
-    pointsEarned: totalPoints,
-    greenItemsCount: foundItems.length,
-    categories,
-    greenItemsJson: JSON.stringify(foundItems),
-  }).returning();
+  if (!fraudCheck.ok) {
+    res.status(400).json({ error: fraudCheck.error });
+    return;
+  }
 
-  const newTotalPoints = user.totalPoints + totalPoints;
+  const { points: totalPoints, status, flagReason, warnings } = fraudCheck;
+  const categories = [...new Set(foundItems.map((i) => i.category))];
+  const oldLevel = calculateLevel(user.totalPoints).level;
+
+  // ── Save receipt ─────────────────────────────────────────────────────────
+  const [receipt] = await db
+    .insert(receiptsTable)
+    .values({
+      userId: user.id,
+      storeName: storeName ?? null,
+      purchaseDate: purchaseDate ?? null,
+      imageHash,
+      rawText: textToAnalyze,
+      pointsEarned: totalPoints,
+      greenItemsCount: foundItems.length,
+      categories,
+      greenItemsJson: JSON.stringify(foundItems),
+      status,
+      flagReason: flagReason ?? null,
+    })
+    .returning();
+
+  // ── Update user points ───────────────────────────────────────────────────
   const today = new Date().toDateString();
   const lastScanDate = user.lastScanDate ? new Date(user.lastScanDate).toDateString() : null;
   const newStreak = lastScanDate === today ? user.streak : user.streak + 1;
 
-  await db.update(usersTable)
-    .set({ totalPoints: newTotalPoints, streak: newStreak, lastScanDate: new Date() })
+  let newTotalPoints = user.totalPoints;
+  let newPendingPoints = user.pendingPoints ?? 0;
+
+  if (status === "approved") {
+    newTotalPoints += totalPoints;
+  } else {
+    newPendingPoints += totalPoints;
+  }
+
+  await db
+    .update(usersTable)
+    .set({
+      totalPoints: newTotalPoints,
+      pendingPoints: newPendingPoints,
+      streak: newStreak,
+      lastScanDate: new Date(),
+    })
     .where(eq(usersTable.id, user.id));
 
-  const activeChallenges = await db.select().from(challengesTable)
-    .where(eq(challengesTable.isActive, true));
-
+  // ── Challenge progress (only for approved receipts) ──────────────────────
   const updatedChallengeNames: string[] = [];
 
-  for (const challenge of activeChallenges) {
-    const relevantItems = foundItems.filter(item => {
-      if (challenge.category === "tutti") return true;
-      return item.category === challenge.category;
-    });
+  if (status === "approved") {
+    const activeChallenges = await db
+      .select()
+      .from(challengesTable)
+      .where(eq(challengesTable.isActive, true));
 
-    if (relevantItems.length === 0) continue;
+    for (const challenge of activeChallenges) {
+      const relevantItems = foundItems.filter(
+        (item) => challenge.category === "tutti" || item.category === challenge.category,
+      );
+      if (relevantItems.length === 0) continue;
 
-    const existing = await db.select().from(challengeProgressTable)
-      .where(and(
-        eq(challengeProgressTable.userId, user.id),
-        eq(challengeProgressTable.challengeId, challenge.id)
-      ));
+      const [existing] = await db
+        .select()
+        .from(challengeProgressTable)
+        .where(
+          and(
+            eq(challengeProgressTable.userId, user.id),
+            eq(challengeProgressTable.challengeId, challenge.id),
+          ),
+        );
 
-    const increment = relevantItems.length;
+      const increment = relevantItems.length;
 
-    if (existing.length === 0) {
-      await db.insert(challengeProgressTable).values({
-        userId: user.id,
-        challengeId: challenge.id,
-        currentCount: increment,
-        isCompleted: increment >= challenge.targetCount,
-        completedAt: increment >= challenge.targetCount ? new Date() : null,
-      });
-    } else {
-      const current = existing[0];
-      if (!current.isCompleted) {
-        const newCount = current.currentCount + increment;
+      if (!existing) {
+        await db.insert(challengeProgressTable).values({
+          userId: user.id,
+          challengeId: challenge.id,
+          currentCount: increment,
+          isCompleted: increment >= challenge.targetCount,
+          completedAt: increment >= challenge.targetCount ? new Date() : null,
+        });
+      } else if (!existing.isCompleted) {
+        const newCount = existing.currentCount + increment;
         const completed = newCount >= challenge.targetCount;
-        await db.update(challengeProgressTable)
+        await db
+          .update(challengeProgressTable)
           .set({
             currentCount: newCount,
             isCompleted: completed,
             completedAt: completed ? new Date() : null,
           })
-          .where(eq(challengeProgressTable.id, current.id));
+          .where(eq(challengeProgressTable.id, existing.id));
 
         if (completed) {
-          await db.update(usersTable)
+          await db
+            .update(usersTable)
             .set({ totalPoints: newTotalPoints + challenge.rewardPoints })
             .where(eq(usersTable.id, user.id));
+          newTotalPoints += challenge.rewardPoints;
           updatedChallengeNames.push(challenge.title);
         }
       }
     }
   }
 
+  // ── Badges ───────────────────────────────────────────────────────────────
   const newBadges = [];
-  if ((await db.select().from(receiptsTable).where(eq(receiptsTable.userId, user.id))).length === 1) {
-    newBadges.push({ id: "first_scan", name: "Prima Scansione", emoji: "🌟", category: "Bio", earnedAt: new Date() });
+  const allUserReceipts = await db
+    .select({ id: receiptsTable.id })
+    .from(receiptsTable)
+    .where(eq(receiptsTable.userId, user.id));
+
+  if (allUserReceipts.length === 1) {
+    newBadges.push({
+      id: "first_scan",
+      name: "Prima Scansione",
+      emoji: "🌟",
+      category: "Bio",
+      earnedAt: new Date(),
+    });
   }
 
+  // ── Level up ─────────────────────────────────────────────────────────────
   const newLevel = calculateLevel(newTotalPoints).level;
   const leveledUp = newLevel !== oldLevel;
 
-  let message = totalPoints > 0
-    ? `Ottimo! Hai guadagnato ${totalPoints} punti Leafy! 🌿`
-    : "Nessun prodotto green trovato. Prova a comprare prodotti Bio o Km 0!";
-  if (leveledUp) {
+  // ── Message ──────────────────────────────────────────────────────────────
+  let message: string;
+  if (status === "pending") {
+    message = `Scontrino ricevuto! ${totalPoints} punti in attesa di approvazione (account nuovo — verranno accreditati entro 48h) ⏳`;
+  } else if (leveledUp) {
     message = `Livello aumentato! Sei ora ${newLevel}! 🎉 +${totalPoints} punti`;
+  } else if (totalPoints > 0) {
+    message = `Ottimo! Hai guadagnato ${totalPoints} punti Leafy! 🌿`;
+  } else {
+    message = "Nessun prodotto green trovato. Prova a comprare prodotti Bio o Km 0!";
+  }
+
+  // ── Background: approve old pending points (max once per hour) ────────────
+  const now = Date.now();
+  if (now - lastPendingApprovalCheck > 60 * 60 * 1000) {
+    lastPendingApprovalCheck = now;
+    approvePendingPoints().catch((e) => console.error("[pending-approval]", e));
   }
 
   res.json({
@@ -162,6 +232,9 @@ router.post("/scan", async (req, res): Promise<void> => {
     }),
     leveledUp,
     newLevel: leveledUp ? newLevel : undefined,
+    pendingPoints: newPendingPoints,
+    receiptStatus: status,
+    antiFraudWarnings: warnings,
     usingRealOcr: !!process.env.GOOGLE_CLOUD_VISION_API_KEY,
   });
 });
