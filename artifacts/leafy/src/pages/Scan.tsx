@@ -196,23 +196,21 @@ export default function Scan() {
 
 
               {/* Center camera button */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
                 <motion.div
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.93 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 18 }}
-                  className="w-24 h-24 rounded-full bg-primary shadow-2xl shadow-primary/40 flex items-center justify-center"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  transition={{ type: "spring", stiffness: 350, damping: 18 }}
+                  className="flex flex-col items-center justify-center w-44 h-44 rounded-full bg-primary shadow-2xl shadow-primary/50"
                 >
-                  <Camera className="w-11 h-11 text-white" />
+                  <Camera className="w-14 h-14 text-white mb-1" />
+                  <span className="text-white/90 text-xs font-semibold tracking-wide">
+                    {hasActiveSession ? "SCANSIONA" : "FOTOGRAFA"}
+                  </span>
                 </motion.div>
-                <div className="text-center">
-                  <p className="text-sm font-semibold text-foreground">
-                    {hasActiveSession ? "Scansiona il barcode" : "Tocca per fotografare"}
-                  </p>
-                  {!hasActiveSession && (
-                    <p className="text-xs text-muted-foreground mt-0.5">oppure carica dalla galleria</p>
-                  )}
-                </div>
+                {!hasActiveSession && (
+                  <p className="text-xs text-muted-foreground">oppure carica dalla galleria</p>
+                )}
               </div>
             </div>
 
