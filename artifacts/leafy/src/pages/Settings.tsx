@@ -18,6 +18,8 @@ export default function Settings() {
   const [editingUsername, setEditingUsername] = useState(false);
   const [usernameInput, setUsernameInput] = useState("");
   const [savingUsername, setSavingUsername] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   useEffect(() => {
     if (profile?.username) {
@@ -58,8 +60,23 @@ export default function Settings() {
     }
   };
 
-  const handleDeleteAccount = () => {
-    toast.error("Funzione non ancora disponibile.");
+  const handleDeleteAccount = async () => {
+    setDeletingAccount(true);
+    try {
+      const res = await fetch("/api/profile/account", {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Errore nella cancellazione");
+      
+      setDeleteConfirmOpen(false);
+      toast.success("Account cancellato.");
+      setTimeout(() => logout(), 500);
+    } catch {
+      toast.error("Errore nella cancellazione dell'account.");
+    } finally {
+      setDeletingAccount(false);
+    }
   };
 
   const handleLogout = () => {
@@ -182,7 +199,7 @@ export default function Settings() {
           <Card className="border-border/50 shadow-sm overflow-hidden">
             <CardContent className="p-0">
               <button
-                onClick={handleDeleteAccount}
+                onClick={() => setDeleteConfirmOpen(true)}
                 className="w-full flex items-center gap-3 px-4 py-4 text-destructive hover:bg-destructive/5 transition-colors"
               >
                 <div className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center flex-shrink-0">
@@ -193,6 +210,37 @@ export default function Settings() {
             </CardContent>
           </Card>
         </section>
+
+        {/* Delete Confirmation Modal */}
+        {deleteConfirmOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+            <Card className="w-full max-w-sm shadow-2xl">
+              <CardContent className="p-6 space-y-4">
+                <h2 className="font-display font-bold text-lg text-destructive">Sei sicuro?</h2>
+                <p className="text-sm text-muted-foreground">
+                  Questa azione è irreversibile. Cancellerai il tuo account, tutti i tuoi dati e i punti accumulati.
+                </p>
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setDeleteConfirmOpen(false)}
+                    disabled={deletingAccount}
+                  >
+                    Annulla
+                  </Button>
+                  <Button
+                    className="flex-1 bg-destructive hover:bg-destructive/90 text-white"
+                    onClick={handleDeleteAccount}
+                    disabled={deletingAccount}
+                  >
+                    {deletingAccount ? "Cancellazione..." : "Sì, cancella"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Versione */}
         <p className="text-center text-xs text-muted-foreground pt-2">Leafy v1.0.0 — Sustainability Loyalty Platform</p>

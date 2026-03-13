@@ -62,6 +62,14 @@ router.put("/profile/username", async (req, res): Promise<void> => {
   res.json({ username: trimmed });
 });
 
+router.delete("/profile/account", async (req, res): Promise<void> => {
+  const user = await requireUser(req, res);
+  if (!user) return;
+
+  await db.delete(usersTable).where(eq(usersTable.id, user.id));
+  res.json({ success: true });
+});
+
 router.get("/profile", async (req, res): Promise<void> => {
   const user = await requireUser(req, res);
   if (!user) return;
