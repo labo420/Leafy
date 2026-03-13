@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response } from "express";
 import { eq, and, gte, desc, sql } from "drizzle-orm";
 import { db, usersTable, receiptsTable, barcodeScansTable } from "@workspace/db";
 import { ScanReceiptBody } from "@workspace/api-zod";
@@ -101,7 +101,10 @@ router.post("/scan", async (req, res): Promise<void> => {
   });
 });
 
-async function validateBarcodeRequest(req: any, res: any): Promise<{ user: any; receipt: any; barcode: string; receiptId: number } | null> {
+type UserRow = typeof usersTable.$inferSelect;
+type ReceiptRow = typeof receiptsTable.$inferSelect;
+
+async function validateBarcodeRequest(req: Request, res: Response): Promise<{ user: UserRow; receipt: ReceiptRow; barcode: string; receiptId: number } | null> {
   const { barcode, receiptId } = req.body;
 
   if (!barcode || typeof barcode !== "string") {

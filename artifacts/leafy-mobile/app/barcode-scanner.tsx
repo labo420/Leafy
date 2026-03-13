@@ -90,6 +90,22 @@ export default function BarcodeScannerScreen() {
 
   const topPadding = Platform.OS === "web" ? 20 : insets.top;
 
+  if (!receiptId || receiptId === 0) {
+    return (
+      <View style={[styles.centered, { paddingTop: topPadding }]}>
+        <Feather name="alert-circle" size={56} color={Colors.amber} />
+        <Text style={styles.permTitle}>Nessuna sessione attiva</Text>
+        <Text style={styles.permSub}>
+          Per scansionare i prodotti devi prima scansionare uno scontrino come prova d'acquisto.
+          Vai alla schermata Scansiona per fotografare il tuo scontrino.
+        </Text>
+        <Pressable style={styles.permBtn} onPress={() => router.back()}>
+          <Text style={styles.permBtnText}>Scansiona scontrino</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
   const lookupMutation = useMutation({
     mutationFn: (barcode: string) =>
       apiFetch<LookupResult>("/scan/barcode/lookup", {
