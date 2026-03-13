@@ -255,7 +255,7 @@ export default function Scan() {
         />
 
         <Button
-          className="w-full text-lg h-14 rounded-2xl shadow-xl shadow-primary/20"
+          className="w-full text-lg h-14 rounded-2xl shadow-2xl shadow-primary/60 bg-gradient-to-br from-primary to-primary/75 hover:shadow-primary/80 transition-shadow"
           disabled={!preview || scanMutation.isPending}
           onClick={handleScan}
           isLoading={scanMutation.isPending}
