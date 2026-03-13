@@ -496,20 +496,31 @@ router.get("/callback", async (req: Request, res: Response) => {
 
 router.get("/logout", async (req: Request, res: Response) => {
   const sid = getSessionId(req);
+  let isOidcSession = false;
+
   if (sid) {
+    const session = await getSession(sid);
+    if (session && session.user && "access_token" in session && session.access_token) {
+      isOidcSession = true;
+    }
     await deleteSession(sid);
   }
   res.clearCookie(SESSION_COOKIE, { path: "/" });
 
-  try {
-    const config = await getOidcConfig();
-    const endSessionUrl = oidc.buildEndSessionUrl(config, {
-      post_logout_redirect_uri: `${getOrigin(req)}/`,
-    });
-    res.redirect(endSessionUrl.href);
-  } catch {
-    res.redirect("/");
+  if (isOidcSession) {
+    try {
+      const config = await getOidcConfig();
+      const endSessionUrl = oidc.buildEndSessionUrl(config, {
+        post_logout_redirect_uri: `${getOrigin(req)}/`,
+      });
+      res.redirect(endSessionUrl.href);
+      return;
+    } catch {
+      // Fallthrough to simple redirect
+    }
   }
+
+  res.redirect("/");
 });
 
 export default router;
