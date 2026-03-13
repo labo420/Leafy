@@ -1,9 +1,29 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 
 const STORAGE_KEY = "leafy_onboarded";
+
+const BOTANICAL_EMOJIS = ["🌿", "🍃", "🌱", "🌸", "🌺", "🌼", "🍀", "🌾", "🌻", "🌷"];
+const PARTICLE_COUNT = 40;
+
+function generateParticles() {
+  return Array.from({ length: PARTICLE_COUNT }, (_, i) => {
+    const angle = Math.random() * Math.PI * 2;
+    const distance = 120 + Math.random() * 350;
+    return {
+      id: i,
+      emoji: BOTANICAL_EMOJIS[Math.floor(Math.random() * BOTANICAL_EMOJIS.length)],
+      x: Math.cos(angle) * distance,
+      y: Math.sin(angle) * distance,
+      rotation: Math.random() * 720 - 360,
+      scale: 0.6 + Math.random() * 0.8,
+      delay: Math.random() * 0.3,
+      size: 16 + Math.random() * 16,
+    };
+  });
+}
 
 const steps = [
   {
@@ -35,6 +55,7 @@ const steps = [
 export function Onboarding() {
   const [visible, setVisible] = useState(false);
   const [step, setStep] = useState(0);
+  const particles = useMemo(() => generateParticles(), []);
 
   useEffect(() => {
     const done = localStorage.getItem(STORAGE_KEY);
@@ -66,6 +87,32 @@ export function Onboarding() {
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm px-4 pb-24 pt-4"
           onClick={(e) => { if (e.target === e.currentTarget) finish(); }}
         >
+          {step === 0 && (
+            <div className="fixed inset-0 pointer-events-none z-[60]">
+              {particles.map((p) => (
+                <motion.span
+                  key={p.id}
+                  initial={{ x: "-50%", y: "-50%", opacity: 1, scale: 0, rotate: 0 }}
+                  animate={{
+                    x: p.x,
+                    y: p.y,
+                    opacity: 0,
+                    scale: p.scale,
+                    rotate: p.rotation,
+                  }}
+                  transition={{
+                    duration: 1.5,
+                    delay: p.delay,
+                    ease: "easeOut",
+                  }}
+                  className="absolute left-1/2 top-1/2"
+                  style={{ fontSize: p.size }}
+                >
+                  {p.emoji}
+                </motion.span>
+              ))}
+            </div>
+          )}
           <motion.div
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
