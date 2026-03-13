@@ -14,7 +14,8 @@ Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti 
 |----------|------|-------------|
 | `leafy-mobile` | Expo app | App principale React Native (iOS/Android/web) |
 | `api-server` | Express 5 | Backend REST API su porta 8080 |
-| `leafy` | React/Vite | Frontend web legacy (porta 5000) |
+| `leafy` | React/Vite | Frontend web (porta 24389, preview path `/`) |
+| `leafy-v2` | React/Vite | Frontend v2 con badge a due livelli (porta 20040, preview path `/leafy-v2/`) |
 | `leafy-register` | React/Vite | Pannello admin web |
 | `mockup-sandbox` | Vite | Sandbox per mockup componenti su canvas |
 
@@ -282,6 +283,19 @@ id, product_name_normalized, product_name_original, eco_score, points,
 category, source, reasoning, emoji, cached_at
 ```
 Cache lookup prodotti. Chiave `barcode:{code}` per lookup da barcode.
+
+### `badges`
+```
+id, name, emoji, category, description, unlock_hint, badge_type (lifetime|weekly|monthly|seasonal),
+target_count, is_active, created_at
+```
+Badge type determines if badge is permanent or resets per period.
+
+### `user_badges`
+```
+id, user_id (FK), badge_id (FK), unlocked_at, period_key, current_progress, created_at
+```
+`period_key` is used for temporal badges (e.g. "2025-W12", "2025-03", "2025-Q1").
 
 ### `challenges`, `challenge_progress`, `vouchers`, `redeemed_vouchers`
 Schema gestito da Drizzle ORM in `lib/db/src/schema/`.

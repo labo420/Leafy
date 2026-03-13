@@ -263,6 +263,52 @@ export interface GreenProduct {
   description: string;
 }
 
+export interface BadgeItem {
+  id: number;
+  name: string;
+  emoji: string;
+  category: string;
+  description: string;
+  unlockHint: string;
+  isUnlocked: boolean;
+  /** @nullable */
+  unlockedAt?: string | null;
+  currentProgress: number;
+  targetCount: number;
+}
+
+export type TemporalBadgeItemBadgeType =
+  (typeof TemporalBadgeItemBadgeType)[keyof typeof TemporalBadgeItemBadgeType];
+
+export const TemporalBadgeItemBadgeType = {
+  weekly: "weekly",
+  monthly: "monthly",
+  seasonal: "seasonal",
+} as const;
+
+export interface TemporalBadgeItem {
+  id: number;
+  name: string;
+  emoji: string;
+  category: string;
+  description: string;
+  unlockHint: string;
+  badgeType: TemporalBadgeItemBadgeType;
+  /** e.g. 2025-W12, 2025-03, 2025-Q1 */
+  periodKey: string;
+  isUnlocked: boolean;
+  /** @nullable */
+  unlockedAt?: string | null;
+  currentProgress: number;
+  targetCount: number;
+  isExpired: boolean;
+}
+
+export interface MyBadgesResponse {
+  lifetime: BadgeItem[];
+  temporal: TemporalBadgeItem[];
+}
+
 export interface AuthUser {
   id: string;
   email?: string | null;

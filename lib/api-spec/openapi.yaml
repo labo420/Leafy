@@ -17,6 +17,8 @@ tags:
     description: Receipt history
   - name: vouchers
     description: Marketplace vouchers
+  - name: badges
+    description: Badge collection system
   - name: challenges
     description: Monthly challenges
   - name: leaderboard
@@ -289,6 +291,19 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Redemption"
+
+  /badges/my:
+    get:
+      operationId: getMyBadges
+      tags: [badges]
+      summary: Get current user badges (lifetime + temporal)
+      responses:
+        "200":
+          description: User badges grouped by type
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyBadgesResponse"
 
   /challenges:
     get:
@@ -979,6 +994,102 @@ components:
         - pointsValue
         - emoji
         - description
+
+    MyBadgesResponse:
+      type: object
+      properties:
+        lifetime:
+          type: array
+          items:
+            $ref: "#/components/schemas/BadgeItem"
+        temporal:
+          type: array
+          items:
+            $ref: "#/components/schemas/TemporalBadgeItem"
+      required:
+        - lifetime
+        - temporal
+
+    BadgeItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        emoji:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        unlockHint:
+          type: string
+        isUnlocked:
+          type: boolean
+        unlockedAt:
+          type: ["string", "null"]
+          format: date-time
+        currentProgress:
+          type: integer
+        targetCount:
+          type: integer
+      required:
+        - id
+        - name
+        - emoji
+        - category
+        - description
+        - unlockHint
+        - isUnlocked
+        - currentProgress
+        - targetCount
+
+    TemporalBadgeItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        emoji:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        unlockHint:
+          type: string
+        badgeType:
+          type: string
+          enum: [weekly, monthly, seasonal]
+        periodKey:
+          type: string
+          description: "e.g. 2025-W12, 2025-03, 2025-Q1"
+        isUnlocked:
+          type: boolean
+        unlockedAt:
+          type: ["string", "null"]
+          format: date-time
+        currentProgress:
+          type: integer
+        targetCount:
+          type: integer
+        isExpired:
+          type: boolean
+      required:
+        - id
+        - name
+        - emoji
+        - category
+        - description
+        - unlockHint
+        - badgeType
+        - periodKey
+        - isUnlocked
+        - currentProgress
+        - targetCount
+        - isExpired
 
     AuthUser:
       type: object

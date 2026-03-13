@@ -7,3 +7,4 @@ export * from "./vouchers";
 export * from "./challenges";
 export * from "./product-cache";
 export * from "./barcode-scans";
+export * from "./badges";

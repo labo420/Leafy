@@ -260,6 +260,43 @@ export const GetRedemptionsResponseItem = zod.object({
 export const GetRedemptionsResponse = zod.array(GetRedemptionsResponseItem);
 
 /**
+ * @summary Get current user badges (lifetime + temporal)
+ */
+export const GetMyBadgesResponse = zod.object({
+  lifetime: zod.array(
+    zod.object({
+      id: zod.number(),
+      name: zod.string(),
+      emoji: zod.string(),
+      category: zod.string(),
+      description: zod.string(),
+      unlockHint: zod.string(),
+      isUnlocked: zod.boolean(),
+      unlockedAt: zod.date().nullish(),
+      currentProgress: zod.number(),
+      targetCount: zod.number(),
+    }),
+  ),
+  temporal: zod.array(
+    zod.object({
+      id: zod.number(),
+      name: zod.string(),
+      emoji: zod.string(),
+      category: zod.string(),
+      description: zod.string(),
+      unlockHint: zod.string(),
+      badgeType: zod.enum(["weekly", "monthly", "seasonal"]),
+      periodKey: zod.string().describe("e.g. 2025-W12, 2025-03, 2025-Q1"),
+      isUnlocked: zod.boolean(),
+      unlockedAt: zod.date().nullish(),
+      currentProgress: zod.number(),
+      targetCount: zod.number(),
+      isExpired: zod.boolean(),
+    }),
+  ),
+});
+
+/**
  * @summary Get active challenges with user progress
  */
 export const GetChallengesResponseItem = zod.object({
