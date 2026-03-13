@@ -187,7 +187,7 @@ export default function Scan() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   transition={{ type: "spring", stiffness: 350, damping: 18 }}
-                  className="flex flex-col items-center justify-center w-44 h-44 rounded-full bg-primary shadow-2xl shadow-primary/50"
+                  className="flex flex-col items-center justify-center w-44 h-44 rounded-full bg-gradient-to-br from-primary to-primary/75 shadow-2xl shadow-primary/60"
                 >
                   <Camera className="w-14 h-14 text-white mb-1" />
                   <span className="text-white/90 text-xs font-semibold tracking-wide">
