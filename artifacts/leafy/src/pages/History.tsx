@@ -123,7 +123,7 @@ export default function History() {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 z-50 bg-background rounded-t-3xl shadow-2xl max-h-[70vh] overflow-y-auto"
+              className="fixed bottom-20 left-0 right-0 z-50 bg-background rounded-t-3xl shadow-2xl max-h-[55vh] overflow-y-auto"
             >
               {/* Handle */}
               <div className="flex justify-center pt-2.5 pb-0.5">
