@@ -123,105 +123,98 @@ export default function History() {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 z-50 bg-background rounded-t-3xl shadow-2xl max-h-[85vh] overflow-y-auto"
+              className="fixed bottom-0 left-0 right-0 z-50 bg-background rounded-t-3xl shadow-2xl max-h-[70vh] overflow-y-auto"
             >
               {/* Handle */}
-              <div className="flex justify-center pt-3 pb-1">
-                <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+              <div className="flex justify-center pt-2.5 pb-0.5">
+                <div className="w-8 h-1 rounded-full bg-muted-foreground/30" />
               </div>
 
               {/* Header */}
-              <div className="flex items-start justify-between px-6 py-4 border-b border-border/50">
+              <div className="flex items-center justify-between px-5 py-3 border-b border-border/50">
                 <div>
-                  <h2 className="font-display font-bold text-xl text-foreground">
+                  <h2 className="font-display font-bold text-base text-foreground leading-tight">
                     {selectedItem?.storeName || "Negozio Sconosciuto"}
                   </h2>
-                  <p className="text-sm text-muted-foreground mt-0.5">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     {selectedItem && format(
                       parseISO(selectedItem.purchaseDate || selectedItem.scannedAt),
-                      "dd MMMM yyyy", { locale: it }
+                      "dd MMM yyyy", { locale: it }
                     )}
                   </p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="bg-primary/10 text-primary font-bold px-3 py-1.5 rounded-full text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="bg-primary/10 text-primary font-bold px-2.5 py-1 rounded-full text-xs">
                     +{selectedItem?.pointsEarned} pts
                   </span>
                   <button
                     onClick={() => setSelectedId(null)}
-                    className="w-8 h-8 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
+                    className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
 
-              <div className="px-6 py-5 space-y-6 pb-10">
+              <div className="px-5 py-3 space-y-3 pb-8">
                 {loadingDetail ? (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {[1, 2, 3].map(i => (
-                      <div key={i} className="h-16 bg-muted rounded-2xl animate-pulse" />
+                      <div key={i} className="h-12 bg-muted rounded-xl animate-pulse" />
                     ))}
                   </div>
                 ) : detail && detail.greenItems.length > 0 ? (
                   <>
                     {/* Prodotti rilevati */}
-                    <section>
-                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">
-                        Prodotti green rilevati
-                      </h3>
-                      <div className="space-y-2">
-                        {detail.greenItems.map((item, idx) => (
-                          <motion.div
-                            key={idx}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: idx * 0.06 }}
-                            className="flex items-center justify-between bg-muted/40 rounded-2xl px-4 py-3"
-                          >
-                            <div className="flex items-center gap-3">
-                              <span className="text-2xl">{item.emoji}</span>
-                              <div>
-                                <p className="font-semibold text-sm text-foreground">
-                                  {item.name}
-                                </p>
-                                <Badge
-                                  variant={getCategoryColor(item.category)}
-                                  className="text-[10px] mt-0.5"
-                                >
-                                  {item.category}
-                                </Badge>
-                              </div>
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
+                      Prodotti green rilevati
+                    </p>
+                    <div className="space-y-1.5">
+                      {detail.greenItems.map((item, idx) => (
+                        <motion.div
+                          key={idx}
+                          initial={{ opacity: 0, x: -8 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: idx * 0.05 }}
+                          className="flex items-center justify-between bg-muted/40 rounded-xl px-3 py-2"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <span className="text-xl">{item.emoji}</span>
+                            <div>
+                              <p className="font-semibold text-xs text-foreground leading-tight">
+                                {item.name}
+                              </p>
+                              <Badge
+                                variant={getCategoryColor(item.category)}
+                                className="text-[9px] mt-0.5 h-4"
+                              >
+                                {item.category}
+                              </Badge>
                             </div>
-                            <div className="flex items-center gap-1 text-primary font-bold text-sm">
-                              <Star className="w-3.5 h-3.5 fill-primary" />
-                              +{item.points}
-                            </div>
-                          </motion.div>
-                        ))}
-                      </div>
-                    </section>
+                          </div>
+                          <div className="flex items-center gap-1 text-primary font-bold text-xs">
+                            <Star className="w-3 h-3 fill-primary" />
+                            +{item.points}
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
 
                     {/* Totale */}
-                    <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-2xl px-4 py-3">
-                      <span className="font-bold text-foreground">Totale punti</span>
-                      <span className="font-display font-bold text-xl text-primary">
-                        +{detail.pointsEarned}
-                      </span>
+                    <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-xl px-3 py-2">
+                      <span className="font-bold text-sm text-foreground">Totale punti</span>
+                      <span className="font-display font-bold text-lg text-primary">+{detail.pointsEarned}</span>
                     </div>
 
                     {/* Spiegazione logica */}
-                    <section className="bg-muted/30 rounded-2xl p-4 flex gap-3">
-                      <Info className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-xs font-semibold text-foreground mb-1">Come funziona l'analisi</p>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          Il testo dello scontrino viene analizzato cercando parole chiave green:
-                          <span className="font-medium text-foreground"> bio, biologico, km 0, vegano, senza plastica, fairtrade, artigianale, DOP/IGP</span>.
-                          Ogni categoria riconosciuta assegna un punteggio diverso basato sull'impatto ambientale.
-                        </p>
-                      </div>
-                    </section>
+                    <div className="bg-muted/30 rounded-xl p-3 flex gap-2">
+                      <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                      <p className="text-[11px] text-muted-foreground leading-relaxed">
+                        Cercate parole chiave:
+                        <span className="font-medium text-foreground"> bio, km 0, vegano, senza plastica, fairtrade, artigianale, DOP/IGP</span>.
+                        Ogni categoria vale punti diversi in base all'impatto ambientale.
+                      </p>
+                    </div>
                   </>
                 ) : detail ? (
                   <div className="text-center py-8">
