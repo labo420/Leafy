@@ -8,14 +8,6 @@ import { Camera, CheckCircle2, ArrowRight, ScanLine, ImageIcon, Sparkles } from 
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 
-const FLOATING_ITEMS = [
-  { emoji: "🌿", label: "Pasta Bio", pts: "+12 pt", x: "8%",  y: "12%" },
-  { emoji: "♻️", label: "Detersivo Eco", pts: "+8 pt",  x: "58%", y: "8%"  },
-  { emoji: "🥦", label: "Verdure Km0", pts: "+15 pt", x: "5%",  y: "58%" },
-  { emoji: "🫒", label: "Olio DOP",    pts: "+10 pt", x: "62%", y: "62%" },
-  { emoji: "🌱", label: "Yogurt Vegano", pts: "+8 pt", x: "30%", y: "76%" },
-];
-
 export default function Scan() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -202,24 +194,6 @@ export default function Scan() {
                 />
               </div>
 
-              {/* Floating product chips */}
-              {FLOATING_ITEMS.map((item, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: [0, -6, 0] }}
-                  transition={{
-                    opacity: { delay: 0.3 + i * 0.15, duration: 0.4 },
-                    y: { delay: i * 0.4, duration: 2.5 + i * 0.3, repeat: Infinity, ease: "easeInOut" },
-                  }}
-                  className="absolute flex items-center gap-1.5 bg-card/85 backdrop-blur-sm rounded-2xl px-2.5 py-1.5 shadow-md border border-border/50 pointer-events-none"
-                  style={{ left: item.x, top: item.y }}
-                >
-                  <span className="text-sm">{item.emoji}</span>
-                  <span className="text-xs font-medium text-foreground/75 whitespace-nowrap">{item.label}</span>
-                  <span className="text-xs font-bold text-primary whitespace-nowrap">{item.pts}</span>
-                </motion.div>
-              ))}
 
               {/* Center camera button */}
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
