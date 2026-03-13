@@ -8,6 +8,7 @@ import NotFound from "@/pages/not-found";
 import { useAuth } from "@workspace/replit-auth-web";
 import { Leaf } from "lucide-react";
 import LoginPage from "@/pages/Login";
+import ProfileDemo from "@/pages/ProfileDemo";
 
 import Home from "@/pages/Home";
 import Scan from "@/pages/Scan";
@@ -79,11 +80,19 @@ function AuthGate() {
   );
 }
 
+function isDemoRoute(): boolean {
+  const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
+  const path = window.location.pathname;
+  return path === `${base}/demo` || path === `${base}/demo/`;
+}
+
 function App() {
+  const showDemo = isDemoRoute();
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <AuthGate />
+        {showDemo ? <ProfileDemo /> : <AuthGate />}
         <Toaster
           position="top-center"
           toastOptions={{
