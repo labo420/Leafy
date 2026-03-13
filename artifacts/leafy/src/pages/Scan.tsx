@@ -32,8 +32,9 @@ export default function Scan() {
             duration: 6000,
           });
         } else if (r.pointsEarned > 0) {
+          const found = (r.greenItemsFound ?? []).length;
           toast.success(`🌿 +${r.pointsEarned} punti guadagnati!`, {
-            description: `${r.greenItemsFound.length} prodott${r.greenItemsFound.length === 1 ? "o green" : "i green"} rilevat${r.greenItemsFound.length === 1 ? "o" : "i"}.`,
+            description: `${found} prodott${found === 1 ? "o green" : "i green"} rilevat${found === 1 ? "o" : "i"}.`,
           });
         } else {
           toast("Ops, la foto è un po' sfocata, riproviamo?", {
@@ -113,7 +114,7 @@ export default function Scan() {
             <p className="font-display text-5xl font-bold text-primary mb-6">+{result.pointsEarned}</p>
 
             <div className="space-y-3 text-left">
-              {result.greenItemsFound.map((item, idx) => (
+              {(result.greenItemsFound ?? []).map((item, idx) => (
                 <div key={idx} className="flex items-center justify-between bg-card p-3 rounded-xl shadow-sm">
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">{item.emoji}</span>
@@ -125,7 +126,7 @@ export default function Scan() {
                   <span className="font-bold text-primary">+{item.points}</span>
                 </div>
               ))}
-              {result.greenItemsFound.length === 0 && (
+              {(result.greenItemsFound ?? []).length === 0 && (
                 <p className="text-center text-sm text-muted-foreground italic py-2">
                   Nessun prodotto green rilevato stavolta. Ritenta al prossimo acquisto!
                 </p>
