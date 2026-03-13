@@ -3,6 +3,7 @@ import { eq, and } from "drizzle-orm";
 import { db, usersTable, receiptsTable, challengeProgressTable, challengesTable } from "@workspace/db";
 import { ScanReceiptBody, ScanReceiptResponse } from "@workspace/api-zod";
 import { parseReceiptText, hashImage, extractTextViaGoogleVision, calculateLevel } from "../lib/scanner";
+import { classifyProducts, extractProductLines } from "../lib/productClassifier";
 import { runAntiFraudChecks, approvePendingPoints } from "../lib/antiFraud";
 import { requireUser } from "./profile";
 
@@ -64,7 +65,16 @@ router.post("/scan", async (req, res): Promise<void> => {
     }
   }
 
-  const foundItems = parseReceiptText(textToAnalyze);
+  // ── AI classification (Open Food Facts + Claude fallback) ───────────────
+  const productLines = extractProductLines(textToAnalyze);
+  let foundItems = productLines.length > 0
+    ? await classifyProducts(productLines)
+    : parseReceiptText(textToAnalyze);
+
+  if (foundItems.length === 0) {
+    foundItems = parseReceiptText(textToAnalyze);
+  }
+
   const rawPoints = foundItems.reduce((sum, item) => sum + item.points, 0);
 
   // ── Anti-fraud multi-layer checks ────────────────────────────────────────
