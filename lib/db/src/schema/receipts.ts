@@ -19,6 +19,8 @@ export const receiptsTable = pgTable("receipts", {
   flagReason: text("flag_reason"),
   barcodeExpiry: timestamp("barcode_expiry", { withTimezone: true }),
   barcodeMode: integer("barcode_mode").notNull().default(1),
+  receiptDate: text("receipt_date"),
+  receiptTotal: integer("receipt_total"),
 });
 
 export const insertReceiptSchema = createInsertSchema(receiptsTable).omit({ id: true, scannedAt: true });

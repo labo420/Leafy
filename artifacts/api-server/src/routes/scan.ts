@@ -4,7 +4,7 @@ import { db, usersTable, receiptsTable, barcodeScansTable } from "@workspace/db"
 import { ScanReceiptBody } from "@workspace/api-zod";
 import { hashImage, extractTextViaGoogleVision, calculateLevel } from "../lib/scanner";
 import { runAntiFraudChecks, approvePendingPoints } from "../lib/antiFraud";
-import { lookupBarcode, analyzeReceiptWithAI, classifyProductsBatch } from "../lib/productClassifier";
+import { lookupBarcode, validateReceiptWithAI, classifyProductsBatch } from "../lib/productClassifier";
 import { requireUser } from "./profile";
 
 const router: IRouter = Router();
@@ -37,10 +37,42 @@ router.post("/scan", async (req, res): Promise<void> => {
     )
     .limit(1);
 
-  // Block only if previously analyzed and points were already awarded
   if (selfDuplicate && selfDuplicate.pointsEarned > 0) {
-    res.status(400).json({ error: "Hai già scansionato questo scontrino. Anti-frode attivo." });
+    res.status(400).json({ error: "Hai già scansionato questo scontrino." });
     return;
+  }
+
+  const validation = await validateReceiptWithAI(imageBase64);
+
+  if (!validation.valid) {
+    res.status(400).json({ error: "Non sembra uno scontrino. Riprova con una foto di uno scontrino." });
+    return;
+  }
+
+  if (!validation.complete && validation.missingInfo.length > 0) {
+    const missing = validation.missingInfo.join(", ");
+    res.status(400).json({
+      error: `Scontrino incompleto — non riesco a leggere: ${missing}. Rifotografa mostrando l'intero scontrino.`,
+    });
+    return;
+  }
+
+  if (validation.date && validation.totalCents !== null) {
+    const [semanticDuplicate] = await db
+      .select({ id: receiptsTable.id })
+      .from(receiptsTable)
+      .where(
+        and(
+          eq(receiptsTable.receiptDate, validation.date),
+          eq(receiptsTable.receiptTotal, validation.totalCents),
+        ),
+      )
+      .limit(1);
+
+    if (semanticDuplicate) {
+      res.status(400).json({ error: "Questo scontrino è già stato scansionato." });
+      return;
+    }
   }
 
   const now = new Date();
@@ -49,14 +81,13 @@ router.post("/scan", async (req, res): Promise<void> => {
   let receipt: typeof receiptsTable.$inferSelect;
 
   if (selfDuplicate) {
-    // Receipt exists but was scanned with old code (0 points, no AI analysis) — re-analyze it
     const [existing] = await db
       .select()
       .from(receiptsTable)
       .where(eq(receiptsTable.id, selfDuplicate.id))
       .limit(1);
     if (!existing) {
-      res.status(400).json({ error: "Hai già scansionato questo scontrino. Anti-frode attivo." });
+      res.status(400).json({ error: "Hai già scansionato questo scontrino." });
       return;
     }
     receipt = existing;
@@ -75,7 +106,7 @@ router.post("/scan", async (req, res): Promise<void> => {
       .insert(receiptsTable)
       .values({
         userId: user.id,
-        storeName: storeName ?? null,
+        storeName: validation.store ?? storeName ?? null,
         purchaseDate: purchaseDate ?? null,
         imageHash,
         rawText: rawText || null,
@@ -87,6 +118,8 @@ router.post("/scan", async (req, res): Promise<void> => {
         flagReason: null,
         barcodeExpiry,
         barcodeMode: 1,
+        receiptDate: validation.date,
+        receiptTotal: validation.totalCents,
       })
       .returning();
     receipt = newReceipt;
@@ -112,7 +145,7 @@ router.post("/scan", async (req, res): Promise<void> => {
 
   const oldLevelInfo = calculateLevel(currentUser?.totalPoints ?? 0);
 
-  const productNames = await analyzeReceiptWithAI(imageBase64);
+  const productNames = validation.products.length > 0 ? validation.products : [];
   const greenItems = productNames.length > 0 ? await classifyProductsBatch(productNames) : [];
   const totalPoints = greenItems.reduce((sum, item) => sum + item.points, 0);
 

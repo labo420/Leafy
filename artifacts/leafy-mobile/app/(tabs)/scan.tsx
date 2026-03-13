@@ -321,7 +321,7 @@ export default function ScanScreen() {
       <View style={styles.idleHeader}>
         <Text style={styles.idleTitle}>Scansiona</Text>
         <Text style={styles.idleSub}>
-          Fotografa il tuo scontrino, poi scansiona i codici a barre dei prodotti per guadagnare punti
+          Fotografa il tuo scontrino per intero (totale e data devono essere visibili), poi scansiona i codici a barre dei prodotti per guadagnare punti
         </Text>
       </View>
 

@@ -222,10 +222,13 @@ Nota: sulla porta 20040 (accesso diretto) funziona. Sulla porta 80, il proxy di 
 ## Flusso di Scansione (Two-Phase Flow)
 
 ### Fase 1 — Scontrino come prova d'acquisto
-1. Utente fotografa lo scontrino
-2. `POST /api/scan` → anti-frode checks, salva receipt, **zero punti**
-3. Risposta: `{ receiptId, barcodeExpiry (now+24h), message }`
-4. App mostra "Scontrino confermato" con CTA per scansionare prodotti
+1. Utente fotografa lo scontrino (hint: "totale e data devono essere visibili")
+2. `POST /api/scan` → AI validation (is receipt? complete? metadata) → semantic dedup → anti-frode → AI product extraction → classification → punti
+3. Se non è uno scontrino → errore "Non sembra uno scontrino"
+4. Se incompleto (data/totale mancanti) → errore con lista info mancanti
+5. Se duplicato semantico (stessa data + totale) → errore "Già scansionato"
+6. Risposta: `{ receiptId, barcodeExpiry (now+24h), pointsEarned, greenItemsFound, ... }`
+7. App mostra risultato con prodotti trovati e CTA per scansionare barcode
 
 ### Fase 2 — Barcode scanner per i punti
 1. Utente apre lo scanner e inquadra il codice a barre
@@ -298,16 +301,18 @@ Base URL: `/api`
 
 ---
 
-## Sistema Anti-Frode (8 layer)
+## Sistema Anti-Frode (9 layer)
 
-1. **Hash scontrino** — Previene doppia scansione dello stesso scontrino
-2. **Age limit** — Scontrini vecchi più di 7 giorni non accettati
-3. **Daily scan cap** — Max 10 scontrini/giorno per utente
-4. **Daily points cap** — Max 200 punti/giorno da barcode
-5. **Cross-user dedup** — Stesso hash rifiutato da utenti diversi
-6. **Reputation multiplier** — 0.5x se account < 7 giorni, 0.7x se < 30 giorni
-7. **Pending staging** — Scansioni ad alto valore → pending → approvazione admin
-8. **Barcode dedup** — Unique constraint `(receipt_id, barcode)` + transazione atomica
+1. **Hash scontrino** — Previene doppia scansione della stessa immagine (SHA-256)
+2. **AI validation** — Claude Vision verifica che l'immagine sia uno scontrino leggibile (data + totale visibili)
+3. **Semantic dedup** — Blocca scontrini con stessa `receipt_date` + `receipt_total` (qualsiasi utente), funziona anche da angolazioni diverse
+4. **Age limit** — Scontrini vecchi più di 7 giorni non accettati
+5. **Daily scan cap** — Max 10 scontrini/giorno per utente
+6. **Daily points cap** — Max 200 punti/giorno da barcode
+7. **Cross-user dedup** — Stesso hash rifiutato da utenti diversi
+8. **Reputation multiplier** — 0.5x se account < 7 giorni, 0.7x se < 30 giorni
+9. **Pending staging** — Scansioni ad alto valore → pending → approvazione admin
+10. **Barcode dedup** — Unique constraint `(receipt_id, barcode)` + transazione atomica
 
 ---
 
@@ -330,11 +335,14 @@ Indice unico su `(provider, provider_account_id)`.
 ```
 id, user_id (FK), store_name, purchase_date, image_hash, raw_text,
 points_earned, green_items_count, categories[], green_items_json,
-scanned_at, status, flag_reason, barcode_expiry, barcode_mode
+scanned_at, status, flag_reason, barcode_expiry, barcode_mode,
+receipt_date, receipt_total
 ```
 - `barcode_expiry` = scadenza sessione barcode (24h dopo scan)
 - `barcode_mode` = 1 (indica flusso barcode attivo)
 - `status` = `approved` | `pending` | `rejected`
+- `receipt_date` = data scontrino (YYYY-MM-DD) estratta dall'AI per anti-duplicato semantico
+- `receipt_total` = totale scontrino in centesimi estratto dall'AI per anti-duplicato semantico
 
 ### `barcode_scans`
 ```
@@ -400,7 +408,8 @@ scanning → looking-up → preview → confirming → confirmed
 
 ### Classificazione Prodotti
 - **Open Food Facts** (primario): API gratuita, nessuna API key
-- **Claude Haiku** (fallback): solo per `classifyProducts()` da testo scontrino — NON usato per lookup barcode
+- **Claude Haiku Vision** (`validateReceiptWithAI`): valida scontrino + estrae metadati (negozio, data, totale) + lista prodotti in un'unica chiamata. Usato come primo step in `POST /scan`.
+- **Claude Haiku** (`classifyProductsBatch`): classifica i prodotti estratti in batch, assegna punti 0-20 per sostenibilità
 - **Cache**: `product_cache` table, key `barcode:{code}` o nome normalizzato
 
 ### Transazione Atomica Barcode Confirm

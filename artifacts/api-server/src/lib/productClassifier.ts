@@ -342,6 +342,97 @@ Criteri punti:
   return results;
 }
 
+export interface ReceiptValidation {
+  valid: boolean;
+  complete: boolean;
+  missingInfo: string[];
+  store: string | null;
+  date: string | null;
+  totalCents: number | null;
+  products: string[];
+}
+
+export async function validateReceiptWithAI(imageBase64: string): Promise<ReceiptValidation> {
+  try {
+    const message = await anthropic.messages.create({
+      model: "claude-haiku-4-5",
+      max_tokens: 1500,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image",
+              source: {
+                type: "base64",
+                media_type: "image/jpeg",
+                data: imageBase64,
+              },
+            },
+            {
+              type: "text",
+              text: `Analizza questa immagine. Determina se è uno scontrino (ricevuta/ticket di acquisto).
+
+Rispondi SOLO con un JSON valido:
+{
+  "isReceipt": true/false,
+  "complete": true/false,
+  "missingInfo": ["data", "totale"],
+  "store": "Nome Negozio" o null,
+  "date": "YYYY-MM-DD" o null,
+  "totalCents": 1250 o null,
+  "products": ["prodotto 1", "prodotto 2"]
+}
+
+Regole:
+- "isReceipt": true se l'immagine mostra uno scontrino/ricevuta fiscale
+- "complete": true solo se riesci a leggere sia la data che il totale
+- "missingInfo": lista degli elementi non leggibili tra ["data", "totale", "negozio"]. Array vuoto se tutto è leggibile
+- "store": nome del negozio/supermercato se leggibile
+- "date": data dello scontrino in formato YYYY-MM-DD. Se l'anno non è visibile, usa l'anno corrente (2026)
+- "totalCents": importo totale in centesimi (es. €12.50 = 1250). null se non leggibile
+- "products": nomi dei prodotti acquistati (normalizza le abbreviazioni, es. "PAST PENNE 500G" → "Pasta Penne"). Massimo 15. Escludi totali, IVA, sconti, info negozio`,
+            },
+          ],
+        },
+      ],
+    });
+
+    const text = message.content[0].type === "text" ? message.content[0].text : "{}";
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      return { valid: true, complete: false, missingInfo: [], store: null, date: null, totalCents: null, products: [] };
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]) as {
+      isReceipt?: boolean;
+      complete?: boolean;
+      missingInfo?: string[];
+      store?: string | null;
+      date?: string | null;
+      totalCents?: number | null;
+      products?: unknown[];
+    };
+
+    const products = (parsed.products ?? [])
+      .filter((p): p is string => typeof p === "string" && p.trim().length >= 2)
+      .slice(0, 15);
+
+    return {
+      valid: parsed.isReceipt !== false,
+      complete: parsed.complete !== false,
+      missingInfo: Array.isArray(parsed.missingInfo) ? parsed.missingInfo : [],
+      store: typeof parsed.store === "string" ? parsed.store : null,
+      date: typeof parsed.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(parsed.date) ? parsed.date : null,
+      totalCents: typeof parsed.totalCents === "number" ? Math.round(parsed.totalCents) : null,
+      products,
+    };
+  } catch (err) {
+    console.error("[validateReceiptWithAI]", err);
+    return { valid: true, complete: false, missingInfo: [], store: null, date: null, totalCents: null, products: [] };
+  }
+}
+
 export async function analyzeReceiptWithAI(imageBase64: string): Promise<string[]> {
   try {
     const message = await anthropic.messages.create({

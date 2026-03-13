@@ -201,6 +201,9 @@ export default function Scan() {
                 {!hasActiveSession && (
                   <p className="text-xs text-muted-foreground">oppure carica dalla galleria</p>
                 )}
+                <p className="text-[11px] text-muted-foreground/70 mt-2 max-w-[220px] text-center leading-tight">
+                  Fotografa lo scontrino per intero — totale e data devono essere visibili
+                </p>
               </div>
             </div>
 
