@@ -290,6 +290,11 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
       .where(eq(usersTable.id, user.id));
 
     return { scan, updatedUser };
+  }).catch((err: Error & { code?: string }) => {
+    if (err.code === "23505") {
+      return { error: "Questo prodotto è già stato scansionato per questo scontrino." } as const;
+    }
+    throw err;
   });
 
   if ("error" in txResult) {
