@@ -1,4 +1,4 @@
-import express, { type Express } from "express";
+import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import path from "path";
@@ -24,5 +24,10 @@ if (process.env.NODE_ENV === "production") {
     res.sendFile(path.join(staticDir, "index.html"));
   });
 }
+
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  console.error("[unhandled error]", err?.message ?? err, err?.stack);
+  res.status(500).json({ error: "Errore interno del server. Riprova tra poco." });
+});
 
 export default app;

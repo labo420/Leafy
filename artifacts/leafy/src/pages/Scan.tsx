@@ -57,10 +57,15 @@ export default function Scan() {
           }, 2400);
         }
       },
-      onError: () => {
-        toast.error("Errore durante l'analisi", {
-          description: "Riprova con una foto più nitida e ben illuminata.",
-        });
+      onError: (err) => {
+        const serverMsg = (err as { data?: { error?: string } })?.data?.error;
+        if (serverMsg) {
+          toast.error(serverMsg);
+        } else {
+          toast.error("Errore durante l'analisi", {
+            description: "Riprova con una foto più nitida e ben illuminata.",
+          });
+        }
       }
     }
   });

@@ -27,7 +27,7 @@ router.post("/scan", async (req, res): Promise<void> => {
   const imageHash = hashImage(imageBase64);
 
   const [selfDuplicate] = await db
-    .select({ id: receiptsTable.id })
+    .select({ id: receiptsTable.id, pointsEarned: receiptsTable.pointsEarned, greenItemsCount: receiptsTable.greenItemsCount })
     .from(receiptsTable)
     .where(
       and(
@@ -37,43 +37,60 @@ router.post("/scan", async (req, res): Promise<void> => {
     )
     .limit(1);
 
-  if (selfDuplicate) {
-    res.status(400).json({ error: "Hai già scansionato questo scontrino in precedenza. Anti-frode attivo." });
-    return;
-  }
-
-  const fraudCheck = await runAntiFraudChecks(user, imageHash, purchaseDate, 0);
-
-  if (!fraudCheck.ok) {
-    res.status(400).json({ error: fraudCheck.error });
+  // Block only if previously analyzed and points were already awarded
+  if (selfDuplicate && selfDuplicate.pointsEarned > 0) {
+    res.status(400).json({ error: "Hai già scansionato questo scontrino. Anti-frode attivo." });
     return;
   }
 
   const now = new Date();
   const barcodeExpiry = new Date(now.getTime() + BARCODE_SESSION_HOURS * 60 * 60 * 1000);
 
-  let rawText = "";
-  const visionText = await extractTextViaGoogleVision(imageBase64);
-  if (visionText) rawText = visionText;
+  let receipt: typeof receiptsTable.$inferSelect;
 
-  const [receipt] = await db
-    .insert(receiptsTable)
-    .values({
-      userId: user.id,
-      storeName: storeName ?? null,
-      purchaseDate: purchaseDate ?? null,
-      imageHash,
-      rawText: rawText || null,
-      pointsEarned: 0,
-      greenItemsCount: 0,
-      categories: [],
-      greenItemsJson: "[]",
-      status: "approved",
-      flagReason: null,
-      barcodeExpiry,
-      barcodeMode: 1,
-    })
-    .returning();
+  if (selfDuplicate) {
+    // Receipt exists but was scanned with old code (0 points, no AI analysis) — re-analyze it
+    const [existing] = await db
+      .select()
+      .from(receiptsTable)
+      .where(eq(receiptsTable.id, selfDuplicate.id))
+      .limit(1);
+    if (!existing) {
+      res.status(400).json({ error: "Hai già scansionato questo scontrino. Anti-frode attivo." });
+      return;
+    }
+    receipt = existing;
+  } else {
+    const fraudCheck = await runAntiFraudChecks(user, imageHash, purchaseDate, 0);
+    if (!fraudCheck.ok) {
+      res.status(400).json({ error: fraudCheck.error });
+      return;
+    }
+
+    let rawText = "";
+    const visionText = await extractTextViaGoogleVision(imageBase64);
+    if (visionText) rawText = visionText;
+
+    const [newReceipt] = await db
+      .insert(receiptsTable)
+      .values({
+        userId: user.id,
+        storeName: storeName ?? null,
+        purchaseDate: purchaseDate ?? null,
+        imageHash,
+        rawText: rawText || null,
+        pointsEarned: 0,
+        greenItemsCount: 0,
+        categories: [],
+        greenItemsJson: "[]",
+        status: "approved",
+        flagReason: null,
+        barcodeExpiry,
+        barcodeMode: 1,
+      })
+      .returning();
+    receipt = newReceipt;
+  }
 
   const today = new Date().toDateString();
   const lastScanDate = user.lastScanDate ? new Date(user.lastScanDate).toDateString() : null;
