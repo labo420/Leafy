@@ -390,8 +390,14 @@ export default function Profile() {
                           </Badge>
                           
                           {badge.isUnlocked ? (
-                            <div className="flex items-center gap-1 text-[10px] text-primary">
-                              <span>Completata!</span>
+                            <div className="flex flex-col items-center gap-0.5">
+                              <div className="flex items-center gap-1 text-[10px] text-primary">
+                                <span>Completata!</span>
+                              </div>
+                              <div className="flex items-center gap-1 text-[9px] text-muted-foreground">
+                                <Calendar className="w-2.5 h-2.5" />
+                                <span>{formatDate(badge.unlockedAt)}</span>
+                              </div>
                             </div>
                           ) : (
                             <div className="w-full space-y-1">
@@ -434,6 +440,9 @@ export default function Profile() {
                           </div>
                           <p className="font-medium text-[10px] leading-tight text-muted-foreground">{badge.name}</p>
                           <p className="text-[8px] text-muted-foreground/60 mt-0.5">{formatPeriod(badge.periodKey, badge.badgeType)}</p>
+                          {badge.isUnlocked && badge.unlockedAt && (
+                            <p className="text-[7px] text-muted-foreground/50 mt-0.5">{formatDate(badge.unlockedAt)}</p>
+                          )}
                         </div>
                       ))}
                     </div>
