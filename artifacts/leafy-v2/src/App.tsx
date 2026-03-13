@@ -73,26 +73,19 @@ function AuthGate() {
     return <LoginPage onSuccess={() => window.location.reload()} />;
   }
 
-  return (
-    <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-      <AppRouter />
-    </WouterRouter>
-  );
-}
-
-function isDemoRoute(): boolean {
-  const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
-  const path = window.location.pathname;
-  return path === `${base}/demo` || path === `${base}/demo/`;
+  return <AppRouter />;
 }
 
 function App() {
-  const showDemo = isDemoRoute();
-
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        {showDemo ? <ProfileDemo /> : <AuthGate />}
+        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+          <Switch>
+            <Route path="/demo" component={ProfileDemo} />
+            <Route><AuthGate /></Route>
+          </Switch>
+        </WouterRouter>
         <Toaster
           position="top-center"
           toastOptions={{
