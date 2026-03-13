@@ -3,7 +3,7 @@ import { useGetProfile, useGetChallenges } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Copy, Target, Award, Trophy, Info, Settings, LogOut } from "lucide-react";
+import { Copy, Target, Award, Trophy, Info, Settings } from "lucide-react";
 import { Link } from "wouter";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -155,11 +155,6 @@ export default function Profile() {
             ))}
           </div>
         </section>
-
-        {/* Logout Button */}
-        <Button variant="ghost-muted" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10">
-          <LogOut className="w-4 h-4 mr-2" /> Disconnetti
-        </Button>
       </div>
     </div>
   );
