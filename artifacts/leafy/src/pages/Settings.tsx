@@ -1,23 +1,62 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Bell, Globe, Lock, Mail, ShieldCheck, Trash2, User, LogOut, ChevronRight } from "lucide-react";
+import { ArrowLeft, Bell, Globe, Lock, Mail, ShieldCheck, Trash2, User, LogOut, ChevronRight, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@workspace/replit-auth-web";
+import { useGetProfile } from "@workspace/api-client-react";
 
 export default function Settings() {
   const { user, logout } = useAuth();
+  const { data: profile, refetch } = useGetProfile();
   const [pushNotifications, setPushNotifications] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(false);
   const [weeklyReport, setWeeklyReport] = useState(true);
   const [challengeAlerts, setChallengeAlerts] = useState(true);
+  const [editingUsername, setEditingUsername] = useState(false);
+  const [usernameInput, setUsernameInput] = useState("");
+  const [savingUsername, setSavingUsername] = useState(false);
 
-  const displayName = user
-    ? [user.firstName, user.lastName].filter(Boolean).join(" ") || `Utente #${user.id}`
+  useEffect(() => {
+    if (profile?.username) {
+      setUsernameInput(profile.username);
+    }
+  }, [profile?.username]);
+
+  const displayName = profile?.username || user
+    ? [user?.firstName, user?.lastName].filter(Boolean).join(" ") || `Utente #${user?.id}`
     : "—";
   const displayEmail = user?.email ?? "—";
+
+  const saveUsername = async () => {
+    if (!usernameInput.trim()) {
+      toast.error("Inserisci un nome utente valido.");
+      return;
+    }
+    if (usernameInput.trim().length < 3 || usernameInput.length > 30) {
+      toast.error("Il nome utente deve avere tra 3 e 30 caratteri.");
+      return;
+    }
+    setSavingUsername(true);
+    try {
+      const res = await fetch("/api/profile/username", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ username: usernameInput.trim() }),
+      });
+      if (!res.ok) throw new Error("Errore nel salvataggio");
+      await refetch();
+      setEditingUsername(false);
+      toast.success("Nome utente aggiornato!");
+    } catch {
+      toast.error("Errore nel salvataggio del nome utente.");
+    } finally {
+      setSavingUsername(false);
+    }
+  };
 
   const handleDeleteAccount = () => {
     toast.error("Funzione non ancora disponibile.");
@@ -49,7 +88,39 @@ export default function Settings() {
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest px-2 mb-2">Account</p>
           <Card className="border-border/50 shadow-sm overflow-hidden">
             <CardContent className="p-0 divide-y divide-border/50">
-              <SettingsRow icon={<User className="w-4 h-4 text-primary" />} label="Nome utente" value={displayName} />
+              {editingUsername ? (
+                <div className="flex items-center gap-3 px-4 py-3.5">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <User className="w-4 h-4 text-primary" />
+                  </div>
+                  <input
+                    type="text"
+                    value={usernameInput}
+                    onChange={(e) => setUsernameInput(e.target.value)}
+                    placeholder="Nuovo nome utente"
+                    maxLength={30}
+                    className="flex-1 bg-transparent border-b border-primary/30 outline-none text-sm font-medium"
+                    autoFocus
+                  />
+                  <button onClick={saveUsername} disabled={savingUsername} className="text-primary hover:text-primary/80 transition">
+                    <Check className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => setEditingUsername(false)} className="text-muted-foreground hover:text-foreground transition">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setEditingUsername(true)}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted/40 transition-colors text-left"
+                >
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <User className="w-4 h-4 text-primary" />
+                  </div>
+                  <span className="flex-1 font-medium text-sm text-foreground">Nome utente</span>
+                  <span className="text-sm text-muted-foreground">{displayName}</span>
+                </button>
+              )}
               <SettingsRow icon={<Mail className="w-4 h-4 text-primary" />} label="Email" value={displayEmail} />
             </CardContent>
           </Card>

@@ -42,6 +42,26 @@ export async function requireUser(
   return user;
 }
 
+router.put("/profile/username", async (req, res): Promise<void> => {
+  const user = await requireUser(req, res);
+  if (!user) return;
+
+  const { username } = req.body;
+  if (!username || typeof username !== "string" || username.trim().length === 0) {
+    res.status(400).json({ error: "Nome utente non valido." });
+    return;
+  }
+  
+  const trimmed = username.trim();
+  if (trimmed.length < 3 || trimmed.length > 30) {
+    res.status(400).json({ error: "Il nome utente deve avere tra 3 e 30 caratteri." });
+    return;
+  }
+
+  await db.update(usersTable).set({ username: trimmed }).where(eq(usersTable.id, user.id));
+  res.json({ username: trimmed });
+});
+
 router.get("/profile", async (req, res): Promise<void> => {
   const user = await requireUser(req, res);
   if (!user) return;
