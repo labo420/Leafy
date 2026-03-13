@@ -116,6 +116,11 @@ export default function ScanScreen() {
       }
       result = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.8, mediaTypes: "images" });
     } else {
+      const mediaPerm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!mediaPerm.granted) {
+        Alert.alert("Permesso negato", "Abilita l'accesso alla galleria nelle impostazioni");
+        return;
+      }
       result = await ImagePicker.launchImageLibraryAsync({ base64: true, quality: 0.8, mediaTypes: "images" });
     }
     if (!result.canceled && result.assets[0]) {
