@@ -256,8 +256,14 @@ export default function Scan() {
 
         <Button
           className="w-full text-lg h-14 rounded-2xl shadow-lg shadow-primary/30 bg-gradient-to-br from-primary to-[#23533e] hover:shadow-primary/50 transition-shadow"
-          disabled={!preview || scanMutation.isPending}
-          onClick={handleScan}
+          disabled={scanMutation.isPending}
+          onClick={() => {
+            if (!preview) {
+              fileInputRef.current?.click();
+              return;
+            }
+            handleScan();
+          }}
           isLoading={scanMutation.isPending}
         >
           {scanMutation.isPending ? "Analizzando..." : "Analizza la tua spesa"}
