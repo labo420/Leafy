@@ -59,6 +59,13 @@ export function Onboarding() {
   const particles = useMemo(() => generateParticles(), []);
 
   useEffect(() => {
+    if (showConfetti) {
+      const timer = setTimeout(() => setShowConfetti(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [showConfetti]);
+
+  useEffect(() => {
     const done = localStorage.getItem(STORAGE_KEY);
     if (!done) {
       const timer = setTimeout(() => {
@@ -92,17 +99,11 @@ export function Onboarding() {
           onClick={(e) => { if (e.target === e.currentTarget) finish(); }}
         >
           {showConfetti && (
-            <motion.div
-              className="fixed inset-0 pointer-events-none z-[60]"
-              onAnimationComplete={() => setShowConfetti(false)}
-              initial={{ opacity: 1 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 1.8 }}
-            >
+            <div className="fixed inset-0 pointer-events-none z-[60]">
               {particles.map((p) => (
                 <motion.span
                   key={p.id}
-                  initial={{ x: "-50%", y: "-50%", opacity: 1, scale: 0, rotate: 0 }}
+                  initial={{ opacity: 1, scale: 0, rotate: 0 }}
                   animate={{
                     x: p.x,
                     y: p.y,
@@ -115,13 +116,13 @@ export function Onboarding() {
                     delay: p.delay,
                     ease: "easeOut",
                   }}
-                  className="absolute left-1/2 top-1/2"
+                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
                   style={{ fontSize: p.size }}
                 >
                   {p.emoji}
                 </motion.span>
               ))}
-            </motion.div>
+            </div>
           )}
           <motion.div
             initial={{ y: 100, opacity: 0 }}
