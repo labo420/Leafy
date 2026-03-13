@@ -180,20 +180,6 @@ export default function Scan() {
                 }}
               />
 
-              {/* Outer glow ring */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <motion.div
-                  animate={{ scale: [1, 1.08, 1], opacity: [0.15, 0.25, 0.15] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                  className="w-56 h-56 rounded-full border-2 border-primary/30"
-                />
-                <motion.div
-                  animate={{ scale: [1, 1.05, 1], opacity: [0.08, 0.15, 0.08] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-                  className="absolute w-72 h-72 rounded-full border border-primary/20"
-                />
-              </div>
-
 
               {/* Center camera button */}
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
