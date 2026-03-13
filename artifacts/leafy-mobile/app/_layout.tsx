@@ -30,6 +30,7 @@ function RootLayoutNav() {
     <Stack screenOptions={{ headerBackTitle: "Indietro" }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="login" options={{ headerShown: false }} />
+      <Stack.Screen name="barcode-scanner" options={{ headerShown: false, presentation: "fullScreenModal" }} />
     </Stack>
   );
 }

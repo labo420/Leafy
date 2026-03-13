@@ -182,12 +182,14 @@ Base URL: `/api`
 | `GET /api/profile/referral` | Dati codice referral |
 | `POST /api/profile/referral/apply` | Applica codice referral |
 
-### Scontrini e Scan
+### Scontrini e Scan (Two-Phase Flow)
 | Endpoint | Descrizione |
 |----------|-------------|
-| `POST /api/scan` | Scansiona scontrino (base64 img → punti + report) |
+| `POST /api/scan` | Valida scontrino come prova d'acquisto (NO punti). Restituisce receiptId + barcodeExpiry (24h) |
+| `POST /api/scan/barcode` | Scansiona codice a barre prodotto: lookup Open Food Facts, Eco-Score → punti. Richiede receiptId attivo |
+| `GET /api/scan/active-session` | Sessione attiva con scontrino e prodotti scansionati |
 | `GET /api/receipts` | Lista scontrini dell'utente |
-| `GET /api/receipts/:id` | Dettaglio scontrino con greenItems (keyword, categoria, punti) |
+| `GET /api/receipts/:id` | Dettaglio scontrino con barcode scans e greenItems |
 
 ### Altro
 | Endpoint | Descrizione |
@@ -255,9 +257,24 @@ Indice unico su `(provider, provider_account_id)`.
 ### `receipts`
 ```
 id, user_id (FK), store_name, purchase_date, image_hash, raw_text,
-points_earned, green_items_count, categories[], green_items_json, scanned_at
+points_earned, green_items_count, categories[], green_items_json, scanned_at,
+status, flag_reason, barcode_expiry
 ```
-`green_items_json` = array JSON di `{ name, category, points, emoji }`.
+`barcode_expiry` = timestamp scadenza sessione barcode (24h dopo scan scontrino).
+
+### `barcode_scans`
+```
+id, receipt_id (FK), user_id (FK), barcode, product_name, eco_score,
+points_earned, category, emoji, reasoning, scanned_at
+```
+Unique constraint on `(receipt_id, barcode)`.
+
+### `product_cache`
+```
+id, product_name_normalized, product_name_original, eco_score, points,
+category, source, reasoning, emoji, cached_at
+```
+Cache per lookup barcode e classificazione prodotti. Key `barcode:{code}` per lookup barcode.
 
 ### `challenges`, `challenge_progress`, `vouchers`, `redeemed_vouchers`
 Schema gestito da Drizzle ORM in `lib/db/src/schema/`.

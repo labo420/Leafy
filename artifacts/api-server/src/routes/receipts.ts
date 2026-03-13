@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq, desc } from "drizzle-orm";
-import { db, receiptsTable } from "@workspace/db";
-import { GetReceiptsResponse, GetReceiptResponse, GetReceiptParams } from "@workspace/api-zod";
+import { db, receiptsTable, barcodeScansTable } from "@workspace/db";
+import { GetReceiptsResponse, GetReceiptParams } from "@workspace/api-zod";
 import { requireUser } from "./profile";
 
 const router: IRouter = Router();
@@ -48,14 +48,30 @@ router.get("/receipts/:id", async (req, res): Promise<void> => {
   let greenItems = [];
   try { greenItems = JSON.parse(receipt.greenItemsJson); } catch {}
 
-  res.json(GetReceiptResponse.parse({
+  const barcodeScans = await db.select().from(barcodeScansTable)
+    .where(eq(barcodeScansTable.receiptId, receipt.id))
+    .orderBy(desc(barcodeScansTable.scannedAt));
+
+  res.json({
     id: receipt.id,
     storeName: receipt.storeName,
     purchaseDate: receipt.purchaseDate,
     pointsEarned: receipt.pointsEarned,
     greenItems,
     scannedAt: receipt.scannedAt,
-  }));
+    barcodeExpiry: receipt.barcodeExpiry,
+    barcodeScans: barcodeScans.map(s => ({
+      id: s.id,
+      barcode: s.barcode,
+      productName: s.productName,
+      ecoScore: s.ecoScore,
+      pointsEarned: s.pointsEarned,
+      category: s.category,
+      emoji: s.emoji,
+      reasoning: s.reasoning,
+      scannedAt: s.scannedAt,
+    })),
+  });
 });
 
 export default router;

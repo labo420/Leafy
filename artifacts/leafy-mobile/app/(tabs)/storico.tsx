@@ -19,7 +19,47 @@ import Colors from "@/constants/colors";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/context/auth";
 import { router } from "expo-router";
-import type { Receipt, ReceiptDetail } from "@workspace/api-client-react";
+
+interface Receipt {
+  id: number;
+  storeName: string | null;
+  purchaseDate: string | null;
+  pointsEarned: number;
+  greenItemsCount: number;
+  categories: string[];
+  scannedAt: string;
+}
+
+interface BarcodeScanItem {
+  id: number;
+  barcode: string;
+  productName: string;
+  ecoScore: string | null;
+  pointsEarned: number;
+  category: string;
+  emoji: string;
+  reasoning: string;
+  scannedAt: string;
+}
+
+interface ReceiptDetailData {
+  id: number;
+  storeName: string | null;
+  purchaseDate: string | null;
+  pointsEarned: number;
+  greenItems: Array<{ itemName: string; category: string; pointsAwarded: number }>;
+  scannedAt: string;
+  barcodeExpiry: string | null;
+  barcodeScans: BarcodeScanItem[];
+}
+
+const ECO_COLORS: Record<string, string> = {
+  a: "#1E8C45",
+  b: "#60AC0E",
+  c: "#FECB02",
+  d: "#EE8100",
+  e: "#E63E11",
+};
 
 function formatDate(dateStr: string | null | undefined): string {
   if (!dateStr) return "";
@@ -31,8 +71,19 @@ function formatDate(dateStr: string | null | undefined): string {
   }
 }
 
+function EcoScoreBadge({ score }: { score: string | null }) {
+  if (!score) return null;
+  const letter = score.toLowerCase();
+  const bg = ECO_COLORS[letter] ?? Colors.textSecondary;
+  return (
+    <View style={[styles.ecoBadge, { backgroundColor: bg }]}>
+      <Text style={styles.ecoBadgeText}>{letter.toUpperCase()}</Text>
+    </View>
+  );
+}
+
 function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }) {
-  const { data, isLoading } = useQuery<ReceiptDetail>({
+  const { data, isLoading } = useQuery<ReceiptDetailData>({
     queryKey: ["receipt", id],
     queryFn: () => apiFetch(`/receipts/${id}`),
   });
@@ -63,10 +114,44 @@ function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }
               {data.scannedAt && <Text style={styles.detailDate}>{formatDate(data.scannedAt)}</Text>}
             </View>
 
-            {data.items && data.items.length > 0 && (
+            {data.barcodeScans && data.barcodeScans.length > 0 && (
               <>
-                <Text style={styles.itemsTitle}>Prodotti green ({data.items.length})</Text>
-                {data.items.map((item: any, i: number) => (
+                <Text style={styles.itemsTitle}>
+                  Prodotti scansionati ({data.barcodeScans.length})
+                </Text>
+                {data.barcodeScans.map((scan) => (
+                  <View key={scan.id} style={styles.barcodeRow}>
+                    <View style={styles.barcodeLeft}>
+                      <Text style={styles.barcodeEmoji}>{scan.emoji}</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.barcodeName} numberOfLines={1}>
+                          {scan.productName}
+                        </Text>
+                        <View style={styles.barcodeMeta}>
+                          <Text style={styles.barcodeCat}>{scan.category}</Text>
+                          {scan.reasoning ? (
+                            <Text style={styles.barcodeReason} numberOfLines={1}>
+                              {scan.reasoning}
+                            </Text>
+                          ) : null}
+                        </View>
+                      </View>
+                    </View>
+                    <View style={styles.barcodeRight}>
+                      <EcoScoreBadge score={scan.ecoScore} />
+                      <Text style={styles.barcodePts}>+{scan.pointsEarned}</Text>
+                    </View>
+                  </View>
+                ))}
+              </>
+            )}
+
+            {data.greenItems && data.greenItems.length > 0 && (
+              <>
+                <Text style={[styles.itemsTitle, { marginTop: 16 }]}>
+                  Prodotti green ({data.greenItems.length})
+                </Text>
+                {data.greenItems.map((item, i) => (
                   <View key={i} style={styles.itemRow}>
                     <View style={styles.itemLeft}>
                       <View style={styles.itemDot} />
@@ -79,6 +164,16 @@ function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }
                   </View>
                 ))}
               </>
+            )}
+
+            {(!data.barcodeScans || data.barcodeScans.length === 0) &&
+             (!data.greenItems || data.greenItems.length === 0) && (
+              <View style={styles.noProductsMsg}>
+                <Feather name="info" size={20} color={Colors.textSecondary} />
+                <Text style={styles.noProductsText}>
+                  Nessun prodotto scansionato per questo scontrino
+                </Text>
+              </View>
             )}
           </ScrollView>
         ) : null}
@@ -103,13 +198,12 @@ function ReceiptCard({ receipt, onPress }: { receipt: Receipt; onPress: () => vo
               {receipt.storeName ?? "Negozio sconosciuto"}
             </Text>
             <Text style={styles.receiptDate}>{formatDate(receipt.scannedAt)}</Text>
-            {receipt.categories.length > 0 && (
+            {receipt.greenItemsCount > 0 && (
               <View style={styles.catRow}>
-                {receipt.categories.slice(0, 2).map((c, i) => (
-                  <View key={i} style={styles.catBadge}>
-                    <Text style={styles.catText}>{c}</Text>
-                  </View>
-                ))}
+                <View style={styles.catBadge}>
+                  <MaterialCommunityIcons name="barcode-scan" size={10} color={Colors.leaf} />
+                  <Text style={styles.catText}>{receipt.greenItemsCount} prodotti</Text>
+                </View>
               </View>
             )}
           </View>
@@ -117,7 +211,6 @@ function ReceiptCard({ receipt, onPress }: { receipt: Receipt; onPress: () => vo
         <View style={styles.receiptRight}>
           <Text style={styles.receiptPoints}>+{receipt.pointsEarned}</Text>
           <Text style={styles.receiptPointsLabel}>pt</Text>
-          <Text style={styles.receiptItems}>{receipt.greenItemsCount} green</Text>
           <Feather name="chevron-right" size={16} color={Colors.textMuted} />
         </View>
       </Pressable>
@@ -195,248 +288,85 @@ export default function StoricoScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   centered: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: Colors.background,
-    padding: 32,
+    flex: 1, alignItems: "center", justifyContent: "center",
+    backgroundColor: Colors.background, padding: 32,
   },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 12,
-  },
-  title: {
-    fontSize: 32,
-    fontFamily: "Inter_700Bold",
-    color: Colors.text,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    fontFamily: "Inter_400Regular",
-    color: Colors.textSecondary,
-  },
+  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
+  title: { fontSize: 32, fontFamily: "Inter_700Bold", color: Colors.text, marginBottom: 4 },
+  subtitle: { fontSize: 14, fontFamily: "Inter_400Regular", color: Colors.textSecondary },
   receiptCard: {
-    backgroundColor: Colors.card,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    backgroundColor: Colors.card, borderRadius: 16, padding: 16, marginBottom: 10,
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
   },
-  receiptLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    flex: 1,
-  },
+  receiptLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
   receiptIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.primaryLight,
-    alignItems: "center",
-    justifyContent: "center",
+    width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.primaryLight,
+    alignItems: "center", justifyContent: "center",
   },
-  receiptStore: {
-    fontSize: 15,
-    fontFamily: "Inter_600SemiBold",
-    color: Colors.text,
-    marginBottom: 2,
-  },
-  receiptDate: {
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
-    color: Colors.textSecondary,
-    marginBottom: 4,
-  },
-  catRow: {
-    flexDirection: "row",
-    gap: 4,
-    flexWrap: "wrap",
-  },
+  receiptStore: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: Colors.text, marginBottom: 2 },
+  receiptDate: { fontSize: 12, fontFamily: "Inter_400Regular", color: Colors.textSecondary, marginBottom: 4 },
+  catRow: { flexDirection: "row", gap: 4, flexWrap: "wrap" },
   catBadge: {
-    backgroundColor: Colors.primaryLight,
-    borderRadius: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    flexDirection: "row", alignItems: "center", gap: 3,
+    backgroundColor: Colors.primaryLight, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2,
   },
-  catText: {
-    fontSize: 10,
-    fontFamily: "Inter_500Medium",
-    color: Colors.leaf,
-  },
-  receiptRight: {
-    alignItems: "flex-end",
-    gap: 2,
-  },
-  receiptPoints: {
-    fontSize: 20,
-    fontFamily: "Inter_700Bold",
-    color: Colors.leaf,
-  },
-  receiptPointsLabel: {
-    fontSize: 11,
-    fontFamily: "Inter_400Regular",
-    color: Colors.textSecondary,
-    marginBottom: 2,
-  },
-  receiptItems: {
-    fontSize: 11,
-    fontFamily: "Inter_400Regular",
-    color: Colors.textSecondary,
-    marginBottom: 4,
-  },
-  emptyState: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 32,
-    gap: 12,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontFamily: "Inter_700Bold",
-    color: Colors.text,
-    textAlign: "center",
-  },
-  emptySub: {
-    fontSize: 14,
-    fontFamily: "Inter_400Regular",
-    color: Colors.textSecondary,
-    textAlign: "center",
-    lineHeight: 22,
-  },
+  catText: { fontSize: 10, fontFamily: "Inter_500Medium", color: Colors.leaf },
+  receiptRight: { alignItems: "flex-end", gap: 2 },
+  receiptPoints: { fontSize: 20, fontFamily: "Inter_700Bold", color: Colors.leaf },
+  receiptPointsLabel: { fontSize: 11, fontFamily: "Inter_400Regular", color: Colors.textSecondary, marginBottom: 2 },
+  emptyState: { flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12 },
+  emptyTitle: { fontSize: 20, fontFamily: "Inter_700Bold", color: Colors.text, textAlign: "center" },
+  emptySub: { fontSize: 14, fontFamily: "Inter_400Regular", color: Colors.textSecondary, textAlign: "center", lineHeight: 22 },
   scanBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: Colors.leaf,
-    borderRadius: 14,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    marginTop: 8,
+    flexDirection: "row", alignItems: "center", gap: 8,
+    backgroundColor: Colors.leaf, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 24, marginTop: 8,
   },
-  scanBtnText: {
-    fontSize: 15,
-    fontFamily: "Inter_700Bold",
-    color: "#fff",
-  },
-  loginBtn: {
-    marginTop: 20,
-    backgroundColor: Colors.leaf,
-    borderRadius: 14,
-    paddingVertical: 14,
-    paddingHorizontal: 40,
-  },
-  loginBtnText: {
-    fontSize: 16,
-    fontFamily: "Inter_700Bold",
-    color: "#fff",
-  },
-  sheetContainer: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  sheetHandle: {
-    width: 36,
-    height: 4,
-    backgroundColor: Colors.border,
-    borderRadius: 2,
-    alignSelf: "center",
-    marginTop: 12,
-    marginBottom: 8,
-  },
+  scanBtnText: { fontSize: 15, fontFamily: "Inter_700Bold", color: "#fff" },
+  loginBtn: { marginTop: 20, backgroundColor: Colors.leaf, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 40 },
+  loginBtnText: { fontSize: 16, fontFamily: "Inter_700Bold", color: "#fff" },
+  sheetContainer: { flex: 1, backgroundColor: Colors.background },
+  sheetHandle: { width: 36, height: 4, backgroundColor: Colors.border, borderRadius: 2, alignSelf: "center", marginTop: 12, marginBottom: 8 },
   sheetHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+    paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: Colors.border,
   },
-  sheetTitle: {
-    fontSize: 18,
-    fontFamily: "Inter_600SemiBold",
-    color: Colors.text,
-  },
+  sheetTitle: { fontSize: 18, fontFamily: "Inter_600SemiBold", color: Colors.text },
   detailHeader: {
-    backgroundColor: Colors.card,
-    borderRadius: 16,
-    padding: 20,
-    alignItems: "center",
-    marginBottom: 20,
-    gap: 6,
+    backgroundColor: Colors.card, borderRadius: 16, padding: 20,
+    alignItems: "center", marginBottom: 20, gap: 6,
   },
-  detailPoints: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginBottom: 4,
+  detailPoints: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 },
+  detailPointsText: { fontSize: 24, fontFamily: "Inter_700Bold", color: Colors.leaf },
+  detailStore: { fontSize: 16, fontFamily: "Inter_600SemiBold", color: Colors.text },
+  detailDate: { fontSize: 13, fontFamily: "Inter_400Regular", color: Colors.textSecondary },
+  itemsTitle: { fontSize: 16, fontFamily: "Inter_700Bold", color: Colors.text, marginBottom: 12 },
+  barcodeRow: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    backgroundColor: Colors.card, borderRadius: 14, padding: 14, marginBottom: 8,
   },
-  detailPointsText: {
-    fontSize: 24,
-    fontFamily: "Inter_700Bold",
-    color: Colors.leaf,
+  barcodeLeft: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
+  barcodeEmoji: { fontSize: 24 },
+  barcodeName: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: Colors.text },
+  barcodeMeta: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 },
+  barcodeCat: { fontSize: 11, fontFamily: "Inter_500Medium", color: Colors.textSecondary },
+  barcodeReason: { fontSize: 10, fontFamily: "Inter_400Regular", color: Colors.textMuted, flex: 1 },
+  barcodeRight: { flexDirection: "row", alignItems: "center", gap: 8 },
+  barcodePts: { fontSize: 15, fontFamily: "Inter_700Bold", color: Colors.leaf },
+  ecoBadge: { width: 26, height: 26, borderRadius: 6, alignItems: "center", justifyContent: "center" },
+  ecoBadgeText: { fontSize: 14, fontFamily: "Inter_700Bold", color: "#fff" },
+  noProductsMsg: {
+    flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: Colors.card,
+    borderRadius: 12, padding: 16,
   },
-  detailStore: {
-    fontSize: 16,
-    fontFamily: "Inter_600SemiBold",
-    color: Colors.text,
-  },
-  detailDate: {
-    fontSize: 13,
-    fontFamily: "Inter_400Regular",
-    color: Colors.textSecondary,
-  },
-  itemsTitle: {
-    fontSize: 16,
-    fontFamily: "Inter_700Bold",
-    color: Colors.text,
-    marginBottom: 12,
-  },
+  noProductsText: { fontSize: 14, fontFamily: "Inter_400Regular", color: Colors.textSecondary, flex: 1 },
   itemRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: Colors.card,
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 8,
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    backgroundColor: Colors.card, borderRadius: 12, padding: 14, marginBottom: 8,
   },
-  itemLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    flex: 1,
-  },
-  itemDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.primary,
-  },
-  itemName: {
-    fontSize: 14,
-    fontFamily: "Inter_600SemiBold",
-    color: Colors.text,
-  },
-  itemCat: {
-    fontSize: 11,
-    fontFamily: "Inter_400Regular",
-    color: Colors.textSecondary,
-  },
-  itemPts: {
-    fontSize: 14,
-    fontFamily: "Inter_700Bold",
-    color: Colors.leaf,
-  },
+  itemLeft: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
+  itemDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.primary },
+  itemName: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: Colors.text },
+  itemCat: { fontSize: 11, fontFamily: "Inter_400Regular", color: Colors.textSecondary },
+  itemPts: { fontSize: 14, fontFamily: "Inter_700Bold", color: Colors.leaf },
 });

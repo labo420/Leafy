@@ -132,6 +132,92 @@ export function extractProductLines(ocrText: string): string[] {
   return [...new Set(products)].slice(0, 20);
 }
 
+export interface BarcodeResult {
+  productName: string;
+  ecoScore: string | null;
+  points: number;
+  category: string;
+  emoji: string;
+  reasoning: string;
+  source: string;
+}
+
+export async function lookupBarcode(barcode: string): Promise<BarcodeResult | null> {
+  const normalizedBarcode = barcode.trim();
+  if (!normalizedBarcode || normalizedBarcode.length < 4) return null;
+
+  const cached = await db
+    .select()
+    .from(productCacheTable)
+    .where(eq(productCacheTable.productNameNormalized, `barcode:${normalizedBarcode}`))
+    .limit(1);
+
+  if (cached.length > 0) {
+    const entry = cached[0];
+    return {
+      productName: entry.productNameOriginal,
+      ecoScore: entry.ecoScore,
+      points: entry.points,
+      category: entry.category,
+      emoji: entry.emoji,
+      reasoning: entry.reasoning,
+      source: entry.source,
+    };
+  }
+
+  try {
+    const url = `https://world.openfoodfacts.org/api/v0/product/${encodeURIComponent(normalizedBarcode)}.json?fields=product_name,ecoscore_grade,ecoscore_score,labels,categories,packaging_tags,origins,brands`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return null;
+    const data = await res.json() as { status?: number; product?: OpenFoodFactsProduct & { brands?: string } };
+
+    if (data.status !== 1 || !data.product) {
+      return null;
+    }
+
+    const product = data.product;
+    const grade = product.ecoscore_grade?.toLowerCase();
+    const points = grade ? (ECO_SCORE_POINTS[grade] ?? 5) : 5;
+    const emoji = grade ? (ECO_SCORE_EMOJI[grade] ?? "🌿") : "🌿";
+
+    const cats: string[] = [];
+    if (product.labels?.toLowerCase().includes("bio") || product.labels?.toLowerCase().includes("organic")) cats.push("Bio");
+    if (product.labels?.toLowerCase().includes("vegan")) cats.push("Vegano");
+    if (product.labels?.toLowerCase().includes("fair")) cats.push("Equo Solidale");
+    const category = cats[0] ?? (grade ? `Eco-Score ${grade.toUpperCase()}` : "Altro");
+
+    const productName = product.product_name || `Prodotto ${normalizedBarcode}`;
+    const reasoning = grade
+      ? `Eco-Score ${grade.toUpperCase()} da Open Food Facts`
+      : "Classificato da Open Food Facts";
+
+    const result: BarcodeResult = {
+      productName,
+      ecoScore: grade ?? null,
+      points,
+      category,
+      emoji,
+      reasoning,
+      source: "openfoodfacts",
+    };
+
+    await db.insert(productCacheTable).values({
+      productNameNormalized: `barcode:${normalizedBarcode}`,
+      productNameOriginal: productName,
+      ecoScore: grade ?? null,
+      points,
+      category,
+      source: "openfoodfacts",
+      reasoning,
+      emoji,
+    }).onConflictDoNothing();
+
+    return result;
+  } catch {
+    return null;
+  }
+}
+
 export async function classifyProducts(productLines: string[]): Promise<FoundItem[]> {
   const results: FoundItem[] = [];
 

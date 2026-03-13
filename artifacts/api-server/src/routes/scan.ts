@@ -1,25 +1,15 @@
 import { Router, type IRouter } from "express";
-import { eq, and } from "drizzle-orm";
-import { db, usersTable, receiptsTable, challengeProgressTable, challengesTable } from "@workspace/db";
-import { ScanReceiptBody, ScanReceiptResponse } from "@workspace/api-zod";
-import { parseReceiptText, hashImage, extractTextViaGoogleVision, calculateLevel } from "../lib/scanner";
-import { classifyProducts, extractProductLines } from "../lib/productClassifier";
+import { eq, and, gte, desc, sql } from "drizzle-orm";
+import { db, usersTable, receiptsTable, barcodeScansTable } from "@workspace/db";
+import { ScanReceiptBody } from "@workspace/api-zod";
+import { hashImage, extractTextViaGoogleVision, calculateLevel } from "../lib/scanner";
 import { runAntiFraudChecks, approvePendingPoints } from "../lib/antiFraud";
+import { lookupBarcode } from "../lib/productClassifier";
 import { requireUser } from "./profile";
 
 const router: IRouter = Router();
 
-const DEMO_TEXT = `
-Prodotti Bio Biologici
-Latte Biologico Biologica 1,29
-Pomodori Pelati Bio 0,89
-Pane Integrale Artigianale 2,10
-Mele Bio kg 0 Km 0 1,45
-Sapone Senza Plastica 3,20
-Caffè Fairtrade Equo Solidale 4,50
-Yogurt Vegano plant based 2,30
-Pecorino DOP 5,60
-`;
+const BARCODE_SESSION_HOURS = 24;
 
 let lastPendingApprovalCheck = 0;
 
@@ -33,11 +23,9 @@ router.post("/scan", async (req, res): Promise<void> => {
   const user = await requireUser(req, res);
   if (!user) return;
 
-  const { imageBase64, storeName, purchaseDate, rawText } = parsed.data;
-
+  const { imageBase64, storeName, purchaseDate } = parsed.data;
   const imageHash = hashImage(imageBase64);
 
-  // ── Exact duplicate check (same user) ────────────────────────────────────
   const [selfDuplicate] = await db
     .select({ id: receiptsTable.id })
     .from(receiptsTable)
@@ -54,42 +42,20 @@ router.post("/scan", async (req, res): Promise<void> => {
     return;
   }
 
-  // ── OCR / text extraction ────────────────────────────────────────────────
-  let textToAnalyze = rawText || "";
-  if (!textToAnalyze) {
-    const visionText = await extractTextViaGoogleVision(imageBase64);
-    if (visionText) {
-      textToAnalyze = visionText;
-    } else {
-      textToAnalyze = DEMO_TEXT + " " + (storeName || "");
-    }
-  }
-
-  // ── AI classification (Open Food Facts + Claude fallback) ───────────────
-  const productLines = extractProductLines(textToAnalyze);
-  let foundItems = productLines.length > 0
-    ? await classifyProducts(productLines)
-    : parseReceiptText(textToAnalyze);
-
-  if (foundItems.length === 0) {
-    foundItems = parseReceiptText(textToAnalyze);
-  }
-
-  const rawPoints = foundItems.reduce((sum, item) => sum + item.points, 0);
-
-  // ── Anti-fraud multi-layer checks ────────────────────────────────────────
-  const fraudCheck = await runAntiFraudChecks(user, imageHash, purchaseDate, rawPoints);
+  const fraudCheck = await runAntiFraudChecks(user, imageHash, purchaseDate, 0);
 
   if (!fraudCheck.ok) {
     res.status(400).json({ error: fraudCheck.error });
     return;
   }
 
-  const { points: totalPoints, status, flagReason, warnings } = fraudCheck;
-  const categories = [...new Set(foundItems.map((i) => i.category))];
-  const oldLevel = calculateLevel(user.totalPoints).level;
+  const now = new Date();
+  const barcodeExpiry = new Date(now.getTime() + BARCODE_SESSION_HOURS * 60 * 60 * 1000);
 
-  // ── Save receipt ─────────────────────────────────────────────────────────
+  let rawText = "";
+  const visionText = await extractTextViaGoogleVision(imageBase64);
+  if (visionText) rawText = visionText;
+
   const [receipt] = await db
     .insert(receiptsTable)
     .values({
@@ -97,155 +63,252 @@ router.post("/scan", async (req, res): Promise<void> => {
       storeName: storeName ?? null,
       purchaseDate: purchaseDate ?? null,
       imageHash,
-      rawText: textToAnalyze,
-      pointsEarned: totalPoints,
-      greenItemsCount: foundItems.length,
-      categories,
-      greenItemsJson: JSON.stringify(foundItems),
-      status,
-      flagReason: flagReason ?? null,
+      rawText: rawText || null,
+      pointsEarned: 0,
+      greenItemsCount: 0,
+      categories: [],
+      greenItemsJson: "[]",
+      status: "approved",
+      flagReason: null,
+      barcodeExpiry,
     })
     .returning();
 
-  // ── Update user points ───────────────────────────────────────────────────
   const today = new Date().toDateString();
   const lastScanDate = user.lastScanDate ? new Date(user.lastScanDate).toDateString() : null;
   const newStreak = lastScanDate === today ? user.streak : user.streak + 1;
 
-  let newTotalPoints = user.totalPoints;
-  let newPendingPoints = user.pendingPoints ?? 0;
-
-  if (status === "approved") {
-    newTotalPoints += totalPoints;
-  } else {
-    newPendingPoints += totalPoints;
-  }
-
   await db
     .update(usersTable)
     .set({
-      totalPoints: newTotalPoints,
-      pendingPoints: newPendingPoints,
       streak: newStreak,
       lastScanDate: new Date(),
     })
     .where(eq(usersTable.id, user.id));
 
-  // ── Challenge progress (only for approved receipts) ──────────────────────
-  const updatedChallengeNames: string[] = [];
-
-  if (status === "approved") {
-    const activeChallenges = await db
-      .select()
-      .from(challengesTable)
-      .where(eq(challengesTable.isActive, true));
-
-    for (const challenge of activeChallenges) {
-      const relevantItems = foundItems.filter(
-        (item) => challenge.category === "tutti" || item.category === challenge.category,
-      );
-      if (relevantItems.length === 0) continue;
-
-      const [existing] = await db
-        .select()
-        .from(challengeProgressTable)
-        .where(
-          and(
-            eq(challengeProgressTable.userId, user.id),
-            eq(challengeProgressTable.challengeId, challenge.id),
-          ),
-        );
-
-      const increment = relevantItems.length;
-
-      if (!existing) {
-        await db.insert(challengeProgressTable).values({
-          userId: user.id,
-          challengeId: challenge.id,
-          currentCount: increment,
-          isCompleted: increment >= challenge.targetCount,
-          completedAt: increment >= challenge.targetCount ? new Date() : null,
-        });
-      } else if (!existing.isCompleted) {
-        const newCount = existing.currentCount + increment;
-        const completed = newCount >= challenge.targetCount;
-        await db
-          .update(challengeProgressTable)
-          .set({
-            currentCount: newCount,
-            isCompleted: completed,
-            completedAt: completed ? new Date() : null,
-          })
-          .where(eq(challengeProgressTable.id, existing.id));
-
-        if (completed) {
-          await db
-            .update(usersTable)
-            .set({ totalPoints: newTotalPoints + challenge.rewardPoints })
-            .where(eq(usersTable.id, user.id));
-          newTotalPoints += challenge.rewardPoints;
-          updatedChallengeNames.push(challenge.title);
-        }
-      }
-    }
-  }
-
-  // ── Badges ───────────────────────────────────────────────────────────────
-  const newBadges = [];
-  const allUserReceipts = await db
-    .select({ id: receiptsTable.id })
-    .from(receiptsTable)
-    .where(eq(receiptsTable.userId, user.id));
-
-  if (allUserReceipts.length === 1) {
-    newBadges.push({
-      id: "first_scan",
-      name: "Prima Scansione",
-      emoji: "🌟",
-      category: "Bio",
-      earnedAt: new Date(),
-    });
-  }
-
-  // ── Level up ─────────────────────────────────────────────────────────────
-  const newLevel = calculateLevel(newTotalPoints).level;
-  const leveledUp = newLevel !== oldLevel;
-
-  // ── Message ──────────────────────────────────────────────────────────────
-  let message: string;
-  if (status === "pending") {
-    message = `Scontrino ricevuto! ${totalPoints} punti in attesa di approvazione (account nuovo — verranno accreditati entro 48h) ⏳`;
-  } else if (leveledUp) {
-    message = `Livello aumentato! Sei ora ${newLevel}! 🎉 +${totalPoints} punti`;
-  } else if (totalPoints > 0) {
-    message = `Ottimo! Hai guadagnato ${totalPoints} punti Leafy! 🌿`;
-  } else {
-    message = "Nessun prodotto green trovato. Prova a comprare prodotti Bio o Km 0!";
-  }
-
-  // ── Background: approve old pending points (max once per hour) ────────────
-  const now = Date.now();
-  if (now - lastPendingApprovalCheck > 60 * 60 * 1000) {
-    lastPendingApprovalCheck = now;
+  const now2 = Date.now();
+  if (now2 - lastPendingApprovalCheck > 60 * 60 * 1000) {
+    lastPendingApprovalCheck = now2;
     approvePendingPoints().catch((e) => console.error("[pending-approval]", e));
   }
 
   res.json({
-    ...ScanReceiptResponse.parse({
-      receiptId: receipt.id,
-      pointsEarned: totalPoints,
-      totalPoints: newTotalPoints,
-      greenItemsFound: foundItems,
-      badges: newBadges,
-      challengesUpdated: updatedChallengeNames,
-      message,
-    }),
-    leveledUp,
-    newLevel: leveledUp ? newLevel : undefined,
-    pendingPoints: newPendingPoints,
-    receiptStatus: status,
-    antiFraudWarnings: warnings,
-    usingRealOcr: !!process.env.GOOGLE_CLOUD_VISION_API_KEY,
+    receiptId: receipt.id,
+    barcodeExpiry: barcodeExpiry.toISOString(),
+    storeName: receipt.storeName,
+    message: "Scontrino confermato! Ora scansiona i codici a barre dei prodotti acquistati per guadagnare punti.",
+    sessionHours: BARCODE_SESSION_HOURS,
+  });
+});
+
+router.post("/scan/barcode", async (req, res): Promise<void> => {
+  const { barcode, receiptId } = req.body;
+
+  if (!barcode || typeof barcode !== "string") {
+    res.status(400).json({ error: "Codice a barre mancante." });
+    return;
+  }
+  if (!receiptId || typeof receiptId !== "number") {
+    res.status(400).json({ error: "ID scontrino mancante." });
+    return;
+  }
+
+  const user = await requireUser(req, res);
+  if (!user) return;
+
+  const [receipt] = await db
+    .select()
+    .from(receiptsTable)
+    .where(
+      and(
+        eq(receiptsTable.id, receiptId),
+        eq(receiptsTable.userId, user.id),
+      ),
+    )
+    .limit(1);
+
+  if (!receipt) {
+    res.status(404).json({ error: "Scontrino non trovato." });
+    return;
+  }
+
+  if (!receipt.barcodeExpiry || new Date() > new Date(receipt.barcodeExpiry)) {
+    res.status(400).json({ error: "La sessione di scansione prodotti è scaduta (massimo 24 ore dallo scontrino)." });
+    return;
+  }
+
+  const [duplicate] = await db
+    .select({ id: barcodeScansTable.id })
+    .from(barcodeScansTable)
+    .where(
+      and(
+        eq(barcodeScansTable.receiptId, receiptId),
+        eq(barcodeScansTable.barcode, barcode.trim()),
+      ),
+    )
+    .limit(1);
+
+  if (duplicate) {
+    res.status(400).json({ error: "Questo prodotto è già stato scansionato per questo scontrino." });
+    return;
+  }
+
+  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const [pointsSumRow] = await db
+    .select({ total: sql<number>`coalesce(sum(points_earned), 0)::int` })
+    .from(barcodeScansTable)
+    .where(
+      and(
+        eq(barcodeScansTable.userId, user.id),
+        gte(barcodeScansTable.scannedAt, oneDayAgo),
+      ),
+    );
+
+  const pointsEarnedToday = pointsSumRow?.total ?? 0;
+  const MAX_DAILY_POINTS = 200;
+  const remainingCap = MAX_DAILY_POINTS - pointsEarnedToday;
+
+  if (remainingCap <= 0) {
+    res.status(400).json({ error: `Hai raggiunto il limite di ${MAX_DAILY_POINTS} punti al giorno. Torna domani!` });
+    return;
+  }
+
+  const product = await lookupBarcode(barcode.trim());
+
+  if (!product) {
+    res.status(404).json({ error: "Prodotto non trovato. Verifica che il codice a barre sia leggibile." });
+    return;
+  }
+
+  const finalPoints = Math.min(product.points, remainingCap);
+
+  const txResult = await db.transaction(async (tx) => {
+    const [existingDup] = await tx
+      .select({ id: barcodeScansTable.id })
+      .from(barcodeScansTable)
+      .where(
+        and(
+          eq(barcodeScansTable.receiptId, receiptId),
+          eq(barcodeScansTable.barcode, barcode.trim()),
+        ),
+      )
+      .limit(1);
+
+    if (existingDup) return { error: "Questo prodotto è già stato scansionato per questo scontrino." };
+
+    const [scan] = await tx
+      .insert(barcodeScansTable)
+      .values({
+        receiptId,
+        userId: user.id,
+        barcode: barcode.trim(),
+        productName: product.productName,
+        ecoScore: product.ecoScore,
+        pointsEarned: finalPoints,
+        category: product.category,
+        emoji: product.emoji,
+        reasoning: product.reasoning,
+      })
+      .returning();
+
+    await tx
+      .update(usersTable)
+      .set({ totalPoints: sql`total_points + ${finalPoints}` })
+      .where(eq(usersTable.id, user.id));
+
+    await tx
+      .update(receiptsTable)
+      .set({
+        pointsEarned: sql`points_earned + ${finalPoints}`,
+        greenItemsCount: sql`green_items_count + 1`,
+      })
+      .where(eq(receiptsTable.id, receiptId));
+
+    const [updatedUser] = await tx
+      .select({ totalPoints: usersTable.totalPoints })
+      .from(usersTable)
+      .where(eq(usersTable.id, user.id));
+
+    return { scan, updatedUser };
+  });
+
+  if ("error" in txResult) {
+    res.status(400).json({ error: txResult.error });
+    return;
+  }
+
+  const { scan, updatedUser } = txResult;
+  const level = calculateLevel(updatedUser?.totalPoints ?? 0);
+
+  res.json({
+    scanId: scan.id,
+    productName: product.productName,
+    ecoScore: product.ecoScore,
+    pointsEarned: finalPoints,
+    category: product.category,
+    emoji: product.emoji,
+    reasoning: product.reasoning,
+    source: product.source,
+    totalPoints: updatedUser?.totalPoints ?? 0,
+    level: level.level,
+    remainingDailyPoints: remainingCap - finalPoints,
+  });
+});
+
+router.get("/scan/active-session", async (req, res): Promise<void> => {
+  const user = await requireUser(req, res);
+  if (!user) return;
+
+  const now = new Date();
+
+  const [activeReceipt] = await db
+    .select()
+    .from(receiptsTable)
+    .where(
+      and(
+        eq(receiptsTable.userId, user.id),
+        gte(receiptsTable.barcodeExpiry, now),
+      ),
+    )
+    .orderBy(desc(receiptsTable.scannedAt))
+    .limit(1);
+
+  if (!activeReceipt) {
+    res.json({ active: false, receipt: null, barcodeScans: [] });
+    return;
+  }
+
+  const barcodeScans = await db
+    .select()
+    .from(barcodeScansTable)
+    .where(eq(barcodeScansTable.receiptId, activeReceipt.id))
+    .orderBy(desc(barcodeScansTable.scannedAt));
+
+  const remainingMs = new Date(activeReceipt.barcodeExpiry!).getTime() - now.getTime();
+  const remainingMinutes = Math.max(0, Math.floor(remainingMs / 60000));
+
+  res.json({
+    active: true,
+    receipt: {
+      id: activeReceipt.id,
+      storeName: activeReceipt.storeName,
+      scannedAt: activeReceipt.scannedAt,
+      barcodeExpiry: activeReceipt.barcodeExpiry,
+      pointsEarned: activeReceipt.pointsEarned,
+      greenItemsCount: activeReceipt.greenItemsCount,
+    },
+    remainingMinutes,
+    barcodeScans: barcodeScans.map((s) => ({
+      id: s.id,
+      barcode: s.barcode,
+      productName: s.productName,
+      ecoScore: s.ecoScore,
+      pointsEarned: s.pointsEarned,
+      category: s.category,
+      emoji: s.emoji,
+      reasoning: s.reasoning,
+      scannedAt: s.scannedAt,
+    })),
   });
 });
 

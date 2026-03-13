@@ -17,6 +17,7 @@ export const receiptsTable = pgTable("receipts", {
   scannedAt: timestamp("scanned_at", { withTimezone: true }).notNull().defaultNow(),
   status: text("status").notNull().default("approved"),
   flagReason: text("flag_reason"),
+  barcodeExpiry: timestamp("barcode_expiry", { withTimezone: true }),
 });
 
 export const insertReceiptSchema = createInsertSchema(receiptsTable).omit({ id: true, scannedAt: true });

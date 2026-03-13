@@ -1,0 +1,328 @@
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import { CameraView, useCameraPermissions } from "expo-camera";
+import * as Haptics from "expo-haptics";
+import { LinearGradient } from "expo-linear-gradient";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useState, useCallback } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import Animated, { FadeIn, FadeInDown, SlideInUp } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiFetch } from "@/lib/api";
+import Colors from "@/constants/colors";
+
+interface BarcodeScanResult {
+  scanId: number;
+  productName: string;
+  ecoScore: string | null;
+  pointsEarned: number;
+  category: string;
+  emoji: string;
+  reasoning: string;
+  source: string;
+  totalPoints: number;
+  remainingDailyPoints: number;
+}
+
+interface ScannedProduct {
+  barcode: string;
+  productName: string;
+  ecoScore: string | null;
+  pointsEarned: number;
+  emoji: string;
+  category: string;
+  reasoning: string;
+}
+
+const ECO_COLORS: Record<string, string> = {
+  a: "#1E8C45",
+  b: "#60AC0E",
+  c: "#FECB02",
+  d: "#EE8100",
+  e: "#E63E11",
+};
+
+function EcoScoreBadge({ score }: { score: string | null }) {
+  if (!score) return null;
+  const letter = score.toLowerCase();
+  const bg = ECO_COLORS[letter] ?? Colors.textSecondary;
+  return (
+    <View style={[styles.ecoBadge, { backgroundColor: bg }]}>
+      <Text style={styles.ecoBadgeText}>{letter.toUpperCase()}</Text>
+    </View>
+  );
+}
+
+export default function BarcodeScannerScreen() {
+  const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
+  const { receiptId: receiptIdStr } = useLocalSearchParams<{ receiptId: string }>();
+  const receiptId = parseInt(receiptIdStr ?? "0", 10);
+
+  const [permission, requestPermission] = useCameraPermissions();
+  const [scannedProducts, setScannedProducts] = useState<ScannedProduct[]>([]);
+  const [lastResult, setLastResult] = useState<BarcodeScanResult | null>(null);
+  const [scanning, setScanning] = useState(true);
+  const [processing, setProcessing] = useState(false);
+  const [cooldown, setCooldown] = useState(false);
+
+  const topPadding = Platform.OS === "web" ? 20 : insets.top;
+
+  const barcodeMutation = useMutation({
+    mutationFn: (barcode: string) =>
+      apiFetch<BarcodeScanResult>("/scan/barcode", {
+        method: "POST",
+        body: JSON.stringify({ barcode, receiptId }),
+      }),
+    onSuccess: (data) => {
+      setLastResult(data);
+      setScannedProducts((prev) => [
+        {
+          barcode: data.productName,
+          productName: data.productName,
+          ecoScore: data.ecoScore,
+          pointsEarned: data.pointsEarned,
+          emoji: data.emoji,
+          category: data.category,
+          reasoning: data.reasoning,
+        },
+        ...prev,
+      ]);
+      setScanning(false);
+      setProcessing(false);
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      queryClient.invalidateQueries({ queryKey: ["receipts"] });
+      queryClient.invalidateQueries({ queryKey: ["active-session"] });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    },
+    onError: (err: Error) => {
+      setProcessing(false);
+      setScanning(true);
+      setCooldown(true);
+      setTimeout(() => setCooldown(false), 2000);
+      Alert.alert("Attenzione", err.message ?? "Errore nella scansione del codice a barre");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    },
+  });
+
+  const handleBarCodeScanned = useCallback(
+    ({ data }: { data: string }) => {
+      if (processing || cooldown || !scanning) return;
+      setProcessing(true);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      barcodeMutation.mutate(data);
+    },
+    [processing, cooldown, scanning],
+  );
+
+  const continueScan = () => {
+    setLastResult(null);
+    setScanning(true);
+    setCooldown(true);
+    setTimeout(() => setCooldown(false), 1500);
+  };
+
+  const finish = () => {
+    queryClient.invalidateQueries({ queryKey: ["profile"] });
+    queryClient.invalidateQueries({ queryKey: ["receipts"] });
+    router.back();
+  };
+
+  const totalPointsEarned = scannedProducts.reduce((s, p) => s + p.pointsEarned, 0);
+
+  if (!permission) {
+    return (
+      <View style={[styles.centered, { paddingTop: topPadding }]}>
+        <ActivityIndicator size="large" color={Colors.leaf} />
+      </View>
+    );
+  }
+
+  if (!permission.granted) {
+    return (
+      <View style={[styles.centered, { paddingTop: topPadding }]}>
+        <Feather name="camera-off" size={56} color={Colors.textSecondary} />
+        <Text style={styles.permTitle}>Fotocamera richiesta</Text>
+        <Text style={styles.permSub}>Per scansionare i codici a barre serve accesso alla fotocamera</Text>
+        <Pressable style={styles.permBtn} onPress={requestPermission}>
+          <Text style={styles.permBtnText}>Abilita fotocamera</Text>
+        </Pressable>
+        <Pressable onPress={() => router.back()} style={{ marginTop: 16 }}>
+          <Text style={[styles.permSub, { color: Colors.leaf }]}>Torna indietro</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  if (!scanning && lastResult) {
+    return (
+      <View style={[styles.container, { paddingTop: topPadding }]}>
+        <LinearGradient colors={[Colors.forest, Colors.leaf]} style={styles.resultBanner}>
+          <Animated.View entering={FadeIn.delay(100)} style={styles.resultContent}>
+            <Text style={styles.resultEmoji}>{lastResult.emoji}</Text>
+            <Text style={styles.resultName}>{lastResult.productName}</Text>
+            <View style={styles.resultRow}>
+              <EcoScoreBadge score={lastResult.ecoScore} />
+              <Text style={styles.resultCategory}>{lastResult.category}</Text>
+            </View>
+            <Text style={styles.resultReasoning}>{lastResult.reasoning}</Text>
+            <View style={styles.resultPointsBox}>
+              <Text style={styles.resultPointsLabel}>Punti guadagnati</Text>
+              <Text style={styles.resultPointsValue}>+{lastResult.pointsEarned}</Text>
+            </View>
+          </Animated.View>
+        </LinearGradient>
+
+        <Animated.View entering={FadeInDown.delay(200)} style={styles.resultActions}>
+          <Pressable style={styles.primaryBtn} onPress={continueScan}>
+            <Feather name="camera" size={18} color="#fff" />
+            <Text style={styles.primaryBtnText}>Scansiona altro</Text>
+          </Pressable>
+          <Pressable style={styles.secondaryBtn} onPress={finish}>
+            <Feather name="check" size={18} color={Colors.leaf} />
+            <Text style={styles.secondaryBtnText}>Finito ({totalPointsEarned} pt)</Text>
+          </Pressable>
+        </Animated.View>
+
+        {scannedProducts.length > 1 && (
+          <Animated.View entering={FadeInDown.delay(300)}>
+            <Text style={styles.listTitle}>Prodotti scansionati ({scannedProducts.length})</Text>
+            <FlatList
+              data={scannedProducts}
+              keyExtractor={(_, i) => i.toString()}
+              renderItem={({ item }) => (
+                <View style={styles.listItem}>
+                  <View style={styles.listItemLeft}>
+                    <Text style={styles.listItemEmoji}>{item.emoji}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.listItemName} numberOfLines={1}>{item.productName}</Text>
+                      <Text style={styles.listItemCat}>{item.category}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.listItemRight}>
+                    <EcoScoreBadge score={item.ecoScore} />
+                    <Text style={styles.listItemPts}>+{item.pointsEarned}</Text>
+                  </View>
+                </View>
+              )}
+              style={{ maxHeight: 200 }}
+              contentContainerStyle={{ paddingHorizontal: 20 }}
+            />
+          </Animated.View>
+        )}
+      </View>
+    );
+  }
+
+  return (
+    <View style={{ flex: 1, backgroundColor: "#000" }}>
+      <CameraView
+        style={StyleSheet.absoluteFill}
+        facing="back"
+        barcodeScannerSettings={{ barcodeTypes: ["ean13", "ean8", "upc_a", "upc_e", "code128", "code39"] }}
+        onBarcodeScanned={scanning && !processing && !cooldown ? handleBarCodeScanned : undefined}
+      />
+
+      <View style={[styles.cameraOverlay, { paddingTop: topPadding + 16 }]}>
+        <View style={styles.cameraHeader}>
+          <Pressable onPress={finish} style={styles.closeBtn}>
+            <Feather name="x" size={24} color="#fff" />
+          </Pressable>
+          <Text style={styles.cameraTitle}>Scansiona prodotto</Text>
+          <View style={{ width: 40 }} />
+        </View>
+
+        <View style={styles.reticle}>
+          <View style={[styles.corner, styles.cornerTL]} />
+          <View style={[styles.corner, styles.cornerTR]} />
+          <View style={[styles.corner, styles.cornerBL]} />
+          <View style={[styles.corner, styles.cornerBR]} />
+        </View>
+
+        {processing && (
+          <Animated.View entering={SlideInUp} style={styles.processingBar}>
+            <ActivityIndicator size="small" color="#fff" />
+            <Text style={styles.processingText}>Ricerca prodotto...</Text>
+          </Animated.View>
+        )}
+
+        <View style={[styles.cameraFooter, { paddingBottom: insets.bottom + 16 }]}>
+          <Text style={styles.cameraHint}>Inquadra il codice a barre del prodotto</Text>
+          {scannedProducts.length > 0 && (
+            <View style={styles.summaryRow}>
+              <MaterialCommunityIcons name="leaf" size={16} color={Colors.leaf} />
+              <Text style={styles.summaryText}>
+                {scannedProducts.length} prodotti | +{totalPointsEarned} punti
+              </Text>
+            </View>
+          )}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: Colors.background },
+  centered: {
+    flex: 1, backgroundColor: Colors.background,
+    alignItems: "center", justifyContent: "center", padding: 32,
+  },
+  permTitle: { fontSize: 22, fontFamily: "Inter_700Bold", color: Colors.text, marginTop: 16, textAlign: "center" },
+  permSub: { fontSize: 14, fontFamily: "Inter_400Regular", color: Colors.textSecondary, textAlign: "center", marginTop: 8, lineHeight: 22 },
+  permBtn: { marginTop: 24, backgroundColor: Colors.leaf, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 32 },
+  permBtnText: { fontSize: 16, fontFamily: "Inter_700Bold", color: "#fff" },
+  cameraOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: "space-between" },
+  cameraHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20 },
+  closeBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(0,0,0,0.5)", alignItems: "center", justifyContent: "center" },
+  cameraTitle: { fontSize: 18, fontFamily: "Inter_700Bold", color: "#fff", textShadowColor: "rgba(0,0,0,0.5)", textShadowRadius: 4 },
+  reticle: { width: 260, height: 160, alignSelf: "center", position: "relative" },
+  corner: { position: "absolute", width: 30, height: 30, borderColor: Colors.leaf, borderWidth: 3 },
+  cornerTL: { top: 0, left: 0, borderRightWidth: 0, borderBottomWidth: 0, borderTopLeftRadius: 8 },
+  cornerTR: { top: 0, right: 0, borderLeftWidth: 0, borderBottomWidth: 0, borderTopRightRadius: 8 },
+  cornerBL: { bottom: 0, left: 0, borderRightWidth: 0, borderTopWidth: 0, borderBottomLeftRadius: 8 },
+  cornerBR: { bottom: 0, right: 0, borderLeftWidth: 0, borderTopWidth: 0, borderBottomRightRadius: 8 },
+  processingBar: {
+    flexDirection: "row", alignItems: "center", gap: 10,
+    alignSelf: "center", backgroundColor: "rgba(0,0,0,0.7)", borderRadius: 20, paddingHorizontal: 20, paddingVertical: 12,
+  },
+  processingText: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: "#fff" },
+  cameraFooter: { alignItems: "center", gap: 8, paddingTop: 16 },
+  cameraHint: { fontSize: 15, fontFamily: "Inter_500Medium", color: "#fff", textShadowColor: "rgba(0,0,0,0.5)", textShadowRadius: 4 },
+  summaryRow: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6 },
+  summaryText: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: "#fff" },
+  resultBanner: { paddingHorizontal: 24, paddingVertical: 32, borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
+  resultContent: { alignItems: "center", gap: 8 },
+  resultEmoji: { fontSize: 48 },
+  resultName: { fontSize: 22, fontFamily: "Inter_700Bold", color: "#fff", textAlign: "center" },
+  resultRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  resultCategory: { fontSize: 14, fontFamily: "Inter_500Medium", color: "rgba(255,255,255,0.8)" },
+  resultReasoning: { fontSize: 13, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.7)", textAlign: "center" },
+  resultPointsBox: { backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 16, padding: 16, alignItems: "center", marginTop: 8, width: "100%" },
+  resultPointsLabel: { fontSize: 12, fontFamily: "Inter_500Medium", color: "rgba(255,255,255,0.8)", textTransform: "uppercase" },
+  resultPointsValue: { fontSize: 40, fontFamily: "Inter_700Bold", color: "#fff" },
+  resultActions: { flexDirection: "row", gap: 12, padding: 20 },
+  primaryBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: Colors.leaf, borderRadius: 16, paddingVertical: 16 },
+  primaryBtnText: { fontSize: 16, fontFamily: "Inter_700Bold", color: "#fff" },
+  secondaryBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: Colors.card, borderRadius: 16, paddingVertical: 16, borderWidth: 1.5, borderColor: Colors.leaf },
+  secondaryBtnText: { fontSize: 16, fontFamily: "Inter_600SemiBold", color: Colors.leaf },
+  ecoBadge: { width: 28, height: 28, borderRadius: 6, alignItems: "center", justifyContent: "center" },
+  ecoBadgeText: { fontSize: 16, fontFamily: "Inter_700Bold", color: "#fff" },
+  listTitle: { fontSize: 16, fontFamily: "Inter_700Bold", color: Colors.text, paddingHorizontal: 20, marginTop: 12, marginBottom: 8 },
+  listItem: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: Colors.card, borderRadius: 12, padding: 14, marginBottom: 8 },
+  listItemLeft: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
+  listItemEmoji: { fontSize: 24 },
+  listItemName: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: Colors.text },
+  listItemCat: { fontSize: 11, fontFamily: "Inter_400Regular", color: Colors.textSecondary },
+  listItemRight: { flexDirection: "row", alignItems: "center", gap: 8 },
+  listItemPts: { fontSize: 14, fontFamily: "Inter_700Bold", color: Colors.leaf },
+});
