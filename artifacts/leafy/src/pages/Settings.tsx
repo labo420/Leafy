@@ -23,8 +23,9 @@ export default function Settings() {
     toast.error("Funzione non ancora disponibile.");
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
+    window.location.href = "/";
   };
 
   return (
