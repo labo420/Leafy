@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/leafy-mobile/"
+title = "Leafy Mobile"
+version = "1.0.0"
+id = "artifacts/leafy-mobile"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+localPort = 23546
+name = "expo"
+paths = ["/leafy-mobile/"]
+
+[services.development]
+run = "pnpm --filter @workspace/leafy-mobile run dev"
+
+[services.env]
+PORT = "23546"
+BASE_PATH = "/leafy-mobile/"
+
+[services.production]
+build = ["pnpm", "--filter", "@workspace/leafy-mobile", "run", "build"]
+run = ["pnpm", "--filter", "@workspace/leafy-mobile", "run", "serve"]
