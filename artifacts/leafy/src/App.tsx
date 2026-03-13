@@ -7,6 +7,7 @@ import { Onboarding } from "@/components/shared/Onboarding";
 import NotFound from "@/pages/not-found";
 import { useAuth } from "@workspace/replit-auth-web";
 import { Leaf } from "lucide-react";
+import LoginPage from "@/pages/Login";
 
 // Pages
 import Home from "@/pages/Home";
@@ -26,26 +27,6 @@ const queryClient = new QueryClient({
   },
 });
 
-function LoginScreen() {
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-6">
-      <div className="flex flex-col items-center gap-6 max-w-xs w-full">
-        <div className="w-20 h-20 rounded-3xl bg-primary flex items-center justify-center shadow-lg">
-          <Leaf className="w-10 h-10 text-primary-foreground" />
-        </div>
-        <div className="text-center">
-          <h1 className="font-display font-bold text-3xl text-foreground mb-2">Leafy</h1>
-          <p className="text-muted-foreground text-sm leading-relaxed">
-            Scansiona gli scontrini, guadagna punti per i prodotti sostenibili e scala la classifica verde.
-          </p>
-        </div>
-        <p className="text-xs text-muted-foreground text-center">
-          Accedendo accetti i nostri Termini di Servizio e la Privacy Policy.
-        </p>
-      </div>
-    </div>
-  );
-}
 
 function LoadingScreen() {
   return (
@@ -88,7 +69,9 @@ function AuthGate() {
   const { isLoading, isAuthenticated } = useAuth();
 
   if (isLoading) return <LoadingScreen />;
-  if (!isAuthenticated) return <LoginScreen />;
+  if (!isAuthenticated) {
+    return <LoginPage onSuccess={() => window.location.reload()} />;
+  }
 
   return (
     <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>

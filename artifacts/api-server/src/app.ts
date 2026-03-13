@@ -2,6 +2,7 @@ import express, { type Express } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import path from "path";
+import passport from "passport";
 import { authMiddleware } from "./middlewares/authMiddleware";
 import router from "./routes";
 
@@ -11,6 +12,7 @@ app.use(cors({ credentials: true, origin: true }));
 app.use(cookieParser());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
+app.use(passport.initialize());
 app.use(authMiddleware);
 
 app.use("/api", router);

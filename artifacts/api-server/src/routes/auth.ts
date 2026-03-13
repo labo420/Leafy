@@ -1,8 +1,12 @@
 import * as oidc from "openid-client";
 import { Router, type IRouter, type Request, type Response } from "express";
+import passport from "passport";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import { Strategy as FacebookStrategy } from "passport-facebook";
+import bcryptjs from "bcryptjs";
 import { GetCurrentAuthUserResponse } from "@workspace/api-zod";
-import { db, usersTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { db, usersTable, oauthAccountsTable } from "@workspace/db";
+import { and, eq } from "drizzle-orm";
 import { generateReferralCode } from "../lib/scanner";
 import {
   clearSession,
@@ -17,6 +21,7 @@ import {
 } from "../lib/auth";
 
 const OIDC_COOKIE_TTL = 10 * 60 * 1000;
+const BCRYPT_ROUNDS = 12;
 
 const router: IRouter = Router();
 
@@ -58,14 +63,84 @@ function getSafeReturnTo(value: unknown): string {
   return value;
 }
 
-async function upsertUser(claims: Record<string, unknown>) {
+function makeLocalSession(dbUser: { id: number; email: string; username: string }): SessionData {
+  const nameParts = dbUser.username.split(" ");
+  return {
+    user: {
+      id: String(dbUser.id),
+      email: dbUser.email,
+      firstName: nameParts[0] ?? dbUser.username,
+      lastName: nameParts.slice(1).join(" ") || null,
+      profileImageUrl: null,
+    },
+    access_token: "",
+  };
+}
+
+async function upsertSocialUser(
+  provider: string,
+  providerAccountId: string,
+  profile: { email?: string | null; displayName?: string | null },
+): Promise<{ id: number; email: string; username: string }> {
+  const [existing] = await db
+    .select()
+    .from(oauthAccountsTable)
+    .where(
+      and(
+        eq(oauthAccountsTable.provider, provider),
+        eq(oauthAccountsTable.providerAccountId, providerAccountId),
+      ),
+    );
+
+  if (existing) {
+    const [user] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.id, existing.userId));
+    return user;
+  }
+
+  let user: { id: number; email: string; username: string } | undefined;
+
+  if (profile.email) {
+    const [byEmail] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.email, profile.email));
+    user = byEmail;
+  }
+
+  if (!user) {
+    const username =
+      profile.displayName ||
+      profile.email?.split("@")[0] ||
+      "Utente Leafy";
+    const [newUser] = await db
+      .insert(usersTable)
+      .values({
+        username,
+        email: profile.email || "utente@leafy.app",
+        totalPoints: 0,
+        streak: 0,
+        referralCode: generateReferralCode(),
+      })
+      .returning();
+    user = newUser;
+  }
+
+  await db
+    .insert(oauthAccountsTable)
+    .values({ userId: user.id, provider, providerAccountId })
+    .onConflictDoNothing();
+
+  return user;
+}
+
+async function upsertReplitUser(claims: Record<string, unknown>) {
   const replitId = claims.sub as string;
   const firstName = (claims.first_name as string) || null;
   const lastName = (claims.last_name as string) || null;
   const email = (claims.email as string) || null;
-  const profileImageUrl = (
-    (claims.profile_image_url || claims.picture) as string | null
-  ) || null;
 
   const username =
     [firstName, lastName].filter(Boolean).join(" ") ||
@@ -100,6 +175,60 @@ async function upsertUser(claims: Record<string, unknown>) {
   return user;
 }
 
+// ─── Configure social strategies (lazily, only if env vars set) ──────────────
+
+function configureGoogleStrategy(callbackURL: string) {
+  const clientID = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  if (!clientID || !clientSecret) return false;
+  passport.use(
+    "google",
+    new GoogleStrategy(
+      { clientID, clientSecret, callbackURL, passReqToCallback: false },
+      (_accessToken, _refreshToken, profile, done) => {
+        const email = profile.emails?.[0]?.value ?? null;
+        upsertSocialUser("google", profile.id, {
+          email,
+          displayName: profile.displayName,
+        })
+          .then((user) => done(null, user))
+          .catch((err) => done(err));
+      },
+    ),
+  );
+  return true;
+}
+
+function configureFacebookStrategy(callbackURL: string) {
+  const clientID = process.env.FACEBOOK_APP_ID;
+  const clientSecret = process.env.FACEBOOK_APP_SECRET;
+  if (!clientID || !clientSecret) return false;
+  passport.use(
+    "facebook",
+    new FacebookStrategy(
+      {
+        clientID,
+        clientSecret,
+        callbackURL,
+        profileFields: ["id", "emails", "displayName"],
+        passReqToCallback: false,
+      },
+      (_accessToken, _refreshToken, profile, done) => {
+        const email = profile.emails?.[0]?.value ?? null;
+        upsertSocialUser("facebook", profile.id, {
+          email,
+          displayName: profile.displayName,
+        })
+          .then((user) => done(null, user))
+          .catch((err) => done(err));
+      },
+    ),
+  );
+  return true;
+}
+
+// ─── GET /auth/user ──────────────────────────────────────────────────────────
+
 router.get("/auth/user", (req: Request, res: Response) => {
   res.json(
     GetCurrentAuthUserResponse.parse({
@@ -107,6 +236,162 @@ router.get("/auth/user", (req: Request, res: Response) => {
     }),
   );
 });
+
+// ─── POST /auth/register ─────────────────────────────────────────────────────
+
+router.post("/auth/register", async (req: Request, res: Response) => {
+  const { email, password, username } = req.body as Record<string, unknown>;
+
+  if (
+    typeof email !== "string" ||
+    typeof password !== "string" ||
+    typeof username !== "string" ||
+    !email.trim() ||
+    !password ||
+    !username.trim()
+  ) {
+    res.status(400).json({ error: "Email, username e password sono obbligatori." });
+    return;
+  }
+
+  if (password.length < 8) {
+    res.status(400).json({ error: "La password deve essere di almeno 8 caratteri." });
+    return;
+  }
+
+  const [existingByEmail] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.email, email.trim().toLowerCase()));
+
+  if (existingByEmail) {
+    res.status(409).json({ error: "Esiste già un account con questa email." });
+    return;
+  }
+
+  const passwordHash = await bcryptjs.hash(password, BCRYPT_ROUNDS);
+
+  const [newUser] = await db
+    .insert(usersTable)
+    .values({
+      username: username.trim(),
+      email: email.trim().toLowerCase(),
+      passwordHash,
+      totalPoints: 0,
+      streak: 0,
+      referralCode: generateReferralCode(),
+    })
+    .returning();
+
+  const sessionData = makeLocalSession(newUser);
+  const sid = await createSession(sessionData);
+  setSessionCookie(res, sid);
+
+  res.json({ user: sessionData.user });
+});
+
+// ─── POST /auth/login ────────────────────────────────────────────────────────
+
+router.post("/auth/login", async (req: Request, res: Response) => {
+  const { email, password } = req.body as Record<string, unknown>;
+
+  if (typeof email !== "string" || typeof password !== "string") {
+    res.status(400).json({ error: "Email e password sono obbligatorie." });
+    return;
+  }
+
+  const [user] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.email, email.trim().toLowerCase()));
+
+  if (!user || !user.passwordHash) {
+    res.status(401).json({ error: "Credenziali non valide." });
+    return;
+  }
+
+  const valid = await bcryptjs.compare(password, user.passwordHash);
+  if (!valid) {
+    res.status(401).json({ error: "Credenziali non valide." });
+    return;
+  }
+
+  const sessionData = makeLocalSession(user);
+  const sid = await createSession(sessionData);
+  setSessionCookie(res, sid);
+
+  res.json({ user: sessionData.user });
+});
+
+// ─── GET /auth/google ────────────────────────────────────────────────────────
+
+router.get("/auth/google", (req: Request, res: Response) => {
+  const callbackURL = `${getOrigin(req)}/api/auth/google/callback`;
+  const ok = configureGoogleStrategy(callbackURL);
+  if (!ok) {
+    res.status(503).json({ error: "Google login non configurato." });
+    return;
+  }
+  passport.authenticate("google", {
+    session: false,
+    scope: ["openid", "email", "profile"],
+  })(req, res, () => {});
+});
+
+router.get("/auth/google/callback", (req: Request, res: Response) => {
+  const callbackURL = `${getOrigin(req)}/api/auth/google/callback`;
+  configureGoogleStrategy(callbackURL);
+  passport.authenticate(
+    "google",
+    { session: false, failureRedirect: "/?auth_error=google" },
+    async (_err: unknown, user: { id: number; email: string; username: string } | false) => {
+      if (!user) {
+        res.redirect("/?auth_error=google");
+        return;
+      }
+      const sessionData = makeLocalSession(user);
+      const sid = await createSession(sessionData);
+      setSessionCookie(res, sid);
+      res.redirect("/");
+    },
+  )(req, res, () => {});
+});
+
+// ─── GET /auth/facebook ──────────────────────────────────────────────────────
+
+router.get("/auth/facebook", (req: Request, res: Response) => {
+  const callbackURL = `${getOrigin(req)}/api/auth/facebook/callback`;
+  const ok = configureFacebookStrategy(callbackURL);
+  if (!ok) {
+    res.status(503).json({ error: "Facebook login non configurato." });
+    return;
+  }
+  passport.authenticate("facebook", {
+    session: false,
+    scope: ["email"],
+  })(req, res, () => {});
+});
+
+router.get("/auth/facebook/callback", (req: Request, res: Response) => {
+  const callbackURL = `${getOrigin(req)}/api/auth/facebook/callback`;
+  configureFacebookStrategy(callbackURL);
+  passport.authenticate(
+    "facebook",
+    { session: false, failureRedirect: "/?auth_error=facebook" },
+    async (_err: unknown, user: { id: number; email: string; username: string } | false) => {
+      if (!user) {
+        res.redirect("/?auth_error=facebook");
+        return;
+      }
+      const sessionData = makeLocalSession(user);
+      const sid = await createSession(sessionData);
+      setSessionCookie(res, sid);
+      res.redirect("/");
+    },
+  )(req, res, () => {});
+});
+
+// ─── GET /login  (Replit OIDC) ───────────────────────────────────────────────
 
 router.get("/login", async (req: Request, res: Response) => {
   const config = await getOidcConfig();
@@ -136,6 +421,8 @@ router.get("/login", async (req: Request, res: Response) => {
 
   res.redirect(redirectTo.href);
 });
+
+// ─── GET /callback  (Replit OIDC) ────────────────────────────────────────────
 
 router.get("/callback", async (req: Request, res: Response) => {
   const config = await getOidcConfig();
@@ -173,7 +460,7 @@ router.get("/callback", async (req: Request, res: Response) => {
     return;
   }
 
-  const dbUser = await upsertUser(claims as unknown as Record<string, unknown>);
+  const dbUser = await upsertReplitUser(claims as unknown as Record<string, unknown>);
 
   const returnTo = getSafeReturnTo(req.cookies?.return_to);
 
@@ -193,9 +480,7 @@ router.get("/callback", async (req: Request, res: Response) => {
     },
     access_token: tokens.access_token,
     refresh_token: tokens.refresh_token,
-    expires_at: tokens.expiresIn()
-      ? now + tokens.expiresIn()!
-      : claims.exp,
+    expires_at: tokens.expiresIn() ? now + tokens.expiresIn()! : claims.exp,
   };
 
   const sid = await createSession(sessionData);
@@ -203,6 +488,8 @@ router.get("/callback", async (req: Request, res: Response) => {
 
   res.redirect(returnTo);
 });
+
+// ─── GET /logout ─────────────────────────────────────────────────────────────
 
 router.get("/logout", async (req: Request, res: Response) => {
   const sid = getSessionId(req);

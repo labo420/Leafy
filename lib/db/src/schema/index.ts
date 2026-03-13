@@ -1,5 +1,6 @@
 export * from "./auth";
 export * from "./users";
+export * from "./oauth-accounts";
 export * from "./products";
 export * from "./receipts";
 export * from "./vouchers";
