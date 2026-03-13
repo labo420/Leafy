@@ -187,7 +187,7 @@ export default function Scan() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   transition={{ type: "spring", stiffness: 350, damping: 18 }}
-                  className="flex flex-col items-center justify-center w-44 h-44 rounded-full bg-[#1b2d26] shadow-2xl shadow-primary/60"
+                  className="flex flex-col items-center justify-center w-44 h-44 rounded-full bg-gradient-to-br from-primary to-[#23533e] shadow-2xl shadow-primary/60"
                 >
                   <Camera className="w-14 h-14 text-white mb-1" />
                   <span className="text-white/90 text-xs font-semibold tracking-wide">
@@ -255,7 +255,7 @@ export default function Scan() {
         />
 
         <Button
-          className="w-full text-lg h-14 rounded-2xl shadow-2xl shadow-primary/60 bg-[#1b2d26] hover:shadow-primary/80 transition-shadow"
+          className="w-full text-lg h-14 rounded-2xl shadow-lg shadow-primary/30 bg-gradient-to-br from-primary to-[#23533e] hover:shadow-primary/50 transition-shadow"
           disabled={!preview || scanMutation.isPending}
           onClick={handleScan}
           isLoading={scanMutation.isPending}
