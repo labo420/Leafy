@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LeafAnimation } from "@/components/shared/LeafAnimation";
-import { Camera, CheckCircle2, ArrowRight, ScanLine } from "lucide-react";
+import { Camera, CheckCircle2, ArrowRight, ScanLine, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 
@@ -154,22 +154,50 @@ export default function Scan() {
 
       <div className="flex-1 flex flex-col">
         {!preview ? (
-          <div
+          <motion.div
             onClick={() => fileInputRef.current?.click()}
-            className="flex-1 border-3 border-dashed border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors rounded-3xl flex flex-col items-center justify-center p-8 text-center cursor-pointer group min-h-[300px]"
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            className="flex-1 relative border-2 border-dashed border-primary/25 hover:border-primary/45 bg-gradient-to-br from-primary/5 via-background to-secondary/10 hover:from-primary/10 hover:to-secondary/15 transition-all duration-300 rounded-3xl flex flex-col items-center justify-center p-8 text-center cursor-pointer group min-h-[300px] overflow-hidden"
           >
-            <div className="w-24 h-24 bg-background rounded-full flex items-center justify-center mb-6 shadow-md group-hover:scale-110 transition-transform">
-              <Camera className="w-12 h-12 text-primary" />
+            {/* Decorative background rings */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-52 h-52 rounded-full border border-primary/8 absolute" />
+              <div className="w-72 h-72 rounded-full border border-primary/5 absolute" />
             </div>
-            <h3 className="font-bold text-xl mb-2 text-foreground">
+
+            {/* Camera icon — layered circles */}
+            <div className="relative mb-5">
+              <div className="w-28 h-28 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center shadow-lg shadow-primary/10 group-hover:shadow-primary/25 group-hover:scale-105 transition-all duration-300">
+                <div className="w-20 h-20 rounded-full bg-background flex items-center justify-center shadow-inner">
+                  <Camera className="w-10 h-10 text-primary" />
+                </div>
+              </div>
+            </div>
+
+            <h3 className="font-bold text-xl mb-1.5 text-foreground">
               {hasActiveSession ? "Scansiona il barcode" : "Carica o Scatta"}
             </h3>
-            <p className="text-sm text-muted-foreground max-w-[200px]">
+            <p className="text-sm text-muted-foreground max-w-[210px] mb-5">
               {hasActiveSession
                 ? "Inquadra il barcode del prodotto."
                 : "Assicurati che l'immagine sia nitida e leggibile."}
             </p>
-          </div>
+
+            {!hasActiveSession && (
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 bg-background/80 backdrop-blur-sm px-3.5 py-1.5 rounded-full border border-border/60 shadow-sm text-xs font-medium text-muted-foreground">
+                  <Camera className="w-3 h-3 text-primary" />
+                  Fotocamera
+                </div>
+                <div className="flex items-center gap-1.5 bg-background/80 backdrop-blur-sm px-3.5 py-1.5 rounded-full border border-border/60 shadow-sm text-xs font-medium text-muted-foreground">
+                  <ImageIcon className="w-3 h-3 text-primary" />
+                  Galleria
+                </div>
+              </div>
+            )}
+          </motion.div>
         ) : (
           <div className="flex-1 relative rounded-3xl overflow-hidden shadow-lg border border-border/50 bg-black/5">
             <img src={preview} alt="Receipt preview" className="w-full h-full object-cover opacity-90" />
