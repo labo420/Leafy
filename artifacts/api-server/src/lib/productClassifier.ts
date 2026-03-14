@@ -254,6 +254,177 @@ function normalizeBarcode(barcode: string): string[] {
 
 export { isValidBarcode };
 
+function isItalianBarcode(barcode: string): boolean {
+  const prefix = barcode.slice(0, 3);
+  const num = parseInt(prefix, 10);
+  return num >= 800 && num <= 809;
+}
+
+async function classifyWithProductData(
+  barcode: string,
+  name: string,
+  brand: string,
+  categories: string,
+  labels: string,
+): Promise<BarcodeResult> {
+  const country = getCountryFromBarcode(barcode);
+  const countryHint = country ? `\nPaese di origine (dal barcode): ${country}` : "";
+
+  try {
+    const message = await anthropic.messages.create({
+      model: "claude-haiku-4-5",
+      max_tokens: 512,
+      messages: [
+        {
+          role: "user",
+          content: `Sei un esperto di sostenibilità ambientale e prodotti alimentari. Un prodotto è stato trovato su Open Food Facts ma senza un eco-score calcolato. Usa i metadati disponibili per stimare il suo impatto ambientale.
+
+Nome prodotto: ${name}
+Brand: ${brand || "non disponibile"}
+Categorie: ${categories || "non disponibili"}
+Etichette: ${labels || "non disponibili"}
+Codice a barre: ${barcode}${countryHint}
+
+Rispondi SOLO con un JSON valido:
+{
+  "points": <numero 0-20, dove 0=non sostenibile, 20=eccellente>,
+  "category": <una di: "Bio", "Km 0", "Vegano", "Senza Plastica", "Equo Solidale", "DOP/IGP", "Artigianale", "Altro">,
+  "emoji": <emoji appropriato>,
+  "reasoning": <spiegazione breve in italiano max 80 caratteri>,
+  "ecoScore": <lettera a-e basata sulla tua analisi dei metadati>
+}
+
+LINEE GUIDA per la stima eco-score:
+- Latticini lavorati, carni processate → d o e
+- Prodotti freschi, frutta, verdura → a o b
+- Prodotti confezionati standard → c
+- Bio/organic/vegano → migliorare di un grado
+- Usa le categorie e le etichette per una stima più precisa`,
+        },
+      ],
+    });
+
+    const text = message.content[0].type === "text" ? message.content[0].text : "{}";
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error("No JSON in response");
+    const parsed = JSON.parse(jsonMatch[0]) as {
+      points?: number;
+      category?: string;
+      emoji?: string;
+      reasoning?: string;
+      ecoScore?: string;
+    };
+
+    const brandPrefix = brand ? `${brand} - ` : "";
+    const productName = name ? `${brandPrefix}${name}` : `Prodotto ${barcode}`;
+
+    return {
+      productName,
+      ecoScore: parsed.ecoScore || null,
+      points: Math.max(0, Math.min(20, parsed.points ?? 5)),
+      category: parsed.category || "Altro",
+      emoji: parsed.emoji || "🌿",
+      reasoning: parsed.reasoning || "Classificato con dati Open Food Facts + AI",
+      source: "openfoodfacts-ai",
+    };
+  } catch (err) {
+    console.error("[classifyWithProductData]", err);
+    const brandPrefix = brand ? `${brand} - ` : "";
+    const productName = name ? `${brandPrefix}${name}` : `Prodotto ${barcode}`;
+    return {
+      productName,
+      ecoScore: null,
+      points: 5,
+      category: "Altro",
+      emoji: "🌿",
+      reasoning: "Classificato da Open Food Facts",
+      source: "openfoodfacts",
+    };
+  }
+}
+
+async function classifyWithVision(barcode: string, imageBase64: string): Promise<BarcodeResult | null> {
+  const country = getCountryFromBarcode(barcode);
+  const countryHint = country ? `\nIl prefisso del barcode indica produzione in: ${country}` : "";
+
+  try {
+    const message = await anthropic.messages.create({
+      model: "claude-haiku-4-5",
+      max_tokens: 512,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image",
+              source: {
+                type: "base64",
+                media_type: "image/jpeg",
+                data: imageBase64,
+              },
+            },
+            {
+              type: "text",
+              text: `Sei un esperto di prodotti alimentari e sostenibilità. L'utente ha scansionato questo prodotto in un supermercato italiano ma non è stato trovato nel database Open Food Facts.
+
+Codice a barre: ${barcode}${countryHint}
+
+Analizza la foto della confezione del prodotto. Cerca di leggere:
+- Nome del prodotto
+- Brand/marca
+- Ingredienti visibili
+- Certificazioni (Bio, DOP, IGP, Vegano, Fair Trade, ecc.)
+- Tipo di confezione (plastica, vetro, cartone, ecc.)
+
+Rispondi SOLO con un JSON valido:
+{
+  "productName": <nome del prodotto letto dalla confezione, o "Prodotto alimentare" se non leggibile>,
+  "brand": <marca se visibile>,
+  "points": <numero 0-20, stima basata su ciò che vedi>,
+  "category": <una di: "Bio", "Km 0", "Vegano", "Senza Plastica", "Equo Solidale", "DOP/IGP", "Artigianale", "Altro">,
+  "emoji": <emoji appropriato>,
+  "reasoning": <spiegazione breve in italiano max 80 caratteri>,
+  "ecoScore": <lettera a-e basata sulla tua analisi visiva>
+}`,
+            },
+          ],
+        },
+      ],
+    });
+
+    const text = message.content[0].type === "text" ? message.content[0].text : "{}";
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error("No JSON in response");
+    const parsed = JSON.parse(jsonMatch[0]) as {
+      productName?: string;
+      brand?: string;
+      points?: number;
+      category?: string;
+      emoji?: string;
+      reasoning?: string;
+      ecoScore?: string;
+    };
+
+    const brandPrefix = parsed.brand ? `${parsed.brand} - ` : "";
+    const productName = parsed.productName && parsed.productName !== "Prodotto alimentare"
+      ? `${brandPrefix}${parsed.productName}`
+      : `Prodotto ${barcode}`;
+
+    return {
+      productName,
+      ecoScore: parsed.ecoScore || null,
+      points: Math.max(0, Math.min(20, parsed.points ?? 5)),
+      category: parsed.category || "Altro",
+      emoji: parsed.emoji || "🌿",
+      reasoning: parsed.reasoning || "Classificato tramite analisi visiva",
+      source: "vision",
+    };
+  } catch (err) {
+    console.error("[classifyWithVision]", err);
+    return null;
+  }
+}
+
 async function classifyBarcodeWithAI(barcode: string): Promise<BarcodeResult> {
   const country = getCountryFromBarcode(barcode);
   const countryHint = country ? `\nIl prefisso del barcode indica produzione in: ${country}` : "";
@@ -321,7 +492,21 @@ IMPORTANTE: Sii conservativo. Se non riesci a identificare il prodotto, usa "Pro
   }
 }
 
-export async function lookupBarcode(barcode: string): Promise<BarcodeResult | null> {
+async function fetchFromOFF(
+  variant: string,
+  endpoint: string,
+): Promise<{ status?: number; product?: OpenFoodFactsProduct & { brands?: string } } | null> {
+  try {
+    const url = `https://${endpoint}/api/v0/product/${encodeURIComponent(variant)}.json?fields=product_name,ecoscore_grade,ecoscore_score,ecoscore_data,labels,categories,packaging_tags,origins,brands`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return null;
+    return await res.json() as { status?: number; product?: OpenFoodFactsProduct & { brands?: string } };
+  } catch {
+    return null;
+  }
+}
+
+export async function lookupBarcode(barcode: string, imageBase64?: string): Promise<BarcodeResult | null> {
   const normalizedBarcode = barcode.trim();
   if (!normalizedBarcode || normalizedBarcode.length < 4) return null;
 
@@ -345,19 +530,46 @@ export async function lookupBarcode(barcode: string): Promise<BarcodeResult | nu
   }
 
   const barcodeVariants = normalizeBarcode(normalizedBarcode);
+  const useItalianFirst = isItalianBarcode(normalizedBarcode);
+  const endpoints = useItalianFirst
+    ? ["it.openfoodfacts.org", "world.openfoodfacts.org"]
+    : ["world.openfoodfacts.org"];
 
   for (const variant of barcodeVariants) {
-    try {
-      const url = `https://world.openfoodfacts.org/api/v0/product/${encodeURIComponent(variant)}.json?fields=product_name,ecoscore_grade,ecoscore_score,ecoscore_data,labels,categories,packaging_tags,origins,brands`;
-      const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
-      if (!res.ok) continue;
-      const data = await res.json() as { status?: number; product?: OpenFoodFactsProduct & { brands?: string } };
-
-      if (data.status !== 1 || !data.product) continue;
+    for (const endpoint of endpoints) {
+      const data = await fetchFromOFF(variant, endpoint);
+      if (!data || data.status !== 1 || !data.product) continue;
 
       const product = data.product;
       const grade = product.ecoscore_grade?.toLowerCase();
       const validGrade = grade && grade !== "not-applicable" && grade !== "unknown" ? grade : null;
+
+      if (!validGrade && product.product_name) {
+        console.log(`[lookupBarcode] OFF found "${product.product_name}" on ${endpoint} without eco-score, classifying with AI`);
+        const aiResult = await classifyWithProductData(
+          normalizedBarcode,
+          product.product_name || "",
+          product.brands || "",
+          product.categories || "",
+          product.labels || "",
+        );
+
+        const co2PerUnit = co2SavingsFromAgribalyse(product) ?? co2SavingsByCategory(aiResult.category, aiResult.points);
+        await db.insert(productCacheTable).values({
+          productNameNormalized: `barcode:${normalizedBarcode}`,
+          productNameOriginal: aiResult.productName,
+          ecoScore: aiResult.ecoScore,
+          points: aiResult.points,
+          category: aiResult.category,
+          source: aiResult.source,
+          reasoning: aiResult.reasoning,
+          emoji: aiResult.emoji,
+          co2PerUnit,
+        }).onConflictDoNothing();
+
+        return aiResult;
+      }
+
       const points = validGrade ? (ECO_SCORE_POINTS[validGrade] ?? 5) : 5;
       const emoji = validGrade ? (ECO_SCORE_EMOJI[validGrade] ?? "🌿") : "🌿";
 
@@ -399,8 +611,27 @@ export async function lookupBarcode(barcode: string): Promise<BarcodeResult | nu
       }).onConflictDoNothing();
 
       return result;
-    } catch {
-      continue;
+    }
+  }
+
+  if (imageBase64 && typeof imageBase64 === "string" && imageBase64.length > 100) {
+    console.log(`[lookupBarcode] OFF miss for ${normalizedBarcode}, trying vision fallback`);
+    const visionResult = await classifyWithVision(normalizedBarcode, imageBase64);
+    if (visionResult) {
+      const co2PerUnit = co2SavingsByCategory(visionResult.category, visionResult.points);
+      await db.insert(productCacheTable).values({
+        productNameNormalized: `barcode:${normalizedBarcode}`,
+        productNameOriginal: visionResult.productName,
+        ecoScore: visionResult.ecoScore,
+        points: visionResult.points,
+        category: visionResult.category,
+        source: visionResult.source,
+        reasoning: visionResult.reasoning,
+        emoji: visionResult.emoji,
+        co2PerUnit,
+      }).onConflictDoNothing();
+
+      return visionResult;
     }
   }
 

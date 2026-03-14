@@ -365,7 +365,8 @@ router.post("/scan/barcode/lookup", async (req, res): Promise<void> => {
     return;
   }
 
-  const product = await lookupBarcode(barcode);
+  const validImage = imageBase64 && typeof imageBase64 === "string" && imageBase64.length > 100 && imageBase64.length <= MAX_BARCODE_IMAGE_SIZE ? imageBase64 : undefined;
+  const product = await lookupBarcode(barcode, validImage);
 
   if (!product) {
     res.status(404).json({ error: "Impossibile classificare questo prodotto. Riprova o inserisci il codice manualmente." });
@@ -416,7 +417,8 @@ router.post("/scan/barcode/preview", async (req, res): Promise<void> => {
     }
   }
 
-  const product = await lookupBarcode(barcode.trim());
+  const validImage = imageBase64 && typeof imageBase64 === "string" && imageBase64.length > 100 && imageBase64.length <= MAX_BARCODE_IMAGE_SIZE ? imageBase64 : undefined;
+  const product = await lookupBarcode(barcode.trim(), validImage);
 
   if (!product) {
     res.status(404).json({ error: "Impossibile classificare questo prodotto. Riprova o inserisci il codice manualmente." });
