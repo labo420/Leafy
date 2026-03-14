@@ -466,7 +466,7 @@ export default function ScanScreen() {
                     end={{ x: 0.8, y: 1 }}
                     style={styles.bigBtnGrad}
                   >
-                    <Feather name="camera" size={56} color="#fff" />
+                    <Feather name="camera" size={72} color="#fff" />
                     <Text style={styles.bigBtnLabel}>Fotografa lo scontrino</Text>
                     <Text style={styles.bigBtnHint}>Totale e data visibili</Text>
                   </LinearGradient>
@@ -539,34 +539,34 @@ const styles = StyleSheet.create({
     paddingTop: 10, paddingBottom: 4,
   },
   bigBtnPulseContainer: {
-    width: 240, height: 240,
+    width: 320, height: 320,
     alignItems: "center", justifyContent: "center",
   },
   bigBtnPulseRing: {
     position: "absolute",
-    width: 220, height: 220, borderRadius: 110,
+    width: 300, height: 300, borderRadius: 150,
     borderWidth: 2,
     borderColor: "rgba(46,107,80,0.35)",
   },
   bigBtnOuter: {
-    width: 220, height: 220, borderRadius: 110,
+    width: 300, height: 300, borderRadius: 150,
     overflow: "hidden",
     shadowColor: Colors.forest,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.35,
+    shadowRadius: 24,
+    elevation: 12,
   },
   bigBtnGrad: {
     flex: 1, alignItems: "center", justifyContent: "center",
-    gap: 8,
+    gap: 10,
   },
   bigBtnLabel: {
-    fontSize: 18, fontFamily: "DMSans_700Bold", color: "#fff",
-    textAlign: "center", marginTop: 2,
+    fontSize: 20, fontFamily: "DMSans_700Bold", color: "#fff",
+    textAlign: "center", marginTop: 4,
   },
   bigBtnHint: {
-    fontSize: 12, fontFamily: "Inter_400Regular",
+    fontSize: 13, fontFamily: "Inter_400Regular",
     color: "rgba(255,255,255,0.75)", textAlign: "center",
   },
 
