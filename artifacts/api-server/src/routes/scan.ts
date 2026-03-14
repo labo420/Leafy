@@ -6,6 +6,7 @@ import { hashImage, extractTextViaGoogleVision, calculateLevel } from "../lib/sc
 import { runAntiFraudChecks, approvePendingPoints } from "../lib/antiFraud";
 import { lookupBarcode, validateReceiptWithAI, classifyProductsBatch } from "../lib/productClassifier";
 import { uploadReceiptImage } from "../lib/receiptImages";
+import { matchChain, isAcceptedStore } from "../lib/supermarketWhitelist";
 import { requireUser } from "./profile";
 
 const router: IRouter = Router();
@@ -56,6 +57,14 @@ router.post("/scan", async (req, res): Promise<void> => {
       : "data, totale";
     res.status(400).json({
       error: `Scontrino incompleto — non riesco a leggere: ${missing}. Rifotografa mostrando l'intero scontrino.`,
+    });
+    return;
+  }
+
+  const resolvedChain = matchChain(validation.storeChain) ?? matchChain(validation.store);
+  if (!isAcceptedStore(resolvedChain)) {
+    res.status(400).json({
+      error: "Scontrino non accettato — Leafy funziona con i principali supermercati italiani. Controlla la lista dei negozi accettati nella schermata Scansiona.",
     });
     return;
   }
@@ -133,6 +142,8 @@ router.post("/scan", async (req, res): Promise<void> => {
         barcodeMode: 1,
         receiptDate: validation.date,
         receiptTotal: validation.totalCents,
+        storeChain: resolvedChain,
+        province: validation.province ?? null,
       })
       .returning();
     receipt = newReceipt;

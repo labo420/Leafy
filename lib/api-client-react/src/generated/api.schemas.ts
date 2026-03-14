@@ -164,6 +164,10 @@ export interface Receipt {
   /** @nullable */
   storeName?: string | null;
   /** @nullable */
+  storeChain?: string | null;
+  /** @nullable */
+  province?: string | null;
+  /** @nullable */
   purchaseDate?: string | null;
   pointsEarned: number;
   greenItemsCount: number;
@@ -179,6 +183,10 @@ export interface ReceiptDetail {
   /** @nullable */
   storeName?: string | null;
   /** @nullable */
+  storeChain?: string | null;
+  /** @nullable */
+  province?: string | null;
+  /** @nullable */
   purchaseDate?: string | null;
   pointsEarned: number;
   greenItems: FoundGreenItem[];
@@ -186,6 +194,12 @@ export interface ReceiptDetail {
   hasImage: boolean;
   /** @nullable */
   imageExpiresAt?: string | null;
+}
+
+export interface AcceptedStores {
+  standard: string[];
+  bio: string[];
+  discount: string[];
 }
 
 export interface Voucher {

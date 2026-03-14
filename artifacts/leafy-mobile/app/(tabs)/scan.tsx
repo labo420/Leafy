@@ -2,7 +2,7 @@ import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -21,6 +21,12 @@ import { apiFetch } from "@/lib/api";
 import Colors from "@/constants/colors";
 import { useAuth } from "@/context/auth";
 import { router } from "expo-router";
+
+interface AcceptedStoresData {
+  standard: string[];
+  bio: string[];
+  discount: string[];
+}
 
 interface ScanResponse {
   receiptId: number;
@@ -61,6 +67,44 @@ function formatTimeRemaining(minutes: number): string {
     return `${hours}h ${mins}min`;
   }
   return `${minutes} min`;
+}
+
+function AcceptedStoresSection() {
+  const [open, setOpen] = useState(false);
+  const { data } = useQuery<AcceptedStoresData>({
+    queryKey: ["accepted-stores"],
+    queryFn: () => apiFetch("/accepted-stores"),
+  });
+
+  if (!data) return null;
+
+  return (
+    <View style={styles.storesSection}>
+      <Pressable style={styles.storesToggle} onPress={() => setOpen(!open)}>
+        <View style={styles.storesToggleLeft}>
+          <Feather name="shopping-bag" size={16} color={Colors.textSecondary} />
+          <Text style={styles.storesToggleText}>Negozi accettati</Text>
+        </View>
+        <Feather name={open ? "chevron-up" : "chevron-down"} size={16} color={Colors.textSecondary} />
+      </Pressable>
+      {open && (
+        <View style={styles.storesList}>
+          <View style={styles.storesCategory}>
+            <Text style={styles.storesCatTitle}>Supermercati</Text>
+            <Text style={styles.storesCatList}>{data.standard.join(", ")}</Text>
+          </View>
+          <View style={styles.storesCategory}>
+            <Text style={styles.storesCatTitle}>Bio / Naturale</Text>
+            <Text style={styles.storesCatList}>{data.bio.join(", ")}</Text>
+          </View>
+          <View style={styles.storesCategory}>
+            <Text style={styles.storesCatTitle}>Discount</Text>
+            <Text style={styles.storesCatList}>{data.discount.join(", ")}</Text>
+          </View>
+        </View>
+      )}
+    </View>
+  );
 }
 
 export default function ScanScreen() {
@@ -375,6 +419,8 @@ export default function ScanScreen() {
               </View>
             ))}
           </View>
+
+          <AcceptedStoresSection />
         </>
       )}
     </View>
@@ -485,4 +531,17 @@ const styles = StyleSheet.create({
     borderWidth: 1.5, borderColor: Colors.leaf,
   },
   newReceiptBtnText: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: Colors.leaf },
+  storesSection: { paddingHorizontal: 20, marginTop: 8, marginBottom: 24 },
+  storesToggle: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingVertical: 12,
+  },
+  storesToggleLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
+  storesToggleText: { fontSize: 14, fontFamily: "Inter_500Medium", color: Colors.textSecondary },
+  storesList: {
+    backgroundColor: Colors.card, borderRadius: 16, padding: 16, gap: 16,
+  },
+  storesCategory: { gap: 4 },
+  storesCatTitle: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: Colors.text },
+  storesCatList: { fontSize: 12, fontFamily: "Inter_400Regular", color: Colors.textSecondary, lineHeight: 18 },
 });

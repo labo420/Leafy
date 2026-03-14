@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format, parseISO } from "date-fns";
 import { it } from "date-fns/locale";
-import { Receipt, CalendarDays, ShoppingBag, X, Info, Star, Camera, Clock } from "lucide-react";
+import { Receipt, CalendarDays, ShoppingBag, X, Info, Star, Camera, Clock, MapPin } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function History() {
@@ -71,10 +71,18 @@ export default function History() {
                       </div>
                       <div>
                         <h3 className="font-bold text-foreground leading-tight">{item.storeName || "Negozio Sconosciuto"}</h3>
-                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                          <CalendarDays className="w-3 h-3" />
-                          {format(parseISO(item.purchaseDate || item.scannedAt), "dd MMM yyyy", { locale: it })}
-                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <p className="text-xs text-muted-foreground flex items-center gap-1">
+                            <CalendarDays className="w-3 h-3" />
+                            {format(parseISO(item.purchaseDate || item.scannedAt), "dd MMM yyyy", { locale: it })}
+                          </p>
+                          {(item as any).province && (
+                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                              <MapPin className="w-3 h-3" />
+                              {(item as any).province}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="text-right">

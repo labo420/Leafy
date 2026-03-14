@@ -26,6 +26,8 @@ import { router } from "expo-router";
 interface Receipt {
   id: number;
   storeName: string | null;
+  storeChain: string | null;
+  province: string | null;
   purchaseDate: string | null;
   pointsEarned: number;
   greenItemsCount: number;
@@ -335,7 +337,15 @@ function ReceiptCard({ receipt, onPress }: { receipt: Receipt; onPress: () => vo
             <Text style={styles.receiptStore}>
               {receipt.storeName ?? "Negozio sconosciuto"}
             </Text>
-            <Text style={styles.receiptDate}>{formatDate(receipt.scannedAt)}</Text>
+            <View style={styles.receiptMetaRow}>
+              <Text style={styles.receiptDate}>{formatDate(receipt.scannedAt)}</Text>
+              {receipt.province && (
+                <View style={styles.provinceBadge}>
+                  <Feather name="map-pin" size={10} color={Colors.textSecondary} />
+                  <Text style={styles.provinceText}>{receipt.province}</Text>
+                </View>
+              )}
+            </View>
             {receipt.greenItemsCount > 0 && (
               <View style={styles.catRow}>
                 <View style={styles.catBadge}>
@@ -443,7 +453,10 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center",
   },
   receiptStore: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: Colors.text, marginBottom: 2 },
-  receiptDate: { fontSize: 12, fontFamily: "Inter_400Regular", color: Colors.textSecondary, marginBottom: 4 },
+  receiptDate: { fontSize: 12, fontFamily: "Inter_400Regular", color: Colors.textSecondary },
+  receiptMetaRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 },
+  provinceBadge: { flexDirection: "row", alignItems: "center", gap: 3 },
+  provinceText: { fontSize: 11, fontFamily: "Inter_400Regular", color: Colors.textSecondary },
   catRow: { flexDirection: "row", gap: 4, flexWrap: "wrap" },
   catBadge: {
     flexDirection: "row", alignItems: "center", gap: 3,

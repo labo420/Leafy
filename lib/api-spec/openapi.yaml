@@ -263,6 +263,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /accepted-stores:
+    get:
+      operationId: getAcceptedStores
+      tags: [scan]
+      summary: Get list of accepted Italian supermarket chains
+      responses:
+        "200":
+          description: Accepted stores by category
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcceptedStores"
+
   /vouchers:
     get:
       operationId: getVouchers
@@ -787,6 +800,10 @@ components:
           type: integer
         storeName:
           type: ["string", "null"]
+        storeChain:
+          type: ["string", "null"]
+        province:
+          type: ["string", "null"]
         purchaseDate:
           type: ["string", "null"]
           format: date
@@ -821,6 +838,10 @@ components:
           type: integer
         storeName:
           type: ["string", "null"]
+        storeChain:
+          type: ["string", "null"]
+        province:
+          type: ["string", "null"]
         purchaseDate:
           type: ["string", "null"]
           format: date
@@ -844,6 +865,26 @@ components:
         - greenItems
         - scannedAt
         - hasImage
+
+    AcceptedStores:
+      type: object
+      properties:
+        standard:
+          type: array
+          items:
+            type: string
+        bio:
+          type: array
+          items:
+            type: string
+        discount:
+          type: array
+          items:
+            type: string
+      required:
+        - standard
+        - bio
+        - discount
 
     Voucher:
       type: object

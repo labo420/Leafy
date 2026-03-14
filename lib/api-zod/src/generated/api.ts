@@ -174,6 +174,8 @@ export const GetActiveSessionResponse = zod.object({
 export const GetReceiptsResponseItem = zod.object({
   id: zod.number(),
   storeName: zod.string().nullish(),
+  storeChain: zod.string().nullish(),
+  province: zod.string().nullish(),
   purchaseDate: zod.date().nullish(),
   pointsEarned: zod.number(),
   greenItemsCount: zod.number(),
@@ -194,6 +196,8 @@ export const GetReceiptParams = zod.object({
 export const GetReceiptResponse = zod.object({
   id: zod.number(),
   storeName: zod.string().nullish(),
+  storeChain: zod.string().nullish(),
+  province: zod.string().nullish(),
   purchaseDate: zod.date().nullish(),
   pointsEarned: zod.number(),
   greenItems: zod.array(
@@ -214,6 +218,15 @@ export const GetReceiptResponse = zod.object({
  */
 export const GetReceiptImageParams = zod.object({
   id: zod.coerce.number(),
+});
+
+/**
+ * @summary Get accepted Italian supermarket chains
+ */
+export const GetAcceptedStoresResponse = zod.object({
+  standard: zod.array(zod.string()),
+  bio: zod.array(zod.string()),
+  discount: zod.array(zod.string()),
 });
 
 /**

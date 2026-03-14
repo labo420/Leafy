@@ -4,6 +4,7 @@ import { db, receiptsTable, barcodeScansTable } from "@workspace/db";
 import { GetReceiptParams } from "@workspace/api-zod";
 import { requireUser } from "./profile";
 import { getReceiptImageStream } from "../lib/receiptImages";
+import { getAcceptedStoresList } from "../lib/supermarketWhitelist";
 
 const router: IRouter = Router();
 
@@ -20,7 +21,9 @@ router.get("/receipts", async (req, res): Promise<void> => {
     const imageActive = !!r.imageUrl && !!r.imageExpiresAt && r.imageExpiresAt > now;
     return {
       id: r.id,
-      storeName: r.storeName,
+      storeName: r.storeChain ?? r.storeName,
+      storeChain: r.storeChain ?? null,
+      province: r.province ?? null,
       purchaseDate: r.purchaseDate,
       pointsEarned: r.pointsEarned,
       greenItemsCount: r.greenItemsCount,
@@ -63,7 +66,9 @@ router.get("/receipts/:id", async (req, res): Promise<void> => {
 
   res.json({
     id: receipt.id,
-    storeName: receipt.storeName,
+    storeName: receipt.storeChain ?? receipt.storeName,
+    storeChain: receipt.storeChain ?? null,
+    province: receipt.province ?? null,
     purchaseDate: receipt.purchaseDate,
     pointsEarned: receipt.pointsEarned,
     greenItems,
@@ -129,6 +134,10 @@ router.get("/receipts/:id/image", async (req, res): Promise<void> => {
     }
   });
   result.stream.pipe(res);
+});
+
+router.get("/accepted-stores", (_req, res): void => {
+  res.json(getAcceptedStoresList());
 });
 
 export default router;

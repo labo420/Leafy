@@ -17,6 +17,7 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AcceptedStores,
   ActiveSession,
   ApplyReferralBody,
   ApplyReferralResponse,
@@ -1005,6 +1006,77 @@ export function useGetReceiptImage<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetReceiptImageQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get accepted Italian supermarket chains
+ */
+export const getGetAcceptedStoresUrl = () => {
+  return `/api/accepted-stores`;
+};
+
+export const getAcceptedStores = async (
+  options?: RequestInit,
+): Promise<AcceptedStores> => {
+  return customFetch<AcceptedStores>(getGetAcceptedStoresUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAcceptedStoresQueryKey = () => {
+  return [`/api/accepted-stores`] as const;
+};
+
+export const getGetAcceptedStoresQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAcceptedStores>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAcceptedStores>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAcceptedStoresQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAcceptedStores>>> = ({
+    signal,
+  }) => getAcceptedStores({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAcceptedStores>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAcceptedStoresQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAcceptedStores>>
+>;
+export type GetAcceptedStoresQueryError = ErrorType<unknown>;
+
+export function useGetAcceptedStores<
+  TData = Awaited<ReturnType<typeof getAcceptedStores>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAcceptedStores>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAcceptedStoresQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

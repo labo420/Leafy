@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./acceptedStores";
 export * from "./activeSession";
 export * from "./activeSessionReceipt";
 export * from "./applyReferralBody";

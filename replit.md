@@ -135,6 +135,7 @@ workspace/
 │   │       ├── seed-badges.ts      # 15 badge seed idempotenti (per nome)
 │   │       └── lib/
 │   │           ├── productClassifier.ts  # Open Food Facts + Claude AI fallback + cache
+│   │           ├── supermarketWhitelist.ts # 51 catene italiane (standard/bio/discount) + matchChain()
 │   │           ├── antiFraud.ts          # 8-layer anti-frode system
 │   │           ├── scanner.ts            # Google Vision OCR + keyword matching
 │   │           ├── auth.ts               # Session store

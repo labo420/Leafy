@@ -1,12 +1,12 @@
 import React, { useState, useRef } from "react";
-import { useScanReceipt, useGetProfile, getGetProfileQueryKey } from "@workspace/api-client-react";
+import { useScanReceipt, useGetProfile, getGetProfileQueryKey, useGetAcceptedStores } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LeafAnimation } from "@/components/shared/LeafAnimation";
-import { Camera, CheckCircle2, ArrowRight, ScanLine, ImageIcon, Sparkles } from "lucide-react";
+import { Camera, CheckCircle2, ArrowRight, ScanLine, ImageIcon, Sparkles, ChevronDown, Store } from "lucide-react";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Scan() {
   const [file, setFile] = useState<File | null>(null);
@@ -15,7 +15,9 @@ export default function Scan() {
   const queryClient = useQueryClient();
   const [showCelebration, setShowCelebration] = useState(false);
 
+  const [storesOpen, setStoresOpen] = useState(false);
   const { data: profile } = useGetProfile();
+  const { data: acceptedStores } = useGetAcceptedStores();
   const hasActiveSession = !!(profile as any)?.activeBarcodeSession;
 
   const scanMutation = useScanReceipt({
@@ -266,6 +268,47 @@ export default function Scan() {
         >
           {scanMutation.isPending ? "Analizzando..." : "Analizza la tua spesa"}
         </Button>
+
+        {acceptedStores && (
+          <div className="mt-2">
+            <button
+              onClick={() => setStoresOpen(!storesOpen)}
+              className="w-full flex items-center justify-between text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
+            >
+              <span className="flex items-center gap-2">
+                <Store className="w-4 h-4" />
+                Negozi accettati
+              </span>
+              <ChevronDown className={`w-4 h-4 transition-transform ${storesOpen ? "rotate-180" : ""}`} />
+            </button>
+            <AnimatePresence>
+              {storesOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <div className="bg-muted/30 rounded-2xl p-4 space-y-4 text-xs">
+                    <div>
+                      <p className="font-semibold text-foreground mb-1.5">Supermercati</p>
+                      <p className="text-muted-foreground leading-relaxed">{acceptedStores.standard.join(", ")}</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-foreground mb-1.5">Bio / Naturale</p>
+                      <p className="text-muted-foreground leading-relaxed">{acceptedStores.bio.join(", ")}</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-foreground mb-1.5">Discount</p>
+                      <p className="text-muted-foreground leading-relaxed">{acceptedStores.discount.join(", ")}</p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
       </div>
     </div>
   );

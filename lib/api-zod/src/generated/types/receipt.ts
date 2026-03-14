@@ -11,6 +11,10 @@ export interface Receipt {
   /** @nullable */
   storeName?: string | null;
   /** @nullable */
+  storeChain?: string | null;
+  /** @nullable */
+  province?: string | null;
+  /** @nullable */
   purchaseDate?: Date | null;
   pointsEarned: number;
   greenItemsCount: number;

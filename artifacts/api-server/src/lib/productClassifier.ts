@@ -387,6 +387,8 @@ export interface ReceiptValidation {
   complete: boolean;
   missingInfo: string[];
   store: string | null;
+  storeChain: string | null;
+  province: string | null;
   date: string | null;
   totalCents: number | null;
   products: string[];
@@ -421,6 +423,8 @@ Rispondi SOLO con un JSON valido:
   "complete": true/false,
   "missingInfo": ["data", "totale"],
   "store": "Nome Negozio" o null,
+  "storeChain": "Nome Catena Normalizzato" o null,
+  "province": "Nome Provincia" o null,
   "date": "YYYY-MM-DD" o null,
   "totalCents": 1250 o null,
   "products": [{"raw": "TESTO ORIGINALE SCONTRINO", "name": "Nome Normalizzato"}]
@@ -430,7 +434,13 @@ Regole:
 - "isReceipt": true se l'immagine mostra uno scontrino/ricevuta fiscale
 - "complete": true solo se riesci a leggere sia la data che il totale
 - "missingInfo": lista degli elementi non leggibili tra ["data", "totale", "negozio"]. Array vuoto se tutto è leggibile
-- "store": nome del negozio/supermercato se leggibile
+- "store": nome del negozio/supermercato ESATTO come appare sullo scontrino
+- "storeChain": nome normalizzato della catena di appartenenza. Usa uno di questi nomi esatti se il negozio corrisponde:
+  Standard: Esselunga, Coop, Ipercoop, UniCoop, NovaCoop, Conad, Conad City, Conad Superstore, Carrefour, Carrefour Express, Carrefour Market, Carrefour Iper, Pam, Panorama, Pam Local, Despar, Eurospar, Interspar, Spar, Bennet, Il Gigante, Tigros, Sigma, Crai, E.Leclerc, Famila, Tuodì, Cadoro, Dì per Dì, Prix Quality, Coal, A&O, Selex, Iper, Billa, Simply Market
+  Bio/Naturale: NaturaSì, Bioessepiù, Ecor, Life, BioBottega
+  Discount: Lidl, Aldi, Eurospin, Penny, Penny Market, MD Discount, In's Mercato, Ard Discount, Todis, Dok Discount
+  Se il negozio non corrisponde a nessuna di queste catene, usa comunque il nome del negozio
+- "province": provincia italiana del punto vendita, dedotta dall'indirizzo sullo scontrino (es. "Milano", "Roma", "Torino", "Novara"). Usa il nome della provincia, NON del comune. null se non determinabile
 - "date": data dello scontrino in formato YYYY-MM-DD. Se l'anno non è visibile, usa l'anno corrente (2026)
 - "totalCents": importo totale in centesimi (es. €12.50 = 1250). null se non leggibile
 - "products": array di oggetti con "raw" (testo ESATTO come appare sullo scontrino) e "name" (forma normalizzata leggibile). Massimo 15 prodotti.
@@ -458,6 +468,8 @@ Regole:
       complete?: boolean;
       missingInfo?: string[];
       store?: string | null;
+      storeChain?: string | null;
+      province?: string | null;
       date?: string | null;
       totalCents?: number | null;
       products?: unknown[];
@@ -501,6 +513,8 @@ Regole:
     }
     const extractedTotal = typeof parsed.totalCents === "number" ? Math.round(parsed.totalCents) : null;
     const extractedStore = typeof parsed.store === "string" && parsed.store.trim().length > 0 ? parsed.store.trim() : null;
+    const extractedStoreChain = typeof parsed.storeChain === "string" && parsed.storeChain.trim().length > 0 ? parsed.storeChain.trim() : null;
+    const extractedProvince = typeof parsed.province === "string" && parsed.province.trim().length > 0 ? parsed.province.trim() : null;
 
     const missingInfo: string[] = [];
     if (!extractedDate) missingInfo.push("data");
@@ -518,6 +532,8 @@ Regole:
       complete: isComplete,
       missingInfo,
       store: extractedStore,
+      storeChain: extractedStoreChain,
+      province: extractedProvince,
       date: extractedDate,
       totalCents: extractedTotal,
       products,
@@ -525,7 +541,7 @@ Regole:
     };
   } catch (err) {
     console.error("[validateReceiptWithAI]", err);
-    return { valid: true, complete: false, missingInfo: [], store: null, date: null, totalCents: null, products: [], reason: "Errore AI, validazione non disponibile" };
+    return { valid: true, complete: false, missingInfo: [], store: null, storeChain: null, province: null, date: null, totalCents: null, products: [], reason: "Errore AI, validazione non disponibile" };
   }
 }
 
