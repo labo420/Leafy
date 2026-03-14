@@ -19,7 +19,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/80 to-background" />
         </div>
 
-        <main className="flex-1 overflow-y-auto overflow-x-hidden pb-24 z-10 scroll-smooth relative">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden z-10 scroll-smooth relative" style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}>
           <AnimatePresence mode="wait">
             <motion.div
               key={location}
