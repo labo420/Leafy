@@ -57,6 +57,8 @@ interface GreenItem {
 interface ReceiptDetailData {
   id: number;
   storeName: string | null;
+  storeChain: string | null;
+  province: string | null;
   purchaseDate: string | null;
   pointsEarned: number;
   greenItems: GreenItem[];
@@ -180,7 +182,15 @@ function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }
                 <Text style={styles.detailPointsText}>+{data.pointsEarned} punti</Text>
               </View>
               {data.storeName && <Text style={styles.detailStore}>{data.storeName}</Text>}
-              {data.scannedAt && <Text style={styles.detailDate}>{formatDate(data.scannedAt)}</Text>}
+              <View style={styles.detailMetaRow}>
+                {data.scannedAt && <Text style={styles.detailDate}>{formatDate(data.scannedAt)}</Text>}
+                {data.province && (
+                  <View style={styles.detailProvince}>
+                    <Feather name="map-pin" size={12} color={Colors.textSecondary} />
+                    <Text style={styles.detailProvinceText}>{data.province}</Text>
+                  </View>
+                )}
+              </View>
             </View>
 
             {data.hasImage && imageData && (
@@ -490,7 +500,10 @@ const styles = StyleSheet.create({
   detailPoints: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 },
   detailPointsText: { fontSize: 24, fontFamily: "Inter_700Bold", color: Colors.leaf },
   detailStore: { fontSize: 16, fontFamily: "Inter_600SemiBold", color: Colors.text },
+  detailMetaRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   detailDate: { fontSize: 13, fontFamily: "Inter_400Regular", color: Colors.textSecondary },
+  detailProvince: { flexDirection: "row", alignItems: "center", gap: 4 },
+  detailProvinceText: { fontSize: 13, fontFamily: "Inter_400Regular", color: Colors.textSecondary },
   itemsTitle: { fontSize: 16, fontFamily: "Inter_700Bold", color: Colors.text, marginBottom: 12 },
   barcodeRow: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",

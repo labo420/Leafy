@@ -76,10 +76,10 @@ export default function History() {
                             <CalendarDays className="w-3 h-3" />
                             {format(parseISO(item.purchaseDate || item.scannedAt), "dd MMM yyyy", { locale: it })}
                           </p>
-                          {(item as any).province && (
+                          {item.province && (
                             <p className="text-xs text-muted-foreground flex items-center gap-1">
                               <MapPin className="w-3 h-3" />
-                              {(item as any).province}
+                              {item.province}
                             </p>
                           )}
                         </div>
@@ -149,12 +149,20 @@ export default function History() {
                   <h2 className="font-display font-bold text-xl text-foreground">
                     {selectedItem?.storeName || "Negozio Sconosciuto"}
                   </h2>
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    {selectedItem && format(
-                      parseISO(selectedItem.purchaseDate || selectedItem.scannedAt),
-                      "dd MMMM yyyy", { locale: it }
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <p className="text-sm text-muted-foreground">
+                      {selectedItem && format(
+                        parseISO(selectedItem.purchaseDate || selectedItem.scannedAt),
+                        "dd MMMM yyyy", { locale: it }
+                      )}
+                    </p>
+                    {selectedItem?.province && (
+                      <span className="text-sm text-muted-foreground flex items-center gap-1">
+                        <MapPin className="w-3.5 h-3.5" />
+                        {selectedItem.province}
+                      </span>
                     )}
-                  </p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="bg-primary/10 text-primary font-bold px-3 py-1.5 rounded-full text-sm">
