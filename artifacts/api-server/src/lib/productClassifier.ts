@@ -478,7 +478,20 @@ Regole:
       .slice(0, 15);
 
     const isValid = parsed.isReceipt === true;
-    const extractedDate = typeof parsed.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(parsed.date) ? parsed.date : null;
+    let extractedDate = typeof parsed.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(parsed.date) ? parsed.date : null;
+    if (extractedDate) {
+      const parsed_d = new Date(extractedDate);
+      const now = new Date();
+      const diffDays = (now.getTime() - parsed_d.getTime()) / (1000 * 60 * 60 * 24);
+      if (diffDays > 60) {
+        const corrected = new Date(parsed_d);
+        corrected.setFullYear(now.getFullYear());
+        const correctedDiff = (now.getTime() - corrected.getTime()) / (1000 * 60 * 60 * 24);
+        if (correctedDiff >= 0 && correctedDiff <= 60) {
+          extractedDate = corrected.toISOString().slice(0, 10);
+        }
+      }
+    }
     const extractedTotal = typeof parsed.totalCents === "number" ? Math.round(parsed.totalCents) : null;
     const extractedStore = typeof parsed.store === "string" && parsed.store.trim().length > 0 ? parsed.store.trim() : null;
 
