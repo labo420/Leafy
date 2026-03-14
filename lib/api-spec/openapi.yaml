@@ -153,6 +153,31 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /scan/barcode/preview:
+    post:
+      operationId: barcodePreview
+      tags: [scan]
+      summary: Standalone barcode lookup for Shopping Mode (estimate only, no points credited)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BarcodePreviewBody"
+      responses:
+        "200":
+          description: Product preview with estimated points
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BarcodePreviewResult"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /scan/barcode/confirm:
     post:
       operationId: barcodeConfirm
@@ -640,6 +665,43 @@ components:
       required:
         - barcode
         - receiptId
+
+    BarcodePreviewBody:
+      type: object
+      properties:
+        barcode:
+          type: string
+      required:
+        - barcode
+
+    BarcodePreviewResult:
+      type: object
+      properties:
+        barcode:
+          type: string
+        productName:
+          type: string
+        ecoScore:
+          type: string
+          nullable: true
+        pointsEstimate:
+          type: integer
+        category:
+          type: string
+        emoji:
+          type: string
+        reasoning:
+          type: string
+        source:
+          type: string
+      required:
+        - barcode
+        - productName
+        - pointsEstimate
+        - category
+        - emoji
+        - reasoning
+        - source
 
     BarcodeLookupResult:
       type: object

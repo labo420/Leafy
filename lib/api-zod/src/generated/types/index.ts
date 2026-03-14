@@ -17,6 +17,8 @@ export * from "./badge";
 export * from "./badgeItem";
 export * from "./barcodeConfirmResult";
 export * from "./barcodeLookupResult";
+export * from "./barcodePreviewBody";
+export * from "./barcodePreviewResult";
 export * from "./barcodeScanBody";
 export * from "./barcodeScannedItem";
 export * from "./beginBrowserLoginParams";

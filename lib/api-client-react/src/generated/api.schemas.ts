@@ -98,6 +98,21 @@ export interface BarcodeScanBody {
   receiptId: number;
 }
 
+export interface BarcodePreviewBody {
+  barcode: string;
+}
+
+export interface BarcodePreviewResult {
+  barcode: string;
+  productName: string;
+  ecoScore?: string | null;
+  pointsEstimate: number;
+  category: string;
+  emoji: string;
+  reasoning: string;
+  source: string;
+}
+
 export interface BarcodeLookupResult {
   barcode: string;
   productName: string;

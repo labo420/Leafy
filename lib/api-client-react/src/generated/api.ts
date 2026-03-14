@@ -24,6 +24,8 @@ import type {
   AuthUserEnvelope,
   BarcodeConfirmResult,
   BarcodeLookupResult,
+  BarcodePreviewBody,
+  BarcodePreviewResult,
   BarcodeScanBody,
   BeginBrowserLoginParams,
   Challenge,
@@ -605,6 +607,92 @@ export const useBarcodeLookup = <
 };
 
 /**
+ * @summary Standalone barcode lookup for Shopping Mode (estimate only, no points credited)
+ */
+export const getBarcodePreviewUrl = () => {
+  return `/api/scan/barcode/preview`;
+};
+
+export const barcodePreview = async (
+  barcodePreviewBody: BarcodePreviewBody,
+  options?: RequestInit,
+): Promise<BarcodePreviewResult> => {
+  return customFetch<BarcodePreviewResult>(getBarcodePreviewUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(barcodePreviewBody),
+  });
+};
+
+export const getBarcodePreviewMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof barcodePreview>>,
+    TError,
+    { data: BodyType<BarcodePreviewBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof barcodePreview>>,
+  TError,
+  { data: BodyType<BarcodePreviewBody> },
+  TContext
+> => {
+  const mutationKey = ["barcodePreview"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof barcodePreview>>,
+    { data: BodyType<BarcodePreviewBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return barcodePreview(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type BarcodePreviewMutationResult = NonNullable<
+  Awaited<ReturnType<typeof barcodePreview>>
+>;
+export type BarcodePreviewMutationBody = BodyType<BarcodePreviewBody>;
+export type BarcodePreviewMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Standalone barcode lookup for Shopping Mode (estimate only, no points credited)
+ */
+export const useBarcodePreview = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof barcodePreview>>,
+    TError,
+    { data: BodyType<BarcodePreviewBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof barcodePreview>>,
+  TError,
+  { data: BodyType<BarcodePreviewBody> },
+  TContext
+> => {
+  return useMutation(getBarcodePreviewMutationOptions(options));
+};
+
+/**
  * @summary Confirm barcode scan and credit points
  */
 export const getBarcodeConfirmUrl = () => {
@@ -1015,7 +1103,7 @@ export function useGetReceiptImage<
 }
 
 /**
- * @summary Get accepted Italian supermarket chains
+ * @summary Get list of accepted Italian supermarket chains
  */
 export const getGetAcceptedStoresUrl = () => {
   return `/api/accepted-stores`;
@@ -1049,9 +1137,9 @@ export const getGetAcceptedStoresQueryOptions = <
 
   const queryKey = queryOptions?.queryKey ?? getGetAcceptedStoresQueryKey();
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAcceptedStores>>> = ({
-    signal,
-  }) => getAcceptedStores({ signal, ...requestOptions });
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getAcceptedStores>>
+  > = ({ signal }) => getAcceptedStores({ signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof getAcceptedStores>>,
@@ -1064,6 +1152,10 @@ export type GetAcceptedStoresQueryResult = NonNullable<
   Awaited<ReturnType<typeof getAcceptedStores>>
 >;
 export type GetAcceptedStoresQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get list of accepted Italian supermarket chains
+ */
 
 export function useGetAcceptedStores<
   TData = Awaited<ReturnType<typeof getAcceptedStores>>,

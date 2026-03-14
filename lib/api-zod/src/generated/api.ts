@@ -116,6 +116,24 @@ export const BarcodeLookupResponse = zod.object({
 });
 
 /**
+ * @summary Standalone barcode lookup for Shopping Mode (estimate only, no points credited)
+ */
+export const BarcodePreviewBody = zod.object({
+  barcode: zod.string(),
+});
+
+export const BarcodePreviewResponse = zod.object({
+  barcode: zod.string(),
+  productName: zod.string(),
+  ecoScore: zod.string().nullish(),
+  pointsEstimate: zod.number(),
+  category: zod.string(),
+  emoji: zod.string(),
+  reasoning: zod.string(),
+  source: zod.string(),
+});
+
+/**
  * @summary Confirm barcode scan and credit points
  */
 export const BarcodeConfirmBody = zod.object({
@@ -221,7 +239,7 @@ export const GetReceiptImageParams = zod.object({
 });
 
 /**
- * @summary Get accepted Italian supermarket chains
+ * @summary Get list of accepted Italian supermarket chains
  */
 export const GetAcceptedStoresResponse = zod.object({
   standard: zod.array(zod.string()),
