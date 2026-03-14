@@ -489,6 +489,7 @@ CREAM = "#F8FAF5"         // background
 | Utente | Email | Password |
 |--------|-------|----------|
 | Demo | `demo@test.app` | `Demo123456` |
+| Personale | `labo@gmail.com` | `labo2406` |
 
 ---
 
