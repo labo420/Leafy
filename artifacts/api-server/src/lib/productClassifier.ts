@@ -11,6 +11,26 @@ const ECO_SCORE_POINTS: Record<string, number> = {
   e: 0,
 };
 
+const ECO_HERO_MAX_POINTS = 40;
+const ECO_HERO_KEYWORDS = [
+  "sfuso", "sfuse", "sfusi",
+  "km 0", "km0", "km zero", "chilometro zero",
+  "fair trade", "fairtrade", "equo solidale", "equosolidale",
+  "ricaricabile", "ricaricabili",
+  "zero plastica", "plastic free", "plastic-free", "senza plastica",
+  "senza imballaggi", "zero imballaggi",
+  "vegano certificato", "vegan certified",
+];
+
+function applyEcoHeroMultiplier(points: number, productName: string, category: string, reasoning: string): { points: number; isEcoHero: boolean } {
+  const haystack = `${productName} ${category} ${reasoning}`.toLowerCase();
+  const isEcoHero = ECO_HERO_KEYWORDS.some((kw) => haystack.includes(kw));
+  if (isEcoHero && points >= 10) {
+    return { points: Math.min(ECO_HERO_MAX_POINTS, points * 2), isEcoHero: true };
+  }
+  return { points, isEcoHero: false };
+}
+
 const ECO_SCORE_EMOJI: Record<string, string> = {
   a: "🌿",
   b: "♻️",
@@ -759,7 +779,7 @@ export async function lookupBarcode(barcode: string, imageBase64?: string): Prom
         return aiResult;
       }
 
-      const points = validGrade ? (ECO_SCORE_POINTS[validGrade] ?? 5) : 5;
+      let points = validGrade ? (ECO_SCORE_POINTS[validGrade] ?? 5) : 5;
       const ecoEmoji = validGrade ? (ECO_SCORE_EMOJI[validGrade] ?? "🌿") : "🌿";
 
       const cats: string[] = [];
@@ -772,9 +792,13 @@ export async function lookupBarcode(barcode: string, imageBase64?: string): Prom
       const productName = product.product_name
         ? `${brandPrefix}${product.product_name}`
         : `Prodotto ${normalizedBarcode}`;
-      const reasoning = validGrade
+      const reasoningRaw = validGrade
         ? `Eco-Score ${validGrade.toUpperCase()} da Open Food Facts`
         : "Classificato da Open Food Facts";
+
+      const heroCheck = applyEcoHeroMultiplier(points, productName, category, reasoningRaw);
+      points = heroCheck.points;
+      const reasoning = heroCheck.isEcoHero ? `${reasoningRaw} · Eco-Hero ⭐` : reasoningRaw;
       const emoji = resolveProductEmoji(productName, category, ecoEmoji);
 
       const result: BarcodeResult = {
@@ -808,40 +832,49 @@ export async function lookupBarcode(barcode: string, imageBase64?: string): Prom
     console.log(`[lookupBarcode] OFF miss for ${normalizedBarcode}, trying vision fallback`);
     const visionResult = await classifyWithVision(normalizedBarcode, imageBase64);
     if (visionResult) {
-      const co2PerUnit = co2SavingsByCategory(visionResult.category, visionResult.points);
+      const heroCheck = applyEcoHeroMultiplier(visionResult.points, visionResult.productName, visionResult.category, visionResult.reasoning);
+      const finalResult = heroCheck.isEcoHero
+        ? { ...visionResult, points: heroCheck.points, reasoning: `${visionResult.reasoning} · Eco-Hero ⭐` }
+        : visionResult;
+      const co2PerUnit = co2SavingsByCategory(finalResult.category, finalResult.points);
       await db.insert(productCacheTable).values({
         productNameNormalized: `barcode:${normalizedBarcode}`,
-        productNameOriginal: visionResult.productName,
-        ecoScore: visionResult.ecoScore,
-        points: visionResult.points,
-        category: visionResult.category,
-        source: visionResult.source,
-        reasoning: visionResult.reasoning,
-        emoji: visionResult.emoji,
+        productNameOriginal: finalResult.productName,
+        ecoScore: finalResult.ecoScore,
+        points: finalResult.points,
+        category: finalResult.category,
+        source: finalResult.source,
+        reasoning: finalResult.reasoning,
+        emoji: finalResult.emoji,
         co2PerUnit,
       }).onConflictDoNothing();
 
-      return visionResult;
+      return finalResult;
     }
   }
 
   console.log(`[lookupBarcode] OFF miss for ${normalizedBarcode}, falling back to AI`);
   const aiResult = await classifyBarcodeWithAI(normalizedBarcode);
 
-  const co2PerUnit = co2SavingsByCategory(aiResult.category, aiResult.points);
+  const heroCheck = applyEcoHeroMultiplier(aiResult.points, aiResult.productName, aiResult.category, aiResult.reasoning);
+  const finalAiResult = heroCheck.isEcoHero
+    ? { ...aiResult, points: heroCheck.points, reasoning: `${aiResult.reasoning} · Eco-Hero ⭐` }
+    : aiResult;
+
+  const co2PerUnit = co2SavingsByCategory(finalAiResult.category, finalAiResult.points);
   await db.insert(productCacheTable).values({
     productNameNormalized: `barcode:${normalizedBarcode}`,
-    productNameOriginal: aiResult.productName,
-    ecoScore: aiResult.ecoScore,
-    points: aiResult.points,
-    category: aiResult.category,
-    source: aiResult.source,
-    reasoning: aiResult.reasoning,
-    emoji: aiResult.emoji,
+    productNameOriginal: finalAiResult.productName,
+    ecoScore: finalAiResult.ecoScore,
+    points: finalAiResult.points,
+    category: finalAiResult.category,
+    source: finalAiResult.source,
+    reasoning: finalAiResult.reasoning,
+    emoji: finalAiResult.emoji,
     co2PerUnit,
   }).onConflictDoNothing();
 
-  return aiResult;
+  return finalAiResult;
 }
 
 export interface BarcodeImageValidation {

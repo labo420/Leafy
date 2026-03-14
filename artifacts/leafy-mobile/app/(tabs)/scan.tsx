@@ -50,6 +50,9 @@ interface ScanResponse {
   message: string;
   sessionHours: number;
   greenItemsFound: PendingProduct[];
+  receiptBonusPts?: number;
+  welcomeBonus?: boolean;
+  welcomeBonusPts?: number;
 }
 
 interface ActiveSession {
@@ -296,6 +299,23 @@ export default function ScanScreen() {
             <Text style={styles.resultTitle}>Scontrino verificato!</Text>
             <Text style={styles.resultSub}>{scanResult.message}</Text>
           </Animated.View>
+
+          {(scanResult.receiptBonusPts || scanResult.welcomeBonus) && (
+            <Animated.View entering={FadeInDown.delay(150)} style={styles.bonusRow}>
+              {scanResult.welcomeBonus && (
+                <View style={styles.bonusChip}>
+                  <Text style={styles.bonusChipEmoji}>🎉</Text>
+                  <Text style={styles.bonusChipText}>Benvenuto! +{scanResult.welcomeBonusPts} pt</Text>
+                </View>
+              )}
+              {(scanResult.receiptBonusPts ?? 0) > 0 && (
+                <View style={styles.bonusChip}>
+                  <Text style={styles.bonusChipEmoji}>📷</Text>
+                  <Text style={styles.bonusChipText}>Scontrino +{scanResult.receiptBonusPts} pt</Text>
+                </View>
+              )}
+            </Animated.View>
+          )}
 
           <Animated.View entering={FadeInDown.delay(200)} style={styles.timerBox}>
             <Feather name="clock" size={20} color="rgba(255,255,255,0.8)" />
@@ -729,6 +749,16 @@ const styles = StyleSheet.create({
     fontSize: 15, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.8)",
     textAlign: "center", lineHeight: 22, marginBottom: 12,
   },
+  bonusRow: {
+    flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12, justifyContent: "center",
+  },
+  bonusChip: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    backgroundColor: "rgba(255,255,255,0.25)", borderRadius: 20,
+    paddingHorizontal: 12, paddingVertical: 6,
+  },
+  bonusChipEmoji: { fontSize: 16 },
+  bonusChipText: { fontSize: 14, fontFamily: "Inter_700Bold", color: "#fff" },
   timerBox: {
     flexDirection: "row", alignItems: "center", gap: 8,
     backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10,

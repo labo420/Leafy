@@ -132,7 +132,12 @@ router.post("/scan", async (req, res): Promise<void> => {
   const now = new Date();
   const barcodeExpiry = new Date(now.getTime() + BARCODE_SESSION_HOURS * 60 * 60 * 1000);
 
+  const RECEIPT_SCAN_BONUS = 5;
+  const WELCOME_BONUS = 100;
+
   let receipt: typeof receiptsTable.$inferSelect;
+  let welcomeBonus = false;
+  let receiptBonusAwarded = false;
 
   if (selfDuplicate) {
     const [existing] = await db
@@ -189,6 +194,24 @@ router.post("/scan", async (req, res): Promise<void> => {
     } catch (e) {
       console.error("[receipt-image] Upload failed:", e);
     }
+
+    const [receiptCountRow] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(receiptsTable)
+      .where(eq(receiptsTable.userId, user.id));
+    const totalReceiptsNow = receiptCountRow?.count ?? 1;
+    welcomeBonus = totalReceiptsNow === 1;
+    receiptBonusAwarded = true;
+
+    const bonusTotal = RECEIPT_SCAN_BONUS + (welcomeBonus ? WELCOME_BONUS : 0);
+    await db
+      .update(usersTable)
+      .set({ totalPoints: sql`total_points + ${bonusTotal}` })
+      .where(eq(usersTable.id, user.id));
+    await db
+      .update(receiptsTable)
+      .set({ pointsEarned: sql`points_earned + ${RECEIPT_SCAN_BONUS}` })
+      .where(eq(receiptsTable.id, newReceipt.id));
   }
 
   const today = new Date().toDateString();
@@ -242,7 +265,10 @@ router.post("/scan", async (req, res): Promise<void> => {
     storeName: receipt.storeName,
     message,
     sessionHours: BARCODE_SESSION_HOURS,
-    pointsEarned: 0,
+    pointsEarned: receiptBonusAwarded ? RECEIPT_SCAN_BONUS : 0,
+    receiptBonusPts: receiptBonusAwarded ? RECEIPT_SCAN_BONUS : 0,
+    welcomeBonus,
+    welcomeBonusPts: welcomeBonus ? WELCOME_BONUS : 0,
     greenItemsFound: pendingProducts.map((p) => ({
       name: p.name,
       matched: false,
@@ -326,11 +352,14 @@ async function validateBarcodeRequest(req: Request, res: Response): Promise<{ us
   return { user, receipt, barcode: barcode.trim(), receiptId };
 }
 
+const MAX_DAILY_POINTS = 200;
+const MAX_RECEIPT_POINTS = 150;
+
 router.post("/scan/barcode/lookup", async (req, res): Promise<void> => {
   const validated = await validateBarcodeRequest(req, res);
   if (!validated) return;
 
-  const { user, barcode } = validated;
+  const { user, barcode, receiptId } = validated;
   const { imageBase64 } = req.body as { imageBase64?: string };
 
   if (imageBase64 && typeof imageBase64 === "string" && imageBase64.length > 100 && imageBase64.length <= MAX_BARCODE_IMAGE_SIZE) {
@@ -357,11 +386,25 @@ router.post("/scan/barcode/lookup", async (req, res): Promise<void> => {
     );
 
   const pointsEarnedToday = pointsSumRow?.total ?? 0;
-  const MAX_DAILY_POINTS = 200;
-  const remainingCap = MAX_DAILY_POINTS - pointsEarnedToday;
+  const remainingDailyCap = MAX_DAILY_POINTS - pointsEarnedToday;
 
-  if (remainingCap <= 0) {
+  if (remainingDailyCap <= 0) {
     res.status(400).json({ error: `Hai raggiunto il limite di ${MAX_DAILY_POINTS} punti al giorno. Torna domani!` });
+    return;
+  }
+
+  const [receiptPtsSumRow] = await db
+    .select({ total: sql<number>`coalesce(sum(points_earned), 0)::int` })
+    .from(barcodeScansTable)
+    .where(eq(barcodeScansTable.receiptId, receiptId));
+  const pointsEarnedThisReceipt = receiptPtsSumRow?.total ?? 0;
+  const remainingReceiptCap = MAX_RECEIPT_POINTS - pointsEarnedThisReceipt;
+
+  if (remainingReceiptCap <= 0) {
+    res.status(400).json({
+      error: `Hai raggiunto il limite di ${MAX_RECEIPT_POINTS} punti per questo scontrino. Ottimo lavoro! 🌿`,
+      receiptCapReached: true,
+    });
     return;
   }
 
@@ -373,7 +416,8 @@ router.post("/scan/barcode/lookup", async (req, res): Promise<void> => {
     return;
   }
 
-  const pointsToAward = Math.min(product.points, remainingCap);
+  const effectiveCap = Math.min(remainingDailyCap, remainingReceiptCap);
+  const pointsToAward = Math.min(product.points, effectiveCap);
 
   res.json({
     barcode,
@@ -384,7 +428,10 @@ router.post("/scan/barcode/lookup", async (req, res): Promise<void> => {
     emoji: product.emoji,
     reasoning: product.reasoning,
     source: product.source,
-    remainingDailyPoints: remainingCap,
+    remainingDailyPoints: remainingDailyCap,
+    remainingReceiptPoints: remainingReceiptCap,
+    receiptCapPts: MAX_RECEIPT_POINTS,
+    dailyCapPts: MAX_DAILY_POINTS,
   });
 });
 
@@ -470,11 +517,31 @@ router.post("/scan/barcode/manual-classify", async (req, res): Promise<void> => 
     .from(barcodeScansTable)
     .where(and(eq(barcodeScansTable.userId, user.id), gte(barcodeScansTable.scannedAt, oneDayAgo)));
   const pointsEarnedToday = pointsSumRow?.total ?? 0;
-  const MAX_DAILY_POINTS = 200;
-  const remainingCap = MAX_DAILY_POINTS - pointsEarnedToday;
+  const remainingDailyCap = MAX_DAILY_POINTS - pointsEarnedToday;
 
-  if (remainingCap <= 0) {
+  if (remainingDailyCap <= 0) {
     res.status(400).json({ error: `Hai raggiunto il limite di ${MAX_DAILY_POINTS} punti al giorno. Torna domani!` });
+    return;
+  }
+
+  const receiptIdParsed = typeof receiptIdRaw === "number" ? receiptIdRaw : parseInt(String(receiptIdRaw ?? "0"), 10);
+  let remainingReceiptCap = MAX_RECEIPT_POINTS;
+  if (receiptIdParsed && !isNaN(receiptIdParsed)) {
+    const [receiptPtsSumRow] = await db
+      .select({ total: sql<number>`coalesce(sum(points_earned), 0)::int` })
+      .from(barcodeScansTable)
+      .where(eq(barcodeScansTable.receiptId, receiptIdParsed));
+    remainingReceiptCap = MAX_RECEIPT_POINTS - (receiptPtsSumRow?.total ?? 0);
+  }
+
+  const effectiveCap = Math.min(remainingDailyCap, remainingReceiptCap);
+
+  if (effectiveCap <= 0) {
+    res.status(400).json({
+      error: remainingReceiptCap <= 0
+        ? `Hai raggiunto il limite di ${MAX_RECEIPT_POINTS} punti per questo scontrino.`
+        : `Hai raggiunto il limite di ${MAX_DAILY_POINTS} punti al giorno. Torna domani!`,
+    });
     return;
   }
 
@@ -509,12 +576,15 @@ router.post("/scan/barcode/manual-classify", async (req, res): Promise<void> => 
     barcode: cleanBarcode,
     productName: result.productName,
     ecoScore: result.ecoScore,
-    pointsToAward: Math.min(result.points, remainingCap),
+    pointsToAward: Math.min(result.points, effectiveCap),
     category: result.category,
     emoji: result.emoji,
     reasoning: result.reasoning,
     source: result.source,
-    remainingDailyPoints: remainingCap,
+    remainingDailyPoints: remainingDailyCap,
+    remainingReceiptPoints: remainingReceiptCap,
+    receiptCapPts: MAX_RECEIPT_POINTS,
+    dailyCapPts: MAX_DAILY_POINTS,
     isManual: true,
   });
 });
@@ -537,11 +607,25 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
     );
 
   const pointsEarnedToday = pointsSumRow?.total ?? 0;
-  const MAX_DAILY_POINTS = 200;
-  const remainingCap = MAX_DAILY_POINTS - pointsEarnedToday;
+  const remainingDailyCap = MAX_DAILY_POINTS - pointsEarnedToday;
 
-  if (remainingCap <= 0) {
+  if (remainingDailyCap <= 0) {
     res.status(400).json({ error: `Hai raggiunto il limite di ${MAX_DAILY_POINTS} punti al giorno. Torna domani!` });
+    return;
+  }
+
+  const [receiptPtsSumRow] = await db
+    .select({ total: sql<number>`coalesce(sum(points_earned), 0)::int` })
+    .from(barcodeScansTable)
+    .where(eq(barcodeScansTable.receiptId, receiptId));
+  const pointsEarnedThisReceipt = receiptPtsSumRow?.total ?? 0;
+  const remainingReceiptCap = MAX_RECEIPT_POINTS - pointsEarnedThisReceipt;
+
+  if (remainingReceiptCap <= 0) {
+    res.status(400).json({
+      error: `Hai raggiunto il limite di ${MAX_RECEIPT_POINTS} punti per questo scontrino. Ottimo lavoro! 🌿`,
+      receiptCapReached: true,
+    });
     return;
   }
 
@@ -571,7 +655,25 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
     }
   }
 
-  const finalPoints = Math.min(product.points, remainingCap);
+  const effectiveCap = Math.min(remainingDailyCap, remainingReceiptCap);
+  const finalPoints = Math.min(product.points, effectiveCap);
+
+  const SCONTRINO_VIRTUOSO_BONUS = 20;
+  const SCONTRINO_VIRTUOSO_THRESHOLD = 3;
+  const isGreenProduct = (product.points ?? 0) >= 10;
+
+  const [greenCountRow] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(barcodeScansTable)
+    .where(and(
+      eq(barcodeScansTable.receiptId, receiptId),
+      gte(barcodeScansTable.pointsEarned, 10),
+    ));
+  const greenCountBefore = greenCountRow?.count ?? 0;
+  const willTriggerVirtuoso = isGreenProduct && greenCountBefore === SCONTRINO_VIRTUOSO_THRESHOLD - 1;
+  const virtuosoAlreadyGiven = greenCountBefore >= SCONTRINO_VIRTUOSO_THRESHOLD;
+
+  const bonusVirtuosoPoints = (willTriggerVirtuoso && !virtuosoAlreadyGiven) ? SCONTRINO_VIRTUOSO_BONUS : 0;
 
   const txResult = await db.transaction(async (tx) => {
     const [existingDup] = await tx
@@ -602,9 +704,10 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
       })
       .returning();
 
+    const totalPointsDelta = finalPoints + bonusVirtuosoPoints;
     await tx
       .update(usersTable)
-      .set({ totalPoints: sql`total_points + ${finalPoints}` })
+      .set({ totalPoints: sql`total_points + ${totalPointsDelta}` })
       .where(eq(usersTable.id, user.id));
 
     let updatedGreenItemsJson = receipt.greenItemsJson;
@@ -624,7 +727,7 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
     await tx
       .update(receiptsTable)
       .set({
-        pointsEarned: sql`points_earned + ${finalPoints}`,
+        pointsEarned: sql`points_earned + ${finalPoints + bonusVirtuosoPoints}`,
         greenItemsCount: sql`green_items_count + 1`,
         categories: newCategories,
         greenItemsJson: updatedGreenItemsJson,
@@ -673,7 +776,12 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
     source: product.source,
     totalPoints: updatedUser?.totalPoints ?? 0,
     level: level.level,
-    remainingDailyPoints: remainingCap - finalPoints,
+    remainingDailyPoints: remainingDailyCap - finalPoints,
+    remainingReceiptPoints: remainingReceiptCap - finalPoints,
+    receiptCapPts: MAX_RECEIPT_POINTS,
+    dailyCapPts: MAX_DAILY_POINTS,
+    bonusVirtuoso: bonusVirtuosoPoints > 0,
+    bonusVirtuosoPts: bonusVirtuosoPoints,
   });
 });
 

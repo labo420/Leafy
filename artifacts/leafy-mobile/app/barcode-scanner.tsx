@@ -36,6 +36,10 @@ interface LookupResult {
   reasoning: string;
   source: string;
   remainingDailyPoints: number;
+  remainingReceiptPoints?: number;
+  receiptCapPts?: number;
+  dailyCapPts?: number;
+  isManual?: boolean;
 }
 
 interface ConfirmResult {
@@ -49,6 +53,11 @@ interface ConfirmResult {
   source: string;
   totalPoints: number;
   remainingDailyPoints: number;
+  remainingReceiptPoints?: number;
+  receiptCapPts?: number;
+  dailyCapPts?: number;
+  bonusVirtuoso?: boolean;
+  bonusVirtuosoPts?: number;
 }
 
 interface ScannedProduct {
@@ -436,8 +445,28 @@ export default function BarcodeScannerScreen() {
               <Text style={styles.resultPointsLabel}>Punti guadagnati</Text>
               <Text style={styles.resultPointsValue}>+{lastConfirmed.pointsEarned}</Text>
             </View>
+
+            {lastConfirmed.bonusVirtuoso && (
+              <View style={styles.virtuosoChip}>
+                <Text style={styles.virtuosoChipIcon}>⭐</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.virtuosoChipTitle}>Scontrino Virtuoso!</Text>
+                  <Text style={styles.virtuosoChipSub}>3+ prodotti green +{lastConfirmed.bonusVirtuosoPts} pt bonus</Text>
+                </View>
+              </View>
+            )}
           </Animated.View>
         </LinearGradient>
+
+        <View style={styles.capsInfoBar}>
+          <Feather name="info" size={12} color={Colors.textSecondary} />
+          <Text style={styles.capsInfoText}>
+            Max {lastConfirmed.receiptCapPts ?? 150} pt/scontrino · {lastConfirmed.dailyCapPts ?? 200} pt/giorno
+          </Text>
+          <Text style={styles.capsInfoRemaining}>
+            Rimasti: {Math.max(0, lastConfirmed.remainingReceiptPoints ?? 0)} scontrino · {Math.max(0, lastConfirmed.remainingDailyPoints ?? 0)} oggi
+          </Text>
+        </View>
 
         <Animated.View entering={FadeInDown.delay(200)} style={styles.resultActions}>
           {targetProductName ? (
@@ -936,5 +965,24 @@ const styles = StyleSheet.create({
   },
   manualCancelScanText: {
     fontSize: 14, fontFamily: "Inter_500Medium", color: Colors.textSecondary,
+  },
+  virtuosoChip: {
+    flexDirection: "row", alignItems: "center", gap: 10,
+    backgroundColor: "rgba(255,255,255,0.25)", borderRadius: 14,
+    paddingHorizontal: 14, paddingVertical: 10, marginTop: 12,
+  },
+  virtuosoChipIcon: { fontSize: 22 },
+  virtuosoChipTitle: { fontSize: 14, fontFamily: "Inter_700Bold", color: "#fff" },
+  virtuosoChipSub: { fontSize: 12, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.85)" },
+  capsInfoBar: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    paddingHorizontal: 20, paddingVertical: 10,
+    backgroundColor: Colors.card, flexWrap: "wrap",
+  },
+  capsInfoText: {
+    fontSize: 12, fontFamily: "Inter_500Medium", color: Colors.textSecondary, flex: 1,
+  },
+  capsInfoRemaining: {
+    fontSize: 12, fontFamily: "Inter_600SemiBold", color: Colors.leaf,
   },
 });
