@@ -24,10 +24,6 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Start application"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
 args = "artifacts/leafy: web"
 
 [[workflows.workflow.tasks]]
@@ -42,17 +38,9 @@ args = "artifacts/mockup-sandbox: web"
 task = "workflow.run"
 args = "artifacts/leafy-register: web"
 
-[[workflows.workflow]]
-name = "Start application"
-author = "agent"
-
-[workflows.workflow.metadata]
-outputType = "console"
-
 [[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "PORT=8080 pnpm --filter @workspace/api-server run dev"
-waitForPort = 8080
+task = "workflow.run"
+args = "Start application"
 
 [[workflows.workflow]]
 name = "artifacts/leafy: web"
@@ -100,6 +88,17 @@ waitForPort = 5000
 
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "echo 'API server handled by artifacts/api-server workflow' && sleep infinity"
+
+[workflows.workflow.metadata]
+outputType = "console"
 
 [agent]
 stack = "PNPM_WORKSPACE"
