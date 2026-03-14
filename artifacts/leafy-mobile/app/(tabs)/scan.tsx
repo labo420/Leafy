@@ -2,7 +2,7 @@ import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -17,13 +17,12 @@ import {
 import Animated, {
   FadeIn, FadeInDown, SlideInDown,
   useSharedValue, useAnimatedStyle, withSpring,
-  withRepeat, withSequence, withTiming, withDelay, Easing,
+  withRepeat, withTiming, withDelay, Easing,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import Colors from "@/constants/colors";
-import { Fonts } from "@/constants/typography";
 import { useAuth } from "@/context/auth";
 import { router } from "expo-router";
 import type { Profile } from "@workspace/api-client-react";
@@ -484,6 +483,9 @@ export default function ScanScreen() {
               onPressIn={() => { cameraScale.value = withSpring(0.92, { damping: 15, stiffness: 250 }); }}
               onPressOut={() => { cameraScale.value = withSpring(1, { damping: 10, stiffness: 180 }); }}
               onPress={() => pickImage("camera")}
+              accessibilityRole="button"
+              accessibilityLabel="Fotografa lo scontrino"
+              accessibilityHint="Apre la fotocamera per scansionare uno scontrino"
             >
               <View style={styles.bigBtnPulseContainer}>
                 <Animated.View style={[styles.bigBtnPulseRing, pulse1Style]} />
