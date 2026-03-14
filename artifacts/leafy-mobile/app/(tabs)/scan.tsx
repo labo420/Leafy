@@ -14,7 +14,10 @@ import {
   Text,
   View,
 } from "react-native";
-import Animated, { FadeIn, FadeInDown, SlideInDown } from "react-native-reanimated";
+import Animated, {
+  FadeIn, FadeInDown, SlideInDown,
+  useSharedValue, useAnimatedStyle, withSpring,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
@@ -187,6 +190,10 @@ export default function ScanScreen() {
 
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 + 84 : 100;
+  const cameraScale = useSharedValue(1);
+  const cameraAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: cameraScale.value }],
+  }));
 
   const { data: activeSession, isLoading: sessionLoading } = useQuery<ActiveSession>({
     queryKey: ["active-session"],
@@ -455,23 +462,27 @@ export default function ScanScreen() {
       ) : (
         <>
           <Animated.View entering={FadeInDown.delay(150).springify()} style={styles.mainActionArea}>
-            <Pressable
-              style={({ pressed }) => [styles.cameraBtn, pressed && styles.cameraBtnPressed]}
-              onPress={() => pickImage("camera")}
-            >
-              <LinearGradient
-                colors={[Colors.leaf, Colors.forest]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.cameraGradient}
+            <View style={styles.cameraCircleArea}>
+              <Pressable
+                onPressIn={() => { cameraScale.value = withSpring(0.91, { damping: 15, stiffness: 200 }); }}
+                onPressOut={() => { cameraScale.value = withSpring(1, { damping: 12, stiffness: 180 }); }}
+                onPress={() => pickImage("camera")}
               >
-                <View style={styles.cameraIconWrap}>
-                  <Feather name="camera" size={52} color="#fff" />
-                </View>
-                <Text style={styles.cameraBtnTitle}>Fotografa lo scontrino</Text>
-                <Text style={styles.cameraBtnSub}>Totale e data devono essere visibili</Text>
-              </LinearGradient>
-            </Pressable>
+                <Animated.View style={cameraAnimStyle}>
+                  <View style={styles.cameraBtnRing} />
+                  <LinearGradient
+                    colors={[Colors.leaf, Colors.forest]}
+                    start={{ x: 0.2, y: 0 }}
+                    end={{ x: 0.8, y: 1 }}
+                    style={styles.cameraBtnCircle}
+                  >
+                    <Feather name="camera" size={68} color="#fff" />
+                  </LinearGradient>
+                </Animated.View>
+              </Pressable>
+              <Text style={styles.cameraBtnTitle}>Fotografa lo scontrino</Text>
+              <Text style={styles.cameraBtnSub}>Totale e data devono essere visibili</Text>
+            </View>
 
             <Pressable
               style={({ pressed }) => [styles.galleryLink, pressed && { opacity: 0.6 }]}
@@ -552,23 +563,26 @@ const styles = StyleSheet.create({
   motivStreakText: { fontSize: 13, fontFamily: "Inter_700Bold", color: Colors.leaf },
 
   mainActionArea: { paddingHorizontal: 20, gap: 14, marginBottom: 16 },
-  cameraBtn: {
-    borderRadius: 28, overflow: "hidden",
-    shadowColor: Colors.forest, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.25, shadowRadius: 16, elevation: 6,
-  },
-  cameraBtnPressed: { opacity: 0.9, transform: [{ scale: 0.98 }] },
-  cameraGradient: {
-    paddingTop: 40, paddingBottom: 36, paddingHorizontal: 24,
-    alignItems: "center", gap: 12,
-  },
-  cameraIconWrap: {
-    width: 96, height: 96, borderRadius: 48,
-    backgroundColor: "rgba(255,255,255,0.18)",
+
+  cameraCircleArea: { alignItems: "center", gap: 18, paddingVertical: 8 },
+  cameraBtnCircle: {
+    width: 168, height: 168, borderRadius: 84,
     alignItems: "center", justifyContent: "center",
-    marginBottom: 4,
+    shadowColor: Colors.leaf,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
+    elevation: 12,
   },
-  cameraBtnTitle: { fontSize: 22, fontFamily: "DMSans_700Bold", color: "#fff", textAlign: "center" },
-  cameraBtnSub: { fontSize: 13, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.75)", textAlign: "center" },
+  cameraBtnRing: {
+    position: "absolute",
+    width: 192, height: 192, borderRadius: 96,
+    borderWidth: 2.5,
+    borderColor: "rgba(46,107,80,0.22)",
+    top: -12, left: -12,
+  },
+  cameraBtnTitle: { fontSize: 21, fontFamily: "DMSans_700Bold", color: Colors.text, textAlign: "center" },
+  cameraBtnSub: { fontSize: 13, fontFamily: "Inter_400Regular", color: Colors.textSecondary, textAlign: "center" },
 
   galleryLink: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
