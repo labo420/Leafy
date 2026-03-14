@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq, desc } from "drizzle-orm";
 import { db, receiptsTable, barcodeScansTable } from "@workspace/db";
-import { GetReceiptsResponse, GetReceiptParams } from "@workspace/api-zod";
+import { GetReceiptParams } from "@workspace/api-zod";
 import { requireUser } from "./profile";
 import { getReceiptImageStream } from "../lib/receiptImages";
 
@@ -15,17 +15,21 @@ router.get("/receipts", async (req, res): Promise<void> => {
     .where(eq(receiptsTable.userId, user.id))
     .orderBy(desc(receiptsTable.scannedAt));
 
-  const data = receipts.map(r => ({
-    id: r.id,
-    storeName: r.storeName,
-    purchaseDate: r.purchaseDate,
-    pointsEarned: r.pointsEarned,
-    greenItemsCount: r.greenItemsCount,
-    categories: r.categories,
-    scannedAt: r.scannedAt,
-    hasImage: !!r.imageUrl,
-    imageExpiresAt: r.imageExpiresAt?.toISOString() ?? null,
-  }));
+  const now = new Date();
+  const data = receipts.map(r => {
+    const imageActive = !!r.imageUrl && !!r.imageExpiresAt && r.imageExpiresAt > now;
+    return {
+      id: r.id,
+      storeName: r.storeName,
+      purchaseDate: r.purchaseDate,
+      pointsEarned: r.pointsEarned,
+      greenItemsCount: r.greenItemsCount,
+      categories: r.categories,
+      scannedAt: r.scannedAt,
+      hasImage: imageActive,
+      imageExpiresAt: imageActive ? r.imageExpiresAt!.toISOString() : null,
+    };
+  });
 
   res.json(data);
 });
@@ -55,6 +59,8 @@ router.get("/receipts/:id", async (req, res): Promise<void> => {
     .where(eq(barcodeScansTable.receiptId, receipt.id))
     .orderBy(desc(barcodeScansTable.scannedAt));
 
+  const imageActive = !!receipt.imageUrl && !!receipt.imageExpiresAt && receipt.imageExpiresAt > new Date();
+
   res.json({
     id: receipt.id,
     storeName: receipt.storeName,
@@ -63,8 +69,8 @@ router.get("/receipts/:id", async (req, res): Promise<void> => {
     greenItems,
     scannedAt: receipt.scannedAt,
     barcodeExpiry: receipt.barcodeExpiry,
-    hasImage: !!receipt.imageUrl,
-    imageExpiresAt: receipt.imageExpiresAt?.toISOString() ?? null,
+    hasImage: imageActive,
+    imageExpiresAt: imageActive ? receipt.imageExpiresAt!.toISOString() : null,
     barcodeScans: barcodeScans.map(s => ({
       id: s.id,
       barcode: s.barcode,

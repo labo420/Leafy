@@ -16,4 +16,7 @@ export interface ReceiptDetail {
   pointsEarned: number;
   greenItems: FoundGreenItem[];
   scannedAt: Date;
+  hasImage: boolean;
+  /** @nullable */
+  imageExpiresAt?: Date | null;
 }

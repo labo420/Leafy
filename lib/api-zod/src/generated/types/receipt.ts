@@ -16,4 +16,7 @@ export interface Receipt {
   greenItemsCount: number;
   categories: string[];
   scannedAt: Date;
+  hasImage: boolean;
+  /** @nullable */
+  imageExpiresAt?: Date | null;
 }

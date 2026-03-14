@@ -179,6 +179,8 @@ export const GetReceiptsResponseItem = zod.object({
   greenItemsCount: zod.number(),
   categories: zod.array(zod.string()),
   scannedAt: zod.date(),
+  hasImage: zod.boolean(),
+  imageExpiresAt: zod.date().nullish(),
 });
 export const GetReceiptsResponse = zod.array(GetReceiptsResponseItem);
 
@@ -203,6 +205,15 @@ export const GetReceiptResponse = zod.object({
     }),
   ),
   scannedAt: zod.date(),
+  hasImage: zod.boolean(),
+  imageExpiresAt: zod.date().nullish(),
+});
+
+/**
+ * @summary Get receipt photo (auth-protected, 30-day retention)
+ */
+export const GetReceiptImageParams = zod.object({
+  id: zod.coerce.number(),
 });
 
 /**

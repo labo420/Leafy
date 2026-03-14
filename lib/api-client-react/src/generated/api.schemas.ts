@@ -85,30 +85,12 @@ export interface ScanReceiptBody {
   rawText?: string | null;
 }
 
-export interface GreenProductItem {
-  name: string;
-  category: string;
-  points: number;
-  emoji: string;
-}
-
-export interface ScanBadge {
-  name: string;
-  emoji: string;
-}
-
 export interface ScanResult {
   receiptId: number;
   barcodeExpiry: string;
   storeName?: string | null;
   message: string;
   sessionHours: number;
-  pointsEarned: number;
-  greenItemsFound: GreenProductItem[];
-  leveledUp: boolean;
-  newLevel?: string | null;
-  badges: ScanBadge[];
-  challengesUpdated: string[];
 }
 
 export interface BarcodeScanBody {
@@ -187,6 +169,9 @@ export interface Receipt {
   greenItemsCount: number;
   categories: string[];
   scannedAt: string;
+  hasImage: boolean;
+  /** @nullable */
+  imageExpiresAt?: string | null;
 }
 
 export interface ReceiptDetail {
@@ -198,6 +183,9 @@ export interface ReceiptDetail {
   pointsEarned: number;
   greenItems: FoundGreenItem[];
   scannedAt: string;
+  hasImage: boolean;
+  /** @nullable */
+  imageExpiresAt?: string | null;
 }
 
 export interface Voucher {

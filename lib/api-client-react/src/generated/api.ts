@@ -927,6 +927,93 @@ export function useGetReceipt<
 }
 
 /**
+ * @summary Get receipt photo (auth-protected, 30-day retention)
+ */
+export const getGetReceiptImageUrl = (id: number) => {
+  return `/api/receipts/${id}/image`;
+};
+
+export const getReceiptImage = async (
+  id: number,
+  options?: RequestInit,
+): Promise<Blob> => {
+  return customFetch<Blob>(getGetReceiptImageUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetReceiptImageQueryKey = (id: number) => {
+  return [`/api/receipts/${id}/image`] as const;
+};
+
+export const getGetReceiptImageQueryOptions = <
+  TData = Awaited<ReturnType<typeof getReceiptImage>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getReceiptImage>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetReceiptImageQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getReceiptImage>>> = ({
+    signal,
+  }) => getReceiptImage(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getReceiptImage>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetReceiptImageQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getReceiptImage>>
+>;
+export type GetReceiptImageQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get receipt photo (auth-protected, 30-day retention)
+ */
+
+export function useGetReceiptImage<
+  TData = Awaited<ReturnType<typeof getReceiptImage>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getReceiptImage>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetReceiptImageQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
  * @summary Get marketplace vouchers
  */
 export const getGetVouchersUrl = (params?: GetVouchersParams) => {
