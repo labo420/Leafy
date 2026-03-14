@@ -81,8 +81,9 @@ function EcoScoreBadge({ score }: { score: string | null }) {
 export default function BarcodeScannerScreen() {
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
-  const { receiptId: receiptIdStr } = useLocalSearchParams<{ receiptId: string }>();
+  const { receiptId: receiptIdStr, productName: productNameParam } = useLocalSearchParams<{ receiptId: string; productName?: string }>();
   const receiptId = parseInt(receiptIdStr ?? "0", 10);
+  const targetProductName = productNameParam ?? null;
   const cameraRef = useRef<CameraView>(null);
 
   const [permission, requestPermission] = useCameraPermissions();
@@ -210,6 +211,13 @@ export default function BarcodeScannerScreen() {
     setTimeout(() => setCooldown(false), 1500);
   };
 
+  const finishAndGoBack = () => {
+    queryClient.invalidateQueries({ queryKey: ["profile"] });
+    queryClient.invalidateQueries({ queryKey: ["receipts"] });
+    queryClient.invalidateQueries({ queryKey: ["active-session"] });
+    router.back();
+  };
+
   const handleManualSearch = () => {
     const code = manualCode.trim();
     if (code.length < 8) return;
@@ -321,14 +329,29 @@ export default function BarcodeScannerScreen() {
         </LinearGradient>
 
         <Animated.View entering={FadeInDown.delay(200)} style={styles.resultActions}>
-          <Pressable style={styles.primaryBtn} onPress={continueScan}>
-            <Feather name="camera" size={18} color="#fff" />
-            <Text style={styles.primaryBtnText}>Scansiona altro</Text>
-          </Pressable>
-          <Pressable style={styles.secondaryBtn} onPress={finish}>
-            <Feather name="check" size={18} color={Colors.leaf} />
-            <Text style={styles.secondaryBtnText}>Finito ({totalPointsEarned} pt)</Text>
-          </Pressable>
+          {targetProductName ? (
+            <>
+              <Pressable style={styles.primaryBtn} onPress={finishAndGoBack}>
+                <Feather name="check" size={18} color="#fff" />
+                <Text style={styles.primaryBtnText}>Torna alla lista</Text>
+              </Pressable>
+              <Pressable style={styles.secondaryBtn} onPress={continueScan}>
+                <MaterialCommunityIcons name="barcode-scan" size={18} color={Colors.leaf} />
+                <Text style={styles.secondaryBtnText}>Scansiona ancora</Text>
+              </Pressable>
+            </>
+          ) : (
+            <>
+              <Pressable style={styles.primaryBtn} onPress={continueScan}>
+                <Feather name="camera" size={18} color="#fff" />
+                <Text style={styles.primaryBtnText}>Scansiona altro</Text>
+              </Pressable>
+              <Pressable style={styles.secondaryBtn} onPress={finish}>
+                <Feather name="check" size={18} color={Colors.leaf} />
+                <Text style={styles.secondaryBtnText}>Finito ({totalPointsEarned} pt)</Text>
+              </Pressable>
+            </>
+          )}
         </Animated.View>
 
         {scannedProducts.length > 1 && (

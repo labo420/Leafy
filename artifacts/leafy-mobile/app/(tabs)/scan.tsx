@@ -33,12 +33,23 @@ interface AcceptedStoresData {
   discount: string[];
 }
 
+interface PendingProduct {
+  name: string;
+  matched: boolean;
+  barcode: string | null;
+  ecoScore: string | null;
+  points: number;
+  emoji: string | null;
+  category: string | null;
+}
+
 interface ScanResponse {
   receiptId: number;
   barcodeExpiry: string;
   storeName: string | null;
   message: string;
   sessionHours: number;
+  greenItemsFound: PendingProduct[];
 }
 
 interface ActiveSession {
@@ -50,6 +61,7 @@ interface ActiveSession {
     barcodeExpiry: string;
     pointsEarned: number;
     greenItemsCount: number;
+    greenItems: PendingProduct[];
   } | null;
   remainingMinutes: number;
   barcodeScans: Array<{
@@ -260,11 +272,17 @@ export default function ScanScreen() {
     setScanResult(null);
   };
 
-  const openBarcodeScanner = (receiptId: number) => {
-    router.push({ pathname: "/barcode-scanner", params: { receiptId: String(receiptId) } });
+  const openBarcodeScanner = (receiptId: number, productName?: string) => {
+    const params: Record<string, string> = { receiptId: String(receiptId) };
+    if (productName) params.productName = productName;
+    router.push({ pathname: "/barcode-scanner", params });
   };
 
   if (state === "confirmed" && scanResult) {
+    const pendingItems = (scanResult.greenItemsFound ?? []).filter(p => !p.matched);
+    const matchedItems = (scanResult.greenItemsFound ?? []).filter(p => p.matched);
+    const hasPendingItems = pendingItems.length > 0;
+
     return (
       <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: bottomPad }}>
         <LinearGradient
@@ -275,41 +293,66 @@ export default function ScanScreen() {
             <View style={styles.resultIconWrap}>
               <Feather name="check-circle" size={56} color="#fff" />
             </View>
-            <Text style={styles.resultTitle}>Scontrino confermato!</Text>
+            <Text style={styles.resultTitle}>Scontrino verificato!</Text>
             <Text style={styles.resultSub}>{scanResult.message}</Text>
           </Animated.View>
 
           <Animated.View entering={FadeInDown.delay(200)} style={styles.timerBox}>
             <Feather name="clock" size={20} color="rgba(255,255,255,0.8)" />
             <Text style={styles.timerText}>
-              Hai {scanResult.sessionHours} ore per scansionare i prodotti
+              Hai {scanResult.sessionHours} ore per scansionare i barcode
             </Text>
           </Animated.View>
         </LinearGradient>
 
-        <Animated.View entering={FadeInDown.delay(300)} style={styles.section}>
-          <Pressable
-            style={styles.scanProductsBtn}
-            onPress={() => openBarcodeScanner(scanResult.receiptId)}
-          >
-            <LinearGradient
-              colors={[Colors.leaf, Colors.forest]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.scanProductsBtnGrad}
-            >
-              <MaterialCommunityIcons name="barcode-scan" size={32} color="#fff" />
-              <Text style={styles.scanProductsBtnTitle}>Scansiona Prodotti</Text>
-              <Text style={styles.scanProductsBtnSub}>
-                Inquadra i codici a barre per guadagnare punti
+        {hasPendingItems ? (
+          <Animated.View entering={FadeInDown.delay(300)} style={styles.section}>
+            <Text style={styles.pendingTitle}>Scansiona i prodotti per guadagnare punti</Text>
+            {pendingItems.map((product, i) => (
+              <View key={i} style={styles.pendingProductRow}>
+                <View style={styles.pendingProductIcon}>
+                  <MaterialCommunityIcons name="barcode-scan" size={18} color={Colors.textSecondary} />
+                </View>
+                <Text style={styles.pendingProductName} numberOfLines={1}>{product.name}</Text>
+                <Pressable
+                  style={({ pressed }) => [styles.scanProductMiniBtn, pressed && { opacity: 0.75 }]}
+                  onPress={() => openBarcodeScanner(scanResult.receiptId, product.name)}
+                >
+                  <Text style={styles.scanProductMiniBtnText}>Scansiona</Text>
+                </Pressable>
+              </View>
+            ))}
+            {matchedItems.length > 0 && (
+              <Text style={styles.matchedHint}>
+                {matchedItems.length} già verificat{matchedItems.length === 1 ? "o" : "i"} ✓
               </Text>
-            </LinearGradient>
-          </Pressable>
-        </Animated.View>
+            )}
+          </Animated.View>
+        ) : (
+          <Animated.View entering={FadeInDown.delay(300)} style={styles.section}>
+            <Pressable
+              style={styles.scanProductsBtn}
+              onPress={() => openBarcodeScanner(scanResult.receiptId)}
+            >
+              <LinearGradient
+                colors={[Colors.leaf, Colors.forest]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.scanProductsBtnGrad}
+              >
+                <MaterialCommunityIcons name="barcode-scan" size={32} color="#fff" />
+                <Text style={styles.scanProductsBtnTitle}>Scansiona Prodotti</Text>
+                <Text style={styles.scanProductsBtnSub}>
+                  Inquadra i codici a barre per guadagnare punti
+                </Text>
+              </LinearGradient>
+            </Pressable>
+          </Animated.View>
+        )}
 
         <View style={styles.section}>
           <Pressable style={styles.laterBtn} onPress={reset}>
-            <Text style={styles.laterBtnText}>Lo faccio dopo</Text>
+            <Text style={styles.laterBtnText}>Lo faccio dopo — riprendo dallo storico</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -357,12 +400,15 @@ export default function ScanScreen() {
 
   if (activeSession?.active && activeSession.receipt) {
     const r = activeSession.receipt;
+    const pendingItems = (r.greenItems ?? []).filter(p => !p.matched);
+    const confirmedItems = activeSession.barcodeScans;
+
     return (
       <ScrollView style={[styles.container, { paddingTop: topPadding }]} contentContainerStyle={{ paddingBottom: bottomPad }}>
         <View style={styles.idleHeader}>
-          <Text style={styles.idleTitle}>Sessione attiva</Text>
+          <Text style={styles.idleTitle}>In sospeso</Text>
           <Text style={styles.idleSub}>
-            Hai uno scontrino aperto — scansiona i prodotti per guadagnare punti
+            Scansiona i prodotti per guadagnare i tuoi punti
           </Text>
         </View>
 
@@ -383,30 +429,34 @@ export default function ScanScreen() {
             </View>
           </View>
 
-          <Pressable
-            style={styles.scanProductsBtn}
-            onPress={() => openBarcodeScanner(r.id)}
-          >
-            <LinearGradient
-              colors={[Colors.leaf, Colors.forest]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.scanProductsBtnGrad}
-            >
-              <MaterialCommunityIcons name="barcode-scan" size={28} color="#fff" />
-              <Text style={styles.scanProductsBtnTitle}>Scansiona Prodotti</Text>
-              <Text style={styles.scanProductsBtnSub}>
-                {r.greenItemsCount > 0
-                  ? `${r.greenItemsCount} prodotti scansionati`
-                  : "Inquadra i codici a barre"}
-              </Text>
-            </LinearGradient>
-          </Pressable>
-
-          {activeSession.barcodeScans.length > 0 && (
+          {pendingItems.length > 0 && (
             <View style={styles.scannedList}>
-              <Text style={styles.scannedListTitle}>Prodotti scansionati</Text>
-              {activeSession.barcodeScans.map((s) => (
+              <Text style={styles.scannedListTitle}>
+                Da verificare ({pendingItems.length})
+              </Text>
+              {pendingItems.map((p, i) => (
+                <View key={i} style={styles.pendingProductRow}>
+                  <View style={styles.pendingProductIcon}>
+                    <MaterialCommunityIcons name="barcode-scan" size={16} color={Colors.textSecondary} />
+                  </View>
+                  <Text style={styles.pendingProductName} numberOfLines={1}>{p.name}</Text>
+                  <Pressable
+                    style={({ pressed }) => [styles.scanProductMiniBtn, pressed && { opacity: 0.75 }]}
+                    onPress={() => openBarcodeScanner(r.id, p.name)}
+                  >
+                    <Text style={styles.scanProductMiniBtnText}>Scansiona</Text>
+                  </Pressable>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {confirmedItems.length > 0 && (
+            <View style={styles.scannedList}>
+              <Text style={styles.scannedListTitle}>
+                Verificati ({confirmedItems.length})
+              </Text>
+              {confirmedItems.map((s) => (
                 <View key={s.id} style={styles.scannedItem}>
                   <Text style={styles.scannedEmoji}>{s.emoji}</Text>
                   <View style={{ flex: 1 }}>
@@ -417,6 +467,24 @@ export default function ScanScreen() {
                 </View>
               ))}
             </View>
+          )}
+
+          {pendingItems.length === 0 && confirmedItems.length === 0 && (
+            <Pressable
+              style={styles.scanProductsBtn}
+              onPress={() => openBarcodeScanner(r.id)}
+            >
+              <LinearGradient
+                colors={[Colors.leaf, Colors.forest]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.scanProductsBtnGrad}
+              >
+                <MaterialCommunityIcons name="barcode-scan" size={28} color="#fff" />
+                <Text style={styles.scanProductsBtnTitle}>Scansiona Prodotti</Text>
+                <Text style={styles.scanProductsBtnSub}>Inquadra i codici a barre</Text>
+              </LinearGradient>
+            </Pressable>
           )}
         </View>
 
@@ -656,6 +724,33 @@ const styles = StyleSheet.create({
   scanProductsBtnSub: { fontSize: 13, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.8)" },
   laterBtn: { alignItems: "center", paddingVertical: 16 },
   laterBtnText: { fontSize: 15, fontFamily: "Inter_500Medium", color: Colors.textSecondary },
+
+  pendingTitle: {
+    fontSize: 15, fontFamily: "Inter_600SemiBold", color: Colors.text,
+    marginBottom: 12,
+  },
+  pendingProductRow: {
+    flexDirection: "row", alignItems: "center", gap: 10,
+    backgroundColor: Colors.card, borderRadius: 14, padding: 12, marginBottom: 8,
+  },
+  pendingProductIcon: {
+    width: 32, height: 32, borderRadius: 10,
+    backgroundColor: Colors.background, alignItems: "center", justifyContent: "center",
+  },
+  pendingProductName: {
+    flex: 1, fontSize: 13, fontFamily: "Inter_500Medium", color: Colors.text,
+  },
+  scanProductMiniBtn: {
+    backgroundColor: Colors.leaf, borderRadius: 10,
+    paddingHorizontal: 12, paddingVertical: 7,
+  },
+  scanProductMiniBtnText: {
+    fontSize: 12, fontFamily: "Inter_700Bold", color: "#fff",
+  },
+  matchedHint: {
+    fontSize: 12, fontFamily: "Inter_400Regular", color: Colors.textSecondary,
+    textAlign: "center", marginTop: 4,
+  },
   activeSessionCard: { marginHorizontal: 20, backgroundColor: Colors.card, borderRadius: 24, padding: 16, gap: 16 },
   activeSessionTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   activeStoreName: { fontSize: 18, fontFamily: "DMSans_700Bold", color: Colors.text },

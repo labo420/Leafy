@@ -4,16 +4,45 @@ import { db, usersTable, receiptsTable, barcodeScansTable, productCacheTable } f
 import { ScanReceiptBody } from "@workspace/api-zod";
 import { hashImage, extractTextViaGoogleVision, calculateLevel } from "../lib/scanner";
 import { runAntiFraudChecks, approvePendingPoints } from "../lib/antiFraud";
-import { lookupBarcode, validateReceiptWithAI, classifyProductsBatch, validateBarcodeImage, isValidBarcode } from "../lib/productClassifier";
+import { lookupBarcode, validateReceiptWithAI, classifyProductsBatch, validateBarcodeImage, isValidBarcode, matchProductToReceipt, type PendingProduct } from "../lib/productClassifier";
 import { uploadReceiptImage } from "../lib/receiptImages";
 import { matchChain, isAcceptedStore } from "../lib/supermarketWhitelist";
 import { requireUser } from "./profile";
 
 const router: IRouter = Router();
 
-const BARCODE_SESSION_HOURS = 24;
+const BARCODE_SESSION_HOURS = 48;
 
 let lastPendingApprovalCheck = 0;
+let lastFinalizeCheck: Record<number, number> = {};
+
+async function finalizeReceipt(receiptId: number): Promise<void> {
+  await db
+    .update(receiptsTable)
+    .set({ status: "approved" })
+    .where(and(eq(receiptsTable.id, receiptId), eq(receiptsTable.status, "pending_barcode")));
+}
+
+async function finalizeExpiredReceipts(userId: number): Promise<void> {
+  const now = Date.now();
+  if ((lastFinalizeCheck[userId] ?? 0) > now - 5 * 60 * 1000) return;
+  lastFinalizeCheck[userId] = now;
+
+  const expired = await db
+    .select({ id: receiptsTable.id })
+    .from(receiptsTable)
+    .where(
+      and(
+        eq(receiptsTable.userId, userId),
+        eq(receiptsTable.status, "pending_barcode"),
+        sql`${receiptsTable.barcodeExpiry} < ${new Date()}`,
+      ),
+    );
+
+  for (const r of expired) {
+    await finalizeReceipt(r.id);
+  }
+}
 
 router.post("/scan", async (req, res): Promise<void> => {
   const parsed = ScanReceiptBody.safeParse(req.body);
@@ -29,7 +58,7 @@ router.post("/scan", async (req, res): Promise<void> => {
   const imageHash = hashImage(imageBase64);
 
   const [selfDuplicate] = await db
-    .select({ id: receiptsTable.id, pointsEarned: receiptsTable.pointsEarned, greenItemsCount: receiptsTable.greenItemsCount })
+    .select({ id: receiptsTable.id, pointsEarned: receiptsTable.pointsEarned, greenItemsCount: receiptsTable.greenItemsCount, status: receiptsTable.status })
     .from(receiptsTable)
     .where(
       and(
@@ -39,8 +68,11 @@ router.post("/scan", async (req, res): Promise<void> => {
     )
     .limit(1);
 
-  if (selfDuplicate && selfDuplicate.pointsEarned > 0) {
-    res.status(400).json({ error: "Questo scontrino è già stato scansionato." });
+  if (selfDuplicate && (selfDuplicate.pointsEarned > 0 || selfDuplicate.status === "pending_barcode")) {
+    const msg = selfDuplicate.status === "pending_barcode"
+      ? "Questo scontrino è già stato registrato. Vai nello storico per continuare la verifica dei prodotti."
+      : "Questo scontrino è già stato scansionato.";
+    res.status(400).json({ error: msg });
     return;
   }
 
@@ -74,7 +106,7 @@ router.post("/scan", async (req, res): Promise<void> => {
       eq(receiptsTable.userId, user.id),
       eq(receiptsTable.receiptDate, validation.date),
       eq(receiptsTable.receiptTotal, validation.totalCents),
-      gt(receiptsTable.pointsEarned, 0),
+      sql`(${receiptsTable.pointsEarned} > 0 OR ${receiptsTable.status} = 'pending_barcode')`,
     ];
     if (validation.store) {
       dupConditions.push(
@@ -136,7 +168,7 @@ router.post("/scan", async (req, res): Promise<void> => {
         greenItemsCount: 0,
         categories: [],
         greenItemsJson: "[]",
-        status: "approved",
+        status: "pending_barcode",
         flagReason: null,
         barcodeExpiry,
         barcodeMode: 1,
@@ -163,12 +195,6 @@ router.post("/scan", async (req, res): Promise<void> => {
   const lastScanDate = user.lastScanDate ? new Date(user.lastScanDate).toDateString() : null;
   const newStreak = lastScanDate === today ? user.streak : user.streak + 1;
 
-  const [currentUser] = await db
-    .select({ totalPoints: usersTable.totalPoints })
-    .from(usersTable)
-    .where(eq(usersTable.id, user.id))
-    .limit(1);
-
   await db
     .update(usersTable)
     .set({
@@ -177,38 +203,28 @@ router.post("/scan", async (req, res): Promise<void> => {
     })
     .where(eq(usersTable.id, user.id));
 
-  const oldLevelInfo = calculateLevel(currentUser?.totalPoints ?? 0);
-
   const productNames = validation.products.length > 0 ? validation.products : [];
-  const greenItems = productNames.length > 0 ? await classifyProductsBatch(productNames) : [];
-  const totalPoints = greenItems.reduce((sum, item) => sum + item.points, 0);
+  const pendingProducts: PendingProduct[] = productNames.map((name) => ({
+    name,
+    matched: false,
+    barcode: null,
+    ecoScore: null,
+    points: 0,
+    emoji: null,
+    category: null,
+  }));
 
-  let leveledUp = false;
-  let newLevel: string | null = null;
-
-  if (totalPoints > 0) {
+  if (pendingProducts.length > 0) {
     await db
       .update(receiptsTable)
       .set({
-        pointsEarned: totalPoints,
-        greenItemsCount: greenItems.length,
-        greenItemsJson: JSON.stringify(greenItems),
-        categories: greenItems.map((i) => i.category),
+        greenItemsCount: pendingProducts.length,
+        greenItemsJson: JSON.stringify(pendingProducts),
       })
       .where(eq(receiptsTable.id, receipt.id));
-
-    const [updatedUser] = await db
-      .update(usersTable)
-      .set({ totalPoints: sql`total_points + ${totalPoints}` })
-      .where(eq(usersTable.id, user.id))
-      .returning({ totalPoints: usersTable.totalPoints });
-
-    const newLevelInfo = calculateLevel(updatedUser?.totalPoints ?? 0);
-    if (oldLevelInfo.level !== newLevelInfo.level) {
-      leveledUp = true;
-      newLevel = newLevelInfo.level;
-    }
   }
+
+  finalizeExpiredReceipts(user.id).catch((e) => console.error("[finalize-expired]", e));
 
   const now2 = Date.now();
   if (now2 - lastPendingApprovalCheck > 60 * 60 * 1000) {
@@ -216,23 +232,28 @@ router.post("/scan", async (req, res): Promise<void> => {
     approvePendingPoints().catch((e) => console.error("[pending-approval]", e));
   }
 
+  const message = pendingProducts.length > 0
+    ? `${pendingProducts.length} prodott${pendingProducts.length === 1 ? "o" : "i"} trovat${pendingProducts.length === 1 ? "o" : "i"} — scansiona i barcode per guadagnare i punti!`
+    : "Scontrino registrato. Scansiona i codici a barre dei tuoi prodotti per guadagnare punti.";
+
   res.json({
     receiptId: receipt.id,
     barcodeExpiry: barcodeExpiry.toISOString(),
     storeName: receipt.storeName,
-    message: totalPoints > 0
-      ? `${greenItems.length} prodott${greenItems.length === 1 ? "o" : "i"} green trovati nella tua spesa!`
-      : "Scontrino registrato. Nessun prodotto sostenibile trovato stavolta.",
+    message,
     sessionHours: BARCODE_SESSION_HOURS,
-    pointsEarned: totalPoints,
-    greenItemsFound: greenItems.map((i) => ({
-      name: i.name,
-      category: i.category,
-      points: i.points,
-      emoji: i.emoji,
+    pointsEarned: 0,
+    greenItemsFound: pendingProducts.map((p) => ({
+      name: p.name,
+      matched: false,
+      barcode: null,
+      ecoScore: null,
+      points: 0,
+      emoji: null,
+      category: null,
     })),
-    leveledUp,
-    newLevel,
+    leveledUp: false,
+    newLevel: null,
     badges: [] as Array<{ name: string; emoji: string }>,
     challengesUpdated: [] as string[],
   });
@@ -282,7 +303,7 @@ async function validateBarcodeRequest(req: Request, res: Response): Promise<{ us
   }
 
   if (!receipt.barcodeExpiry || new Date() > new Date(receipt.barcodeExpiry)) {
-    res.status(400).json({ error: "La sessione di scansione prodotti è scaduta (massimo 24 ore dallo scontrino)." });
+    res.status(400).json({ error: "La sessione di scansione prodotti è scaduta (massimo 48 ore dallo scontrino)." });
     return null;
   }
 
@@ -418,7 +439,7 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
   const validated = await validateBarcodeRequest(req, res);
   if (!validated) return;
 
-  const { user, barcode, receiptId } = validated;
+  const { user, receipt, barcode, receiptId } = validated;
 
   const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const [pointsSumRow] = await db
@@ -445,6 +466,25 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
   if (!product) {
     res.status(404).json({ error: "Impossibile classificare questo prodotto. Riprova." });
     return;
+  }
+
+  let matchedProductName: string | null = null;
+
+  if (receipt.status === "pending_barcode") {
+    let pendingProducts: PendingProduct[] = [];
+    try { pendingProducts = JSON.parse(receipt.greenItemsJson ?? "[]"); } catch {}
+
+    if (pendingProducts.length > 0) {
+      const matchResult = await matchProductToReceipt(product.productName, pendingProducts);
+      if (!matchResult.matched) {
+        res.status(400).json({
+          error: "Questo prodotto non sembra essere nel tuo scontrino. Verifica di stare scansionando un prodotto che hai acquistato.",
+          notInReceipt: true,
+        });
+        return;
+      }
+      matchedProductName = matchResult.productName;
+    }
   }
 
   const finalPoints = Math.min(product.points, remainingCap);
@@ -483,11 +523,27 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
       .set({ totalPoints: sql`total_points + ${finalPoints}` })
       .where(eq(usersTable.id, user.id));
 
+    let updatedGreenItemsJson = receipt.greenItemsJson;
+    if (matchedProductName) {
+      let items: PendingProduct[] = [];
+      try { items = JSON.parse(receipt.greenItemsJson ?? "[]"); } catch {}
+      const updatedItems = items.map((item) =>
+        item.name === matchedProductName
+          ? { ...item, matched: true, barcode, ecoScore: product.ecoScore, points: finalPoints, emoji: product.emoji, category: product.category }
+          : item,
+      );
+      updatedGreenItemsJson = JSON.stringify(updatedItems);
+    }
+
+    const newCategories = [...new Set([...(receipt.categories ?? []), product.category])];
+
     await tx
       .update(receiptsTable)
       .set({
         pointsEarned: sql`points_earned + ${finalPoints}`,
         greenItemsCount: sql`green_items_count + 1`,
+        categories: newCategories,
+        greenItemsJson: updatedGreenItemsJson,
       })
       .where(eq(receiptsTable.id, receiptId));
 
@@ -496,7 +552,7 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
       .from(usersTable)
       .where(eq(usersTable.id, user.id));
 
-    return { scan, updatedUser };
+    return { scan, updatedUser, updatedGreenItemsJson };
   }).catch((err: Error & { code?: string }) => {
     if (err.code === "23505") {
       return { error: "Questo prodotto è già stato scansionato per questo scontrino." } as const;
@@ -509,7 +565,17 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
     return;
   }
 
-  const { scan, updatedUser } = txResult;
+  const { scan, updatedUser, updatedGreenItemsJson } = txResult;
+
+  if (receipt.status === "pending_barcode") {
+    let updatedItems: PendingProduct[] = [];
+    try { updatedItems = JSON.parse(updatedGreenItemsJson ?? "[]"); } catch {}
+    const allMatched = updatedItems.length > 0 && updatedItems.every((p) => p.matched);
+    if (allMatched) {
+      finalizeReceipt(receiptId).catch((e) => console.error("[finalize-receipt]", e));
+    }
+  }
+
   const level = calculateLevel(updatedUser?.totalPoints ?? 0);
 
   res.json({
@@ -531,6 +597,8 @@ router.get("/scan/active-session", async (req, res): Promise<void> => {
   const user = await requireUser(req, res);
   if (!user) return;
 
+  finalizeExpiredReceipts(user.id).catch((e) => console.error("[finalize-expired]", e));
+
   const now = new Date();
 
   const [activeReceipt] = await db
@@ -539,6 +607,7 @@ router.get("/scan/active-session", async (req, res): Promise<void> => {
     .where(
       and(
         eq(receiptsTable.userId, user.id),
+        eq(receiptsTable.status, "pending_barcode"),
         gte(receiptsTable.barcodeExpiry, now),
       ),
     )
@@ -559,6 +628,9 @@ router.get("/scan/active-session", async (req, res): Promise<void> => {
   const remainingMs = new Date(activeReceipt.barcodeExpiry!).getTime() - now.getTime();
   const remainingMinutes = Math.max(0, Math.floor(remainingMs / 60000));
 
+  let greenItems: PendingProduct[] = [];
+  try { greenItems = JSON.parse(activeReceipt.greenItemsJson ?? "[]"); } catch {}
+
   res.json({
     active: true,
     receipt: {
@@ -568,6 +640,7 @@ router.get("/scan/active-session", async (req, res): Promise<void> => {
       barcodeExpiry: activeReceipt.barcodeExpiry,
       pointsEarned: activeReceipt.pointsEarned,
       greenItemsCount: activeReceipt.greenItemsCount,
+      greenItems,
     },
     remainingMinutes,
     barcodeScans: barcodeScans.map((s) => ({

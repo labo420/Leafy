@@ -127,7 +127,30 @@ router.get("/profile", async (req, res): Promise<void> => {
     badgesCount: earnedBadges.length,
     badges,
   });
-  res.json(data);
+
+  const now = new Date();
+  const pendingValidations = receipts
+    .filter(r => r.status === "pending_barcode" && r.barcodeExpiry && r.barcodeExpiry > now)
+    .map(r => {
+      let matchedCount = 0;
+      let totalCount = 0;
+      try {
+        const items = JSON.parse(r.greenItemsJson ?? "[]") as Array<{ matched?: boolean }>;
+        totalCount = items.length;
+        matchedCount = items.filter(i => i.matched).length;
+      } catch {}
+      const remainingHours = Math.max(0, Math.floor((r.barcodeExpiry!.getTime() - now.getTime()) / 3600000));
+      return {
+        receiptId: r.id,
+        storeName: r.storeChain ?? r.storeName,
+        expiresAt: r.barcodeExpiry!.toISOString(),
+        remainingHours,
+        matchedProducts: matchedCount,
+        totalProducts: totalCount,
+      };
+    });
+
+  res.json({ ...data, pendingValidations });
 });
 
 router.get("/profile/impact", async (req, res): Promise<void> => {

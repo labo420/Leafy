@@ -19,6 +19,18 @@ router.get("/receipts", async (req, res): Promise<void> => {
   const now = new Date();
   const data = receipts.map(r => {
     const imageActive = !!r.imageUrl && !!r.imageExpiresAt && r.imageExpiresAt > now;
+    const isPending = r.status === "pending_barcode" && !!r.barcodeExpiry && r.barcodeExpiry > now;
+    const remainingMs = isPending ? new Date(r.barcodeExpiry!).getTime() - now.getTime() : 0;
+    const remainingHours = isPending ? Math.max(0, Math.floor(remainingMs / 3600000)) : 0;
+
+    let pendingProductsCount = 0;
+    if (r.status === "pending_barcode") {
+      try {
+        const items = JSON.parse(r.greenItemsJson ?? "[]") as Array<{ matched?: boolean }>;
+        pendingProductsCount = items.filter(i => !i.matched).length;
+      } catch {}
+    }
+
     return {
       id: r.id,
       storeName: r.storeChain ?? r.storeName,
@@ -31,6 +43,11 @@ router.get("/receipts", async (req, res): Promise<void> => {
       scannedAt: r.scannedAt,
       hasImage: imageActive,
       imageExpiresAt: imageActive ? r.imageExpiresAt!.toISOString() : null,
+      status: r.status,
+      barcodeExpiry: r.barcodeExpiry ? r.barcodeExpiry.toISOString() : null,
+      isPending,
+      remainingHours,
+      pendingProductsCount,
     };
   });
 
@@ -55,7 +72,7 @@ router.get("/receipts/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  let greenItems = [];
+  let greenItems: Array<{ name: string; matched?: boolean; barcode?: string | null; ecoScore?: string | null; points: number; emoji?: string | null; category?: string | null }> = [];
   try { greenItems = JSON.parse(receipt.greenItemsJson); } catch {}
 
   const barcodeScans = await db.select().from(barcodeScansTable)
@@ -63,6 +80,10 @@ router.get("/receipts/:id", async (req, res): Promise<void> => {
     .orderBy(desc(barcodeScansTable.scannedAt));
 
   const imageActive = !!receipt.imageUrl && !!receipt.imageExpiresAt && receipt.imageExpiresAt > new Date();
+  const now = new Date();
+  const isPending = receipt.status === "pending_barcode" && !!receipt.barcodeExpiry && receipt.barcodeExpiry > now;
+  const remainingMs = isPending ? new Date(receipt.barcodeExpiry!).getTime() - now.getTime() : 0;
+  const remainingHours = isPending ? Math.max(0, Math.floor(remainingMs / 3600000)) : 0;
 
   res.json({
     id: receipt.id,
@@ -73,9 +94,12 @@ router.get("/receipts/:id", async (req, res): Promise<void> => {
     pointsEarned: receipt.pointsEarned,
     greenItems,
     scannedAt: receipt.scannedAt,
-    barcodeExpiry: receipt.barcodeExpiry,
+    barcodeExpiry: receipt.barcodeExpiry ? receipt.barcodeExpiry.toISOString() : null,
     hasImage: imageActive,
     imageExpiresAt: imageActive ? receipt.imageExpiresAt!.toISOString() : null,
+    status: receipt.status,
+    isPending,
+    remainingHours,
     barcodeScans: barcodeScans.map(s => ({
       id: s.id,
       barcode: s.barcode,

@@ -788,6 +788,65 @@ Regole:
   }
 }
 
+export interface PendingProduct {
+  name: string;
+  matched: boolean;
+  barcode: string | null;
+  ecoScore: string | null;
+  points: number;
+  emoji: string | null;
+  category: string | null;
+}
+
+export async function matchProductToReceipt(
+  barcodeProductName: string,
+  receiptProducts: PendingProduct[],
+): Promise<{ matched: boolean; productName: string | null }> {
+  const unmatched = receiptProducts.filter((p) => !p.matched);
+  if (unmatched.length === 0) return { matched: false, productName: null };
+
+  try {
+    const productList = unmatched.map((p, i) => `${i + 1}. ${p.name}`).join("\n");
+    const message = await anthropic.messages.create({
+      model: "claude-haiku-4-5",
+      max_tokens: 150,
+      temperature: 0,
+      messages: [
+        {
+          role: "user",
+          content: `Prodotto scansionato dal barcode: "${barcodeProductName}"
+
+Lista prodotti dallo scontrino (non ancora verificati):
+${productList}
+
+Questo prodotto corrisponde a uno dei prodotti sullo scontrino? Considera varianti di nome, abbreviazioni italiane e formati diversi (es. "Pasta Barilla Fusilli 500g" corrisponde a "PAST FUSIL 500G").
+
+Rispondi SOLO con JSON valido: {"matched": true/false, "productIndex": numero (1-N) o null}`,
+        },
+      ],
+    });
+
+    const text = message.content[0].type === "text" ? message.content[0].text : "{}";
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return { matched: false, productName: null };
+
+    const parsed = JSON.parse(jsonMatch[0]) as { matched?: boolean; productIndex?: number | null };
+
+    if (
+      parsed.matched === true &&
+      typeof parsed.productIndex === "number" &&
+      parsed.productIndex >= 1 &&
+      parsed.productIndex <= unmatched.length
+    ) {
+      return { matched: true, productName: unmatched[parsed.productIndex - 1].name };
+    }
+    return { matched: false, productName: null };
+  } catch (err) {
+    console.error("[matchProductToReceipt]", err);
+    return { matched: false, productName: null };
+  }
+}
+
 export async function analyzeReceiptWithAI(imageBase64: string): Promise<string[]> {
   try {
     const message = await anthropic.messages.create({
