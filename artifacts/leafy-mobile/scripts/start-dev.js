@@ -2,11 +2,24 @@
 const { spawn, execSync } = require("child_process");
 const fs = require("fs");
 const http = require("http");
+const net = require("net");
 const path = require("path");
 
 const TUNNEL_FILE = "/tmp/expo-tunnel-url.txt";
 const NGROK_API = "http://127.0.0.1:4040/api/tunnels";
 const NGROK_AUTH_TOKEN = process.env.NGROK_AUTH_TOKEN || "";
+
+function readArtifactPort() {
+  try {
+    const tomlPath = path.join(__dirname, "..", ".replit-artifact", "artifact.toml");
+    const content = fs.readFileSync(tomlPath, "utf8");
+    const match = content.match(/^PORT\s*=\s*"(\d+)"/m);
+    if (match) return Number(match[1]);
+  } catch {}
+  return null;
+}
+
+const ARTIFACT_PORT = readArtifactPort();
 
 function findNgrokBin() {
   const candidates = [
@@ -22,7 +35,20 @@ function findNgrokBin() {
 
 const args = process.argv.slice(2);
 const portFlag = args.indexOf("--port");
-const targetPort = portFlag !== -1 && args[portFlag + 1] ? args[portFlag + 1] : null;
+const cliPort = portFlag !== -1 && args[portFlag + 1] ? args[portFlag + 1] : null;
+
+const expoPort = ARTIFACT_PORT || (cliPort ? Number(cliPort) : 8081);
+const workflowPort = cliPort ? Number(cliPort) : null;
+
+if (ARTIFACT_PORT) {
+  if (portFlag !== -1 && args[portFlag + 1]) {
+    args[portFlag + 1] = String(ARTIFACT_PORT);
+  } else {
+    args.push("--port", String(ARTIFACT_PORT));
+  }
+}
+
+const targetPort = String(expoPort);
 
 function killStaleProcesses() {
   try {
@@ -95,6 +121,24 @@ function pollNgrokAPI() {
     });
   }).on("error", () => {});
 }
+
+if (workflowPort && workflowPort !== expoPort) {
+  const proxyServer = net.createServer((socket) => {
+    const target = net.connect(expoPort, "127.0.0.1");
+    socket.pipe(target);
+    target.pipe(socket);
+    socket.on("error", () => target.destroy());
+    target.on("error", () => socket.destroy());
+  });
+  proxyServer.listen(workflowPort, "0.0.0.0", () => {
+    console.log(`Port bridge: ${workflowPort} → ${expoPort}`);
+  });
+  proxyServer.on("error", (err) => {
+    console.warn(`Port bridge failed on ${workflowPort}: ${err.message}`);
+  });
+}
+
+console.log(`Starting Expo on port ${expoPort}...`);
 
 const child = spawn("pnpm", ["exec", "expo", "start", ...args], {
   stdio: ["inherit", "pipe", "pipe"],
