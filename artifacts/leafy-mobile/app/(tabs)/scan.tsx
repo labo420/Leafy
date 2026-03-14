@@ -787,6 +787,7 @@ const styles = StyleSheet.create({
   storesToggleText: { fontSize: 14, fontFamily: "Inter_500Medium", color: Colors.textSecondary },
   storesList: {
     backgroundColor: Colors.card, borderRadius: 24, padding: 16, gap: 16,
+    maxHeight: 320,
   },
   storesCategory: { gap: 4 },
   storesCatTitle: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: Colors.text },

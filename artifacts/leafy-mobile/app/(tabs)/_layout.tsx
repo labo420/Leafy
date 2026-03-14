@@ -86,10 +86,12 @@ export default function TabLayout() {
         tabBarLabelStyle: {
           fontSize: 10,
           fontFamily: Fonts.bodyMedium,
-          marginBottom: 2,
+          marginBottom: 0,
         },
         tabBarItemStyle: {
-          paddingTop: 6,
+          paddingTop: 8,
+          paddingHorizontal: 4,
+          gap: 2,
         },
       }}
     >
