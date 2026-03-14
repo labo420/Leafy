@@ -384,16 +384,16 @@ export default function HomeScreen() {
         </View>
       )}
 
-      {challenges && challenges.filter((c) => !c.completed).length > 0 && (
+      {challenges && challenges.filter((c) => !c.isCompleted).length > 0 && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Sfide attive</Text>
           {challenges
-            .filter((c) => !c.completed)
+            .filter((c) => !c.isCompleted)
             .slice(0, 2)
             .map((c) => (
               <View key={c.id} style={styles.challengeCard}>
                 <View style={styles.challengeLeft}>
-                  <Text style={styles.challengeName}>{c.name}</Text>
+                  <Text style={styles.challengeName}>{c.title}</Text>
                   <Text style={styles.challengeDesc}>{c.description}</Text>
                   <View style={styles.challengeProgress}>
                     <View
@@ -402,19 +402,19 @@ export default function HomeScreen() {
                         {
                           width: `${Math.min(
                             100,
-                            ((c.currentProgress ?? 0) / c.targetValue) * 100
+                            ((c.currentCount ?? 0) / c.targetCount) * 100
                           )}%`,
                         },
                       ]}
                     />
                   </View>
                   <Text style={styles.challengeProgressText}>
-                    {c.currentProgress ?? 0}/{c.targetValue}
+                    {c.currentCount ?? 0}/{c.targetCount}
                   </Text>
                 </View>
                 <View style={styles.challengeRight}>
                   <Feather name="award" size={16} color={Colors.amber} />
-                  <Text style={styles.challengePoints}>+{c.bonusPoints}</Text>
+                  <Text style={styles.challengePoints}>+{c.rewardPoints}</Text>
                 </View>
               </View>
             ))}

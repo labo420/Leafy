@@ -36,7 +36,7 @@ function VoucherCard({ voucher, userPoints, onRedeem }: {
   userPoints: number;
   onRedeem: (v: Voucher) => void;
 }) {
-  const canAfford = userPoints >= voucher.pointsRequired;
+  const canAfford = userPoints >= voucher.pointsCost;
   return (
     <Animated.View entering={FadeInDown.delay(50).springify()}>
       <Pressable
@@ -50,21 +50,17 @@ function VoucherCard({ voucher, userPoints, onRedeem }: {
           <View style={styles.voucherPointsBox}>
             <MaterialCommunityIcons name="leaf" size={12} color={canAfford ? Colors.leaf : Colors.textMuted} />
             <Text style={[styles.voucherPoints, !canAfford && styles.voucherPointsDisabled]}>
-              {voucher.pointsRequired.toLocaleString("it-IT")}
+              {voucher.pointsCost.toLocaleString("it-IT")}
             </Text>
           </View>
         </View>
 
-        <Text style={styles.voucherBrand}>{voucher.brand}</Text>
+        <Text style={styles.voucherBrand}>{voucher.brandName}</Text>
         <Text style={styles.voucherTitle}>{voucher.title}</Text>
         <Text style={styles.voucherDesc} numberOfLines={2}>{voucher.description}</Text>
 
         <View style={styles.voucherBottom}>
-          <Text style={styles.voucherValue}>
-            {voucher.discountType === "percent"
-              ? `-${voucher.discountValue}%`
-              : `€${voucher.discountValue} off`}
-          </Text>
+          <Text style={styles.voucherValue}>{voucher.discount}</Text>
           {voucher.expiresAt && (
             <Text style={styles.voucherExpiry}>
               Scade {new Date(voucher.expiresAt).toLocaleDateString("it-IT")}
@@ -76,7 +72,7 @@ function VoucherCard({ voucher, userPoints, onRedeem }: {
           <View style={styles.voucherLock}>
             <Feather name="lock" size={12} color={Colors.textMuted} />
             <Text style={styles.voucherLockText}>
-              Ti mancano {(voucher.pointsRequired - userPoints).toLocaleString("it-IT")} punti
+              Ti mancano {(voucher.pointsCost - userPoints).toLocaleString("it-IT")} punti
             </Text>
           </View>
         )}
@@ -160,7 +156,7 @@ export default function MarketplaceScreen() {
     },
   });
 
-  const userPoints = profile?.points ?? 0;
+  const userPoints = profile?.totalPoints ?? 0;
 
   if (!user) {
     return (
@@ -258,18 +254,18 @@ export default function MarketplaceScreen() {
                 <Feather name="gift" size={32} color={Colors.amber} />
               </View>
               <Text style={styles.modalTitle}>Riscatta voucher</Text>
-              <Text style={styles.modalBrand}>{confirmVoucher.brand}</Text>
+              <Text style={styles.modalBrand}>{confirmVoucher.brandName}</Text>
               <Text style={styles.modalVoucherTitle}>{confirmVoucher.title}</Text>
 
               <View style={styles.modalCost}>
                 <MaterialCommunityIcons name="leaf" size={16} color={Colors.leaf} />
                 <Text style={styles.modalCostText}>
-                  {confirmVoucher.pointsRequired.toLocaleString("it-IT")} punti
+                  {confirmVoucher.pointsCost.toLocaleString("it-IT")} punti
                 </Text>
               </View>
 
               <Text style={styles.modalAfter}>
-                Punti rimanenti: {(userPoints - confirmVoucher.pointsRequired).toLocaleString("it-IT")}
+                Punti rimanenti: {(userPoints - confirmVoucher.pointsCost).toLocaleString("it-IT")}
               </Text>
 
               <View style={styles.modalBtns}>
