@@ -358,6 +358,7 @@ export async function validateReceiptWithAI(imageBase64: string): Promise<Receip
     const message = await anthropic.messages.create({
       model: "claude-haiku-4-5",
       max_tokens: 1500,
+      temperature: 0,
       messages: [
         {
           role: "user",
@@ -372,7 +373,7 @@ export async function validateReceiptWithAI(imageBase64: string): Promise<Receip
             },
             {
               type: "text",
-              text: `Analizza questa immagine. Determina se è uno scontrino (ricevuta/ticket di acquisto).
+              text: `Sei un lettore OCR preciso. Analizza questa immagine e determina se è uno scontrino (ricevuta/ticket di acquisto).
 
 Rispondi SOLO con un JSON valido:
 {
@@ -382,7 +383,7 @@ Rispondi SOLO con un JSON valido:
   "store": "Nome Negozio" o null,
   "date": "YYYY-MM-DD" o null,
   "totalCents": 1250 o null,
-  "products": ["prodotto 1", "prodotto 2"]
+  "products": [{"raw": "TESTO ORIGINALE SCONTRINO", "name": "Nome Normalizzato"}]
 }
 
 Regole:
@@ -392,7 +393,14 @@ Regole:
 - "store": nome del negozio/supermercato se leggibile
 - "date": data dello scontrino in formato YYYY-MM-DD. Se l'anno non è visibile, usa l'anno corrente (2026)
 - "totalCents": importo totale in centesimi (es. €12.50 = 1250). null se non leggibile
-- "products": nomi dei prodotti acquistati (normalizza le abbreviazioni, es. "PAST PENNE 500G" → "Pasta Penne"). Massimo 15. Escludi totali, IVA, sconti, info negozio`,
+- "products": array di oggetti con "raw" (testo ESATTO come appare sullo scontrino) e "name" (forma normalizzata leggibile). Massimo 15 prodotti.
+  REGOLE FERREE per i prodotti:
+  * Includi SOLO prodotti il cui nome è CHIARAMENTE e COMPLETAMENTE leggibile sulla foto
+  * "raw" deve essere il testo letterale dallo scontrino, NON interpretato
+  * "name" può normalizzare abbreviazioni INEQUIVOCABILI (es. "PAST PENNE 500G" → "Pasta Penne")
+  * Se il testo è ambiguo, troncato, illeggibile o potrebbe essere più prodotti diversi: ESCLUDILO
+  * NON dedurre, NON interpretare, NON inventare prodotti non esplicitamente scritti
+  * Escludi: totali, subtotali, IVA, sconti, date, codici cassa, informazioni del negozio`,
             },
           ],
         },
@@ -416,7 +424,21 @@ Regole:
     };
 
     const products = (parsed.products ?? [])
-      .filter((p): p is string => typeof p === "string" && p.trim().length >= 2)
+      .flatMap((p): string[] => {
+        if (typeof p === "string" && p.trim().length >= 2) {
+          return [p.trim()];
+        }
+        if (p && typeof p === "object") {
+          const obj = p as Record<string, unknown>;
+          const name = typeof obj.name === "string" ? obj.name.trim() : "";
+          const raw = typeof obj.raw === "string" ? obj.raw.trim() : "";
+          if (name.length >= 2) {
+            if (raw) console.log(`[products] raw="${raw}" → name="${name}"`);
+            return [name];
+          }
+        }
+        return [];
+      })
       .slice(0, 15);
 
     const isValid = parsed.isReceipt === true;
