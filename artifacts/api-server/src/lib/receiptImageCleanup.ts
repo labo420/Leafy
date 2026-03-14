@@ -1,16 +1,17 @@
 import { db, receiptsTable } from "@workspace/db";
-import { isNotNull, lte, eq } from "drizzle-orm";
+import { isNotNull, lte, eq, and } from "drizzle-orm";
 import { deleteReceiptImage } from "./receiptImages";
 
 export async function cleanupExpiredReceiptImages(): Promise<number> {
   const now = new Date();
 
-  const expiredReceipts = await db
+  const toClean = await db
     .select({ id: receiptsTable.id, imageUrl: receiptsTable.imageUrl })
     .from(receiptsTable)
-    .where(lte(receiptsTable.imageExpiresAt, now));
-
-  const toClean = expiredReceipts.filter(r => r.imageUrl !== null);
+    .where(and(
+      isNotNull(receiptsTable.imageUrl),
+      lte(receiptsTable.imageExpiresAt, now),
+    ));
 
   let cleaned = 0;
   for (const receipt of toClean) {
