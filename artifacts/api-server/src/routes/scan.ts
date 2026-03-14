@@ -45,7 +45,7 @@ router.post("/scan", async (req, res): Promise<void> => {
   const validation = await validateReceiptWithAI(imageBase64);
 
   if (!validation.valid) {
-    res.status(400).json({ error: "Non sembra uno scontrino. Riprova con una foto di uno scontrino." });
+    res.status(400).json({ error: "Non sembra uno scontrino. Riprova." });
     return;
   }
 
