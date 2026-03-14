@@ -376,32 +376,27 @@ export default function ScanScreen() {
         <>
           <View style={styles.idleOptions}>
             <Pressable
-              style={({ pressed }) => [styles.optionCard, pressed && styles.optionCardPressed]}
+              style={({ pressed }) => [styles.optionCardPrimary, pressed && styles.optionCardPressed]}
               onPress={() => pickImage("camera")}
             >
               <LinearGradient
                 colors={[Colors.leaf, Colors.forest]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
-                style={styles.optionGradient}
+                style={styles.optionGradientPrimary}
               >
-                <Feather name="camera" size={48} color="#fff" />
-                <Text style={styles.optionTitle}>Fotocamera</Text>
-                <Text style={styles.optionSub}>Scatta una foto allo scontrino</Text>
+                <Feather name="camera" size={56} color="#fff" />
+                <Text style={styles.optionTitlePrimary}>Scatta una foto</Text>
+                <Text style={styles.optionSub}>Fotografa il tuo scontrino</Text>
               </LinearGradient>
             </Pressable>
 
             <Pressable
-              style={({ pressed }) => [styles.optionCard, pressed && styles.optionCardPressed]}
+              style={({ pressed }) => [styles.optionCardSecondary, pressed && styles.optionCardPressed]}
               onPress={() => pickImage("gallery")}
             >
-              <View style={styles.optionSecondary}>
-                <Feather name="image" size={48} color={Colors.leaf} />
-                <Text style={[styles.optionTitle, { color: Colors.text }]}>Galleria</Text>
-                <Text style={[styles.optionSub, { color: Colors.textSecondary }]}>
-                  Scegli dalla libreria foto
-                </Text>
-              </View>
+              <Feather name="image" size={24} color={Colors.leaf} />
+              <Text style={styles.optionTitleSecondary}>O scegli dalla galleria</Text>
             </Pressable>
           </View>
 
@@ -461,18 +456,29 @@ const styles = StyleSheet.create({
   idleHeader: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 16 },
   idleTitle: { fontSize: 32, fontFamily: "DMSans_700Bold", color: Colors.text, marginBottom: 8 },
   idleSub: { fontSize: 15, fontFamily: "Inter_400Regular", color: Colors.textSecondary, lineHeight: 22 },
-  idleOptions: { flexDirection: "row", paddingHorizontal: 20, gap: 12, marginBottom: 24 },
+  idleOptions: { flexDirection: "column", paddingHorizontal: 20, gap: 16, marginBottom: 24, justifyContent: "flex-end", flex: 1 },
   optionCard: {
     flex: 1, borderRadius: 24, overflow: "hidden",
     shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 4,
   },
+  optionCardPrimary: {
+    borderRadius: 24, overflow: "hidden", minHeight: 240,
+    shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 5,
+  },
+  optionCardSecondary: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 12,
+    backgroundColor: Colors.card, borderRadius: 24, paddingVertical: 16, borderWidth: 1.5, borderColor: Colors.border,
+  },
   optionCardPressed: { opacity: 0.88 },
   optionGradient: { padding: 24, alignItems: "center", gap: 10, minHeight: 180, justifyContent: "center" },
+  optionGradientPrimary: { padding: 32, alignItems: "center", gap: 12, flex: 1, justifyContent: "center" },
   optionSecondary: {
     padding: 24, alignItems: "center", gap: 10, minHeight: 180, justifyContent: "center",
     backgroundColor: Colors.card, borderWidth: 2, borderColor: Colors.border, borderRadius: 24,
   },
   optionTitle: { fontSize: 17, fontFamily: "DMSans_700Bold", color: "#fff", textAlign: "center" },
+  optionTitlePrimary: { fontSize: 24, fontFamily: "DMSans_700Bold", color: "#fff", textAlign: "center" },
+  optionTitleSecondary: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: Colors.leaf, textAlign: "center" },
   optionSub: { fontSize: 12, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.8)", textAlign: "center" },
   steps: { paddingHorizontal: 24, gap: 12 },
   stepsTitle: {
