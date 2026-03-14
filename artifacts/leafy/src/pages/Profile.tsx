@@ -187,6 +187,9 @@ export default function Profile() {
               </CardContent>
             </Card>
           </div>
+          <p className="text-[11px] text-muted-foreground/70 text-center mt-2 px-1">
+            Stime indicative basate sulla categoria del prodotto, non dati precisi per singolo articolo.
+          </p>
         </section>
 
         <Card className="bg-gradient-to-r from-accent/20 to-transparent border-transparent">

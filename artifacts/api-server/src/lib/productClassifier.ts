@@ -27,12 +27,42 @@ interface OpenFoodFactsProduct {
   categories?: string;
   packaging_tags?: string[];
   origins?: string;
+  ecoscore_data?: {
+    agribalyse?: {
+      co2_total?: number;
+    };
+  };
+}
+
+const BASELINE_CO2_PER_KG = 3.5;
+const TYPICAL_UNIT_KG = 0.25;
+
+function co2SavingsFromAgribalyse(product: OpenFoodFactsProduct): number | null {
+  const co2Total = product.ecoscore_data?.agribalyse?.co2_total;
+  if (typeof co2Total !== "number") return null;
+  return Math.max(0, Math.round((BASELINE_CO2_PER_KG - co2Total) * TYPICAL_UNIT_KG * 100) / 100);
+}
+
+const CO2_BY_CATEGORY: Record<string, number> = {
+  "Bio": 0.8,
+  "Km 0": 0.4,
+  "Vegano": 2.0,
+  "Equo Solidale": 0.2,
+  "DOP/IGP": 0.3,
+  "Artigianale": 0.1,
+  "Senza Plastica": 0.1,
+  "Altro": 0.1,
+};
+
+function co2SavingsByCategory(category: string, points: number): number {
+  if (points === 0) return 0;
+  return CO2_BY_CATEGORY[category] ?? 0.1;
 }
 
 async function searchOpenFoodFacts(name: string): Promise<OpenFoodFactsProduct | null> {
   try {
     const encoded = encodeURIComponent(name);
-    const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encoded}&json=1&page_size=3&action=process&fields=product_name,ecoscore_grade,ecoscore_score,labels,categories,packaging_tags,origins&lang=it&country=it`;
+    const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encoded}&json=1&page_size=3&action=process&fields=product_name,ecoscore_grade,ecoscore_score,ecoscore_data,labels,categories,packaging_tags,origins&lang=it&country=it`;
     const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
     if (!res.ok) return null;
     const data = await res.json() as { products?: OpenFoodFactsProduct[] };
@@ -166,7 +196,7 @@ export async function lookupBarcode(barcode: string): Promise<BarcodeResult | nu
   }
 
   try {
-    const url = `https://world.openfoodfacts.org/api/v0/product/${encodeURIComponent(normalizedBarcode)}.json?fields=product_name,ecoscore_grade,ecoscore_score,labels,categories,packaging_tags,origins,brands`;
+    const url = `https://world.openfoodfacts.org/api/v0/product/${encodeURIComponent(normalizedBarcode)}.json?fields=product_name,ecoscore_grade,ecoscore_score,ecoscore_data,labels,categories,packaging_tags,origins,brands`;
     const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
     if (!res.ok) return null;
     const data = await res.json() as { status?: number; product?: OpenFoodFactsProduct & { brands?: string } };
@@ -201,6 +231,7 @@ export async function lookupBarcode(barcode: string): Promise<BarcodeResult | nu
       source: "openfoodfacts",
     };
 
+    const co2PerUnit = co2SavingsFromAgribalyse(product) ?? co2SavingsByCategory(category, points);
     await db.insert(productCacheTable).values({
       productNameNormalized: `barcode:${normalizedBarcode}`,
       productNameOriginal: productName,
@@ -210,6 +241,7 @@ export async function lookupBarcode(barcode: string): Promise<BarcodeResult | nu
       source: "openfoodfacts",
       reasoning,
       emoji,
+      co2PerUnit,
     }).onConflictDoNothing();
 
     return result;
@@ -318,6 +350,7 @@ Criteri punti:
           source: "ai",
           reasoning,
           emoji,
+          co2PerUnit: co2SavingsByCategory(category, points),
         }).onConflictDoNothing()
       );
 
@@ -576,6 +609,9 @@ export async function classifyProducts(productLines: string[]): Promise<FoundIte
       classification = aiResult;
     }
 
+    const co2PerUnit = offProduct
+      ? (co2SavingsFromAgribalyse(offProduct) ?? co2SavingsByCategory(classification.category, classification.points))
+      : co2SavingsByCategory(classification.category, classification.points);
     await db.insert(productCacheTable).values({
       productNameNormalized: normalized,
       productNameOriginal: line,
@@ -585,6 +621,7 @@ export async function classifyProducts(productLines: string[]): Promise<FoundIte
       source: offProduct ? "openfoodfacts" : "ai",
       reasoning: classification.reasoning,
       emoji: classification.emoji,
+      co2PerUnit,
     }).onConflictDoNothing();
 
     if (classification.points > 0) {

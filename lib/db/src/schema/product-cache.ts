@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -12,6 +12,7 @@ export const productCacheTable = pgTable("product_cache", {
   source: text("source").notNull().default("ai"),
   reasoning: text("reasoning").notNull().default(""),
   emoji: text("emoji").notNull().default("🌿"),
+  co2PerUnit: real("co2_per_unit"),
   cachedAt: timestamp("cached_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { eq } from "drizzle-orm";
-import { db, usersTable, receiptsTable } from "@workspace/db";
+import { db, usersTable, receiptsTable, productCacheTable } from "@workspace/db";
 import {
   GetProfileResponse,
   GetImpactResponse,
@@ -136,15 +136,51 @@ router.get("/profile/impact", async (req, res): Promise<void> => {
 
   const receipts = await db.select().from(receiptsTable).where(eq(receiptsTable.userId, user.id));
 
+  const WATER_BY_CAT: Record<string, number> = {
+    "Bio": 80, "Km 0": 10, "Vegano": 200, "DOP/IGP": 30,
+    "Artigianale": 5, "Equo Solidale": 5, "Senza Plastica": 0,
+  };
+
   let co2 = 0, plastic = 0, water = 0, greenItems = 0;
+
   for (const r of receipts) {
     greenItems += r.greenItemsCount;
+
     for (const cat of r.categories) {
-      if (cat === "Bio") { co2 += 0.3; water += 50; }
-      if (cat === "Km 0") { co2 += 0.5; water += 20; }
-      if (cat === "Senza Plastica") { plastic += 0.05; }
-      if (cat === "Vegano") { co2 += 0.8; water += 100; }
-      if (cat === "Equo Solidale") { co2 += 0.1; }
+      water += WATER_BY_CAT[cat] ?? 0;
+      if (cat === "Senza Plastica") plastic += 0.05;
+    }
+
+    let items: { name?: string; category?: string; points?: number }[] = [];
+    try { items = JSON.parse(r.greenItemsJson || "[]"); } catch { items = []; }
+
+    if (items.length > 0) {
+      for (const item of items) {
+        if (!item.name) continue;
+        const normalized = item.name.toLowerCase().trim().replace(/\s+/g, " ").replace(/[^a-z0-9àèéìòù ]/g, "");
+        const [cached] = await db
+          .select({ co2PerUnit: productCacheTable.co2PerUnit })
+          .from(productCacheTable)
+          .where(eq(productCacheTable.productNameNormalized, normalized))
+          .limit(1);
+        if (cached?.co2PerUnit != null) {
+          co2 += cached.co2PerUnit;
+        } else {
+          const CO2_BY_CAT: Record<string, number> = {
+            "Bio": 0.8, "Km 0": 0.4, "Vegano": 2.0,
+            "Equo Solidale": 0.2, "DOP/IGP": 0.3,
+            "Artigianale": 0.1, "Senza Plastica": 0.1, "Altro": 0.1,
+          };
+          if ((item.points ?? 0) > 0) co2 += CO2_BY_CAT[item.category ?? "Altro"] ?? 0.1;
+        }
+      }
+    } else if (r.categories.length > 0) {
+      const CO2_BY_CAT: Record<string, number> = {
+        "Bio": 0.8, "Km 0": 0.4, "Vegano": 2.0,
+        "Equo Solidale": 0.2, "DOP/IGP": 0.3,
+        "Artigianale": 0.1, "Senza Plastica": 0.1,
+      };
+      for (const cat of r.categories) co2 += CO2_BY_CAT[cat] ?? 0;
     }
   }
 
