@@ -114,7 +114,7 @@ function LevelProgressRing({
         <Text style={ringStyles.levelLabel}>
           {(LEVEL_LABELS[level] ?? level).toUpperCase()}
         </Text>
-        <Text style={ringStyles.percentageText}>{Math.round(percentage)}%</Text>
+        <Text style={ringStyles.percentageText}>{points === 0 ? "Inizia! ⬇️" : `${Math.round(percentage)}%`}</Text>
         <Text style={ringStyles.pointsValue}>
           {new Intl.NumberFormat("it-IT").format(points)}
         </Text>
@@ -256,9 +256,9 @@ export default function HomeScreen() {
           </View>
           <View>
             <Text style={styles.logoText}>Leafy</Text>
-            <Text style={styles.greeting}>Ciao, {username}!</Text>
+            <Text style={styles.greeting}>Ciao, {username}! 👋</Text>
             <View style={styles.streakRow}>
-              <Feather name="zap" size={13} color={Colors.amber} />
+              <Text style={{ fontSize: 13 }}>🔥</Text>
               <Text style={styles.streakLabel}>{streak} giorni di fila</Text>
             </View>
           </View>

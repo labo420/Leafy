@@ -546,7 +546,7 @@ export default function ProfiloScreen() {
         </View>
         <Text style={styles.username}>{username}</Text>
         <View style={styles.levelPill}>
-          <Feather name="award" size={14} color={Colors.amber} />
+          <Text style={{ fontSize: 14 }}>{level === "Bronzo" || level === "bronze" ? "🥉" : level === "Argento" || level === "silver" ? "🥈" : level === "Oro" || level === "gold" ? "🥇" : "💎"}</Text>
           <Text style={styles.levelPillText}>Livello {level}</Text>
         </View>
       </Animated.View>
@@ -554,7 +554,7 @@ export default function ProfiloScreen() {
       <Animated.View entering={FadeInDown.delay(150).springify()} style={styles.section}>
         <View style={styles.sectionHeader}>
           <Feather name="activity" size={18} color={Colors.leaf} />
-          <Text style={styles.sectionTitle}>Il tuo impatto verde</Text>
+          <Text style={styles.sectionTitle}>Il tuo impatto verde 🌍</Text>
         </View>
         <View style={styles.impactGrid}>
           <View style={[styles.impactCard, { backgroundColor: "#EFF6FF" }]}>
@@ -565,7 +565,7 @@ export default function ProfiloScreen() {
               {(impact?.co2SavedKg ?? 0).toFixed(1)}{" "}
               <Text style={styles.impactUnit}>kg</Text>
             </Text>
-            <Text style={styles.impactLabel}>CO₂ risparmiata</Text>
+            <Text style={styles.impactLabel}>🌿 CO₂ risparmiata</Text>
           </View>
           <View style={[styles.impactCard, { backgroundColor: "#F0FDFA" }]}>
             <View style={[styles.impactIconCircle, { backgroundColor: "#CCFBF1" }]}>
@@ -575,7 +575,7 @@ export default function ProfiloScreen() {
               {(impact?.waterSavedLiters ?? 0).toFixed(0)}{" "}
               <Text style={styles.impactUnit}>L</Text>
             </Text>
-            <Text style={styles.impactLabel}>Acqua salvata</Text>
+            <Text style={styles.impactLabel}>💧 Acqua salvata</Text>
           </View>
         </View>
         <Text style={styles.impactDisclaimer}>
@@ -589,7 +589,7 @@ export default function ProfiloScreen() {
             <View style={styles.referralLeft}>
               <Feather name="users" size={22} color={Colors.leaf} />
               <View style={{ flex: 1 }}>
-                <Text style={styles.referralTitle}>Invita un amico</Text>
+                <Text style={styles.referralTitle}>🤝 Invita un amico</Text>
                 <Text style={styles.referralSub}>
                   +500 punti per entrambi!
                 </Text>

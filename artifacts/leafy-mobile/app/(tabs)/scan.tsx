@@ -100,7 +100,7 @@ function AcceptedStoresSection() {
       <Pressable style={styles.storesToggle} onPress={() => setOpen(!open)} accessibilityRole="button" accessibilityLabel="Negozi accettati" accessibilityState={{ expanded: open }}>
         <View style={styles.storesToggleLeft}>
           <Feather name="shopping-bag" size={16} color={Colors.textSecondary} />
-          <Text style={styles.storesToggleText}>Negozi accettati</Text>
+          <Text style={styles.storesToggleText}>🏪 Negozi accettati</Text>
         </View>
         <Feather name={open ? "chevron-up" : "chevron-down"} size={16} color={Colors.textSecondary} />
       </Pressable>
@@ -131,7 +131,7 @@ function HowItWorksSection() {
       <Pressable style={styles.howToggle} onPress={() => setOpen(!open)} accessibilityRole="button" accessibilityLabel="Come funziona" accessibilityState={{ expanded: open }}>
         <View style={styles.howToggleLeft}>
           <Feather name="help-circle" size={16} color={Colors.textSecondary} />
-          <Text style={styles.howToggleText}>Come funziona</Text>
+          <Text style={styles.howToggleText}>❓ Come funziona</Text>
         </View>
         <Feather name={open ? "chevron-up" : "chevron-down"} size={16} color={Colors.textSecondary} />
       </Pressable>
@@ -507,7 +507,7 @@ export default function ScanScreen() {
     >
       <View style={styles.idleHeader}>
         <Text style={styles.idleTitle}>Scansiona</Text>
-        <Text style={styles.idleSub}>Guadagna punti per ogni acquisto sostenibile</Text>
+        <Text style={styles.idleSub}>🌱 Guadagna punti per ogni acquisto sostenibile</Text>
       </View>
 
       {sessionLoading ? (
