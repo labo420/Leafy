@@ -34,6 +34,10 @@ interface Receipt {
   greenItemsCount: number;
   categories: string[];
   scannedAt: string;
+  status: string | null;
+  isPending: boolean;
+  remainingHours: number;
+  pendingProductsCount: number;
 }
 
 interface BarcodeScanItem {
@@ -50,9 +54,12 @@ interface BarcodeScanItem {
 
 interface GreenItem {
   name: string;
-  category: string;
+  category: string | null;
   points: number;
-  emoji: string;
+  emoji: string | null;
+  matched?: boolean;
+  barcode?: string | null;
+  ecoScore?: string | null;
 }
 
 interface ReceiptDetailData {
@@ -68,6 +75,9 @@ interface ReceiptDetailData {
   barcodeScans: BarcodeScanItem[];
   hasImage: boolean;
   imageExpiresAt: string | null;
+  status: string | null;
+  isPending: boolean;
+  remainingHours: number;
 }
 
 const ECO_COLORS: Record<string, string> = {
@@ -179,6 +189,19 @@ function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }
           <ActivityIndicator size="large" color={Colors.leaf} style={{ marginTop: 40 }} />
         ) : data ? (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 20 }}>
+
+            {data.isPending && (
+              <View style={styles.pendingBanner}>
+                <View style={styles.pendingBannerTop}>
+                  <Feather name="clock" size={18} color={Colors.amber} />
+                  <Text style={styles.pendingBannerTitle}>Verifica in sospeso</Text>
+                </View>
+                <Text style={styles.pendingBannerSub}>
+                  Hai ancora {data.remainingHours} ore per scansionare i barcode dei prodotti green
+                </Text>
+              </View>
+            )}
+
             <View style={styles.detailHeader}>
               <View style={styles.detailPoints}>
                 <MaterialCommunityIcons name="leaf" size={20} color={Colors.leaf} />
@@ -252,25 +275,51 @@ function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }
                   <Text style={[styles.itemsTitle, { marginTop: 16 }]}>
                     Prodotti green ({data.greenItems.length})
                   </Text>
-                  <Text style={styles.itemsHint}>Tocca ✏️ per correggere</Text>
+                  {!data.isPending && <Text style={styles.itemsHint}>Tocca ✏️ per correggere</Text>}
                 </View>
-                {data.greenItems.map((item, i) => (
-                  <View key={i} style={styles.itemRow}>
-                    <Text style={styles.itemEmoji}>{item.emoji ?? "🌿"}</Text>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.itemName}>{formatProductName(item.name)}</Text>
-                      <Text style={styles.itemCat}>{item.category}</Text>
+                {data.greenItems.map((item, i) => {
+                  const isUnmatched = data.isPending && item.matched === false;
+                  const isMatched = data.isPending && item.matched === true;
+                  return (
+                    <View key={i} style={[styles.itemRow, isMatched && styles.itemRowMatched]}>
+                      <Text style={styles.itemEmoji}>{item.emoji ?? "🌿"}</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.itemName}>{formatProductName(item.name)}</Text>
+                        <Text style={styles.itemCat}>{item.category ?? ""}</Text>
+                      </View>
+                      {isMatched && (
+                        <View style={styles.verifiedBadge}>
+                          <Feather name="check" size={12} color={Colors.leaf} />
+                          <Text style={styles.verifiedBadgeText}>+{item.points} pt</Text>
+                        </View>
+                      )}
+                      {isUnmatched && (
+                        <Pressable
+                          style={styles.scanItemBtn}
+                          onPress={() => {
+                            onClose();
+                            router.push({ pathname: "/barcode-scanner", params: { receiptId: String(data.id), productName: item.name } });
+                          }}
+                        >
+                          <MaterialCommunityIcons name="barcode-scan" size={14} color="#fff" />
+                          <Text style={styles.scanItemBtnText}>Scansiona</Text>
+                        </Pressable>
+                      )}
+                      {!data.isPending && (
+                        <>
+                          <Text style={styles.itemPts}>+{item.points} pt</Text>
+                          <Pressable
+                            style={styles.editBtn}
+                            onPress={() => openEdit(item)}
+                            hitSlop={8}
+                          >
+                            <Feather name="edit-2" size={14} color={Colors.textSecondary} />
+                          </Pressable>
+                        </>
+                      )}
                     </View>
-                    <Text style={styles.itemPts}>+{item.points} pt</Text>
-                    <Pressable
-                      style={styles.editBtn}
-                      onPress={() => openEdit(item)}
-                      hitSlop={8}
-                    >
-                      <Feather name="edit-2" size={14} color={Colors.textSecondary} />
-                    </Pressable>
-                  </View>
-                ))}
+                  );
+                })}
               </>
             )}
 
@@ -344,8 +393,11 @@ function ReceiptCard({ receipt, onPress }: { receipt: Receipt; onPress: () => vo
       >
         <View style={styles.receiptTop}>
           <View style={styles.receiptLeft}>
-            <View style={styles.receiptIcon}>
-              <Feather name="shopping-bag" size={20} color={Colors.leaf} />
+            <View style={[styles.receiptIcon, receipt.isPending && styles.receiptIconPending]}>
+              {receipt.isPending
+                ? <Feather name="clock" size={20} color={Colors.amber} />
+                : <Feather name="shopping-bag" size={20} color={Colors.leaf} />
+              }
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.receiptStore}>
@@ -362,11 +414,27 @@ function ReceiptCard({ receipt, onPress }: { receipt: Receipt; onPress: () => vo
               </View>
             </View>
           </View>
-          <View style={styles.receiptPointsBadge}>
-            <Text style={styles.receiptPointsBadgeText}>+{receipt.pointsEarned} pts</Text>
-          </View>
+          {receipt.isPending ? (
+            <View style={styles.pendingBadge}>
+              <Text style={styles.pendingBadgeText}>⏳ {receipt.remainingHours}h</Text>
+            </View>
+          ) : (
+            <View style={styles.receiptPointsBadge}>
+              <Text style={styles.receiptPointsBadgeText}>+{receipt.pointsEarned} pts</Text>
+            </View>
+          )}
         </View>
-        {receipt.categories && receipt.categories.length > 0 && (
+
+        {receipt.isPending && receipt.pendingProductsCount > 0 && (
+          <View style={styles.pendingInfoRow}>
+            <MaterialCommunityIcons name="barcode-scan" size={13} color={Colors.amber} />
+            <Text style={styles.pendingInfoText}>
+              {receipt.pendingProductsCount} prodott{receipt.pendingProductsCount === 1 ? "o" : "i"} da verificare
+            </Text>
+          </View>
+        )}
+
+        {!receipt.isPending && receipt.categories && receipt.categories.length > 0 && (
           <View style={styles.catRow}>
             <Text style={styles.catCountText}>{receipt.greenItemsCount} prodotti:</Text>
             {receipt.categories.map((cat, idx) => {
@@ -597,5 +665,48 @@ const styles = StyleSheet.create({
   },
   imageExpiryText: {
     fontSize: 11, fontFamily: "Inter_400Regular", color: Colors.textSecondary,
+  },
+  receiptIconPending: {
+    backgroundColor: "#FEF3C7",
+  },
+  pendingBadge: {
+    backgroundColor: "#FEF3C7", borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6,
+  },
+  pendingBadgeText: {
+    fontSize: 13, fontFamily: "Inter_700Bold", color: Colors.amber,
+  },
+  pendingInfoRow: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    paddingTop: 10, borderTopWidth: 1, borderTopColor: Colors.border,
+  },
+  pendingInfoText: {
+    fontSize: 12, fontFamily: "Inter_500Medium", color: Colors.amber,
+  },
+  pendingBanner: {
+    backgroundColor: "#FEF3C7", borderRadius: 16, padding: 16,
+    marginBottom: 16, gap: 6,
+    borderWidth: 1, borderColor: "#FCD34D",
+  },
+  pendingBannerTop: { flexDirection: "row", alignItems: "center", gap: 8 },
+  pendingBannerTitle: { fontSize: 15, fontFamily: "Inter_700Bold", color: Colors.amber },
+  pendingBannerSub: { fontSize: 13, fontFamily: "Inter_400Regular", color: "#92400E", lineHeight: 18 },
+  itemRowMatched: {
+    opacity: 0.65,
+  },
+  verifiedBadge: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    backgroundColor: Colors.primaryLight, borderRadius: 10,
+    paddingHorizontal: 8, paddingVertical: 4,
+  },
+  verifiedBadgeText: {
+    fontSize: 12, fontFamily: "Inter_700Bold", color: Colors.leaf,
+  },
+  scanItemBtn: {
+    flexDirection: "row", alignItems: "center", gap: 5,
+    backgroundColor: Colors.leaf, borderRadius: 10,
+    paddingHorizontal: 10, paddingVertical: 7,
+  },
+  scanItemBtnText: {
+    fontSize: 12, fontFamily: "Inter_700Bold", color: "#fff",
   },
 });

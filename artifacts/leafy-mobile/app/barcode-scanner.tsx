@@ -418,7 +418,16 @@ export default function BarcodeScannerScreen() {
         )}
 
         <View style={[styles.cameraFooter, { paddingBottom: insets.bottom + 16 }]}>
-          <Text style={styles.cameraHint}>Inquadra il codice a barre del prodotto</Text>
+          {targetProductName ? (
+            <View style={styles.targetProductBanner}>
+              <MaterialCommunityIcons name="barcode-scan" size={16} color={Colors.leaf} />
+              <Text style={styles.targetProductText} numberOfLines={1}>
+                Stai verificando: {targetProductName}
+              </Text>
+            </View>
+          ) : (
+            <Text style={styles.cameraHint}>Inquadra il codice a barre del prodotto</Text>
+          )}
           {scannedProducts.length > 0 && (
             <View style={styles.summaryRow}>
               <MaterialCommunityIcons name="leaf" size={16} color={Colors.leaf} />
@@ -579,4 +588,12 @@ const styles = StyleSheet.create({
   },
   manualSearchBtnDisabled: { opacity: 0.45 },
   manualSearchText: { fontSize: 15, fontFamily: "Inter_700Bold", color: "#fff" },
+  targetProductBanner: {
+    flexDirection: "row", alignItems: "center", gap: 8,
+    backgroundColor: "rgba(0,0,0,0.7)", borderRadius: 14,
+    paddingHorizontal: 14, paddingVertical: 10, maxWidth: 320,
+  },
+  targetProductText: {
+    fontSize: 13, fontFamily: "Inter_600SemiBold", color: "#fff", flex: 1,
+  },
 });
