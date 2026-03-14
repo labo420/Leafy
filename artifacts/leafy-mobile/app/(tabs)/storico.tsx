@@ -78,13 +78,7 @@ const ECO_COLORS: Record<string, string> = {
   e: "#E63E11",
 };
 
-const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
-  "Bio": { bg: "#DCFCE7", text: "#16A34A" },
-  "Km 0": { bg: "#DBEAFE", text: "#2563EB" },
-  "Senza Plastica": { bg: "#CCFBF1", text: "#0D9488" },
-  "Equo Solidale": { bg: "#FEE2E2", text: "#DC2626" },
-  "Vegano": { bg: "#FEF3C7", text: "#D97706" },
-};
+const CATEGORY_COLORS = Colors.categoryColors;
 
 function formatDate(dateStr: string | null | undefined): string {
   if (!dateStr) return "";

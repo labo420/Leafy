@@ -47,4 +47,12 @@ export default {
 
   tabActive: LEAF,
   tabInactive: GRAY_400,
+
+  categoryColors: {
+    "Bio": { bg: "#DCFCE7", text: "#16A34A" },
+    "Km 0": { bg: "#DBEAFE", text: "#2563EB" },
+    "Senza Plastica": { bg: "#CCFBF1", text: "#0D9488" },
+    "Equo Solidale": { bg: "#FEE2E2", text: "#DC2626" },
+    "Vegano": { bg: "#FEF3C7", text: "#D97706" },
+  } as Record<string, { bg: string; text: string }>,
 };

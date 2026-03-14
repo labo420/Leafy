@@ -1,7 +1,7 @@
 import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -14,7 +14,14 @@ import {
   Text,
   View,
 } from "react-native";
-import Animated, { FadeInDown } from "react-native-reanimated";
+import Animated, {
+  FadeInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -39,6 +46,24 @@ function VoucherCard({ voucher, userPoints, onRedeem }: {
   const canAfford = userPoints >= voucher.pointsCost;
   const progressPercent = Math.min((userPoints / voucher.pointsCost) * 100, 100);
   const isAlmostThere = !canAfford && progressPercent >= 80;
+
+  const pulseScale = useSharedValue(1);
+  useEffect(() => {
+    if (isAlmostThere) {
+      pulseScale.value = withRepeat(
+        withSequence(
+          withTiming(1.08, { duration: 600 }),
+          withTiming(1, { duration: 600 }),
+        ),
+        -1,
+        true,
+      );
+    }
+  }, [isAlmostThere]);
+  const pulseStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseScale.value }],
+  }));
+
   return (
     <Animated.View entering={FadeInDown.delay(50).springify()}>
       <Pressable
@@ -57,10 +82,10 @@ function VoucherCard({ voucher, userPoints, onRedeem }: {
               <Text style={styles.voucherCategoryText}>{voucher.category}</Text>
             </View>
             {isAlmostThere && (
-              <View style={styles.almostBadge}>
+              <Animated.View style={[styles.almostBadge, pulseStyle]}>
                 <Feather name="zap" size={10} color={Colors.amber} />
                 <Text style={styles.almostBadgeText}>Quasi!</Text>
-              </View>
+              </Animated.View>
             )}
           </View>
           <Text style={styles.voucherDiscount}>{voucher.discount}</Text>
