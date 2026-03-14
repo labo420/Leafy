@@ -423,7 +423,7 @@ Base URL: `/api`
 
 ---
 
-## Sistema Anti-Frode (9 layer)
+## Sistema Anti-Frode (11 layer)
 
 1. **Hash scontrino** — Previene doppia scansione della stessa immagine (SHA-256)
 2. **AI validation** — Claude Vision verifica che l'immagine sia uno scontrino leggibile (data + totale visibili)
@@ -435,6 +435,7 @@ Base URL: `/api`
 8. **Reputation multiplier** — 0.5x se account < 7 giorni, 0.7x se < 30 giorni
 9. **Pending staging** — Scansioni ad alto valore → pending → approvazione admin
 10. **Barcode dedup** — Unique constraint `(receipt_id, barcode)` + transazione atomica
+11. **Barcode image anti-fraud** — Claude Vision analizza la foto catturata dalla camera durante la scansione barcode per rilevare frodi (foto di schermi, screenshot, immagini stampate). Confidence >= 0.7 blocca la scansione con errore. Endpoint: `POST /scan/barcode/lookup` e `POST /scan/barcode/preview` (campo opzionale `imageBase64`)
 
 ---
 
@@ -569,8 +570,10 @@ Il footer della schermata fotocamera include anche un link **"Non riesci a scans
 
 ### Classificazione Prodotti
 - **Open Food Facts** (primario): API gratuita, nessuna API key. Le chiamate includono `ecoscore_data` per ottenere dati Agribalyse (CO2 reale per kg)
+- **Barcode lookup con fallback AI**: `lookupBarcode()` prova Open Food Facts (con normalizzazione barcode — pad EAN-12→13, strip leading zero). Se OFF non trova il prodotto, **fallback a Claude AI** che classifica in base al prefisso paese del barcode (EAN country codes) e conoscenza generale dei prodotti. Punti conservativi (5-10) per il fallback AI.
 - **Claude Haiku Vision** (`validateReceiptWithAI`): valida scontrino + estrae metadati (negozio, data, totale, `storeChain` normalizzato, `province` dalla rubrica indirizzo) + lista prodotti in un'unica chiamata. `temperature: 0`, formato prodotti `{raw, name}`. **Il campo `raw` (testo verbatim) ha priorità su `name` (normalizzato dall'AI)** per evitare allucinazioni OCR. Usato come primo step in `POST /scan`.
 - **Claude Haiku** (`classifyProductsBatch`): classifica i prodotti estratti in batch, assegna punti 0-20 per sostenibilità
+- **Claude Haiku Vision** (`validateBarcodeImage`): anti-frode barcode — analizza la foto catturata dalla camera per rilevare foto di schermi, screenshot, stampe
 - **Cache**: `product_cache` table, key `barcode:{code}` o nome normalizzato. Tutti i punti di inserimento salvano `co2_per_unit` (da Agribalyse o stimato da categoria)
 - **Correzione prodotti**: `POST /api/scan/products/correct` permette di correggere un nome prodotto errato. Cancella la vecchia cache entry, riclassifica il nome corretto e aggiorna `greenItemsJson` nello scontrino. UI nel tab Storico (icona ✏️ su ogni prodotto green).
 

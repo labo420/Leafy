@@ -178,6 +178,149 @@ export interface BarcodeResult {
   source: string;
 }
 
+const EAN_COUNTRY_PREFIXES: Array<[string, string]> = [
+  ["800", "Italia"], ["801", "Italia"], ["802", "Italia"], ["803", "Italia"],
+  ["804", "Italia"], ["805", "Italia"], ["806", "Italia"], ["807", "Italia"],
+  ["808", "Italia"], ["809", "Italia"],
+  ["400", "Germania"], ["401", "Germania"], ["402", "Germania"], ["403", "Germania"],
+  ["404", "Germania"], ["405", "Germania"], ["406", "Germania"], ["407", "Germania"],
+  ["408", "Germania"], ["409", "Germania"], ["410", "Germania"], ["411", "Germania"],
+  ["412", "Germania"], ["413", "Germania"], ["414", "Germania"], ["415", "Germania"],
+  ["416", "Germania"], ["417", "Germania"], ["418", "Germania"], ["419", "Germania"],
+  ["300", "Francia"], ["301", "Francia"], ["302", "Francia"], ["303", "Francia"],
+  ["304", "Francia"], ["305", "Francia"], ["306", "Francia"], ["307", "Francia"],
+  ["308", "Francia"], ["309", "Francia"], ["310", "Francia"], ["311", "Francia"],
+  ["312", "Francia"], ["313", "Francia"], ["314", "Francia"], ["315", "Francia"],
+  ["316", "Francia"], ["317", "Francia"], ["318", "Francia"], ["319", "Francia"],
+  ["320", "Francia"], ["321", "Francia"], ["322", "Francia"], ["323", "Francia"],
+  ["324", "Francia"], ["325", "Francia"], ["326", "Francia"], ["327", "Francia"],
+  ["328", "Francia"], ["329", "Francia"], ["330", "Francia"], ["331", "Francia"],
+  ["332", "Francia"], ["333", "Francia"], ["334", "Francia"], ["335", "Francia"],
+  ["336", "Francia"], ["337", "Francia"], ["338", "Francia"], ["339", "Francia"],
+  ["340", "Francia"], ["341", "Francia"], ["342", "Francia"], ["343", "Francia"],
+  ["344", "Francia"], ["345", "Francia"], ["346", "Francia"], ["347", "Francia"],
+  ["348", "Francia"], ["349", "Francia"], ["350", "Francia"], ["351", "Francia"],
+  ["352", "Francia"], ["353", "Francia"], ["354", "Francia"], ["355", "Francia"],
+  ["356", "Francia"], ["357", "Francia"], ["358", "Francia"], ["359", "Francia"],
+  ["360", "Francia"], ["361", "Francia"], ["362", "Francia"], ["363", "Francia"],
+  ["364", "Francia"], ["365", "Francia"], ["366", "Francia"], ["367", "Francia"],
+  ["368", "Francia"], ["369", "Francia"], ["370", "Francia"], ["371", "Francia"],
+  ["372", "Francia"], ["373", "Francia"], ["374", "Francia"], ["375", "Francia"],
+  ["376", "Francia"], ["377", "Francia"], ["378", "Francia"], ["379", "Francia"],
+  ["840", "Spagna"], ["841", "Spagna"], ["842", "Spagna"], ["843", "Spagna"],
+  ["844", "Spagna"], ["845", "Spagna"], ["846", "Spagna"], ["847", "Spagna"],
+  ["848", "Spagna"], ["849", "Spagna"],
+  ["500", "Regno Unito"], ["501", "Regno Unito"], ["502", "Regno Unito"], ["503", "Regno Unito"],
+  ["504", "Regno Unito"], ["505", "Regno Unito"], ["506", "Regno Unito"], ["507", "Regno Unito"],
+  ["508", "Regno Unito"], ["509", "Regno Unito"],
+  ["00", "USA/Canada"], ["01", "USA/Canada"], ["02", "USA/Canada"], ["03", "USA/Canada"],
+  ["04", "USA/Canada"], ["05", "USA/Canada"], ["06", "USA/Canada"], ["07", "USA/Canada"],
+  ["08", "USA/Canada"], ["09", "USA/Canada"],
+];
+
+function getCountryFromBarcode(barcode: string): string | null {
+  for (const [prefix, country] of EAN_COUNTRY_PREFIXES) {
+    if (barcode.startsWith(prefix)) return country;
+  }
+  return null;
+}
+
+function isValidBarcode(barcode: string): boolean {
+  if (!/^\d+$/.test(barcode)) return false;
+  if (![8, 12, 13, 14].includes(barcode.length)) return false;
+  if (barcode.length === 13 || barcode.length === 8) {
+    let sum = 0;
+    const digits = barcode.split("").map(Number);
+    for (let i = 0; i < digits.length - 1; i++) {
+      sum += digits[i] * (i % 2 === 0 ? 1 : 3);
+    }
+    const checkDigit = (10 - (sum % 10)) % 10;
+    return checkDigit === digits[digits.length - 1];
+  }
+  return true;
+}
+
+function normalizeBarcode(barcode: string): string[] {
+  const cleaned = barcode.replace(/[^0-9]/g, "");
+  const variants: string[] = [cleaned];
+  if (cleaned.length === 12) {
+    variants.push("0" + cleaned);
+  }
+  if (cleaned.length === 14 && cleaned.startsWith("0")) {
+    variants.push(cleaned.slice(1));
+  }
+  return [...new Set(variants)];
+}
+
+export { isValidBarcode };
+
+async function classifyBarcodeWithAI(barcode: string): Promise<BarcodeResult> {
+  const country = getCountryFromBarcode(barcode);
+  const countryHint = country ? `\nIl prefisso del barcode indica produzione in: ${country}` : "";
+
+  try {
+    const message = await anthropic.messages.create({
+      model: "claude-haiku-4-5",
+      max_tokens: 512,
+      messages: [
+        {
+          role: "user",
+          content: `Sei un esperto di prodotti alimentari. Un utente ha scansionato un codice a barre EAN/UPC in un supermercato italiano ma il prodotto non è stato trovato nel database Open Food Facts.
+
+Codice a barre: ${barcode}${countryHint}
+
+Basandoti sulla struttura del codice a barre e sulla tua conoscenza dei prodotti alimentari, prova a identificare o stimare che tipo di prodotto potrebbe essere.
+
+Rispondi SOLO con un JSON valido:
+{
+  "productName": <nome stimato del prodotto, o "Prodotto alimentare" se non identificabile>,
+  "points": <numero 5-10, stima conservativa>,
+  "category": <una di: "Bio", "Km 0", "Vegano", "Senza Plastica", "Equo Solidale", "DOP/IGP", "Artigianale", "Altro">,
+  "emoji": <emoji appropriato>,
+  "reasoning": <spiegazione breve in italiano max 80 caratteri>,
+  "ecoScore": <"c" come default, o altra lettera se hai info sufficienti>
+}
+
+IMPORTANTE: Sii conservativo. Se non riesci a identificare il prodotto, usa "Prodotto alimentare" come nome, "Altro" come categoria, e 5 come punti.`,
+        },
+      ],
+    });
+
+    const text = message.content[0].type === "text" ? message.content[0].text : "{}";
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error("No JSON in response");
+    const parsed = JSON.parse(jsonMatch[0]) as {
+      productName?: string;
+      points?: number;
+      category?: string;
+      emoji?: string;
+      reasoning?: string;
+      ecoScore?: string;
+    };
+
+    return {
+      productName: parsed.productName || `Prodotto ${barcode}`,
+      ecoScore: parsed.ecoScore || null,
+      points: Math.max(0, Math.min(15, parsed.points ?? 5)),
+      category: parsed.category || "Altro",
+      emoji: parsed.emoji || "🌿",
+      reasoning: parsed.reasoning || "Classificato tramite AI",
+      source: "ai",
+    };
+  } catch (err) {
+    console.error("[classifyBarcodeWithAI]", err);
+    return {
+      productName: `Prodotto ${barcode}`,
+      ecoScore: null,
+      points: 5,
+      category: "Altro",
+      emoji: "🌿",
+      reasoning: "Prodotto non trovato nei database — classificazione base",
+      source: "ai-fallback",
+    };
+  }
+}
+
 export async function lookupBarcode(barcode: string): Promise<BarcodeResult | null> {
   const normalizedBarcode = barcode.trim();
   if (!normalizedBarcode || normalizedBarcode.length < 4) return null;
@@ -201,58 +344,158 @@ export async function lookupBarcode(barcode: string): Promise<BarcodeResult | nu
     };
   }
 
-  try {
-    const url = `https://world.openfoodfacts.org/api/v0/product/${encodeURIComponent(normalizedBarcode)}.json?fields=product_name,ecoscore_grade,ecoscore_score,ecoscore_data,labels,categories,packaging_tags,origins,brands`;
-    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
-    if (!res.ok) return null;
-    const data = await res.json() as { status?: number; product?: OpenFoodFactsProduct & { brands?: string } };
+  const barcodeVariants = normalizeBarcode(normalizedBarcode);
 
-    if (data.status !== 1 || !data.product) {
-      return null;
+  for (const variant of barcodeVariants) {
+    try {
+      const url = `https://world.openfoodfacts.org/api/v0/product/${encodeURIComponent(variant)}.json?fields=product_name,ecoscore_grade,ecoscore_score,ecoscore_data,labels,categories,packaging_tags,origins,brands`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      if (!res.ok) continue;
+      const data = await res.json() as { status?: number; product?: OpenFoodFactsProduct & { brands?: string } };
+
+      if (data.status !== 1 || !data.product) continue;
+
+      const product = data.product;
+      const grade = product.ecoscore_grade?.toLowerCase();
+      const validGrade = grade && grade !== "not-applicable" && grade !== "unknown" ? grade : null;
+      const points = validGrade ? (ECO_SCORE_POINTS[validGrade] ?? 5) : 5;
+      const emoji = validGrade ? (ECO_SCORE_EMOJI[validGrade] ?? "🌿") : "🌿";
+
+      const cats: string[] = [];
+      if (product.labels?.toLowerCase().includes("bio") || product.labels?.toLowerCase().includes("organic")) cats.push("Bio");
+      if (product.labels?.toLowerCase().includes("vegan")) cats.push("Vegano");
+      if (product.labels?.toLowerCase().includes("fair")) cats.push("Equo Solidale");
+      const category = cats[0] ?? (validGrade ? `Eco-Score ${validGrade.toUpperCase()}` : "Altro");
+
+      const brandPrefix = product.brands ? `${product.brands} - ` : "";
+      const productName = product.product_name
+        ? `${brandPrefix}${product.product_name}`
+        : `Prodotto ${normalizedBarcode}`;
+      const reasoning = validGrade
+        ? `Eco-Score ${validGrade.toUpperCase()} da Open Food Facts`
+        : "Classificato da Open Food Facts";
+
+      const result: BarcodeResult = {
+        productName,
+        ecoScore: validGrade,
+        points,
+        category,
+        emoji,
+        reasoning,
+        source: "openfoodfacts",
+      };
+
+      const co2PerUnit = co2SavingsFromAgribalyse(product) ?? co2SavingsByCategory(category, points);
+      await db.insert(productCacheTable).values({
+        productNameNormalized: `barcode:${normalizedBarcode}`,
+        productNameOriginal: productName,
+        ecoScore: validGrade,
+        points,
+        category,
+        source: "openfoodfacts",
+        reasoning,
+        emoji,
+        co2PerUnit,
+      }).onConflictDoNothing();
+
+      return result;
+    } catch {
+      continue;
     }
+  }
 
-    const product = data.product;
-    const grade = product.ecoscore_grade?.toLowerCase();
-    const points = grade ? (ECO_SCORE_POINTS[grade] ?? 5) : 5;
-    const emoji = grade ? (ECO_SCORE_EMOJI[grade] ?? "🌿") : "🌿";
+  console.log(`[lookupBarcode] OFF miss for ${normalizedBarcode}, falling back to AI`);
+  const aiResult = await classifyBarcodeWithAI(normalizedBarcode);
 
-    const cats: string[] = [];
-    if (product.labels?.toLowerCase().includes("bio") || product.labels?.toLowerCase().includes("organic")) cats.push("Bio");
-    if (product.labels?.toLowerCase().includes("vegan")) cats.push("Vegano");
-    if (product.labels?.toLowerCase().includes("fair")) cats.push("Equo Solidale");
-    const category = cats[0] ?? (grade ? `Eco-Score ${grade.toUpperCase()}` : "Altro");
+  const co2PerUnit = co2SavingsByCategory(aiResult.category, aiResult.points);
+  await db.insert(productCacheTable).values({
+    productNameNormalized: `barcode:${normalizedBarcode}`,
+    productNameOriginal: aiResult.productName,
+    ecoScore: aiResult.ecoScore,
+    points: aiResult.points,
+    category: aiResult.category,
+    source: aiResult.source,
+    reasoning: aiResult.reasoning,
+    emoji: aiResult.emoji,
+    co2PerUnit,
+  }).onConflictDoNothing();
 
-    const productName = product.product_name || `Prodotto ${normalizedBarcode}`;
-    const reasoning = grade
-      ? `Eco-Score ${grade.toUpperCase()} da Open Food Facts`
-      : "Classificato da Open Food Facts";
+  return aiResult;
+}
 
-    const result: BarcodeResult = {
-      productName,
-      ecoScore: grade ?? null,
-      points,
-      category,
-      emoji,
-      reasoning,
-      source: "openfoodfacts",
+export interface BarcodeImageValidation {
+  legitimate: boolean;
+  confidence: number;
+  reason: string;
+}
+
+export async function validateBarcodeImage(imageBase64: string): Promise<BarcodeImageValidation> {
+  try {
+    const message = await anthropic.messages.create({
+      model: "claude-haiku-4-5",
+      max_tokens: 256,
+      temperature: 0,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image",
+              source: {
+                type: "base64",
+                media_type: "image/jpeg",
+                data: imageBase64,
+              },
+            },
+            {
+              type: "text",
+              text: `Analizza questa immagine per determinare se mostra un PRODOTTO REALE con un codice a barre, oppure se è una FRODE (foto di uno schermo, screenshot, immagine stampata, foto di un altro telefono).
+
+Rispondi SOLO con un JSON valido:
+{
+  "legitimate": true/false,
+  "confidence": <0.0-1.0>,
+  "reason": "<spiegazione breve in italiano, max 60 caratteri>"
+}
+
+Criteri di FRODE (legitimate=false):
+- Pixel dello schermo visibili, effetto moiré
+- Cornice/bordi di un telefono o monitor visibili
+- Riflessi tipici di uno schermo LCD/OLED
+- Immagine troppo piatta/uniforme (stampa su carta)
+- Sfondo digitale o interfaccia app visibile
+- Barre di stato, notifiche o UI di sistema visibili
+
+Criteri di LEGITTIMITÀ (legitimate=true):
+- Prodotto fisico 3D con ombre naturali
+- Scaffale del supermercato, carrello, tavolo
+- Illuminazione ambientale naturale/artificiale
+- Profondità di campo reale
+- Superficie/texture del packaging visibile`,
+            },
+          ],
+        },
+      ],
+    });
+
+    const text = message.content[0].type === "text" ? message.content[0].text : "{}";
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return { legitimate: true, confidence: 0.5, reason: "Validazione non disponibile" };
+
+    const parsed = JSON.parse(jsonMatch[0]) as {
+      legitimate?: boolean;
+      confidence?: number;
+      reason?: string;
     };
 
-    const co2PerUnit = co2SavingsFromAgribalyse(product) ?? co2SavingsByCategory(category, points);
-    await db.insert(productCacheTable).values({
-      productNameNormalized: `barcode:${normalizedBarcode}`,
-      productNameOriginal: productName,
-      ecoScore: grade ?? null,
-      points,
-      category,
-      source: "openfoodfacts",
-      reasoning,
-      emoji,
-      co2PerUnit,
-    }).onConflictDoNothing();
-
-    return result;
-  } catch {
-    return null;
+    return {
+      legitimate: parsed.legitimate !== false,
+      confidence: typeof parsed.confidence === "number" ? parsed.confidence : 0.5,
+      reason: parsed.reason || "Analisi completata",
+    };
+  } catch (err) {
+    console.error("[validateBarcodeImage]", err);
+    return { legitimate: true, confidence: 0.5, reason: "Errore nella validazione immagine" };
   }
 }
 

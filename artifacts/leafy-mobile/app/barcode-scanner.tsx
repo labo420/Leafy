@@ -3,7 +3,7 @@ import { CameraView, useCameraPermissions } from "expo-camera";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -83,6 +83,7 @@ export default function BarcodeScannerScreen() {
   const queryClient = useQueryClient();
   const { receiptId: receiptIdStr } = useLocalSearchParams<{ receiptId: string }>();
   const receiptId = parseInt(receiptIdStr ?? "0", 10);
+  const cameraRef = useRef<CameraView>(null);
 
   const [permission, requestPermission] = useCameraPermissions();
   const [scannedProducts, setScannedProducts] = useState<ScannedProduct[]>([]);
@@ -112,10 +113,10 @@ export default function BarcodeScannerScreen() {
   }
 
   const lookupMutation = useMutation({
-    mutationFn: (barcode: string) =>
+    mutationFn: (params: { barcode: string; imageBase64?: string }) =>
       apiFetch<LookupResult>("/scan/barcode/lookup", {
         method: "POST",
-        body: JSON.stringify({ barcode, receiptId }),
+        body: JSON.stringify({ barcode: params.barcode, receiptId, imageBase64: params.imageBase64 }),
       }),
     onSuccess: (data) => {
       setLookupData(data);
@@ -165,11 +166,26 @@ export default function BarcodeScannerScreen() {
   });
 
   const handleBarCodeScanned = useCallback(
-    ({ data }: { data: string }) => {
+    async ({ data }: { data: string }) => {
       if (phase !== "scanning" || cooldown) return;
       setPhase("looking-up");
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      lookupMutation.mutate(data);
+
+      let imageBase64: string | undefined;
+      try {
+        if (cameraRef.current && Platform.OS !== "web") {
+          const photo = await cameraRef.current.takePictureAsync({
+            base64: true,
+            quality: 0.2,
+            skipProcessing: true,
+          });
+          if (photo?.base64) {
+            imageBase64 = photo.base64;
+          }
+        }
+      } catch {}
+
+      lookupMutation.mutate({ barcode: data, imageBase64 });
     },
     [phase, cooldown],
   );
@@ -201,7 +217,7 @@ export default function BarcodeScannerScreen() {
     setManualCode("");
     setPhase("looking-up");
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    lookupMutation.mutate(code);
+    lookupMutation.mutate({ barcode: code });
   };
 
   const finish = () => {
@@ -348,6 +364,7 @@ export default function BarcodeScannerScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: "#000" }}>
       <CameraView
+        ref={cameraRef}
         style={StyleSheet.absoluteFill}
         facing="back"
         barcodeScannerSettings={{ barcodeTypes: ["ean13", "ean8", "upc_a", "upc_e", "code128", "code39"] }}

@@ -4,7 +4,7 @@ import { db, usersTable, receiptsTable, barcodeScansTable, productCacheTable } f
 import { ScanReceiptBody } from "@workspace/api-zod";
 import { hashImage, extractTextViaGoogleVision, calculateLevel } from "../lib/scanner";
 import { runAntiFraudChecks, approvePendingPoints } from "../lib/antiFraud";
-import { lookupBarcode, validateReceiptWithAI, classifyProductsBatch } from "../lib/productClassifier";
+import { lookupBarcode, validateReceiptWithAI, classifyProductsBatch, validateBarcodeImage, isValidBarcode } from "../lib/productClassifier";
 import { uploadReceiptImage } from "../lib/receiptImages";
 import { matchChain, isAcceptedStore } from "../lib/supermarketWhitelist";
 import { requireUser } from "./profile";
@@ -241,6 +241,8 @@ router.post("/scan", async (req, res): Promise<void> => {
 type UserRow = typeof usersTable.$inferSelect;
 type ReceiptRow = typeof receiptsTable.$inferSelect;
 
+const MAX_BARCODE_IMAGE_SIZE = 500_000;
+
 async function validateBarcodeRequest(req: Request, res: Response): Promise<{ user: UserRow; receipt: ReceiptRow; barcode: string; receiptId: number } | null> {
   const { barcode, receiptId } = req.body;
 
@@ -248,6 +250,13 @@ async function validateBarcodeRequest(req: Request, res: Response): Promise<{ us
     res.status(400).json({ error: "Codice a barre mancante." });
     return null;
   }
+
+  const cleanedBarcode = barcode.trim().replace(/[^0-9]/g, "");
+  if (!isValidBarcode(cleanedBarcode)) {
+    res.status(400).json({ error: "Codice a barre non valido. Verifica che sia un codice EAN/UPC corretto." });
+    return null;
+  }
+
   if (!receiptId || typeof receiptId !== "number") {
     res.status(400).json({ error: "ID scontrino mancante." });
     return null;
@@ -301,6 +310,19 @@ router.post("/scan/barcode/lookup", async (req, res): Promise<void> => {
   if (!validated) return;
 
   const { user, barcode } = validated;
+  const { imageBase64 } = req.body as { imageBase64?: string };
+
+  if (imageBase64 && typeof imageBase64 === "string" && imageBase64.length > 100 && imageBase64.length <= MAX_BARCODE_IMAGE_SIZE) {
+    const validation = await validateBarcodeImage(imageBase64);
+    if (!validation.legitimate && validation.confidence >= 0.7) {
+      console.log(`[anti-fraud] Barcode image rejected for user ${user.id}: ${validation.reason}`);
+      res.status(400).json({
+        error: "Inquadra un prodotto reale — sembra che tu stia fotografando uno schermo o un'immagine stampata.",
+        fraudDetected: true,
+      });
+      return;
+    }
+  }
 
   const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const [pointsSumRow] = await db
@@ -325,7 +347,7 @@ router.post("/scan/barcode/lookup", async (req, res): Promise<void> => {
   const product = await lookupBarcode(barcode);
 
   if (!product) {
-    res.status(404).json({ error: "Prodotto non trovato su Open Food Facts. Verifica che il codice a barre sia leggibile." });
+    res.status(404).json({ error: "Impossibile classificare questo prodotto. Riprova o inserisci il codice manualmente." });
     return;
   }
 
@@ -345,20 +367,38 @@ router.post("/scan/barcode/lookup", async (req, res): Promise<void> => {
 });
 
 router.post("/scan/barcode/preview", async (req, res): Promise<void> => {
-  const { barcode } = req.body;
+  const { barcode, imageBase64 } = req.body as { barcode?: string; imageBase64?: string };
 
   if (!barcode || typeof barcode !== "string") {
     res.status(400).json({ error: "Codice a barre mancante." });
     return;
   }
 
+  const cleanedBarcode = barcode.trim().replace(/[^0-9]/g, "");
+  if (!isValidBarcode(cleanedBarcode)) {
+    res.status(400).json({ error: "Codice a barre non valido. Verifica che sia un codice EAN/UPC corretto." });
+    return;
+  }
+
   const user = await requireUser(req, res);
   if (!user) return;
+
+  if (imageBase64 && typeof imageBase64 === "string" && imageBase64.length > 100 && imageBase64.length <= MAX_BARCODE_IMAGE_SIZE) {
+    const validation = await validateBarcodeImage(imageBase64);
+    if (!validation.legitimate && validation.confidence >= 0.7) {
+      console.log(`[anti-fraud] Shopping scan image rejected for user ${user.id}: ${validation.reason}`);
+      res.status(400).json({
+        error: "Inquadra un prodotto reale — sembra che tu stia fotografando uno schermo o un'immagine stampata.",
+        fraudDetected: true,
+      });
+      return;
+    }
+  }
 
   const product = await lookupBarcode(barcode.trim());
 
   if (!product) {
-    res.status(404).json({ error: "Prodotto non trovato su Open Food Facts. Verifica che il codice a barre sia leggibile." });
+    res.status(404).json({ error: "Impossibile classificare questo prodotto. Riprova o inserisci il codice manualmente." });
     return;
   }
 
@@ -403,7 +443,7 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
   const product = await lookupBarcode(barcode);
 
   if (!product) {
-    res.status(404).json({ error: "Prodotto non trovato. Verifica che il codice a barre sia leggibile." });
+    res.status(404).json({ error: "Impossibile classificare questo prodotto. Riprova." });
     return;
   }
 
