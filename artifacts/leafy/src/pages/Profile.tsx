@@ -186,23 +186,6 @@ export default function Profile() {
                 <p className="text-xs text-muted-foreground">Acqua salvata</p>
               </CardContent>
             </Card>
-            <Card className="col-span-2 bg-gradient-to-br from-accent/10 to-transparent border-transparent shadow-sm">
-              <CardContent className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-accent/20 text-accent-foreground flex items-center justify-center">
-                    <Zap className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Prodotti Green Acquistati</p>
-                    <p className="text-2xl font-bold text-foreground">{imp.greenProductsCount}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-muted-foreground">Scontrini</p>
-                  <p className="font-bold text-foreground">{imp.receiptsScanned}</p>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </section>
 
