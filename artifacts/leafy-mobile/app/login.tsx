@@ -27,7 +27,7 @@ const BASE_URL = process.env.EXPO_PUBLIC_DOMAIN
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
-  const { refetch } = useAuth();
+  const { setUser, refetch } = useAuth();
 
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
@@ -82,7 +82,9 @@ export default function LoginScreen() {
         return;
       }
 
-      await refetch();
+      if (data.user) {
+        setUser(data.user);
+      }
       router.replace("/(tabs)");
     } catch {
       setError("Errore di connessione. Riprova.");
