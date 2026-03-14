@@ -419,22 +419,29 @@ Regole:
       .filter((p): p is string => typeof p === "string" && p.trim().length >= 2)
       .slice(0, 15);
 
-    const isValid = parsed.isReceipt !== false;
-    const isComplete = parsed.complete !== false;
-    const missingInfo = Array.isArray(parsed.missingInfo) ? parsed.missingInfo : [];
+    const isValid = parsed.isReceipt === true;
+    const extractedDate = typeof parsed.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(parsed.date) ? parsed.date : null;
+    const extractedTotal = typeof parsed.totalCents === "number" ? Math.round(parsed.totalCents) : null;
+    const extractedStore = typeof parsed.store === "string" && parsed.store.trim().length > 0 ? parsed.store.trim() : null;
+
+    const missingInfo: string[] = [];
+    if (!extractedDate) missingInfo.push("data");
+    if (extractedTotal === null) missingInfo.push("totale");
+
+    const isComplete = isValid && extractedDate !== null && extractedTotal !== null;
 
     let reason = "";
     if (!isValid) reason = "L'immagine non sembra uno scontrino.";
-    else if (!isComplete) reason = `Informazioni mancanti: ${missingInfo.length > 0 ? missingInfo.join(", ") : "data e/o totale"}.`;
+    else if (!isComplete) reason = `Informazioni mancanti: ${missingInfo.join(", ")}.`;
     else reason = "Scontrino valido e completo.";
 
     return {
       valid: isValid,
       complete: isComplete,
       missingInfo,
-      store: typeof parsed.store === "string" ? parsed.store : null,
-      date: typeof parsed.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(parsed.date) ? parsed.date : null,
-      totalCents: typeof parsed.totalCents === "number" ? Math.round(parsed.totalCents) : null,
+      store: extractedStore,
+      date: extractedDate,
+      totalCents: extractedTotal,
       products,
       reason,
     };
