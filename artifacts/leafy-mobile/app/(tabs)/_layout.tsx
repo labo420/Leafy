@@ -59,10 +59,8 @@ export default function TabLayout() {
         tabBarActiveTintColor: Colors.leaf,
         tabBarInactiveTintColor: Colors.tabInactive,
         tabBarStyle: {
-          position: "absolute",
           backgroundColor: isIOS ? "transparent" : Colors.card,
           borderTopWidth: 0,
-          borderTopColor: Colors.border,
           elevation: 0,
           height: 84 + insets.bottom,
           paddingBottom: Math.max(insets.bottom, 8),
@@ -81,9 +79,9 @@ export default function TabLayout() {
               tint="light"
               style={[StyleSheet.absoluteFill, { borderTopLeftRadius: 24, borderTopRightRadius: 24 }]}
             />
-          ) : isWeb ? (
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: Colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: "visible" }]} />
-          ) : null,
+          ) : (
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: Colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24 }]} />
+          ),
         tabBarLabelStyle: {
           fontSize: 10,
           fontFamily: Fonts.bodyMedium,
