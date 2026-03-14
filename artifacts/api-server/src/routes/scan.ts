@@ -38,7 +38,7 @@ router.post("/scan", async (req, res): Promise<void> => {
     .limit(1);
 
   if (selfDuplicate && selfDuplicate.pointsEarned > 0) {
-    res.status(400).json({ error: "Hai già scansionato questo scontrino." });
+    res.status(400).json({ error: "Questo scontrino è già stato scansionato." });
     return;
   }
 
@@ -59,20 +59,19 @@ router.post("/scan", async (req, res): Promise<void> => {
     return;
   }
 
-  if (validation.date && validation.totalCents !== null) {
-    const storeNorm = (validation.store ?? "").toLowerCase().trim();
-    const dupConditions = [
-      eq(receiptsTable.receiptDate, validation.date),
-      eq(receiptsTable.receiptTotal, validation.totalCents),
-    ];
-    if (storeNorm.length > 0) {
-      dupConditions.push(sql`lower(trim(coalesce(${receiptsTable.storeName}, ''))) = ${storeNorm}`);
-    }
+  if (validation.date && validation.totalCents !== null && validation.store) {
+    const storeNorm = validation.store.toLowerCase().trim();
 
     const [semanticDuplicate] = await db
       .select({ id: receiptsTable.id })
       .from(receiptsTable)
-      .where(and(...dupConditions))
+      .where(
+        and(
+          eq(receiptsTable.receiptDate, validation.date),
+          eq(receiptsTable.receiptTotal, validation.totalCents),
+          sql`lower(trim(coalesce(${receiptsTable.storeName}, ''))) = ${storeNorm}`,
+        ),
+      )
       .limit(1);
 
     if (semanticDuplicate) {
@@ -93,7 +92,7 @@ router.post("/scan", async (req, res): Promise<void> => {
       .where(eq(receiptsTable.id, selfDuplicate.id))
       .limit(1);
     if (!existing) {
-      res.status(400).json({ error: "Hai già scansionato questo scontrino." });
+      res.status(400).json({ error: "Questo scontrino è già stato scansionato." });
       return;
     }
     receipt = existing;
