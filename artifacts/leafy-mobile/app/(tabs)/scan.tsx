@@ -2,7 +2,7 @@ import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -22,6 +22,7 @@ import Colors from "@/constants/colors";
 import { Fonts } from "@/constants/typography";
 import { useAuth } from "@/context/auth";
 import { router } from "expo-router";
+import type { Profile } from "@workspace/api-client-react";
 
 interface AcceptedStoresData {
   standard: string[];
@@ -70,6 +71,42 @@ function formatTimeRemaining(minutes: number): string {
   return `${minutes} min`;
 }
 
+function getMotivationMessage(profile: Profile | undefined): { emoji: string; line1: string; line2: string } {
+  if (!profile) return { emoji: "🌿", line1: "Benvenuto!", line2: "Scansiona il tuo primo scontrino" };
+  const { totalPoints, streak } = profile;
+  if (streak >= 7) return { emoji: "🔥", line1: `${streak} giorni di streak!`, line2: `${totalPoints} punti accumulati — fantastico` };
+  if (streak >= 3) return { emoji: "⚡", line1: `Streak di ${streak} giorni`, line2: `Hai guadagnato ${totalPoints} punti — continua!` };
+  if (totalPoints > 500) return { emoji: "🌟", line1: `${totalPoints} punti totali`, line2: "Sei un eco-campione — vai avanti!" };
+  if (totalPoints > 0) return { emoji: "🌱", line1: `${totalPoints} punti guadagnati`, line2: "Ogni acquisto conta per il pianeta" };
+  return { emoji: "👋", line1: "Prima scansione?", line2: "Guadagna subito i tuoi primi punti" };
+}
+
+function MotivationCard({ profile }: { profile: Profile | undefined }) {
+  const msg = getMotivationMessage(profile);
+  return (
+    <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.motivCard}>
+      <LinearGradient
+        colors={["#f0f9f4", "#e8f5ed"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.motivGradient}
+      >
+        <Text style={styles.motivEmoji}>{msg.emoji}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.motivLine1}>{msg.line1}</Text>
+          <Text style={styles.motivLine2}>{msg.line2}</Text>
+        </View>
+        {profile && profile.streak > 0 && (
+          <View style={styles.motivStreak}>
+            <MaterialCommunityIcons name="fire" size={14} color={Colors.leaf} />
+            <Text style={styles.motivStreakText}>{profile.streak}</Text>
+          </View>
+        )}
+      </LinearGradient>
+    </Animated.View>
+  );
+}
+
 function AcceptedStoresSection() {
   const [open, setOpen] = useState(false);
   const { data } = useQuery<AcceptedStoresData>({
@@ -108,6 +145,37 @@ function AcceptedStoresSection() {
   );
 }
 
+function HowItWorksSection() {
+  const [open, setOpen] = useState(false);
+  return (
+    <View style={styles.howSection}>
+      <Pressable style={styles.howToggle} onPress={() => setOpen(!open)}>
+        <View style={styles.howToggleLeft}>
+          <Feather name="help-circle" size={16} color={Colors.textSecondary} />
+          <Text style={styles.howToggleText}>Come funziona</Text>
+        </View>
+        <Feather name={open ? "chevron-up" : "chevron-down"} size={16} color={Colors.textSecondary} />
+      </Pressable>
+      {open && (
+        <View style={styles.howSteps}>
+          {[
+            { icon: "file-text" as const, text: "Fotografa lo scontrino (totale e data visibili)" },
+            { icon: "maximize" as const, text: "Scansiona i codici a barre dei prodotti" },
+            { icon: "award" as const, text: "Guadagna punti in base al Punteggio Verde" },
+          ].map((step, i) => (
+            <View key={i} style={styles.stepRow}>
+              <View style={styles.stepIcon}>
+                <Feather name={step.icon} size={15} color={Colors.leaf} />
+              </View>
+              <Text style={styles.stepText}>{step.text}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
 export default function ScanScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
@@ -125,6 +193,12 @@ export default function ScanScreen() {
     queryFn: () => apiFetch("/scan/active-session"),
     enabled: !!user,
     refetchInterval: 60000,
+  });
+
+  const { data: profile } = useQuery<Profile>({
+    queryKey: ["profile"],
+    queryFn: () => apiFetch("/profile"),
+    enabled: !!user,
   });
 
   const scanMutation = useMutation({
@@ -362,135 +436,182 @@ export default function ScanScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: topPadding }]}>
+    <ScrollView
+      style={[styles.container, { paddingTop: topPadding }]}
+      contentContainerStyle={[styles.idleContent, { paddingBottom: bottomPad }]}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.idleHeader}>
         <Text style={styles.idleTitle}>Scansiona</Text>
-        <Text style={styles.idleSub}>
-          Fotografa il tuo scontrino per intero (totale e data devono essere visibili), poi scansiona i codici a barre dei prodotti per guadagnare punti
-        </Text>
+        <Text style={styles.idleSub}>Guadagna punti per ogni acquisto sostenibile</Text>
       </View>
+
+      {user && (
+        <MotivationCard profile={profile} />
+      )}
 
       {sessionLoading ? (
         <ActivityIndicator size="large" color={Colors.leaf} style={{ marginTop: 40 }} />
       ) : (
         <>
-          <View style={styles.idleOptions}>
+          <Animated.View entering={FadeInDown.delay(150).springify()} style={styles.mainActionArea}>
             <Pressable
-              style={({ pressed }) => [styles.optionCardPrimary, pressed && styles.optionCardPressed]}
+              style={({ pressed }) => [styles.cameraBtn, pressed && styles.cameraBtnPressed]}
               onPress={() => pickImage("camera")}
             >
               <LinearGradient
                 colors={[Colors.leaf, Colors.forest]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
-                style={styles.optionGradientPrimary}
+                style={styles.cameraGradient}
               >
-                <Feather name="camera" size={56} color="#fff" />
-                <Text style={styles.optionTitlePrimary}>Scatta una foto</Text>
-                <Text style={styles.optionSub}>Fotografa il tuo scontrino</Text>
+                <View style={styles.cameraIconWrap}>
+                  <Feather name="camera" size={52} color="#fff" />
+                </View>
+                <Text style={styles.cameraBtnTitle}>Fotografa lo scontrino</Text>
+                <Text style={styles.cameraBtnSub}>Totale e data devono essere visibili</Text>
               </LinearGradient>
             </Pressable>
 
             <Pressable
-              style={({ pressed }) => [styles.optionCardSecondary, pressed && styles.optionCardPressed]}
+              style={({ pressed }) => [styles.galleryLink, pressed && { opacity: 0.6 }]}
               onPress={() => pickImage("gallery")}
             >
-              <Feather name="image" size={24} color={Colors.leaf} />
-              <Text style={styles.optionTitleSecondary}>O scegli dalla galleria</Text>
+              <Feather name="image" size={16} color={Colors.textSecondary} />
+              <Text style={styles.galleryLinkText}>Oppure scegli dalla galleria</Text>
             </Pressable>
-          </View>
+          </Animated.View>
 
-          <Pressable
-            style={styles.shoppingModeBtn}
-            onPress={() => {
-              if (!user) {
-                router.push("/login");
-                return;
-              }
-              router.push("/shopping-scanner");
-            }}
-          >
-            <View style={styles.shoppingModeInner}>
-              <View style={styles.shoppingModeLeft}>
-                <View style={styles.shoppingModeIcon}>
-                  <MaterialCommunityIcons name="cart-outline" size={22} color={Colors.leaf} />
+          <Animated.View entering={FadeInDown.delay(250).springify()}>
+            <Pressable
+              style={({ pressed }) => [styles.shoppingModeBtn, pressed && { opacity: 0.85 }]}
+              onPress={() => {
+                if (!user) {
+                  router.push("/login");
+                  return;
+                }
+                router.push("/shopping-scanner");
+              }}
+            >
+              <LinearGradient
+                colors={["#f5fbf7", "#edf7f1"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.shoppingModeInner}
+              >
+                <View style={styles.shoppingModeLeft}>
+                  <View style={styles.shoppingModeIcon}>
+                    <MaterialCommunityIcons name="cart-outline" size={22} color={Colors.leaf} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.shoppingModeTitle}>Modalità Spesa</Text>
+                    <Text style={styles.shoppingModeSub}>Scopri i punti prima di pagare</Text>
+                  </View>
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.shoppingModeTitle}>Modalità Spesa</Text>
-                  <Text style={styles.shoppingModeSub}>Scansiona prodotti per una stima punti</Text>
+                <View style={styles.shoppingModeArrow}>
+                  <Feather name="chevron-right" size={18} color={Colors.leaf} />
                 </View>
-              </View>
-              <Feather name="chevron-right" size={20} color={Colors.textMuted} />
-            </View>
-          </Pressable>
+              </LinearGradient>
+            </Pressable>
+          </Animated.View>
 
-          <View style={styles.steps}>
-            <Text style={styles.stepsTitle}>Come funziona</Text>
-            {[
-              { icon: "file-text" as const, text: "1. Fotografa lo scontrino come prova d'acquisto" },
-              { icon: "maximize" as const, text: "2. Scansiona i codici a barre dei prodotti" },
-              { icon: "award" as const, text: "3. Guadagna punti in base al Punteggio Verde" },
-            ].map((step, i) => (
-              <View key={i} style={styles.stepRow}>
-                <View style={styles.stepIcon}>
-                  <Feather name={step.icon} size={16} color={Colors.leaf} />
-                </View>
-                <Text style={styles.stepText}>{step.text}</Text>
-              </View>
-            ))}
-          </View>
-
-          <AcceptedStoresSection />
+          <Animated.View entering={FadeInDown.delay(320).springify()}>
+            <HowItWorksSection />
+            <AcceptedStoresSection />
+          </Animated.View>
         </>
       )}
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
+  idleContent: { flexGrow: 1 },
   centered: {
     flex: 1, backgroundColor: Colors.background,
     alignItems: "center", justifyContent: "center",
   },
-  idleHeader: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 16 },
-  idleTitle: { fontSize: 32, fontFamily: "DMSans_700Bold", color: Colors.text, marginBottom: 8 },
-  idleSub: { fontSize: 15, fontFamily: "Inter_400Regular", color: Colors.textSecondary, lineHeight: 22 },
-  idleOptions: { flexDirection: "column", paddingHorizontal: 20, gap: 16, marginBottom: 24, justifyContent: "flex-end", flex: 1 },
-  optionCard: {
-    flex: 1, borderRadius: 24, overflow: "hidden",
-    shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 4,
+
+  idleHeader: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 8 },
+  idleTitle: { fontSize: 32, fontFamily: "DMSans_700Bold", color: Colors.text, marginBottom: 4 },
+  idleSub: { fontSize: 15, fontFamily: "Inter_400Regular", color: Colors.textSecondary },
+
+  motivCard: { marginHorizontal: 20, marginBottom: 20, borderRadius: 20, overflow: "hidden" },
+  motivGradient: {
+    flexDirection: "row", alignItems: "center", gap: 12,
+    paddingHorizontal: 16, paddingVertical: 14,
   },
-  optionCardPrimary: {
-    borderRadius: 24, overflow: "hidden", minHeight: 240,
-    shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 5,
+  motivEmoji: { fontSize: 28 },
+  motivLine1: { fontSize: 14, fontFamily: "Inter_700Bold", color: Colors.leaf },
+  motivLine2: { fontSize: 12, fontFamily: "Inter_400Regular", color: Colors.textSecondary, marginTop: 1 },
+  motivStreak: {
+    flexDirection: "row", alignItems: "center", gap: 2,
+    backgroundColor: Colors.primaryLight, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 4,
   },
-  optionCardSecondary: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 12,
-    backgroundColor: Colors.card, borderRadius: 24, paddingVertical: 16, borderWidth: 1.5, borderColor: Colors.border,
+  motivStreakText: { fontSize: 13, fontFamily: "Inter_700Bold", color: Colors.leaf },
+
+  mainActionArea: { paddingHorizontal: 20, gap: 14, marginBottom: 16 },
+  cameraBtn: {
+    borderRadius: 28, overflow: "hidden",
+    shadowColor: Colors.forest, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.25, shadowRadius: 16, elevation: 6,
   },
-  optionCardPressed: { opacity: 0.88 },
-  optionGradient: { padding: 24, alignItems: "center", gap: 10, minHeight: 180, justifyContent: "center" },
-  optionGradientPrimary: { padding: 32, alignItems: "center", gap: 12, flex: 1, justifyContent: "center" },
-  optionSecondary: {
-    padding: 24, alignItems: "center", gap: 10, minHeight: 180, justifyContent: "center",
-    backgroundColor: Colors.card, borderWidth: 2, borderColor: Colors.border, borderRadius: 24,
+  cameraBtnPressed: { opacity: 0.9, transform: [{ scale: 0.98 }] },
+  cameraGradient: {
+    paddingTop: 40, paddingBottom: 36, paddingHorizontal: 24,
+    alignItems: "center", gap: 12,
   },
-  optionTitle: { fontSize: 17, fontFamily: "DMSans_700Bold", color: "#fff", textAlign: "center" },
-  optionTitlePrimary: { fontSize: 24, fontFamily: "DMSans_700Bold", color: "#fff", textAlign: "center" },
-  optionTitleSecondary: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: Colors.leaf, textAlign: "center" },
-  optionSub: { fontSize: 12, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.8)", textAlign: "center" },
-  steps: { paddingHorizontal: 24, gap: 12 },
-  stepsTitle: {
-    fontSize: 13, fontFamily: "Inter_600SemiBold", color: Colors.textSecondary,
-    textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4,
+  cameraIconWrap: {
+    width: 96, height: 96, borderRadius: 48,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    alignItems: "center", justifyContent: "center",
+    marginBottom: 4,
   },
+  cameraBtnTitle: { fontSize: 22, fontFamily: "DMSans_700Bold", color: "#fff", textAlign: "center" },
+  cameraBtnSub: { fontSize: 13, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.75)", textAlign: "center" },
+
+  galleryLink: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
+    paddingVertical: 4,
+  },
+  galleryLinkText: { fontSize: 14, fontFamily: "Inter_500Medium", color: Colors.textSecondary },
+
+  shoppingModeBtn: {
+    marginHorizontal: 20, marginBottom: 8,
+    borderRadius: 20, overflow: "hidden",
+    borderWidth: 1.5, borderColor: "rgba(46,107,80,0.18)",
+  },
+  shoppingModeInner: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 16, paddingVertical: 16,
+  },
+  shoppingModeLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
+  shoppingModeIcon: {
+    width: 44, height: 44, borderRadius: 14,
+    backgroundColor: Colors.primaryLight, alignItems: "center", justifyContent: "center",
+  },
+  shoppingModeTitle: { fontSize: 15, fontFamily: "Inter_700Bold", color: Colors.text },
+  shoppingModeSub: { fontSize: 12, fontFamily: "Inter_400Regular", color: Colors.textSecondary, marginTop: 2 },
+  shoppingModeArrow: {
+    width: 32, height: 32, borderRadius: 10,
+    backgroundColor: Colors.primaryLight, alignItems: "center", justifyContent: "center",
+  },
+
+  howSection: { paddingHorizontal: 20, marginTop: 8 },
+  howToggle: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingVertical: 14,
+  },
+  howToggleLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
+  howToggleText: { fontSize: 14, fontFamily: "Inter_500Medium", color: Colors.textSecondary },
+  howSteps: { gap: 10, paddingBottom: 8 },
   stepRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   stepIcon: {
     width: 32, height: 32, borderRadius: 24, backgroundColor: Colors.primaryLight,
     alignItems: "center", justifyContent: "center",
   },
-  stepText: { fontSize: 14, fontFamily: "Inter_400Regular", color: Colors.textSecondary, flex: 1 },
+  stepText: { fontSize: 13, fontFamily: "Inter_400Regular", color: Colors.textSecondary, flex: 1, lineHeight: 18 },
+
   previewHeader: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     paddingHorizontal: 20, paddingVertical: 16,
@@ -562,10 +683,10 @@ const styles = StyleSheet.create({
     borderWidth: 1.5, borderColor: Colors.leaf,
   },
   newReceiptBtnText: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: Colors.leaf },
-  storesSection: { paddingHorizontal: 20, marginTop: 8, marginBottom: 24 },
+  storesSection: { paddingHorizontal: 20, marginTop: 0, marginBottom: 8 },
   storesToggle: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingVertical: 12,
+    paddingVertical: 14,
   },
   storesToggleLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
   storesToggleText: { fontSize: 14, fontFamily: "Inter_500Medium", color: Colors.textSecondary },
@@ -575,21 +696,4 @@ const styles = StyleSheet.create({
   storesCategory: { gap: 4 },
   storesCatTitle: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: Colors.text },
   storesCatList: { fontSize: 12, fontFamily: "Inter_400Regular", color: Colors.textSecondary, lineHeight: 18 },
-  shoppingModeBtn: {
-    marginHorizontal: 20, marginBottom: 20,
-    backgroundColor: Colors.card, borderRadius: 24,
-    borderWidth: 1.5, borderColor: Colors.border,
-    borderStyle: "dashed" as const,
-  },
-  shoppingModeInner: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 16, paddingVertical: 14,
-  },
-  shoppingModeLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
-  shoppingModeIcon: {
-    width: 40, height: 40, borderRadius: 12,
-    backgroundColor: Colors.primaryLight, alignItems: "center", justifyContent: "center",
-  },
-  shoppingModeTitle: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: Colors.text },
-  shoppingModeSub: { fontSize: 12, fontFamily: "Inter_400Regular", color: Colors.textSecondary, marginTop: 1 },
 });
