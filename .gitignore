@@ -44,6 +44,16 @@ Thumbs.db
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
 
+# Environment secrets
+.env
+.env.local
+.env.*.local
+
 # Replit
 .cache/
 .local/
+.replit
+artifact.toml
+
+# Lock files are committed (pnpm-lock.yaml), but not platform-specific
+*.log
