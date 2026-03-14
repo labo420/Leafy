@@ -4,7 +4,7 @@
 
 Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti scansionano scontrini come prova d'acquisto, poi inquadrano i codici a barre dei prodotti per guadagnare punti basati sull'**Eco-Score** di Open Food Facts. Salgono di livello (Bronzo → Argento → Oro → Platino), completano sfide mensili e riscattano voucher nel marketplace.
 
-**Stato attuale**: App Expo React Native funzionante (SDK 54) + backend Express/PostgreSQL + admin panel web + frontend web con sistema badge a due livelli (lifetime + temporali).
+**Stato attuale**: App Expo React Native funzionante (SDK 54) + backend Express/PostgreSQL + admin panel web + frontend web con sistema badge a due livelli (lifetime + temporali) + whitelist 51 supermercati italiani con validazione AI di catena e provincia.
 
 ---
 
@@ -222,12 +222,13 @@ File: `artifacts/api-server/src/seed-badges.ts`
 
 ### Fase 1 — Scontrino come prova d'acquisto
 1. Utente fotografa lo scontrino (hint: "totale e data devono essere visibili")
-2. `POST /api/scan` → AI validation (is receipt? complete? metadata) → semantic dedup → anti-frode → AI product extraction → classification → punti
+2. `POST /api/scan` → AI validation (is receipt? complete? `storeChain`? `province`? metadata) → whitelist check → semantic dedup → anti-frode → AI product extraction → classification → punti
 3. Se non è uno scontrino → errore "Non sembra uno scontrino"
 4. Se incompleto (data/totale mancanti) → errore con lista info mancanti
-5. Se duplicato semantico (stessa data + totale) → errore "Già scansionato"
-6. Risposta: `{ receiptId, barcodeExpiry (now+24h), pointsEarned, greenItemsFound, ... }`
-7. App mostra risultato con prodotti trovati e CTA per scansionare barcode
+5. **Se negozio non in whitelist** → HTTP 400 "Scontrino non accettato — Leafy funziona con i principali supermercati italiani."
+6. Se duplicato semantico (stessa data + totale) → errore "Già scansionato"
+7. Risposta: `{ receiptId, barcodeExpiry (now+24h), pointsEarned, greenItemsFound, ... }`
+8. App mostra risultato con prodotti trovati e CTA per scansionare barcode
 
 ### Fase 2 — Barcode scanner per i punti
 1. Utente apre lo scanner e inquadra il codice a barre
@@ -276,13 +277,14 @@ Base URL: `/api`
 ### Scontrini e Scan
 | Endpoint | Descrizione |
 |----------|-------------|
-| `POST /api/scan` | Valida scontrino (proof-only, NO punti) → apre sessione 24h |
+| `POST /api/scan` | Valida scontrino + whitelist check → apre sessione 24h |
 | `POST /api/scan/barcode/lookup` | Preview prodotto da barcode (NO credito punti) |
 | `POST /api/scan/barcode/confirm` | Conferma e accredita punti |
 | `GET /api/scan/active-session` | Sessione barcode attiva + prodotti scansionati |
-| `GET /api/receipts` | Lista scontrini (incl. `hasImage`, `imageExpiresAt`) |
+| `GET /api/receipts` | Lista scontrini (incl. `storeChain`, `province`, `hasImage`) |
 | `GET /api/receipts/:id` | Dettaglio: greenItems + barcodeScans + Eco-Score + foto |
 | `GET /api/receipts/:id/image` | Serve foto scontrino (auth-protected, 30gg retention) |
+| `GET /api/accepted-stores` | Lista supermercati accettati per categoria `{ standard, bio, discount }` |
 
 ### Badge
 | Endpoint | Descrizione |
@@ -333,10 +335,10 @@ Indice unico su `(provider, provider_account_id)`.
 
 ### `receipts`
 ```
-id, user_id (FK), store_name, purchase_date, image_hash, raw_text,
-points_earned, green_items_count, categories[], green_items_json,
-scanned_at, status, flag_reason, barcode_expiry, barcode_mode,
-receipt_date, receipt_total, image_url, image_expires_at
+id, user_id (FK), store_name, store_chain, province, purchase_date,
+image_hash, raw_text, points_earned, green_items_count, categories[],
+green_items_json, scanned_at, status, flag_reason, barcode_expiry,
+barcode_mode, receipt_date, receipt_total, image_url, image_expires_at
 ```
 - `barcode_expiry` = scadenza sessione barcode (24h dopo scan)
 - `barcode_mode` = 1 (indica flusso barcode attivo)
@@ -345,6 +347,8 @@ receipt_date, receipt_total, image_url, image_expires_at
 - `receipt_total` = totale scontrino in centesimi estratto dall'AI per anti-duplicato semantico
 - `image_url` = path GCS della foto scontrino (pattern: `receipts/{userId}/{receiptId}.jpg`)
 - `image_expires_at` = scadenza foto (30 giorni dopo upload)
+- `store_chain` = nome normalizzato della catena (es. "Esselunga", "Lidl") estratto dall'AI
+- `province` = provincia italiana dedotta dall'indirizzo sullo scontrino (es. "Milano"), estratta dall'AI. Sempre `null` se non determinabile
 
 ### `barcode_scans`
 ```
@@ -418,9 +422,18 @@ Il footer della schermata fotocamera include anche un link **"Non riesci a scans
 - Compatibile con vecchi scontrini senza `greenItemsJson` (usa `r.categories`)
 - Il frontend mostra disclaimer: *"Stime indicative basate sulla categoria del prodotto, non dati precisi per singolo articolo."*
 
+### Whitelist Supermercati (`supermarketWhitelist.ts`)
+51 catene italiane suddivise in 3 categorie: `standard` (GDO classica), `bio` (specializzati biologico), `discount`.
+
+**`matchChain(storeName)`**: matching strict longest-first, lunghezza minima 4 caratteri, solo `normalized.includes(norm)` (NON il contrario). Ritorna il nome normalizzato della catena oppure `null`. Usato in `POST /api/scan` per bloccare i negozi non in whitelist (HTTP 400). `storeChain` e `province` vengono salvati sul DB anche per i negozi non in whitelist prima del reject.
+
+**`GET /api/accepted-stores`**: endpoint pubblico (no auth) che ritorna `{ standard: string[], bio: string[], discount: string[] }`. Consumato da web (`useGetAcceptedStores`) e mobile per la sezione collassabile "Negozi accettati" nella schermata di scansione.
+
+**Storico**: web e mobile mostrano `storeChain` come nome del negozio (se disponibile), con `province` accanto alla data (icona MapPin).
+
 ### Classificazione Prodotti
 - **Open Food Facts** (primario): API gratuita, nessuna API key. Le chiamate includono `ecoscore_data` per ottenere dati Agribalyse (CO2 reale per kg)
-- **Claude Haiku Vision** (`validateReceiptWithAI`): valida scontrino + estrae metadati (negozio, data, totale) + lista prodotti in un'unica chiamata. `temperature: 0`, formato prodotti `{raw, name}`. **Il campo `raw` (testo verbatim) ha priorità su `name` (normalizzato dall'AI)** per evitare allucinazioni OCR. Usato come primo step in `POST /scan`.
+- **Claude Haiku Vision** (`validateReceiptWithAI`): valida scontrino + estrae metadati (negozio, data, totale, `storeChain` normalizzato, `province` dalla rubrica indirizzo) + lista prodotti in un'unica chiamata. `temperature: 0`, formato prodotti `{raw, name}`. **Il campo `raw` (testo verbatim) ha priorità su `name` (normalizzato dall'AI)** per evitare allucinazioni OCR. Usato come primo step in `POST /scan`.
 - **Claude Haiku** (`classifyProductsBatch`): classifica i prodotti estratti in batch, assegna punti 0-20 per sostenibilità
 - **Cache**: `product_cache` table, key `barcode:{code}` o nome normalizzato. Tutti i punti di inserimento salvano `co2_per_unit` (da Agribalyse o stimato da categoria)
 - **Correzione prodotti**: `POST /api/scan/products/correct` permette di correggere un nome prodotto errato. Cancella la vecchia cache entry, riclassifica il nome corretto e aggiorna `greenItemsJson` nello scontrino. UI nel tab Storico (icona ✏️ su ogni prodotto green).
