@@ -80,6 +80,11 @@ function formatDate(dateStr: string | null | undefined): string {
   }
 }
 
+function formatProductName(name: string): string {
+  if (!name) return "";
+  return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+}
+
 function EcoScoreBadge({ score }: { score: string | null }) {
   if (!score) return null;
   const letter = score.toLowerCase();
@@ -197,7 +202,7 @@ function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }
                   <View key={i} style={styles.itemRow}>
                     <Text style={styles.itemEmoji}>{item.emoji ?? "🌿"}</Text>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.itemName}>{item.name}</Text>
+                      <Text style={styles.itemName}>{formatProductName(item.name)}</Text>
                       <Text style={styles.itemCat}>{item.category}</Text>
                     </View>
                     <Text style={styles.itemPts}>+{item.points} pt</Text>
