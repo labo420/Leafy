@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LeafAnimation } from "@/components/shared/LeafAnimation";
+import { BarcodeScanner } from "@/components/ui/BarcodeScanner";
 import { Camera, CheckCircle2, ArrowRight, ScanLine, ImageIcon, Sparkles, ChevronDown, Store, ShoppingCart, Search, X, Leaf, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -41,6 +42,7 @@ export default function Scan() {
   const [barcodeInput, setBarcodeInput] = useState("");
   const [shoppingList, setShoppingList] = useState<ShoppingItem[]>([]);
   const barcodeInputRef = useRef<HTMLInputElement>(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   const barcodePreviewMutation = useBarcodePreview({
     mutation: {
@@ -384,6 +386,15 @@ export default function Scan() {
                     />
                     <Button
                       size="sm"
+                      variant="outline"
+                      onClick={() => setScannerOpen(true)}
+                      className="rounded-xl px-3 shrink-0 border-primary/40 text-primary hover:bg-primary/5"
+                      title="Scansiona con fotocamera"
+                    >
+                      <Camera className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="sm"
                       onClick={handleBarcodeLookup}
                       disabled={!barcodeInput.trim() || barcodePreviewMutation.isPending}
                       className="rounded-xl px-4 shrink-0"
@@ -495,6 +506,19 @@ export default function Scan() {
           </div>
         )}
       </div>
+
+      <BarcodeScanner
+        open={scannerOpen}
+        onDetected={(barcode) => {
+          setScannerOpen(false);
+          setBarcodeInput(barcode);
+          setShoppingOpen(true);
+          setTimeout(() => {
+            barcodePreviewMutation.mutate({ data: { barcode } });
+          }, 100);
+        }}
+        onClose={() => setScannerOpen(false)}
+      />
     </div>
   );
 }
