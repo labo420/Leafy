@@ -33,18 +33,21 @@ Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti 
 | Variabile | Obbligatoria | Descrizione |
 |-----------|-------------|-------------|
 | `DATABASE_URL` | ✅ Sì | PostgreSQL connection string (fornita automaticamente da Replit) |
+| `SESSION_SECRET` | ✅ Produzione | Segreto per la firma dei cookie di sessione. Genera con: `openssl rand -base64 32` |
+| `NGROK_AUTH_TOKEN` | ✅ Dev mobile | Token ngrok per il tunnel Expo. Registrati su [ngrok.com](https://ngrok.com) → Dashboard → Your Authtoken. Senza di esso, l'app mobile non riesce a connettersi al backend fuori dalla rete locale. |
 | `GOOGLE_CLIENT_ID` | Auth Google | OAuth 2.0 Client ID da Google Cloud Console |
 | `GOOGLE_CLIENT_SECRET` | Auth Google | OAuth 2.0 Client Secret da Google Cloud Console |
 | `FACEBOOK_APP_ID` | Auth Facebook | App ID da Facebook Developers |
 | `FACEBOOK_APP_SECRET` | Auth Facebook | App Secret da Facebook Developers |
 | `GOOGLE_CLOUD_VISION_API_KEY` | Consigliata | Google Vision API per OCR scontrini. Senza, usa keyword matching. |
 | `ADMIN_PASSWORD` | No | Password pannello admin. Default: `leafy2026` |
-| `SESSION_SECRET` | Produzione | Segreto per la firma dei cookie di sessione |
-| `AI_INTEGRATIONS_ANTHROPIC_BASE_URL` | Auto | Fornita automaticamente da Replit AI Integrations |
-| `AI_INTEGRATIONS_ANTHROPIC_API_KEY` | Auto | Fornita automaticamente da Replit AI Integrations |
-| `DEFAULT_OBJECT_STORAGE_BUCKET_ID` | Auto | Bucket ID GCS per Object Storage (foto scontrini) |
-| `PRIVATE_OBJECT_DIR` | Auto | Directory privata su GCS |
-| `PUBLIC_OBJECT_SEARCH_PATHS` | Auto | Path ricerca oggetti pubblici |
+| `AI_INTEGRATIONS_ANTHROPIC_BASE_URL` | Auto (Replit) | Fornita automaticamente da Replit AI Integrations |
+| `AI_INTEGRATIONS_ANTHROPIC_API_KEY` | Auto (Replit) | Fornita automaticamente da Replit AI Integrations |
+| `DEFAULT_OBJECT_STORAGE_BUCKET_ID` | Auto (Replit) | Bucket ID GCS per Object Storage (foto scontrini) |
+| `PRIVATE_OBJECT_DIR` | Auto (Replit) | Directory privata su GCS |
+| `PUBLIC_OBJECT_SEARCH_PATHS` | Auto (Replit) | Path ricerca oggetti pubblici |
+| `EXPO_PUBLIC_DOMAIN` | Auto (Replit) | Dominio pubblico del backend. Su Replit = `$REPLIT_DEV_DOMAIN` (iniettato dal workflow). Su GitHub/altri: imposta al tuo dominio. |
+| `EXPO_PUBLIC_REPL_ID` | Auto (Replit) | ID del Repl. Su Replit = `$REPL_ID` (iniettato dal workflow). Su GitHub/altri: qualsiasi stringa univoca. |
 
 Per impostare i secrets su Replit: **Tools → Secrets**.
 
@@ -54,20 +57,47 @@ Per impostare i secrets su Replit: **Tools → Secrets**.
 
 ## Come Avviare il Progetto
 
-### Dev (Development)
+### Setup Completo da Zero (GitHub / Non-Replit)
+
+Sequenza da seguire **nell'ordine esatto** per partire da un clone fresco del repo:
 
 ```bash
-# Installa dipendenze
+# 1. Installa tutte le dipendenze del monorepo
 pnpm install
 
-# Sincronizza schema DB (dopo modifiche allo schema)
+# 2. Configura i secrets obbligatori (vedi tabella env vars sopra):
+#    DATABASE_URL, SESSION_SECRET, NGROK_AUTH_TOKEN
+#    Opzionali: GOOGLE_CLIENT_ID/SECRET, FACEBOOK_APP_ID/SECRET,
+#               GOOGLE_CLOUD_VISION_API_KEY, ADMIN_PASSWORD
+
+# 3. Crea lo schema PostgreSQL
 pnpm --filter @workspace/db run push
 
-# Avvia tutto insieme (workflow Replit "Start application")
-PORT=8080 pnpm --filter @workspace/api-server run dev & PORT=24389 BASE_PATH=/ pnpm --filter @workspace/leafy run dev
+# 4. Avvia il backend (i 15 badge vengono seedati automaticamente al primo avvio)
+PORT=8080 pnpm --filter @workspace/api-server run dev
+
+# 5. In terminali separati, avvia gli altri servizi:
+PORT=24389 BASE_PATH=/ pnpm --filter @workspace/leafy run dev
+EXPO_PUBLIC_DOMAIN=<tuo-dominio> pnpm --filter @workspace/leafy-mobile run dev
 ```
 
-I workflow Replit gestiscono questi comandi automaticamente.
+> **Nota seed badge**: `seed-badges.ts` viene chiamato automaticamente all'avvio del server in `src/index.ts`. Non serve nessun comando extra — i 15 badge vengono inseriti (idempotentemente) al primo start.
+
+### Dev su Replit (Development)
+
+I workflow Replit gestiscono tutto automaticamente. Clicca **Run** o usa i workflow nel pannello:
+
+```bash
+# Backend API (workflow "Start application")
+PORT=8080 pnpm --filter @workspace/api-server run dev
+
+# Frontend web (workflow "artifacts/leafy: web")
+PORT=24389 BASE_PATH=/ pnpm --filter @workspace/leafy run dev
+
+# App mobile Expo (workflow "artifacts/leafy-mobile: expo")
+EXPO_PUBLIC_DOMAIN=$REPLIT_DEV_DOMAIN EXPO_PUBLIC_REPL_ID=$REPL_ID \
+  node scripts/start-dev.js --tunnel --port $PORT
+```
 
 ### App Mobile (Expo)
 
@@ -77,7 +107,7 @@ pnpm --filter @workspace/leafy-mobile run dev
 # oppure usa il workflow Replit "artifacts/leafy-mobile: expo"
 ```
 
-Il tunnel ngrok si configura automaticamente via `start-dev.js`.
+Il tunnel ngrok si configura automaticamente via `start-dev.js` usando `NGROK_AUTH_TOKEN`.
 
 ### Build Produzione
 
@@ -86,6 +116,33 @@ PORT=80 BASE_PATH=/ pnpm --filter @workspace/leafy run build
 pnpm --filter @workspace/api-server run build
 # Poi avviare: node artifacts/api-server/dist/index.cjs
 ```
+
+---
+
+## Funzionalità Dipendenti da Replit (Non Portabili)
+
+Le seguenti funzionalità **non funzionano fuori dall'ambiente Replit** senza modifiche al codice o sostituzioni di servizi:
+
+### 1. Replit OIDC (Login con account Replit)
+- Endpoint `GET /api/login` reindirizza a `https://replit.com/oidc/...`
+- Richiede `REPL_ID`, `REPLIT_DEV_DOMAIN`, `ISSUER_URL` (tutte variabili auto-iniettate da Replit)
+- **Su GitHub/altri**: disabilitare o sostituire con un altro provider OAuth (Google, Facebook sono già integrati e funzionano ovunque)
+
+### 2. Object Storage — GCS Sidecar
+- Le foto degli scontrini vengono salvate su Google Cloud Storage tramite un sidecar Replit
+- Le credenziali (`DEFAULT_OBJECT_STORAGE_BUCKET_ID`, `PRIVATE_OBJECT_DIR`, `PUBLIC_OBJECT_SEARCH_PATHS`) sono iniettate automaticamente
+- **Su GitHub/altri**: necessita un bucket GCS con service account e credenziali manuali, oppure sostituire con storage locale (`multer` + disco locale) o S3
+
+### 3. Variabili Auto-iniettate da Replit
+| Variabile | Usata per | Alternativa |
+|-----------|-----------|-------------|
+| `REPLIT_DEV_DOMAIN` | CORS origin, cookie domain, `EXPO_PUBLIC_DOMAIN` | Imposta manualmente al tuo dominio |
+| `REPL_ID` | Replit OIDC, `EXPO_PUBLIC_REPL_ID` | Qualsiasi stringa univoca |
+| `ISSUER_URL` | Endpoint OIDC discovery | Non necessario se si disabilita Replit Login |
+
+### 4. AI Integrations (Anthropic — Claude)
+- `AI_INTEGRATIONS_ANTHROPIC_BASE_URL` e `AI_INTEGRATIONS_ANTHROPIC_API_KEY` sono fornite da Replit AI Integrations
+- **Su GitHub/altri**: serve un account Anthropic con API key propria e sostituire `AI_INTEGRATIONS_ANTHROPIC_BASE_URL` con `https://api.anthropic.com`
 
 ---
 
@@ -398,12 +455,28 @@ Schema gestito da Drizzle ORM in `lib/db/src/schema/`.
 
 | Tab | File | Descrizione |
 |-----|------|-------------|
-| Home | `(tabs)/index.tsx` | Dashboard: punti, livello, streak, impatto |
+| Home | `(tabs)/index.tsx` | Header chiaro con logo+avatar, progress ring SVG circolare animato (react-native-svg + reanimated, 220px), messaggio motivazionale streak-based, progress bar lineare, CTA compatto 64px. API: `totalPoints`, `nextLevelPoints`, `levelProgress`, livelli in italiano. |
 | Scansiona | `(tabs)/scan.tsx` | Flusso scontrino + sessione barcode attiva |
 | Storico | `(tabs)/storico.tsx` | Lista scontrini + dettaglio con barcode scans |
 | Premi | `(tabs)/marketplace.tsx` | Voucher riscattabili |
-| Profilo | `(tabs)/profilo.tsx` | Profilo, badge, sfide, referral |
+| Profilo | `(tabs)/profilo.tsx` | Header verde (`Colors.leaf`) con cerchi decorativi, avatar card flottante (−40px overlap) con upload foto via `expo-image-picker` → `PUT /api/profile/image`, griglia impatto 2×1 (CO₂ blu + acqua teal), badge con tab Traguardi/Sfide da `GET /api/badges/my`. |
+| Impostazioni | `impostazioni.tsx` | Schermata impostazioni utente (Task #7, placeholder attuale) |
 | Scanner | `barcode-scanner.tsx` | Schermata full-screen camera barcode |
+
+### Campi API chiave per mobile
+
+```ts
+// GET /api/profile
+{ totalPoints, nextLevelPoints, levelProgress /* 0-100 */, level /* "Bronzo"/"Argento"/"Oro"/"Platino" */ }
+
+// GET /api/badges/my  (NON /profile/badges)
+{ lifetime: BadgeItem[], temporal: TemporalBadgeItem[] }
+
+// Challenge fields
+{ title, isCompleted, rewardPoints, currentCount, targetCount, progressPercent }
+
+// profileImageUrl: su AuthUser (da useAuth), NON sul tipo Profile
+```
 
 ---
 
