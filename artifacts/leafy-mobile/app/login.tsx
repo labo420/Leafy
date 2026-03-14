@@ -17,6 +17,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import Colors from "@/constants/colors";
+import { Fonts } from "@/constants/typography";
 import { useAuth } from "@/context/auth";
 
 type Mode = "login" | "register";
@@ -112,12 +113,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <LinearGradient
-      colors={[Colors.forest, Colors.leaf]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 0.4, y: 1 }}
-      style={[styles.gradient, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
-    >
+    <View style={[styles.screen, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -127,16 +123,13 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Logo */}
           <View style={styles.logoWrap}>
-            <MaterialCommunityIcons name="leaf" size={40} color={Colors.mint} />
+            <MaterialCommunityIcons name="leaf" size={32} color={Colors.leaf} />
           </View>
           <Text style={styles.appName}>Leafy</Text>
           <Text style={styles.tagline}>Acquisti sostenibili, punti reali</Text>
 
-          {/* Card */}
           <View style={styles.card}>
-            {/* Tab switcher */}
             <View style={styles.tabs}>
               {(["login", "register"] as Mode[]).map((m) => (
                 <Pressable
@@ -151,7 +144,6 @@ export default function LoginScreen() {
               ))}
             </View>
 
-            {/* Form */}
             {mode === "register" && (
               <View style={styles.inputWrap}>
                 <Feather name="user" size={16} color={Colors.textMuted} style={styles.inputIcon} />
@@ -215,23 +207,28 @@ export default function LoginScreen() {
               onPress={handleSubmit}
               disabled={loading}
             >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.primaryBtnText}>
-                  {mode === "login" ? "Accedi" : "Crea account"}
-                </Text>
-              )}
+              <LinearGradient
+                colors={[Colors.leaf, "#23533e"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.primaryBtnGradient}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.primaryBtnText}>
+                    {mode === "login" ? "Accedi" : "Crea account"}
+                  </Text>
+                )}
+              </LinearGradient>
             </Pressable>
 
-            {/* Divider */}
             <View style={styles.divider}>
               <View style={styles.dividerLine} />
               <Text style={styles.dividerText}>oppure</Text>
               <View style={styles.dividerLine} />
             </View>
 
-            {/* Google */}
             <Pressable
               style={({ pressed }) => [styles.oauthBtn, pressed && { opacity: 0.85 }]}
               onPress={() => handleOAuth("google")}
@@ -249,7 +246,6 @@ export default function LoginScreen() {
               )}
             </Pressable>
 
-            {/* Facebook */}
             <Pressable
               style={({ pressed }) => [styles.oauthBtn, pressed && { opacity: 0.85 }]}
               onPress={() => handleOAuth("facebook")}
@@ -273,13 +269,14 @@ export default function LoginScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  gradient: {
+  screen: {
     flex: 1,
+    backgroundColor: Colors.background,
   },
   scroll: {
     flexGrow: 1,
@@ -292,40 +289,47 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 22,
-    backgroundColor: "rgba(255,255,255,0.15)",
+    backgroundColor: Colors.primaryLight,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
+    shadowColor: Colors.leaf,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 4,
   },
   appName: {
     fontSize: 36,
-    fontFamily: "Inter_700Bold",
-    color: "#fff",
+    fontFamily: Fonts.displayBold,
+    color: Colors.text,
     letterSpacing: -0.5,
     marginBottom: 6,
   },
   tagline: {
     fontSize: 15,
-    fontFamily: "Inter_400Regular",
-    color: "rgba(255,255,255,0.75)",
+    fontFamily: Fonts.bodyRegular,
+    color: Colors.textSecondary,
     marginBottom: 32,
     textAlign: "center",
   },
   card: {
     width: "100%",
-    backgroundColor: "#fff",
+    backgroundColor: Colors.card,
     borderRadius: 24,
     padding: 24,
     gap: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.08,
     shadowRadius: 24,
     elevation: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   tabs: {
     flexDirection: "row",
-    backgroundColor: "#F0F4F1",
+    backgroundColor: Colors.cardAlt,
     borderRadius: 12,
     padding: 4,
     gap: 4,
@@ -338,7 +342,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   tabActive: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.card,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
@@ -347,12 +351,12 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: 14,
-    fontFamily: "Inter_500Medium",
+    fontFamily: Fonts.bodyMedium,
     color: Colors.textMuted,
   },
   tabTextActive: {
     color: Colors.forest,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: Fonts.bodySemiBold,
   },
   inputWrap: {
     flexDirection: "row",
@@ -362,7 +366,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 12,
-    backgroundColor: "#FAFBFA",
+    backgroundColor: Colors.background,
     gap: 8,
   },
   inputIcon: {
@@ -371,7 +375,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 14,
-    fontFamily: "Inter_400Regular",
+    fontFamily: Fonts.bodyRegular,
     color: Colors.text,
   },
   errorBox: {
@@ -385,20 +389,23 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 13,
-    fontFamily: "Inter_400Regular",
+    fontFamily: Fonts.bodyRegular,
     color: "#DC2626",
     flex: 1,
   },
   primaryBtn: {
-    backgroundColor: Colors.leaf,
     borderRadius: 14,
+    overflow: "hidden",
+    marginTop: 4,
+  },
+  primaryBtnGradient: {
     paddingVertical: 15,
     alignItems: "center",
-    marginTop: 4,
+    borderRadius: 14,
   },
   primaryBtnText: {
     fontSize: 16,
-    fontFamily: "Inter_700Bold",
+    fontFamily: Fonts.displayBold,
     color: "#fff",
     letterSpacing: 0.2,
   },
@@ -415,7 +422,7 @@ const styles = StyleSheet.create({
   },
   dividerText: {
     fontSize: 12,
-    fontFamily: "Inter_400Regular",
+    fontFamily: Fonts.bodyRegular,
     color: Colors.textMuted,
   },
   oauthBtn: {
@@ -427,13 +434,13 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     borderRadius: 14,
     paddingVertical: 13,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.card,
   },
   googleIcon: {
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.card,
     borderWidth: 1.5,
     borderColor: "#E2E8F0",
     alignItems: "center",
@@ -441,7 +448,7 @@ const styles = StyleSheet.create({
   },
   googleG: {
     fontSize: 13,
-    fontFamily: "Inter_700Bold",
+    fontFamily: Fonts.bodyBold,
     color: "#4285F4",
     lineHeight: 16,
   },
@@ -455,18 +462,18 @@ const styles = StyleSheet.create({
   },
   fbF: {
     fontSize: 14,
-    fontFamily: "Inter_700Bold",
+    fontFamily: Fonts.bodyBold,
     color: "#fff",
     lineHeight: 18,
   },
   oauthBtnText: {
     fontSize: 14,
-    fontFamily: "Inter_500Medium",
+    fontFamily: Fonts.bodyMedium,
     color: Colors.text,
   },
   terms: {
     fontSize: 11,
-    fontFamily: "Inter_400Regular",
+    fontFamily: Fonts.bodyRegular,
     color: Colors.textMuted,
     textAlign: "center",
     lineHeight: 16,

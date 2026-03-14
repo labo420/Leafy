@@ -451,6 +451,9 @@ importers:
       '@babel/core':
         specifier: ^7.25.2
         version: 7.29.0
+      '@expo-google-fonts/dm-sans':
+        specifier: 0.4.0
+        version: 0.4.0
       '@expo-google-fonts/inter':
         specifier: ^0.4.0
         version: 0.4.2
@@ -1578,6 +1581,9 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [linux]
+
+  '@expo-google-fonts/dm-sans@0.4.0':
+    resolution: {integrity: sha512-VsftzbvhjUumeL3y9GXR/GihLt75tSCUs5TxlF2IZi/JiUG0Qrdhq2a3h6mN02d9CVajoc62f2imbM0xULJWoA==}
 
   '@expo-google-fonts/inter@0.4.2':
     resolution: {integrity: sha512-syfiImMaDmq7cFi0of+waE2M4uSCyd16zgyWxdPOY7fN2VBmSLKEzkfbZgeOjJq61kSqPBNNtXjggiQiSD6gMQ==}
@@ -7079,6 +7085,8 @@ snapshots:
 
   '@esbuild/linux-x64@0.27.3':
     optional: true
+
+  '@expo-google-fonts/dm-sans@0.4.0': {}
 
   '@expo-google-fonts/inter@0.4.2': {}
 

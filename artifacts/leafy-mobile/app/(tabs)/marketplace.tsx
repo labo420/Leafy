@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import Colors from "@/constants/colors";
+import { Fonts } from "@/constants/typography";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/context/auth";
 import { router } from "expo-router";
@@ -320,7 +321,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontFamily: "Inter_700Bold",
+    fontFamily: "DMSans_700Bold",
     color: Colors.text,
   },
   pointsBadge: {
@@ -368,7 +369,7 @@ const styles = StyleSheet.create({
   },
   voucherCard: {
     backgroundColor: Colors.card,
-    borderRadius: 20,
+    borderRadius: 24,
     padding: 20,
     marginBottom: 12,
     shadowColor: "#000",
@@ -425,7 +426,7 @@ const styles = StyleSheet.create({
   },
   voucherTitle: {
     fontSize: 18,
-    fontFamily: "Inter_700Bold",
+    fontFamily: "DMSans_700Bold",
     color: Colors.text,
     marginBottom: 6,
   },
@@ -443,7 +444,7 @@ const styles = StyleSheet.create({
   },
   voucherValue: {
     fontSize: 22,
-    fontFamily: "Inter_700Bold",
+    fontFamily: "DMSans_700Bold",
     color: Colors.primary,
   },
   voucherExpiry: {
@@ -470,7 +471,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     backgroundColor: Colors.card,
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 16,
     marginBottom: 10,
     shadowColor: "#000",
@@ -525,7 +526,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 18,
-    fontFamily: "Inter_700Bold",
+    fontFamily: "DMSans_700Bold",
     color: Colors.text,
     textAlign: "center",
   },
@@ -578,7 +579,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 22,
-    fontFamily: "Inter_700Bold",
+    fontFamily: "DMSans_700Bold",
     color: Colors.text,
     marginBottom: 4,
   },
@@ -592,7 +593,7 @@ const styles = StyleSheet.create({
   },
   modalVoucherTitle: {
     fontSize: 17,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: "DMSans_600SemiBold",
     color: Colors.text,
     textAlign: "center",
     marginBottom: 20,

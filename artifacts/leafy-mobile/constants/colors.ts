@@ -1,32 +1,32 @@
-const GREEN = "#2ECC71";
-const GREEN_DARK = "#27AE60";
-const GREEN_DEEP = "#1A7A40";
-const GREEN_LIGHT = "#D5F5E3";
-const GREEN_MUTED = "#A8DFC4";
+const PRIMARY = "#2E6B50";
+const PRIMARY_DARK = "#245A42";
+const PRIMARY_DEEP = "#1A4331";
+const PRIMARY_LIGHT = "#D6EFE2";
+const PRIMARY_MUTED = "#A0C8B5";
 
-const FOREST = "#1B4332";
-const LEAF = "#40916C";
-const MINT = "#95D5B2";
+const FOREST = "#1B2D26";
+const LEAF = "#2E6B50";
+const MINT = "#51B888";
 
-const CREAM = "#F8FAF5";
+const CREAM = "#F6F7F2";
 const WHITE = "#FFFFFF";
-const BLACK = "#0A0F0A";
-const GRAY_100 = "#F0F4F1";
-const GRAY_200 = "#DDE7E0";
-const GRAY_400 = "#8DA89A";
+const BLACK = "#1B2D26";
+const GRAY_100 = "#E3EBE0";
+const GRAY_200 = "#D6DED3";
+const GRAY_400 = "#628477";
 const GRAY_600 = "#4A6357";
 const GRAY_800 = "#1F3028";
 
-const AMBER = "#F59E0B";
-const RED = "#EF4444";
+const AMBER = "#F4A462";
+const RED = "#EF4343";
 const BLUE = "#3B82F6";
 
 export default {
-  primary: GREEN,
-  primaryDark: GREEN_DARK,
-  primaryDeep: GREEN_DEEP,
-  primaryLight: GREEN_LIGHT,
-  primaryMuted: GREEN_MUTED,
+  primary: PRIMARY,
+  primaryDark: PRIMARY_DARK,
+  primaryDeep: PRIMARY_DEEP,
+  primaryLight: PRIMARY_LIGHT,
+  primaryMuted: PRIMARY_MUTED,
 
   forest: FOREST,
   leaf: LEAF,

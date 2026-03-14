@@ -24,6 +24,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/context/auth";
 import Colors from "@/constants/colors";
+import { Fonts } from "@/constants/typography";
 
 interface PreviewResult {
   barcode: string;
@@ -500,7 +501,7 @@ const styles = StyleSheet.create({
     flex: 1, backgroundColor: Colors.background,
     alignItems: "center", justifyContent: "center", padding: 32,
   },
-  permTitle: { fontSize: 22, fontFamily: "Inter_700Bold", color: Colors.text, marginTop: 16, textAlign: "center" },
+  permTitle: { fontSize: 22, fontFamily: "DMSans_700Bold", color: Colors.text, marginTop: 16, textAlign: "center" },
   permSub: { fontSize: 14, fontFamily: "Inter_400Regular", color: Colors.textSecondary, textAlign: "center", marginTop: 8, lineHeight: 22 },
   permBtn: { marginTop: 24, backgroundColor: Colors.leaf, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 32 },
   permBtnText: { fontSize: 16, fontFamily: "Inter_700Bold", color: "#fff" },
@@ -509,7 +510,7 @@ const styles = StyleSheet.create({
   cameraHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20 },
   closeBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(0,0,0,0.5)", alignItems: "center", justifyContent: "center" },
   cameraTitleWrap: { flexDirection: "row", alignItems: "center", gap: 6 },
-  cameraTitle: { fontSize: 18, fontFamily: "Inter_700Bold", color: "#fff", textShadowColor: "rgba(0,0,0,0.5)", textShadowRadius: 4 },
+  cameraTitle: { fontSize: 18, fontFamily: "DMSans_700Bold", color: "#fff", textShadowColor: "rgba(0,0,0,0.5)", textShadowRadius: 4 },
 
   floatingCounter: {
     flexDirection: "row", alignItems: "center", gap: 6,
@@ -542,7 +543,7 @@ const styles = StyleSheet.create({
 
   viewReportBtn: {
     flexDirection: "row", alignItems: "center", gap: 6,
-    backgroundColor: Colors.leaf, borderRadius: 16,
+    backgroundColor: Colors.leaf, borderRadius: 24,
     paddingHorizontal: 20, paddingVertical: 10,
   },
   viewReportText: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: "#fff" },
@@ -555,27 +556,27 @@ const styles = StyleSheet.create({
   previewBanner: { paddingHorizontal: 24, paddingVertical: 32, borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
   previewContent: { alignItems: "center", gap: 8 },
   previewEmoji: { fontSize: 48 },
-  previewName: { fontSize: 22, fontFamily: "Inter_700Bold", color: "#fff", textAlign: "center" },
+  previewName: { fontSize: 22, fontFamily: "DMSans_700Bold", color: "#fff", textAlign: "center" },
   previewRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   previewCategory: { fontSize: 14, fontFamily: "Inter_500Medium", color: "rgba(255,255,255,0.8)" },
   previewReasoning: { fontSize: 13, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.7)", textAlign: "center" },
   previewPointsBox: {
-    backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 16, padding: 16,
+    backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 24, padding: 16,
     alignItems: "center", marginTop: 8, width: "100%",
   },
   previewPointsLabel: { fontSize: 12, fontFamily: "Inter_500Medium", color: "rgba(255,255,255,0.8)", textTransform: "uppercase" },
-  previewPointsValue: { fontSize: 40, fontFamily: "Inter_700Bold", color: "#fff" },
+  previewPointsValue: { fontSize: 40, fontFamily: "DMSans_700Bold", color: "#fff" },
 
   previewActions: { flexDirection: "row", gap: 12, padding: 20 },
   skipBtn: {
     flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: Colors.card, borderRadius: 16, paddingVertical: 16,
+    backgroundColor: Colors.card, borderRadius: 24, paddingVertical: 16,
     borderWidth: 1.5, borderColor: Colors.border,
   },
   skipBtnText: { fontSize: 16, fontFamily: "Inter_600SemiBold", color: Colors.textSecondary },
   addBtn: {
     flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: Colors.leaf, borderRadius: 16, paddingVertical: 16,
+    backgroundColor: Colors.leaf, borderRadius: 24, paddingVertical: 16,
   },
   addBtnText: { fontSize: 16, fontFamily: "Inter_700Bold", color: "#fff" },
 
@@ -590,14 +591,14 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 28, borderBottomRightRadius: 28,
   },
   reportHeaderContent: { alignItems: "center", gap: 8 },
-  reportTitle: { fontSize: 28, fontFamily: "Inter_700Bold", color: "#fff" },
+  reportTitle: { fontSize: 28, fontFamily: "DMSans_700Bold", color: "#fff" },
   reportSubtitle: { fontSize: 15, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.8)" },
   reportTotalBox: {
-    backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 16, padding: 16,
+    backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 24, padding: 16,
     alignItems: "center", marginTop: 8, width: "100%",
   },
   reportTotalLabel: { fontSize: 12, fontFamily: "Inter_500Medium", color: "rgba(255,255,255,0.8)", textTransform: "uppercase" },
-  reportTotalValue: { fontSize: 48, fontFamily: "Inter_700Bold", color: "#fff" },
+  reportTotalValue: { fontSize: 48, fontFamily: "DMSans_700Bold", color: "#fff" },
   reportDisclaimer: {
     flexDirection: "row", alignItems: "center", gap: 6,
     backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 10, padding: 10, marginTop: 4,
@@ -605,7 +606,7 @@ const styles = StyleSheet.create({
   reportDisclaimerText: { fontSize: 11, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.7)", flex: 1 },
 
   section: { paddingHorizontal: 20, paddingTop: 20 },
-  sectionTitle: { fontSize: 16, fontFamily: "Inter_700Bold", color: Colors.text, marginBottom: 12 },
+  sectionTitle: { fontSize: 16, fontFamily: "DMSans_700Bold", color: Colors.text, marginBottom: 12 },
 
   breakdownGrid: { gap: 8 },
   breakdownItem: {
@@ -626,9 +627,9 @@ const styles = StyleSheet.create({
   listItemCat: { fontSize: 11, fontFamily: "Inter_400Regular", color: Colors.textSecondary },
   listItemPts: { fontSize: 14, fontFamily: "Inter_700Bold", color: Colors.leaf },
 
-  ctaBtn: { borderRadius: 20, overflow: "hidden" },
+  ctaBtn: { borderRadius: 24, overflow: "hidden" },
   ctaGradient: { padding: 20, alignItems: "center", gap: 6 },
-  ctaBtnTitle: { fontSize: 18, fontFamily: "Inter_700Bold", color: "#fff" },
+  ctaBtnTitle: { fontSize: 18, fontFamily: "DMSans_700Bold", color: "#fff" },
   ctaBtnSub: { fontSize: 13, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.8)" },
 
   closeReportBtn: { alignItems: "center", paddingVertical: 16, marginTop: 8 },
@@ -653,7 +654,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24,
     padding: 24, gap: 16,
   },
-  manualTitle: { fontSize: 18, fontFamily: "Inter_700Bold", color: Colors.text, textAlign: "center" },
+  manualTitle: { fontSize: 18, fontFamily: "DMSans_700Bold", color: Colors.text, textAlign: "center" },
   manualInput: {
     backgroundColor: Colors.card, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14,
     fontSize: 20, fontFamily: "Inter_600SemiBold", color: Colors.text,

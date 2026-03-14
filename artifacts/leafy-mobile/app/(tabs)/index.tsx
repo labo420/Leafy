@@ -26,6 +26,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 
 import Colors from "@/constants/colors";
+import { Fonts } from "@/constants/typography";
 import { useAuth } from "@/context/auth";
 import { apiFetch } from "@/lib/api";
 import type { Profile, ImpactStats, Challenge } from "@workspace/api-client-react";
@@ -137,7 +138,7 @@ const ringStyles = StyleSheet.create({
   },
   levelLabel: {
     fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: "DMSans_600SemiBold",
     color: Colors.textSecondary,
     letterSpacing: 1.5,
     marginBottom: 4,
@@ -150,7 +151,7 @@ const ringStyles = StyleSheet.create({
   },
   pointsValue: {
     fontSize: 32,
-    fontFamily: "Inter_700Bold",
+    fontFamily: "DMSans_700Bold",
     color: Colors.leaf,
     letterSpacing: -1,
   },
@@ -459,7 +460,7 @@ const styles = StyleSheet.create({
   },
   guestTitle: {
     fontSize: 24,
-    fontFamily: "Inter_700Bold",
+    fontFamily: "DMSans_700Bold",
     color: Colors.text,
     marginTop: 16,
     textAlign: "center",
@@ -507,13 +508,13 @@ const styles = StyleSheet.create({
   },
   logoText: {
     fontSize: 18,
-    fontFamily: "Inter_700Bold",
+    fontFamily: "DMSans_700Bold",
     color: Colors.leaf,
     marginBottom: 2,
   },
   greeting: {
     fontSize: 16,
-    fontFamily: "Inter_600SemiBold",
+    fontFamily: "DMSans_600SemiBold",
     color: Colors.text,
   },
   streakRow: {
@@ -583,8 +584,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     backgroundColor: Colors.primaryLight,
     borderWidth: 1,
-    borderColor: "rgba(64, 145, 108, 0.15)",
-    borderRadius: 16,
+    borderColor: "rgba(46, 107, 80, 0.15)",
+    borderRadius: 24,
     paddingHorizontal: 20,
     paddingVertical: 16,
     alignItems: "center",
@@ -607,7 +608,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 12,
     height: 64,
-    borderRadius: 20,
+    borderRadius: 24,
     shadowColor: Colors.leaf,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.25,
@@ -616,7 +617,7 @@ const styles = StyleSheet.create({
   },
   ctaText: {
     fontSize: 18,
-    fontFamily: "Inter_700Bold",
+    fontFamily: "DMSans_700Bold",
     color: "#fff",
   },
   section: {
@@ -625,7 +626,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontFamily: "Inter_700Bold",
+    fontFamily: "DMSans_700Bold",
     color: Colors.text,
     marginBottom: 12,
   },
@@ -636,7 +637,7 @@ const styles = StyleSheet.create({
   impactCard: {
     flex: 1,
     backgroundColor: Colors.card,
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 14,
     alignItems: "center",
     shadowColor: "#000",
@@ -656,7 +657,7 @@ const styles = StyleSheet.create({
   },
   impactValue: {
     fontSize: 18,
-    fontFamily: "Inter_700Bold",
+    fontFamily: "DMSans_700Bold",
     color: Colors.text,
   },
   impactUnit: {
@@ -673,7 +674,7 @@ const styles = StyleSheet.create({
   },
   challengeCard: {
     backgroundColor: Colors.card,
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 16,
     marginBottom: 10,
     flexDirection: "row",
@@ -730,7 +731,7 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     backgroundColor: Colors.card,
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 16,
     alignItems: "center",
     gap: 6,
@@ -742,7 +743,7 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 22,
-    fontFamily: "Inter_700Bold",
+    fontFamily: "DMSans_700Bold",
     color: Colors.text,
   },
   statLabel: {

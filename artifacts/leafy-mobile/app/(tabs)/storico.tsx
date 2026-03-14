@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import Colors from "@/constants/colors";
+import { Fonts } from "@/constants/typography";
 import { apiFetch, apiBase } from "@/lib/api";
 import { useAuth } from "@/context/auth";
 import { router } from "expo-router";
@@ -450,10 +451,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background, padding: 32,
   },
   header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
-  title: { fontSize: 32, fontFamily: "Inter_700Bold", color: Colors.text, marginBottom: 4 },
+  title: { fontSize: 32, fontFamily: "DMSans_700Bold", color: Colors.text, marginBottom: 4 },
   subtitle: { fontSize: 14, fontFamily: "Inter_400Regular", color: Colors.textSecondary },
   receiptCard: {
-    backgroundColor: Colors.card, borderRadius: 16, padding: 16, marginBottom: 10,
+    backgroundColor: Colors.card, borderRadius: 24, padding: 16, marginBottom: 10,
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
   },
@@ -477,7 +478,7 @@ const styles = StyleSheet.create({
   receiptPoints: { fontSize: 20, fontFamily: "Inter_700Bold", color: Colors.leaf },
   receiptPointsLabel: { fontSize: 11, fontFamily: "Inter_400Regular", color: Colors.textSecondary, marginBottom: 2 },
   emptyState: { flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12 },
-  emptyTitle: { fontSize: 20, fontFamily: "Inter_700Bold", color: Colors.text, textAlign: "center" },
+  emptyTitle: { fontSize: 20, fontFamily: "DMSans_700Bold", color: Colors.text, textAlign: "center" },
   emptySub: { fontSize: 14, fontFamily: "Inter_400Regular", color: Colors.textSecondary, textAlign: "center", lineHeight: 22 },
   scanBtn: {
     flexDirection: "row", alignItems: "center", gap: 8,
@@ -492,19 +493,19 @@ const styles = StyleSheet.create({
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
     paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: Colors.border,
   },
-  sheetTitle: { fontSize: 18, fontFamily: "Inter_600SemiBold", color: Colors.text },
+  sheetTitle: { fontSize: 18, fontFamily: "DMSans_600SemiBold", color: Colors.text },
   detailHeader: {
-    backgroundColor: Colors.card, borderRadius: 16, padding: 20,
+    backgroundColor: Colors.card, borderRadius: 24, padding: 20,
     alignItems: "center", marginBottom: 20, gap: 6,
   },
   detailPoints: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 },
-  detailPointsText: { fontSize: 24, fontFamily: "Inter_700Bold", color: Colors.leaf },
-  detailStore: { fontSize: 16, fontFamily: "Inter_600SemiBold", color: Colors.text },
+  detailPointsText: { fontSize: 24, fontFamily: "DMSans_700Bold", color: Colors.leaf },
+  detailStore: { fontSize: 16, fontFamily: "DMSans_600SemiBold", color: Colors.text },
   detailMetaRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   detailDate: { fontSize: 13, fontFamily: "Inter_400Regular", color: Colors.textSecondary },
   detailProvince: { flexDirection: "row", alignItems: "center", gap: 4 },
   detailProvinceText: { fontSize: 13, fontFamily: "Inter_400Regular", color: Colors.textSecondary },
-  itemsTitle: { fontSize: 16, fontFamily: "Inter_700Bold", color: Colors.text, marginBottom: 12 },
+  itemsTitle: { fontSize: 16, fontFamily: "DMSans_700Bold", color: Colors.text, marginBottom: 12 },
   barcodeRow: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     backgroundColor: Colors.card, borderRadius: 14, padding: 14, marginBottom: 8,
@@ -546,7 +547,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24,
     padding: 24, gap: 12,
   },
-  correctionTitle: { fontSize: 18, fontFamily: "Inter_700Bold", color: Colors.text },
+  correctionTitle: { fontSize: 18, fontFamily: "DMSans_700Bold", color: Colors.text },
   correctionSub: { fontSize: 13, fontFamily: "Inter_400Regular", color: Colors.textSecondary, marginTop: -4 },
   correctionInput: {
     backgroundColor: Colors.card, borderWidth: 1.5, borderColor: Colors.border,
@@ -566,7 +567,7 @@ const styles = StyleSheet.create({
   },
   correctionConfirmText: { fontSize: 15, fontFamily: "Inter_700Bold", color: "#fff" },
   imageSection: {
-    backgroundColor: Colors.card, borderRadius: 16, padding: 12,
+    backgroundColor: Colors.card, borderRadius: 24, padding: 12,
     marginBottom: 16, gap: 8,
   },
   receiptImage: {

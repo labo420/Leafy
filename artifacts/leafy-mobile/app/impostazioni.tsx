@@ -5,6 +5,7 @@ import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import Colors from "@/constants/colors";
+import { Fonts } from "@/constants/typography";
 
 export default function ImpostazioniScreen() {
   const insets = useSafeAreaInsets();
@@ -54,7 +55,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontFamily: "Inter_700Bold",
+    fontFamily: "DMSans_700Bold",
     color: Colors.text,
   },
   content: {

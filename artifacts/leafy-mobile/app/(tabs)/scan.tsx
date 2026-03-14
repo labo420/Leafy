@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import Colors from "@/constants/colors";
+import { Fonts } from "@/constants/typography";
 import { useAuth } from "@/context/auth";
 import { router } from "expo-router";
 
@@ -458,20 +459,20 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center",
   },
   idleHeader: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 16 },
-  idleTitle: { fontSize: 32, fontFamily: "Inter_700Bold", color: Colors.text, marginBottom: 8 },
+  idleTitle: { fontSize: 32, fontFamily: "DMSans_700Bold", color: Colors.text, marginBottom: 8 },
   idleSub: { fontSize: 15, fontFamily: "Inter_400Regular", color: Colors.textSecondary, lineHeight: 22 },
   idleOptions: { flexDirection: "row", paddingHorizontal: 20, gap: 12, marginBottom: 24 },
   optionCard: {
-    flex: 1, borderRadius: 20, overflow: "hidden",
+    flex: 1, borderRadius: 24, overflow: "hidden",
     shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 4,
   },
   optionCardPressed: { opacity: 0.88 },
   optionGradient: { padding: 24, alignItems: "center", gap: 10, minHeight: 180, justifyContent: "center" },
   optionSecondary: {
     padding: 24, alignItems: "center", gap: 10, minHeight: 180, justifyContent: "center",
-    backgroundColor: Colors.card, borderWidth: 2, borderColor: Colors.border, borderRadius: 20,
+    backgroundColor: Colors.card, borderWidth: 2, borderColor: Colors.border, borderRadius: 24,
   },
-  optionTitle: { fontSize: 17, fontFamily: "Inter_700Bold", color: "#fff", textAlign: "center" },
+  optionTitle: { fontSize: 17, fontFamily: "DMSans_700Bold", color: "#fff", textAlign: "center" },
   optionSub: { fontSize: 12, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.8)", textAlign: "center" },
   steps: { paddingHorizontal: 24, gap: 12 },
   stepsTitle: {
@@ -480,7 +481,7 @@ const styles = StyleSheet.create({
   },
   stepRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   stepIcon: {
-    width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.primaryLight,
+    width: 32, height: 32, borderRadius: 24, backgroundColor: Colors.primaryLight,
     alignItems: "center", justifyContent: "center",
   },
   stepText: { fontSize: 14, fontFamily: "Inter_400Regular", color: Colors.textSecondary, flex: 1 },
@@ -488,30 +489,30 @@ const styles = StyleSheet.create({
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     paddingHorizontal: 20, paddingVertical: 16,
   },
-  previewTitle: { fontSize: 18, fontFamily: "Inter_600SemiBold", color: Colors.text },
+  previewTitle: { fontSize: 18, fontFamily: "DMSans_600SemiBold", color: Colors.text },
   previewImage: { flex: 1, width: "100%" },
   previewActions: { flexDirection: "row", paddingHorizontal: 20, paddingTop: 16, gap: 12 },
   primaryBtn: {
     flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: Colors.leaf, borderRadius: 16, paddingVertical: 16,
+    backgroundColor: Colors.leaf, borderRadius: 24, paddingVertical: 16,
   },
   primaryBtnText: { fontSize: 16, fontFamily: "Inter_700Bold", color: "#fff" },
   secondaryBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: Colors.card, borderRadius: 16, paddingVertical: 16, paddingHorizontal: 20,
+    backgroundColor: Colors.card, borderRadius: 24, paddingVertical: 16, paddingHorizontal: 20,
     borderWidth: 1.5, borderColor: Colors.leaf,
   },
   secondaryBtnText: { fontSize: 16, fontFamily: "Inter_600SemiBold", color: Colors.leaf },
-  scanningImage: { width: "90%", height: "60%", borderRadius: 16, opacity: 0.4 },
+  scanningImage: { width: "90%", height: "60%", borderRadius: 24, opacity: 0.4 },
   scanningOverlay: { position: "absolute", alignItems: "center", gap: 12 },
-  scanningText: { fontSize: 22, fontFamily: "Inter_700Bold", color: Colors.text, marginTop: 12 },
+  scanningText: { fontSize: 22, fontFamily: "DMSans_700Bold", color: Colors.text, marginTop: 12 },
   scanningSubText: { fontSize: 15, fontFamily: "Inter_400Regular", color: Colors.textSecondary },
   resultHeader: {
     paddingHorizontal: 24, paddingBottom: 32,
     borderBottomLeftRadius: 28, borderBottomRightRadius: 28, alignItems: "center",
   },
   resultIconWrap: { alignItems: "center", marginBottom: 12 },
-  resultTitle: { fontSize: 28, fontFamily: "Inter_700Bold", color: "#fff", textAlign: "center", marginBottom: 4 },
+  resultTitle: { fontSize: 28, fontFamily: "DMSans_700Bold", color: "#fff", textAlign: "center", marginBottom: 4 },
   resultSub: {
     fontSize: 15, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.8)",
     textAlign: "center", lineHeight: 22, marginBottom: 12,
@@ -522,15 +523,15 @@ const styles = StyleSheet.create({
   },
   timerText: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: "#fff" },
   section: { paddingHorizontal: 20, paddingTop: 20 },
-  scanProductsBtn: { borderRadius: 20, overflow: "hidden" },
+  scanProductsBtn: { borderRadius: 24, overflow: "hidden" },
   scanProductsBtnGrad: { padding: 24, alignItems: "center", gap: 8 },
-  scanProductsBtnTitle: { fontSize: 20, fontFamily: "Inter_700Bold", color: "#fff" },
+  scanProductsBtnTitle: { fontSize: 20, fontFamily: "DMSans_700Bold", color: "#fff" },
   scanProductsBtnSub: { fontSize: 13, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.8)" },
   laterBtn: { alignItems: "center", paddingVertical: 16 },
   laterBtnText: { fontSize: 15, fontFamily: "Inter_500Medium", color: Colors.textSecondary },
-  activeSessionCard: { marginHorizontal: 20, backgroundColor: Colors.card, borderRadius: 20, padding: 16, gap: 16 },
+  activeSessionCard: { marginHorizontal: 20, backgroundColor: Colors.card, borderRadius: 24, padding: 16, gap: 16 },
   activeSessionTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  activeStoreName: { fontSize: 18, fontFamily: "Inter_700Bold", color: Colors.text },
+  activeStoreName: { fontSize: 18, fontFamily: "DMSans_700Bold", color: Colors.text },
   activeTimerRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
   activeTimerText: { fontSize: 13, fontFamily: "Inter_400Regular", color: Colors.textSecondary },
   activePointsBadge: {
@@ -551,7 +552,7 @@ const styles = StyleSheet.create({
   orText: { fontSize: 14, fontFamily: "Inter_500Medium", color: Colors.textSecondary, textAlign: "center", marginBottom: 12 },
   newReceiptBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: Colors.card, borderRadius: 16, paddingVertical: 16,
+    backgroundColor: Colors.card, borderRadius: 24, paddingVertical: 16,
     borderWidth: 1.5, borderColor: Colors.leaf,
   },
   newReceiptBtnText: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: Colors.leaf },
@@ -563,14 +564,14 @@ const styles = StyleSheet.create({
   storesToggleLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
   storesToggleText: { fontSize: 14, fontFamily: "Inter_500Medium", color: Colors.textSecondary },
   storesList: {
-    backgroundColor: Colors.card, borderRadius: 16, padding: 16, gap: 16,
+    backgroundColor: Colors.card, borderRadius: 24, padding: 16, gap: 16,
   },
   storesCategory: { gap: 4 },
   storesCatTitle: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: Colors.text },
   storesCatList: { fontSize: 12, fontFamily: "Inter_400Regular", color: Colors.textSecondary, lineHeight: 18 },
   shoppingModeBtn: {
     marginHorizontal: 20, marginBottom: 20,
-    backgroundColor: Colors.card, borderRadius: 16,
+    backgroundColor: Colors.card, borderRadius: 24,
     borderWidth: 1.5, borderColor: Colors.border,
     borderStyle: "dashed" as const,
   },

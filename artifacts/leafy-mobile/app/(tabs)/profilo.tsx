@@ -20,6 +20,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import Colors from "@/constants/colors";
+import { Fonts } from "@/constants/typography";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/context/auth";
 import type {
@@ -168,7 +169,7 @@ function TemporalBadgeCard({
         style={[
           badgeStyles.emojiCircle,
           badge.isUnlocked
-            ? { backgroundColor: "rgba(64,145,108,0.1)" }
+            ? { backgroundColor: "rgba(46,107,80,0.1)" }
             : { backgroundColor: "rgba(245,158,11,0.1)" },
         ]}
       >
@@ -213,7 +214,7 @@ const badgeStyles = StyleSheet.create({
   card: {
     flex: 1,
     backgroundColor: Colors.card,
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 14,
     alignItems: "center",
     borderWidth: 1,
@@ -225,13 +226,13 @@ const badgeStyles = StyleSheet.create({
     borderStyle: "dashed",
   },
   cardActive: {
-    borderColor: "rgba(64,145,108,0.2)",
+    borderColor: "rgba(46,107,80,0.2)",
   },
   emojiCircle: {
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: "rgba(64,145,108,0.1)",
+    backgroundColor: "rgba(46,107,80,0.1)",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 8,
@@ -770,7 +771,7 @@ const styles = StyleSheet.create({
   },
   guestTitle: {
     fontSize: 24,
-    fontFamily: "Inter_700Bold",
+    fontFamily: "DMSans_700Bold",
     color: Colors.text,
     marginTop: 16,
     textAlign: "center",
@@ -827,7 +828,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 28,
-    fontFamily: "Inter_700Bold",
+    fontFamily: "DMSans_700Bold",
     color: "#fff",
   },
   settingsBtn: {
@@ -842,7 +843,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginTop: -40,
     backgroundColor: Colors.card,
-    borderRadius: 20,
+    borderRadius: 24,
     padding: 20,
     alignItems: "center",
     shadowColor: "#000",
@@ -879,7 +880,7 @@ const styles = StyleSheet.create({
     right: 0,
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: 24,
     backgroundColor: Colors.leaf,
     alignItems: "center",
     justifyContent: "center",
@@ -891,7 +892,7 @@ const styles = StyleSheet.create({
   },
   username: {
     fontSize: 22,
-    fontFamily: "Inter_700Bold",
+    fontFamily: "DMSans_700Bold",
     color: Colors.text,
     marginBottom: 8,
   },
@@ -921,12 +922,12 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 17,
-    fontFamily: "Inter_700Bold",
+    fontFamily: "DMSans_700Bold",
     color: Colors.text,
     flex: 1,
   },
   monthBadge: {
-    backgroundColor: "rgba(64,145,108,0.1)",
+    backgroundColor: "rgba(46,107,80,0.1)",
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -942,7 +943,7 @@ const styles = StyleSheet.create({
   },
   impactCard: {
     flex: 1,
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 16,
     alignItems: "center",
     gap: 6,
@@ -957,7 +958,7 @@ const styles = StyleSheet.create({
   },
   impactValue: {
     fontSize: 22,
-    fontFamily: "Inter_700Bold",
+    fontFamily: "DMSans_700Bold",
     color: Colors.text,
   },
   impactUnit: {
@@ -981,8 +982,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "rgba(64,145,108,0.08)",
-    borderRadius: 16,
+    backgroundColor: "rgba(46,107,80,0.08)",
+    borderRadius: 24,
     padding: 16,
   },
   referralLeft: {
@@ -993,7 +994,7 @@ const styles = StyleSheet.create({
   },
   referralTitle: {
     fontSize: 15,
-    fontFamily: "Inter_700Bold",
+    fontFamily: "DMSans_700Bold",
     color: Colors.text,
   },
   referralSub: {
@@ -1006,13 +1007,13 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "rgba(64,145,108,0.1)",
+    backgroundColor: "rgba(46,107,80,0.1)",
     alignItems: "center",
     justifyContent: "center",
   },
   challengeCard: {
     backgroundColor: Colors.card,
-    borderRadius: 16,
+    borderRadius: 24,
     padding: 16,
     marginBottom: 10,
     shadowColor: "#000",
@@ -1029,7 +1030,7 @@ const styles = StyleSheet.create({
   },
   challengeName: {
     fontSize: 15,
-    fontFamily: "Inter_700Bold",
+    fontFamily: "DMSans_700Bold",
     color: Colors.text,
     flex: 1,
   },
