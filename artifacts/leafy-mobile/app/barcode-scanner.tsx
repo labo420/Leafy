@@ -673,7 +673,7 @@ export default function BarcodeScannerScreen() {
           <Text style={styles.permTitle}>Inserisci codice a barre</Text>
           <Text style={styles.permSub}>La fotocamera non è disponibile su web. Inserisci il codice del prodotto manualmente.</Text>
           <TextInput
-            style={[styles.manualInput, { width: "100%", marginTop: 24 }]}
+            style={[styles.manualInput, { marginTop: 24 }]}
             value={manualCode}
             onChangeText={setManualCode}
             keyboardType="number-pad"
@@ -685,7 +685,7 @@ export default function BarcodeScannerScreen() {
             onSubmitEditing={handleManualSearch}
           />
           <Pressable
-            style={[styles.permBtn, { marginTop: 12, flexDirection: "row", gap: 8, alignSelf: "stretch", justifyContent: "center", opacity: manualCode.trim().length < 8 || phase === "looking-up" ? 0.5 : 1 }]}
+            style={[styles.permBtn, { marginTop: 12, flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center", opacity: manualCode.trim().length < 8 || phase === "looking-up" ? 0.5 : 1 }]}
             onPress={handleManualSearch}
             disabled={manualCode.trim().length < 8 || phase === "looking-up"}
           >
