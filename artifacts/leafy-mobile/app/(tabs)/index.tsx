@@ -14,12 +14,14 @@ import {
   View,
 } from "react-native";
 import Animated, {
+  useAnimatedProps,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
   withTiming,
   FadeInDown,
 } from "react-native-reanimated";
+import Svg, { Circle } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 
@@ -28,6 +30,8 @@ import { useAuth } from "@/context/auth";
 import { apiFetch } from "@/lib/api";
 import type { Profile, ImpactStats, Challenge } from "@workspace/api-client-react";
 
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
 const LEVEL_LABELS: Record<string, string> = {
   bronze: "Bronzo",
   silver: "Argento",
@@ -35,39 +39,126 @@ const LEVEL_LABELS: Record<string, string> = {
   platinum: "Platino",
 };
 
-const LEVEL_COLORS: Record<string, string[]> = {
-  bronze: ["#CD7F32", "#A0522D"],
-  silver: ["#A8A9AD", "#6C6C6C"],
-  gold: ["#FFD700", "#DAA520"],
-  platinum: ["#E5E4E2", "#A0A0A0"],
-};
+const MOTIVATIONAL_MESSAGES = [
+  (name: string) => `Oggi sei già un passo avanti, ${name}! 🌿`,
+  (name: string) => `Stai accumulando punti reali, ${name}! 🏆`,
+  () => `Ogni scontrino vale qualcosa per te. 💫`,
+  (name: string) => `Grande slancio questa settimana, ${name}! ♻️`,
+  (_name: string, pts: number) => `${pts.toLocaleString("it-IT")} punti nel tuo portafoglio — continua così! 🎁`,
+  () => `Potresti sorprenderti di quanti punti guadagni già. 🛒`,
+  () => `Ogni scelta conta. La tua fa la differenza! 🌱`,
+];
 
-function LevelRing({ level, progress }: { level: string; progress: number }) {
-  const animProgress = useSharedValue(0);
+const RING_SIZE = 220;
+const RING_STROKE = 14;
+const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2;
+const RING_CIRCUMFERENCE = RING_RADIUS * 2 * Math.PI;
+
+function LevelProgressRing({
+  progress,
+  level,
+  points,
+}: {
+  progress: number;
+  level: string;
+  points: number;
+}) {
+  const animatedProgress = useSharedValue(0);
+
   useEffect(() => {
-    animProgress.value = withTiming(progress, { duration: 1200 });
+    animatedProgress.value = withTiming(progress, { duration: 1500 });
   }, [progress]);
 
-  const colors = LEVEL_COLORS[level] ?? ["#2ECC71", "#27AE60"];
+  const animatedProps = useAnimatedProps(() => {
+    const offset = RING_CIRCUMFERENCE - (animatedProgress.value / 100) * RING_CIRCUMFERENCE;
+    return {
+      strokeDashoffset: offset,
+    };
+  });
 
   return (
-    <View style={styles.levelRingContainer}>
-      <LinearGradient
-        colors={[colors[0], colors[1]] as [string, string]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.levelRingOuter}
+    <View style={ringStyles.container}>
+      <Svg
+        width={RING_SIZE}
+        height={RING_SIZE}
+        style={{ transform: [{ rotate: "-90deg" }] }}
       >
-        <View style={styles.levelRingInner}>
-          <MaterialCommunityIcons name="leaf" size={28} color={Colors.leaf} />
-        </View>
-      </LinearGradient>
+        <Circle
+          cx={RING_SIZE / 2}
+          cy={RING_SIZE / 2}
+          r={RING_RADIUS}
+          stroke={Colors.border}
+          strokeWidth={RING_STROKE}
+          fill="transparent"
+        />
+        <AnimatedCircle
+          cx={RING_SIZE / 2}
+          cy={RING_SIZE / 2}
+          r={RING_RADIUS}
+          stroke={Colors.leaf}
+          strokeWidth={RING_STROKE}
+          fill="transparent"
+          strokeDasharray={RING_CIRCUMFERENCE}
+          animatedProps={animatedProps}
+          strokeLinecap="round"
+        />
+      </Svg>
+      <View style={ringStyles.innerContent}>
+        <Text style={ringStyles.levelLabel}>
+          {(LEVEL_LABELS[level] ?? level).toUpperCase()}
+        </Text>
+        <Text style={ringStyles.pointsValue}>
+          {new Intl.NumberFormat("it-IT").format(points)}
+        </Text>
+        <Text style={ringStyles.pointsLabel}>PUNTI</Text>
+      </View>
     </View>
   );
 }
 
-function ImpactCard({ icon, label, value, unit }: {
-  icon: string; label: string; value: number; unit: string;
+const ringStyles = StyleSheet.create({
+  container: {
+    width: RING_SIZE,
+    height: RING_SIZE,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  innerContent: {
+    position: "absolute",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  levelLabel: {
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+    color: Colors.textSecondary,
+    letterSpacing: 1.5,
+    marginBottom: 4,
+  },
+  pointsValue: {
+    fontSize: 36,
+    fontFamily: "Inter_700Bold",
+    color: Colors.leaf,
+    letterSpacing: -1,
+  },
+  pointsLabel: {
+    fontSize: 11,
+    fontFamily: "Inter_500Medium",
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+});
+
+function ImpactCard({
+  icon,
+  label,
+  value,
+  unit,
+}: {
+  icon: string;
+  label: string;
+  value: number;
+  unit: string;
 }) {
   return (
     <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.impactCard}>
@@ -85,7 +176,11 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
 
-  const { data: profile, isLoading: profileLoading, refetch: refetchProfile } = useQuery<Profile>({
+  const {
+    data: profile,
+    isLoading: profileLoading,
+    refetch: refetchProfile,
+  } = useQuery<Profile>({
     queryKey: ["profile"],
     queryFn: () => apiFetch("/profile"),
     enabled: !!user,
@@ -132,7 +227,9 @@ export default function HomeScreen() {
       <View style={[styles.centered, { paddingTop: topPadding }]}>
         <MaterialCommunityIcons name="leaf" size={48} color={Colors.primaryMuted} />
         <Text style={styles.guestTitle}>Benvenuto su Leafy</Text>
-        <Text style={styles.guestSub}>Accedi per iniziare a guadagnare punti green</Text>
+        <Text style={styles.guestSub}>
+          Accedi per iniziare a guadagnare punti green
+        </Text>
         <Pressable style={styles.loginBtn} onPress={() => router.push("/login")}>
           <Text style={styles.loginBtnText}>Accedi</Text>
         </Pressable>
@@ -140,86 +237,137 @@ export default function HomeScreen() {
     );
   }
 
+  if (profileLoading) {
+    return (
+      <View style={[styles.centered, { paddingTop: topPadding }]}>
+        <ActivityIndicator size="large" color={Colors.leaf} />
+        <Text style={[styles.guestSub, { marginTop: 12 }]}>Caricamento...</Text>
+      </View>
+    );
+  }
+
+  const username = profile?.username || user?.firstName || "Utente";
+  const streak = profile?.streak ?? 0;
+  const points = profile?.points ?? 0;
+  const level = profile?.level ?? "bronze";
+  const levelProgress = Math.max(0, Math.min(100, profile?.levelProgress ?? 0));
+  const nextLevelPoints = profile?.pointsToNextLevel ?? 0;
+  const safeInitial = (username.trim().charAt(0) || "U").toUpperCase();
+
+  const msgFn = MOTIVATIONAL_MESSAGES[streak % MOTIVATIONAL_MESSAGES.length];
+  const motivationalMessage = msgFn(username, points);
+
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={{ paddingBottom: bottomPad }}
       showsVerticalScrollIndicator={false}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.leaf} />}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={Colors.leaf}
+        />
+      }
     >
-      {/* Header */}
-      <LinearGradient
-        colors={[Colors.forest, Colors.leaf]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.header, { paddingTop: topPadding + 16 }]}
-      >
-        <View style={styles.headerTop}>
+      <View style={[styles.header, { paddingTop: topPadding + 12 }]}>
+        <View style={styles.headerLeft}>
+          <View style={styles.logoBox}>
+            <MaterialCommunityIcons name="leaf" size={22} color={Colors.leaf} />
+          </View>
           <View>
-            <Text style={styles.greeting}>Ciao, {profile?.username ?? user?.firstName ?? "Utente"}</Text>
-            <Text style={styles.subGreeting}>Oggi puoi fare la differenza</Text>
-          </View>
-          <View style={styles.streakBadge}>
-            <Feather name="zap" size={14} color={Colors.amber} />
-            <Text style={styles.streakText}>{profile?.streak ?? 0}</Text>
-          </View>
-        </View>
-
-        {/* Level & Points */}
-        <View style={styles.levelCard}>
-          <LevelRing level={profile?.level ?? "bronze"} progress={(profile?.levelProgress ?? 0) / 100} />
-          <View style={styles.levelInfo}>
-            <Text style={styles.levelName}>
-              Livello {LEVEL_LABELS[profile?.level ?? "bronze"] ?? "Bronzo"}
-            </Text>
-            <Text style={styles.pointsText}>
-              {(profile?.points ?? 0).toLocaleString("it-IT")} punti
-            </Text>
-            <View style={styles.progressBar}>
-              <View
-                style={[styles.progressFill, { width: `${profile?.levelProgress ?? 0}%` }]}
-              />
+            <Text style={styles.greeting}>Ciao, {username}!</Text>
+            <View style={styles.streakRow}>
+              <Feather name="zap" size={13} color={Colors.amber} />
+              <Text style={styles.streakLabel}>{streak} giorni di fila</Text>
             </View>
-            <Text style={styles.progressLabel}>
-              {profile?.pointsToNextLevel ?? 0} punti al prossimo livello
-            </Text>
           </View>
         </View>
-      </LinearGradient>
+        <Pressable onPress={() => router.push("/(tabs)/profilo")}>
+          <View style={styles.avatarCircle}>
+            <Text style={styles.avatarInitial}>
+              {safeInitial}
+            </Text>
+          </View>
+        </Pressable>
+      </View>
 
-      {/* Scan Button */}
-      <View style={styles.scanSection}>
+      <Animated.View
+        entering={FadeInDown.delay(100).springify()}
+        style={styles.progressSection}
+      >
+        <LevelProgressRing
+          progress={levelProgress}
+          level={level}
+          points={points}
+        />
+
+        <View style={styles.progressBarSection}>
+          <View style={styles.progressBarLabels}>
+            <Text style={styles.progressBarLabelText}>
+              {LEVEL_LABELS[level] ?? level}
+            </Text>
+            <Text style={styles.progressBarLabelText}>
+              {nextLevelPoints.toLocaleString("it-IT")} pts al prossimo
+            </Text>
+          </View>
+          <View style={styles.progressBarTrack}>
+            <View
+              style={[styles.progressBarFill, { width: `${levelProgress}%` }]}
+            />
+          </View>
+        </View>
+      </Animated.View>
+
+      <Animated.View
+        entering={FadeInDown.delay(200).springify()}
+        style={styles.motivationalBox}
+      >
+        <Text style={styles.motivationalText}>{motivationalMessage}</Text>
+      </Animated.View>
+
+      <View style={styles.ctaSection}>
         <Animated.View style={scanAnimStyle}>
-          <Pressable style={styles.scanButton} onPress={handleScanPress}>
+          <Pressable onPress={handleScanPress}>
             <LinearGradient
-              colors={[Colors.primary, Colors.leaf]}
+              colors={[Colors.leaf, "#23533e"]}
               start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.scanButtonGradient}
+              end={{ x: 1, y: 0 }}
+              style={styles.ctaButton}
             >
-              <View style={styles.scanButtonIcon}>
-                <Feather name="camera" size={32} color="#fff" />
-              </View>
-              <Text style={styles.scanButtonTitle}>Scansiona scontrino</Text>
-              <Text style={styles.scanButtonSub}>Guadagna punti per ogni prodotto green</Text>
+              <Feather name="camera" size={22} color="#fff" />
+              <Text style={styles.ctaText}>Analizza la tua spesa</Text>
             </LinearGradient>
           </Pressable>
         </Animated.View>
       </View>
 
-      {/* Impact Stats */}
       {impact && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Il tuo impatto</Text>
           <View style={styles.impactRow}>
-            <ImpactCard icon="cloud" label="CO2 risparmiata" value={impact.co2SavedKg} unit="kg" />
-            <ImpactCard icon="droplet" label="Acqua risparmiata" value={impact.waterSavedLiters} unit="L" />
-            <ImpactCard icon="package" label="Plastica evitata" value={impact.plasticAvoidedKg} unit="kg" />
+            <ImpactCard
+              icon="cloud"
+              label="CO2 risparmiata"
+              value={impact.co2SavedKg}
+              unit="kg"
+            />
+            <ImpactCard
+              icon="droplet"
+              label="Acqua risparmiata"
+              value={impact.waterSavedLiters}
+              unit="L"
+            />
+            <ImpactCard
+              icon="package"
+              label="Plastica evitata"
+              value={impact.plasticAvoidedKg}
+              unit="kg"
+            />
           </View>
         </View>
       )}
 
-      {/* Active Challenges */}
       {challenges && challenges.filter((c) => !c.completed).length > 0 && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Sfide attive</Text>
@@ -235,7 +383,12 @@ export default function HomeScreen() {
                     <View
                       style={[
                         styles.challengeProgressFill,
-                        { width: `${Math.min(100, ((c.currentProgress ?? 0) / c.targetValue) * 100)}%` },
+                        {
+                          width: `${Math.min(
+                            100,
+                            ((c.currentProgress ?? 0) / c.targetValue) * 100
+                          )}%`,
+                        },
                       ]}
                     />
                   </View>
@@ -252,18 +405,21 @@ export default function HomeScreen() {
         </View>
       )}
 
-      {/* Quick Stats */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Statistiche rapide</Text>
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
             <Feather name="file-text" size={22} color={Colors.leaf} />
-            <Text style={styles.statValue}>{impact?.receiptsScanned ?? 0}</Text>
+            <Text style={styles.statValue}>
+              {impact?.receiptsScanned ?? 0}
+            </Text>
             <Text style={styles.statLabel}>Scontrini</Text>
           </View>
           <View style={styles.statCard}>
             <Feather name="shopping-bag" size={22} color={Colors.leaf} />
-            <Text style={styles.statValue}>{impact?.greenProductsCount ?? 0}</Text>
+            <Text style={styles.statValue}>
+              {impact?.greenProductsCount ?? 0}
+            </Text>
             <Text style={styles.statLabel}>Prodotti green</Text>
           </View>
           <View style={styles.statCard}>
@@ -315,132 +471,132 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingBottom: 28,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-  },
-  headerTop: {
+    paddingBottom: 16,
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 20,
+    alignItems: "center",
+    backgroundColor: Colors.background,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  logoBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: Colors.primaryLight,
+    alignItems: "center",
+    justifyContent: "center",
   },
   greeting: {
-    fontSize: 24,
+    fontSize: 20,
     fontFamily: "Inter_700Bold",
-    color: "#fff",
+    color: Colors.text,
   },
-  subGreeting: {
-    fontSize: 14,
-    fontFamily: "Inter_400Regular",
-    color: "rgba(255,255,255,0.75)",
-    marginTop: 2,
-  },
-  streakBadge: {
+  streakRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    marginTop: 2,
   },
-  streakText: {
-    fontSize: 15,
-    fontFamily: "Inter_700Bold",
-    color: Colors.amber,
-  },
-  levelCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: 20,
-    padding: 16,
-    gap: 16,
-  },
-  levelRingContainer: {},
-  levelRingOuter: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  levelRingInner: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  levelInfo: { flex: 1 },
-  levelName: {
-    fontSize: 16,
-    fontFamily: "Inter_700Bold",
-    color: "#fff",
-    marginBottom: 4,
-  },
-  pointsText: {
-    fontSize: 24,
-    fontFamily: "Inter_700Bold",
-    color: "#fff",
-    marginBottom: 8,
-  },
-  progressBar: {
-    height: 6,
-    backgroundColor: "rgba(255,255,255,0.3)",
-    borderRadius: 3,
-    marginBottom: 4,
-  },
-  progressFill: {
-    height: 6,
-    backgroundColor: Colors.primary,
-    borderRadius: 3,
-  },
-  progressLabel: {
-    fontSize: 11,
+  streakLabel: {
+    fontSize: 13,
     fontFamily: "Inter_400Regular",
-    color: "rgba(255,255,255,0.7)",
+    color: Colors.textSecondary,
   },
-  scanSection: {
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 8,
-  },
-  scanButton: {
-    borderRadius: 24,
-    overflow: "hidden",
-    shadowColor: Colors.leaf,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  scanButtonGradient: {
-    padding: 24,
-    alignItems: "center",
-    gap: 8,
-  },
-  scanButtonIcon: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: "rgba(255,255,255,0.2)",
+  avatarCircle: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: Colors.leaf,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 4,
+    borderWidth: 2,
+    borderColor: Colors.background,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  scanButtonTitle: {
+  avatarInitial: {
     fontSize: 20,
     fontFamily: "Inter_700Bold",
     color: "#fff",
   },
-  scanButtonSub: {
+  progressSection: {
+    alignItems: "center",
+    paddingVertical: 16,
+  },
+  progressBarSection: {
+    width: "100%",
+    maxWidth: 280,
+    marginTop: 20,
+  },
+  progressBarLabels: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  progressBarLabelText: {
+    fontSize: 12,
+    fontFamily: "Inter_500Medium",
+    color: Colors.textSecondary,
+  },
+  progressBarTrack: {
+    height: 8,
+    backgroundColor: Colors.border,
+    borderRadius: 4,
+    overflow: "hidden",
+  },
+  progressBarFill: {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.leaf,
+  },
+  motivationalBox: {
+    marginHorizontal: 20,
+    marginTop: 8,
+    marginBottom: 4,
+    backgroundColor: Colors.primaryLight,
+    borderWidth: 1,
+    borderColor: "rgba(64, 145, 108, 0.15)",
+    borderRadius: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    alignItems: "center",
+  },
+  motivationalText: {
     fontSize: 14,
-    fontFamily: "Inter_400Regular",
-    color: "rgba(255,255,255,0.8)",
+    fontFamily: "Inter_500Medium",
+    color: Colors.leaf,
     textAlign: "center",
+    lineHeight: 22,
+  },
+  ctaSection: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 8,
+  },
+  ctaButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    height: 64,
+    borderRadius: 20,
+    shadowColor: Colors.leaf,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  ctaText: {
+    fontSize: 18,
+    fontFamily: "Inter_700Bold",
+    color: "#fff",
   },
   section: {
     paddingHorizontal: 20,
