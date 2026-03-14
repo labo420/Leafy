@@ -8,10 +8,13 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import Animated, { FadeIn, FadeInDown, SlideInUp } from "react-native-reanimated";
@@ -87,6 +90,8 @@ export default function BarcodeScannerScreen() {
   const [lookupData, setLookupData] = useState<LookupResult | null>(null);
   const [lastConfirmed, setLastConfirmed] = useState<ConfirmResult | null>(null);
   const [cooldown, setCooldown] = useState(false);
+  const [showManualInput, setShowManualInput] = useState(false);
+  const [manualCode, setManualCode] = useState("");
 
   const topPadding = Platform.OS === "web" ? 20 : insets.top;
 
@@ -187,6 +192,16 @@ export default function BarcodeScannerScreen() {
     setPhase("scanning");
     setCooldown(true);
     setTimeout(() => setCooldown(false), 1500);
+  };
+
+  const handleManualSearch = () => {
+    const code = manualCode.trim();
+    if (code.length < 8) return;
+    setShowManualInput(false);
+    setManualCode("");
+    setPhase("looking-up");
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    lookupMutation.mutate(code);
   };
 
   const finish = () => {
@@ -372,8 +387,53 @@ export default function BarcodeScannerScreen() {
               </Text>
             </View>
           )}
+          <Pressable onPress={() => { setManualCode(""); setShowManualInput(true); }}>
+            <Text style={styles.manualLink}>Non riesci a scansionare? Inserisci il codice</Text>
+          </Pressable>
         </View>
       </View>
+
+      <Modal
+        visible={showManualInput}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowManualInput(false)}
+      >
+        <KeyboardAvoidingView
+          style={styles.manualOverlay}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowManualInput(false)} />
+          <View style={styles.manualPanel}>
+            <Text style={styles.manualTitle}>Inserisci codice a barre</Text>
+            <TextInput
+              style={styles.manualInput}
+              value={manualCode}
+              onChangeText={setManualCode}
+              keyboardType="number-pad"
+              placeholder="Es. 8712345678900"
+              placeholderTextColor={Colors.textSecondary}
+              maxLength={14}
+              autoFocus
+              returnKeyType="search"
+              onSubmitEditing={handleManualSearch}
+            />
+            <View style={styles.manualBtns}>
+              <Pressable style={styles.manualCancelBtn} onPress={() => setShowManualInput(false)}>
+                <Text style={styles.manualCancelText}>Annulla</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.manualSearchBtn, manualCode.trim().length < 8 && styles.manualSearchBtnDisabled]}
+                onPress={handleManualSearch}
+                disabled={manualCode.trim().length < 8}
+              >
+                <Feather name="search" size={16} color="#fff" />
+                <Text style={styles.manualSearchText}>Cerca</Text>
+              </Pressable>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -449,4 +509,34 @@ const styles = StyleSheet.create({
   listItemCat: { fontSize: 11, fontFamily: "Inter_400Regular", color: Colors.textSecondary },
   listItemRight: { flexDirection: "row", alignItems: "center", gap: 8 },
   listItemPts: { fontSize: 14, fontFamily: "Inter_700Bold", color: Colors.leaf },
+  manualLink: {
+    fontSize: 13, fontFamily: "Inter_500Medium", color: "rgba(255,255,255,0.6)",
+    textDecorationLine: "underline", textAlign: "center",
+  },
+  manualOverlay: {
+    flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.55)",
+  },
+  manualPanel: {
+    backgroundColor: Colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    padding: 24, gap: 16,
+  },
+  manualTitle: { fontSize: 18, fontFamily: "Inter_700Bold", color: Colors.text, textAlign: "center" },
+  manualInput: {
+    backgroundColor: Colors.card, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14,
+    fontSize: 20, fontFamily: "Inter_600SemiBold", color: Colors.text,
+    borderWidth: 1.5, borderColor: Colors.border, letterSpacing: 2,
+  },
+  manualBtns: { flexDirection: "row", gap: 12 },
+  manualCancelBtn: {
+    flex: 1, alignItems: "center", justifyContent: "center",
+    backgroundColor: Colors.card, borderRadius: 14, paddingVertical: 14,
+    borderWidth: 1.5, borderColor: Colors.border,
+  },
+  manualCancelText: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: Colors.textSecondary },
+  manualSearchBtn: {
+    flex: 2, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    backgroundColor: Colors.leaf, borderRadius: 14, paddingVertical: 14,
+  },
+  manualSearchBtnDisabled: { opacity: 0.45 },
+  manualSearchText: { fontSize: 15, fontFamily: "Inter_700Bold", color: "#fff" },
 });
