@@ -31,6 +31,7 @@ function RootLayoutNav() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="login" options={{ headerShown: false }} />
       <Stack.Screen name="barcode-scanner" options={{ headerShown: false, presentation: "fullScreenModal" }} />
+      <Stack.Screen name="shopping-scanner" options={{ headerShown: false, presentation: "fullScreenModal" }} />
     </Stack>
   );
 }
