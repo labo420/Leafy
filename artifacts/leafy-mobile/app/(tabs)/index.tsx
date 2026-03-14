@@ -33,6 +33,10 @@ import type { Profile, ImpactStats, Challenge } from "@workspace/api-client-reac
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 const LEVEL_LABELS: Record<string, string> = {
+  Bronzo: "Bronzo",
+  Argento: "Argento",
+  Oro: "Oro",
+  Platino: "Platino",
   bronze: "Bronzo",
   silver: "Argento",
   gold: "Oro",
@@ -248,10 +252,10 @@ export default function HomeScreen() {
 
   const username = profile?.username || user?.firstName || "Utente";
   const streak = profile?.streak ?? 0;
-  const points = profile?.points ?? 0;
-  const level = profile?.level ?? "bronze";
+  const points = profile?.totalPoints ?? 0;
+  const level = profile?.level ?? "Bronzo";
   const levelProgress = Math.max(0, Math.min(100, profile?.levelProgress ?? 0));
-  const nextLevelPoints = profile?.pointsToNextLevel ?? 0;
+  const nextLevelPoints = profile?.nextLevelPoints ?? 0;
   const safeInitial = (username.trim().charAt(0) || "U").toUpperCase();
 
   const msgFn = MOTIVATIONAL_MESSAGES[streak % MOTIVATIONAL_MESSAGES.length];
