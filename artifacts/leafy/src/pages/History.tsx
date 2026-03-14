@@ -21,6 +21,11 @@ export default function History() {
     { id: 3, storeName: "Mercato Contadino", purchaseDate: "2025-01-08T08:00:00Z", pointsEarned: 220, greenItemsCount: 5, categories: ["Km 0", "Bio", "Vegano"], scannedAt: "2025-01-08T11:45:00Z" },
   ];
 
+  const formatProductName = (name: string) => {
+    if (!name) return "";
+    return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+  };
+
   const getCategoryColor = (cat: string) => {
     const map: Record<string, "green" | "blue" | "teal" | "red" | "accent" | "default"> = {
       "Bio": "green",
@@ -183,7 +188,7 @@ export default function History() {
                               <span className="text-2xl">{item.emoji}</span>
                               <div>
                                 <p className="font-semibold text-sm text-foreground">
-                                  {item.name}
+                                  {formatProductName(item.name)}
                                 </p>
                                 <Badge
                                   variant={getCategoryColor(item.category)}
