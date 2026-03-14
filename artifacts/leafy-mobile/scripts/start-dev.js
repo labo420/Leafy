@@ -34,7 +34,16 @@ function killStaleProcesses() {
   } catch {}
 
   try {
+    execSync("pkill -f metro || true", { stdio: "ignore" });
+  } catch {}
+
+  try {
     execSync("pkill -f '@react-native-community/cli-server-api' || true", { stdio: "ignore" });
+  } catch {}
+
+  // Give killed processes time to release ports
+  try {
+    execSync("sleep 1", { stdio: "ignore" });
   } catch {}
 
   if (targetPort) {
