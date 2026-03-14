@@ -62,10 +62,12 @@ function LevelProgressRing({
   progress,
   level,
   points,
+  percentage,
 }: {
   progress: number;
   level: string;
   points: number;
+  percentage: number;
 }) {
   const animatedProgress = useSharedValue(0);
 
@@ -111,6 +113,7 @@ function LevelProgressRing({
         <Text style={ringStyles.levelLabel}>
           {(LEVEL_LABELS[level] ?? level).toUpperCase()}
         </Text>
+        <Text style={ringStyles.percentageText}>{Math.round(percentage)}%</Text>
         <Text style={ringStyles.pointsValue}>
           {new Intl.NumberFormat("it-IT").format(points)}
         </Text>
@@ -139,8 +142,14 @@ const ringStyles = StyleSheet.create({
     letterSpacing: 1.5,
     marginBottom: 4,
   },
+  percentageText: {
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+    color: Colors.textSecondary,
+    marginBottom: 2,
+  },
   pointsValue: {
-    fontSize: 36,
+    fontSize: 32,
     fontFamily: "Inter_700Bold",
     color: Colors.leaf,
     letterSpacing: -1,
@@ -280,6 +289,7 @@ export default function HomeScreen() {
             <MaterialCommunityIcons name="leaf" size={22} color={Colors.leaf} />
           </View>
           <View>
+            <Text style={styles.logoText}>Leafy</Text>
             <Text style={styles.greeting}>Ciao, {username}!</Text>
             <View style={styles.streakRow}>
               <Feather name="zap" size={13} color={Colors.amber} />
@@ -304,6 +314,7 @@ export default function HomeScreen() {
           progress={levelProgress}
           level={level}
           points={points}
+          percentage={levelProgress}
         />
 
         <View style={styles.progressBarSection}>
@@ -494,9 +505,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  greeting: {
-    fontSize: 20,
+  logoText: {
+    fontSize: 18,
     fontFamily: "Inter_700Bold",
+    color: Colors.leaf,
+    marginBottom: 2,
+  },
+  greeting: {
+    fontSize: 16,
+    fontFamily: "Inter_600SemiBold",
     color: Colors.text,
   },
   streakRow: {
