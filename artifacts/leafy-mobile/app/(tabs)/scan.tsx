@@ -105,20 +105,20 @@ function AcceptedStoresSection() {
         <Feather name={open ? "chevron-up" : "chevron-down"} size={16} color={Colors.textSecondary} />
       </Pressable>
       {open && (
-        <ScrollView style={styles.storesList} nestedScrollEnabled showsVerticalScrollIndicator={false}>
+        <View style={styles.storesList}>
           <View style={styles.storesCategory}>
             <Text style={styles.storesCatTitle}>Supermercati</Text>
-            <Text style={styles.storesCatList} numberOfLines={0}>{data.standard.join(", ")}</Text>
+            <Text style={styles.storesCatList}>{data.standard.join(", ")}</Text>
           </View>
           <View style={styles.storesCategory}>
             <Text style={styles.storesCatTitle}>Bio / Naturale</Text>
-            <Text style={styles.storesCatList} numberOfLines={0}>{data.bio.join(", ")}</Text>
+            <Text style={styles.storesCatList}>{data.bio.join(", ")}</Text>
           </View>
           <View style={styles.storesCategory}>
             <Text style={styles.storesCatTitle}>Discount</Text>
-            <Text style={styles.storesCatList} numberOfLines={0}>{data.discount.join(", ")}</Text>
+            <Text style={styles.storesCatList}>{data.discount.join(", ")}</Text>
           </View>
-        </ScrollView>
+        </View>
       )}
     </View>
   );
@@ -165,7 +165,7 @@ export default function ScanScreen() {
   const [scanResult, setScanResult] = useState<ScanResponse | null>(null);
 
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
-  const bottomPad = Platform.OS === "web" ? 34 + 84 : 100;
+  const bottomPad = Platform.OS === "web" ? 34 + 84 : 100 + insets.bottom;
   const cameraScale = useSharedValue(1);
   const cameraAnimStyle = useAnimatedStyle(() => ({
     transform: [{ scale: cameraScale.value }],
@@ -787,7 +787,6 @@ const styles = StyleSheet.create({
   storesToggleText: { fontSize: 14, fontFamily: "Inter_500Medium", color: Colors.textSecondary },
   storesList: {
     backgroundColor: Colors.card, borderRadius: 24, padding: 16, gap: 16,
-    maxHeight: 320,
   },
   storesCategory: { gap: 4 },
   storesCatTitle: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: Colors.text },

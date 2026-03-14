@@ -64,24 +64,25 @@ export default function TabLayout() {
           borderTopWidth: 0,
           borderTopColor: Colors.border,
           elevation: 0,
-          height: 80 + insets.bottom,
-          paddingBottom: insets.bottom,
+          height: 84 + insets.bottom,
+          paddingBottom: Math.max(insets.bottom, 8),
           borderTopLeftRadius: 24,
           borderTopRightRadius: 24,
           shadowColor: "#000",
           shadowOffset: { width: 0, height: -10 },
           shadowOpacity: 0.05,
           shadowRadius: 20,
+          overflow: "visible",
         },
         tabBarBackground: () =>
           isIOS ? (
             <BlurView
               intensity={80}
               tint="light"
-              style={[StyleSheet.absoluteFill, { borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: "hidden" }]}
+              style={[StyleSheet.absoluteFill, { borderTopLeftRadius: 24, borderTopRightRadius: 24 }]}
             />
           ) : isWeb ? (
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: Colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24 }]} />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: Colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: "visible" }]} />
           ) : null,
         tabBarLabelStyle: {
           fontSize: 10,

@@ -458,7 +458,7 @@ export default function StoricoScreen() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
-  const bottomPad = Platform.OS === "web" ? 34 + 84 : 100;
+  const bottomPad = Platform.OS === "web" ? 34 + 84 : 100 + insets.bottom;
 
   const { data: receipts, isLoading } = useQuery<Receipt[]>({
     queryKey: ["receipts"],

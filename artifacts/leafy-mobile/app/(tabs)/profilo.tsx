@@ -364,7 +364,7 @@ export default function ProfiloScreen() {
   const [badgeTab, setBadgeTab] = useState<BadgeTab>("traguardi");
 
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
-  const bottomPad = Platform.OS === "web" ? 34 + 84 : 100;
+  const bottomPad = Platform.OS === "web" ? 34 + 84 : 100 + insets.bottom;
 
   const { data: profile, refetch: refetchProfile } = useQuery<Profile>({
     queryKey: ["profile"],

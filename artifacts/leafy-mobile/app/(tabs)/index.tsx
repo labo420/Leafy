@@ -199,7 +199,7 @@ export default function HomeScreen() {
   };
 
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
-  const bottomPad = Platform.OS === "web" ? 34 + 84 : 100;
+  const bottomPad = Platform.OS === "web" ? 34 + 84 : 100 + insets.bottom;
 
   if (!user) {
     return (

@@ -185,7 +185,7 @@ export default function MarketplaceScreen() {
   const [codeModal, setCodeModal] = useState<{ title: string; code: string } | null>(null);
 
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
-  const bottomPad = Platform.OS === "web" ? 34 + 84 : 100;
+  const bottomPad = Platform.OS === "web" ? 34 + 84 : 100 + insets.bottom;
 
   const { data: profile } = useQuery<Profile>({
     queryKey: ["profile"],
