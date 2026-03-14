@@ -6,7 +6,7 @@ const path = require("path");
 
 const TUNNEL_FILE = "/tmp/expo-tunnel-url.txt";
 const NGROK_API = "http://127.0.0.1:4040/api/tunnels";
-const NGROK_AUTH_TOKEN = "5W1bR67GNbWcXqmxZzBG1_56GezNeaX6sSRvn8npeQ8";
+const NGROK_AUTH_TOKEN = process.env.NGROK_AUTH_TOKEN || "";
 
 function findNgrokBin() {
   const candidates = [
@@ -20,9 +20,40 @@ function findNgrokBin() {
   return null;
 }
 
-try {
-  execSync("pkill -f ngrok || true", { stdio: "ignore" });
-} catch {}
+const args = process.argv.slice(2);
+const portFlag = args.indexOf("--port");
+const targetPort = portFlag !== -1 && args[portFlag + 1] ? args[portFlag + 1] : null;
+
+function killStaleProcesses() {
+  try {
+    execSync("pkill -f ngrok || true", { stdio: "ignore" });
+  } catch {}
+
+  try {
+    execSync("pkill -f 'expo start' || true", { stdio: "ignore" });
+  } catch {}
+
+  try {
+    execSync("pkill -f '@react-native-community/cli-server-api' || true", { stdio: "ignore" });
+  } catch {}
+
+  if (targetPort) {
+    try {
+      const lsofOut = execSync(`lsof -ti :${targetPort} 2>/dev/null`, { encoding: "utf8" }).trim();
+      if (lsofOut) {
+        const pids = lsofOut.split("\n").filter(Boolean);
+        for (const pid of pids) {
+          if (pid !== String(process.pid)) {
+            try { process.kill(Number(pid), "SIGKILL"); } catch {}
+          }
+        }
+        console.log(`Killed stale process(es) on port ${targetPort}: ${pids.join(", ")}`);
+      }
+    } catch {}
+  }
+}
+
+killStaleProcesses();
 
 const ngrokBin = findNgrokBin();
 if (ngrokBin) {
@@ -56,7 +87,6 @@ function pollNgrokAPI() {
   }).on("error", () => {});
 }
 
-const args = process.argv.slice(2);
 const child = spawn("pnpm", ["exec", "expo", "start", ...args], {
   stdio: ["inherit", "pipe", "pipe"],
   env: process.env,
