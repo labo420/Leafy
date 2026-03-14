@@ -78,6 +78,14 @@ const ECO_COLORS: Record<string, string> = {
   e: "#E63E11",
 };
 
+const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
+  "Bio": { bg: "#DCFCE7", text: "#16A34A" },
+  "Km 0": { bg: "#DBEAFE", text: "#2563EB" },
+  "Senza Plastica": { bg: "#CCFBF1", text: "#0D9488" },
+  "Equo Solidale": { bg: "#FEE2E2", text: "#DC2626" },
+  "Vegano": { bg: "#FEF3C7", text: "#D97706" },
+};
+
 function formatDate(dateStr: string | null | undefined): string {
   if (!dateStr) return "";
   try {
@@ -340,38 +348,43 @@ function ReceiptCard({ receipt, onPress }: { receipt: Receipt; onPress: () => vo
         style={({ pressed }) => [styles.receiptCard, pressed && { opacity: 0.85 }]}
         onPress={onPress}
       >
-        <View style={styles.receiptLeft}>
-          <View style={styles.receiptIcon}>
-            <Feather name="file-text" size={20} color={Colors.leaf} />
-          </View>
-          <View>
-            <Text style={styles.receiptStore}>
-              {receipt.storeName ?? "Negozio sconosciuto"}
-            </Text>
-            <View style={styles.receiptMetaRow}>
-              <Text style={styles.receiptDate}>{formatDate(receipt.scannedAt)}</Text>
-              {receipt.province && (
-                <View style={styles.provinceBadge}>
-                  <Feather name="map-pin" size={10} color={Colors.textSecondary} />
-                  <Text style={styles.provinceText}>{receipt.province}</Text>
-                </View>
-              )}
+        <View style={styles.receiptTop}>
+          <View style={styles.receiptLeft}>
+            <View style={styles.receiptIcon}>
+              <Feather name="shopping-bag" size={20} color={Colors.leaf} />
             </View>
-            {receipt.greenItemsCount > 0 && (
-              <View style={styles.catRow}>
-                <View style={styles.catBadge}>
-                  <MaterialCommunityIcons name="barcode-scan" size={10} color={Colors.leaf} />
-                  <Text style={styles.catText}>{receipt.greenItemsCount} prodotti</Text>
-                </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.receiptStore}>
+                {receipt.storeName ?? "Negozio sconosciuto"}
+              </Text>
+              <View style={styles.receiptMetaRow}>
+                <Text style={styles.receiptDate}>{formatDate(receipt.scannedAt)}</Text>
+                {receipt.province && (
+                  <View style={styles.provinceBadge}>
+                    <Feather name="map-pin" size={10} color={Colors.textSecondary} />
+                    <Text style={styles.provinceText}>{receipt.province}</Text>
+                  </View>
+                )}
               </View>
-            )}
+            </View>
+          </View>
+          <View style={styles.receiptPointsBadge}>
+            <Text style={styles.receiptPointsBadgeText}>+{receipt.pointsEarned} pts</Text>
           </View>
         </View>
-        <View style={styles.receiptRight}>
-          <Text style={styles.receiptPoints}>+{receipt.pointsEarned}</Text>
-          <Text style={styles.receiptPointsLabel}>pt</Text>
-          <Feather name="chevron-right" size={16} color={Colors.textMuted} />
-        </View>
+        {receipt.categories && receipt.categories.length > 0 && (
+          <View style={styles.catRow}>
+            <Text style={styles.catCountText}>{receipt.greenItemsCount} prodotti:</Text>
+            {receipt.categories.map((cat, idx) => {
+              const color = CATEGORY_COLORS[cat] || { bg: Colors.cardAlt, text: Colors.textSecondary };
+              return (
+                <View key={idx} style={[styles.catBadge, { backgroundColor: color.bg }]}>
+                  <Text style={[styles.catText, { color: color.text }]}>{cat}</Text>
+                </View>
+              );
+            })}
+          </View>
+        )}
       </Pressable>
     </Animated.View>
   );
@@ -455,8 +468,10 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 14, fontFamily: "Inter_400Regular", color: Colors.textSecondary },
   receiptCard: {
     backgroundColor: Colors.card, borderRadius: 24, padding: 16, marginBottom: 10,
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
+  },
+  receiptTop: {
+    flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12,
   },
   receiptLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
   receiptIcon: {
@@ -468,15 +483,23 @@ const styles = StyleSheet.create({
   receiptMetaRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 },
   provinceBadge: { flexDirection: "row", alignItems: "center", gap: 3 },
   provinceText: { fontSize: 11, fontFamily: "Inter_400Regular", color: Colors.textSecondary },
-  catRow: { flexDirection: "row", gap: 4, flexWrap: "wrap" },
-  catBadge: {
-    flexDirection: "row", alignItems: "center", gap: 3,
-    backgroundColor: Colors.primaryLight, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2,
+  receiptPointsBadge: {
+    backgroundColor: Colors.primaryLight, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6,
   },
-  catText: { fontSize: 10, fontFamily: "Inter_500Medium", color: Colors.leaf },
-  receiptRight: { alignItems: "flex-end", gap: 2 },
-  receiptPoints: { fontSize: 20, fontFamily: "Inter_700Bold", color: Colors.leaf },
-  receiptPointsLabel: { fontSize: 11, fontFamily: "Inter_400Regular", color: Colors.textSecondary, marginBottom: 2 },
+  receiptPointsBadgeText: {
+    fontSize: 13, fontFamily: "Inter_700Bold", color: Colors.leaf,
+  },
+  catRow: {
+    flexDirection: "row", gap: 6, flexWrap: "wrap", alignItems: "center",
+    paddingTop: 12, borderTopWidth: 1, borderTopColor: Colors.border,
+  },
+  catCountText: {
+    fontSize: 11, fontFamily: "Inter_500Medium", color: Colors.textSecondary, marginRight: 2,
+  },
+  catBadge: {
+    borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3,
+  },
+  catText: { fontSize: 10, fontFamily: "Inter_600SemiBold" },
   emptyState: { flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12 },
   emptyTitle: { fontSize: 20, fontFamily: "DMSans_700Bold", color: Colors.text, textAlign: "center" },
   emptySub: { fontSize: 14, fontFamily: "Inter_400Regular", color: Colors.textSecondary, textAlign: "center", lineHeight: 22 },

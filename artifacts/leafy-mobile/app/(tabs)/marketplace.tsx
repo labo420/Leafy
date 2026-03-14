@@ -37,45 +37,83 @@ function VoucherCard({ voucher, userPoints, onRedeem }: {
   onRedeem: (v: Voucher) => void;
 }) {
   const canAfford = userPoints >= voucher.pointsCost;
+  const progressPercent = Math.min((userPoints / voucher.pointsCost) * 100, 100);
+  const isAlmostThere = !canAfford && progressPercent >= 80;
   return (
     <Animated.View entering={FadeInDown.delay(50).springify()}>
       <Pressable
-        style={[styles.voucherCard, !canAfford && styles.voucherCardDisabled]}
+        style={[styles.voucherCard, isAlmostThere && styles.voucherCardAlmost]}
         onPress={() => canAfford && onRedeem(voucher)}
       >
-        <View style={styles.voucherTop}>
-          <View style={[styles.voucherCategory, !canAfford && styles.voucherCategoryDisabled]}>
-            <Text style={styles.voucherCategoryText}>{voucher.category}</Text>
+        <LinearGradient
+          colors={["rgba(244,164,98,0.2)", "transparent"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.voucherGradientHeader}
+        >
+          <View style={styles.voucherGradientLeft}>
+            <View style={styles.voucherCategory}>
+              <Feather name="tag" size={10} color={Colors.textSecondary} />
+              <Text style={styles.voucherCategoryText}>{voucher.category}</Text>
+            </View>
+            {isAlmostThere && (
+              <View style={styles.almostBadge}>
+                <Feather name="zap" size={10} color={Colors.amber} />
+                <Text style={styles.almostBadgeText}>Quasi!</Text>
+              </View>
+            )}
           </View>
-          <View style={styles.voucherPointsBox}>
-            <MaterialCommunityIcons name="leaf" size={12} color={canAfford ? Colors.leaf : Colors.textMuted} />
-            <Text style={[styles.voucherPoints, !canAfford && styles.voucherPointsDisabled]}>
-              {voucher.pointsCost.toLocaleString("it-IT")}
-            </Text>
-          </View>
-        </View>
+          <Text style={styles.voucherDiscount}>{voucher.discount}</Text>
+        </LinearGradient>
 
-        <Text style={styles.voucherBrand}>{voucher.brandName}</Text>
-        <Text style={styles.voucherTitle}>{voucher.title}</Text>
-        <Text style={styles.voucherDesc} numberOfLines={2}>{voucher.description}</Text>
+        <View style={styles.voucherBody}>
+          <Text style={styles.voucherTitle}>{voucher.title}</Text>
+          <Text style={styles.voucherBrand}>{voucher.brandName}</Text>
+          <Text style={styles.voucherDesc} numberOfLines={2}>{voucher.description}</Text>
 
-        <View style={styles.voucherBottom}>
-          <Text style={styles.voucherValue}>{voucher.discount}</Text>
-          {voucher.expiresAt && (
-            <Text style={styles.voucherExpiry}>
-              Scade {new Date(voucher.expiresAt).toLocaleDateString("it-IT")}
-            </Text>
+          {!canAfford && (
+            <View style={styles.voucherProgressSection}>
+              <View style={styles.voucherProgressLabels}>
+                <Text style={styles.voucherProgressLabelText}>
+                  {new Intl.NumberFormat("it-IT").format(userPoints)} pt
+                </Text>
+                <Text style={styles.voucherProgressLabelText}>
+                  {new Intl.NumberFormat("it-IT").format(voucher.pointsCost)} pt
+                </Text>
+              </View>
+              <View style={styles.voucherProgressTrack}>
+                <View
+                  style={[
+                    styles.voucherProgressFill,
+                    {
+                      width: `${progressPercent}%`,
+                      backgroundColor: isAlmostThere ? Colors.amber : "rgba(46,107,80,0.4)",
+                    },
+                  ]}
+                />
+              </View>
+            </View>
           )}
-        </View>
 
-        {!canAfford && (
-          <View style={styles.voucherLock}>
-            <Feather name="lock" size={12} color={Colors.textMuted} />
-            <Text style={styles.voucherLockText}>
-              Ti mancano {(voucher.pointsCost - userPoints).toLocaleString("it-IT")} punti
+          <Pressable
+            style={[
+              styles.redeemBtn,
+              canAfford ? styles.redeemBtnActive : styles.redeemBtnDisabled,
+            ]}
+            onPress={() => canAfford && onRedeem(voucher)}
+            disabled={!canAfford}
+          >
+            <Text style={[styles.redeemBtnText, !canAfford && styles.redeemBtnTextDisabled]}>
+              {canAfford ? "Riscatta ora" : "Punti insufficienti"}
             </Text>
-          </View>
-        )}
+            <View style={[styles.redeemBtnCost, !canAfford && styles.redeemBtnCostDisabled]}>
+              <MaterialCommunityIcons name="leaf" size={14} color={canAfford ? "#fff" : Colors.textMuted} />
+              <Text style={[styles.redeemBtnCostText, !canAfford && styles.redeemBtnCostTextDisabled]}>
+                {voucher.pointsCost.toLocaleString("it-IT")}
+              </Text>
+            </View>
+          </Pressable>
+        </View>
       </Pressable>
     </Animated.View>
   );
@@ -119,6 +157,7 @@ export default function MarketplaceScreen() {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<"vouchers" | "my">("vouchers");
   const [confirmVoucher, setConfirmVoucher] = useState<Voucher | null>(null);
+  const [codeModal, setCodeModal] = useState<{ title: string; code: string } | null>(null);
 
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 + 84 : 100;
@@ -147,9 +186,10 @@ export default function MarketplaceScreen() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       queryClient.invalidateQueries({ queryKey: ["redemptions"] });
+      const voucherTitle = confirmVoucher?.title ?? "Voucher";
       setConfirmVoucher(null);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert("Riscattato!", `Il tuo codice: ${data.code}\nPunti rimanenti: ${data.remainingPoints}`);
+      setCodeModal({ title: voucherTitle, code: data.code });
     },
     onError: (err: Error) => {
       Alert.alert("Errore", err.message);
@@ -291,6 +331,34 @@ export default function MarketplaceScreen() {
           </Pressable>
         </Modal>
       )}
+
+      {/* Code Result Modal */}
+      {codeModal && (
+        <Modal visible animationType="fade" transparent onRequestClose={() => setCodeModal(null)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.codeModalCard}>
+              <LinearGradient
+                colors={[Colors.leaf, Colors.mint, Colors.amber]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.codeModalStripe}
+              />
+              <View style={styles.codeModalCheck}>
+                <Feather name="check" size={32} color={Colors.leaf} />
+              </View>
+              <Text style={styles.codeModalTitle}>Premio Riscattato!</Text>
+              <Text style={styles.codeModalSub}>{codeModal.title}</Text>
+              <View style={styles.codeModalCodeBox}>
+                <Text style={styles.codeModalLabel}>IL TUO CODICE SEGRETO</Text>
+                <Text style={styles.codeModalCode}>{codeModal.code}</Text>
+              </View>
+              <Pressable style={styles.codeModalCloseBtn} onPress={() => setCodeModal(null)}>
+                <Text style={styles.codeModalCloseBtnText}>Chiudi e usa il buono</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 }
@@ -366,100 +434,154 @@ const styles = StyleSheet.create({
   voucherCard: {
     backgroundColor: Colors.card,
     borderRadius: 24,
-    padding: 20,
-    marginBottom: 12,
+    marginBottom: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 3,
+    overflow: "hidden",
   },
-  voucherCardDisabled: {
-    opacity: 0.65,
+  voucherCardAlmost: {
+    borderWidth: 2,
+    borderColor: "rgba(244,164,98,0.4)",
   },
-  voucherTop: {
+  voucherGradientHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  voucherGradientLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   voucherCategory: {
-    backgroundColor: Colors.primaryLight,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(255,255,255,0.8)",
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 4,
-  },
-  voucherCategoryDisabled: {
-    backgroundColor: Colors.cardAlt,
+    borderWidth: 1,
+    borderColor: "rgba(244,164,98,0.3)",
   },
   voucherCategoryText: {
     fontSize: 11,
     fontFamily: "Inter_600SemiBold",
-    color: Colors.leaf,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  voucherPointsBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  voucherPoints: {
-    fontSize: 16,
-    fontFamily: "Inter_700Bold",
-    color: Colors.leaf,
-  },
-  voucherPointsDisabled: {
-    color: Colors.textMuted,
-  },
-  voucherBrand: {
-    fontSize: 12,
-    fontFamily: "Inter_500Medium",
     color: Colors.textSecondary,
     textTransform: "uppercase",
     letterSpacing: 0.5,
-    marginBottom: 4,
+  },
+  almostBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    backgroundColor: Colors.amber,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  almostBadgeText: {
+    fontSize: 11,
+    fontFamily: "Inter_700Bold",
+    color: "#fff",
+  },
+  voucherDiscount: {
+    fontSize: 24,
+    fontFamily: "DMSans_700Bold",
+    color: Colors.text,
+  },
+  voucherBody: {
+    padding: 20,
+  },
+  voucherBrand: {
+    fontSize: 13,
+    fontFamily: "Inter_500Medium",
+    color: Colors.textSecondary,
+    marginBottom: 12,
   },
   voucherTitle: {
     fontSize: 18,
     fontFamily: "DMSans_700Bold",
     color: Colors.text,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   voucherDesc: {
     fontSize: 13,
     fontFamily: "Inter_400Regular",
     color: Colors.textSecondary,
     lineHeight: 19,
-    marginBottom: 12,
+    marginBottom: 16,
   },
-  voucherBottom: {
+  voucherProgressSection: {
+    marginBottom: 16,
+  },
+  voucherProgressLabels: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 4,
+  },
+  voucherProgressLabelText: {
+    fontSize: 10,
+    fontFamily: "Inter_600SemiBold",
+    color: Colors.textSecondary,
+  },
+  voucherProgressTrack: {
+    height: 5,
+    backgroundColor: Colors.border,
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  voucherProgressFill: {
+    height: 5,
+    borderRadius: 3,
+  },
+  redeemBtn: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
   },
-  voucherValue: {
-    fontSize: 22,
-    fontFamily: "DMSans_700Bold",
-    color: Colors.primary,
+  redeemBtnActive: {
+    backgroundColor: Colors.leaf,
   },
-  voucherExpiry: {
-    fontSize: 11,
-    fontFamily: "Inter_400Regular",
-    color: Colors.textMuted,
+  redeemBtnDisabled: {
+    backgroundColor: Colors.cardAlt,
   },
-  voucherLock: {
+  redeemBtnText: {
+    fontSize: 15,
+    fontFamily: "Inter_700Bold",
+    color: "#fff",
+  },
+  redeemBtnTextDisabled: {
+    color: Colors.textSecondary,
+  },
+  redeemBtnCost: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    marginTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    paddingTop: 10,
+    backgroundColor: "rgba(0,0,0,0.1)",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
   },
-  voucherLockText: {
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
+  redeemBtnCostDisabled: {
+    backgroundColor: "rgba(0,0,0,0.05)",
+  },
+  redeemBtnCostText: {
+    fontSize: 14,
+    fontFamily: "Inter_700Bold",
+    color: "#fff",
+  },
+  redeemBtnCostTextDisabled: {
     color: Colors.textMuted,
   },
   redemptionCard: {
@@ -641,6 +763,86 @@ const styles = StyleSheet.create({
   },
   modalConfirmText: {
     fontSize: 15,
+    fontFamily: "Inter_700Bold",
+    color: "#fff",
+  },
+  codeModalCard: {
+    backgroundColor: Colors.card,
+    borderRadius: 24,
+    padding: 24,
+    width: "100%",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 24,
+    elevation: 8,
+    overflow: "hidden",
+    position: "relative",
+  },
+  codeModalStripe: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 6,
+  },
+  codeModalCheck: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "#DCFCE7",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  codeModalTitle: {
+    fontSize: 24,
+    fontFamily: "DMSans_700Bold",
+    color: Colors.text,
+    marginBottom: 4,
+  },
+  codeModalSub: {
+    fontSize: 14,
+    fontFamily: "Inter_400Regular",
+    color: Colors.textSecondary,
+    marginBottom: 24,
+    textAlign: "center",
+  },
+  codeModalCodeBox: {
+    backgroundColor: Colors.cardAlt,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
+    width: "100%",
+    alignItems: "center",
+  },
+  codeModalLabel: {
+    fontSize: 10,
+    fontFamily: "Inter_600SemiBold",
+    color: Colors.textMuted,
+    letterSpacing: 1.5,
+    marginBottom: 8,
+  },
+  codeModalCode: {
+    fontSize: 28,
+    fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+    fontWeight: "700",
+    color: Colors.text,
+    letterSpacing: 4,
+  },
+  codeModalCloseBtn: {
+    backgroundColor: Colors.leaf,
+    borderRadius: 14,
+    paddingVertical: 16,
+    width: "100%",
+    alignItems: "center",
+  },
+  codeModalCloseBtnText: {
+    fontSize: 16,
     fontFamily: "Inter_700Bold",
     color: "#fff",
   },

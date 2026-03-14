@@ -29,7 +29,7 @@ import Colors from "@/constants/colors";
 import { Fonts } from "@/constants/typography";
 import { useAuth } from "@/context/auth";
 import { apiFetch } from "@/lib/api";
-import type { Profile, ImpactStats, Challenge } from "@workspace/api-client-react";
+import type { Profile } from "@workspace/api-client-react";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -163,29 +163,6 @@ const ringStyles = StyleSheet.create({
   },
 });
 
-function ImpactCard({
-  icon,
-  label,
-  value,
-  unit,
-}: {
-  icon: React.ComponentProps<typeof Feather>["name"];
-  label: string;
-  value: number;
-  unit: string;
-}) {
-  return (
-    <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.impactCard}>
-      <View style={styles.impactIcon}>
-        <Feather name={icon} size={20} color={Colors.leaf} />
-      </View>
-      <Text style={styles.impactValue}>{value.toFixed(1)}</Text>
-      <Text style={styles.impactUnit}>{unit}</Text>
-      <Text style={styles.impactLabel}>{label}</Text>
-    </Animated.View>
-  );
-}
-
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
@@ -200,23 +177,11 @@ export default function HomeScreen() {
     enabled: !!user,
   });
 
-  const { data: impact, refetch: refetchImpact } = useQuery<ImpactStats>({
-    queryKey: ["impact"],
-    queryFn: () => apiFetch("/profile/impact"),
-    enabled: !!user,
-  });
-
-  const { data: challenges } = useQuery<Challenge[]>({
-    queryKey: ["challenges"],
-    queryFn: () => apiFetch("/challenges"),
-    enabled: !!user,
-  });
-
   const [refreshing, setRefreshing] = React.useState(false);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([refetchProfile(), refetchImpact()]);
+    await refetchProfile();
     setRefreshing(false);
   };
 
@@ -358,93 +323,6 @@ export default function HomeScreen() {
         </Animated.View>
       </View>
 
-      {impact && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Il tuo impatto</Text>
-          <View style={styles.impactRow}>
-            <ImpactCard
-              icon="cloud"
-              label="CO2 risparmiata"
-              value={impact.co2SavedKg}
-              unit="kg"
-            />
-            <ImpactCard
-              icon="droplet"
-              label="Acqua risparmiata"
-              value={impact.waterSavedLiters}
-              unit="L"
-            />
-            <ImpactCard
-              icon="package"
-              label="Plastica evitata"
-              value={impact.plasticAvoidedKg}
-              unit="kg"
-            />
-          </View>
-        </View>
-      )}
-
-      {challenges && challenges.filter((c) => !c.isCompleted).length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Sfide attive</Text>
-          {challenges
-            .filter((c) => !c.isCompleted)
-            .slice(0, 2)
-            .map((c) => (
-              <View key={c.id} style={styles.challengeCard}>
-                <View style={styles.challengeLeft}>
-                  <Text style={styles.challengeName}>{c.title}</Text>
-                  <Text style={styles.challengeDesc}>{c.description}</Text>
-                  <View style={styles.challengeProgress}>
-                    <View
-                      style={[
-                        styles.challengeProgressFill,
-                        {
-                          width: `${Math.min(
-                            100,
-                            ((c.currentCount ?? 0) / c.targetCount) * 100
-                          )}%`,
-                        },
-                      ]}
-                    />
-                  </View>
-                  <Text style={styles.challengeProgressText}>
-                    {c.currentCount ?? 0}/{c.targetCount}
-                  </Text>
-                </View>
-                <View style={styles.challengeRight}>
-                  <Feather name="award" size={16} color={Colors.amber} />
-                  <Text style={styles.challengePoints}>+{c.rewardPoints}</Text>
-                </View>
-              </View>
-            ))}
-        </View>
-      )}
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Statistiche rapide</Text>
-        <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <Feather name="file-text" size={22} color={Colors.leaf} />
-            <Text style={styles.statValue}>
-              {impact?.receiptsScanned ?? 0}
-            </Text>
-            <Text style={styles.statLabel}>Scontrini</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Feather name="shopping-bag" size={22} color={Colors.leaf} />
-            <Text style={styles.statValue}>
-              {impact?.greenProductsCount ?? 0}
-            </Text>
-            <Text style={styles.statLabel}>Prodotti green</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Feather name="zap" size={22} color={Colors.amber} />
-            <Text style={styles.statValue}>{profile?.streak ?? 0}</Text>
-            <Text style={styles.statLabel}>Streak giorni</Text>
-          </View>
-        </View>
-      </View>
     </ScrollView>
   );
 }
@@ -619,137 +497,5 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: "DMSans_700Bold",
     color: "#fff",
-  },
-  section: {
-    paddingHorizontal: 20,
-    paddingTop: 24,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontFamily: "DMSans_700Bold",
-    color: Colors.text,
-    marginBottom: 12,
-  },
-  impactRow: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  impactCard: {
-    flex: 1,
-    backgroundColor: Colors.card,
-    borderRadius: 24,
-    padding: 14,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  impactIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.primaryLight,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 8,
-  },
-  impactValue: {
-    fontSize: 18,
-    fontFamily: "DMSans_700Bold",
-    color: Colors.text,
-  },
-  impactUnit: {
-    fontSize: 11,
-    fontFamily: "Inter_500Medium",
-    color: Colors.leaf,
-  },
-  impactLabel: {
-    fontSize: 10,
-    fontFamily: "Inter_400Regular",
-    color: Colors.textSecondary,
-    textAlign: "center",
-    marginTop: 4,
-  },
-  challengeCard: {
-    backgroundColor: Colors.card,
-    borderRadius: 24,
-    padding: 16,
-    marginBottom: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  challengeLeft: { flex: 1 },
-  challengeName: {
-    fontSize: 15,
-    fontFamily: "Inter_600SemiBold",
-    color: Colors.text,
-    marginBottom: 2,
-  },
-  challengeDesc: {
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
-    color: Colors.textSecondary,
-    marginBottom: 8,
-  },
-  challengeProgress: {
-    height: 4,
-    backgroundColor: Colors.border,
-    borderRadius: 2,
-    marginBottom: 4,
-  },
-  challengeProgressFill: {
-    height: 4,
-    backgroundColor: Colors.leaf,
-    borderRadius: 2,
-  },
-  challengeProgressText: {
-    fontSize: 11,
-    fontFamily: "Inter_400Regular",
-    color: Colors.textMuted,
-  },
-  challengeRight: {
-    alignItems: "center",
-    gap: 4,
-  },
-  challengePoints: {
-    fontSize: 14,
-    fontFamily: "Inter_700Bold",
-    color: Colors.amber,
-  },
-  statsRow: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: Colors.card,
-    borderRadius: 24,
-    padding: 16,
-    alignItems: "center",
-    gap: 6,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  statValue: {
-    fontSize: 22,
-    fontFamily: "DMSans_700Bold",
-    color: Colors.text,
-  },
-  statLabel: {
-    fontSize: 11,
-    fontFamily: "Inter_400Regular",
-    color: Colors.textSecondary,
-    textAlign: "center",
   },
 });
