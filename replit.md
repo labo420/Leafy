@@ -354,9 +354,10 @@ Unique constraint su `(receipt_id, barcode)`.
 ### `product_cache`
 ```
 id, product_name_normalized, product_name_original, eco_score, points,
-category, source, reasoning, emoji, cached_at
+category, source, reasoning, emoji, co2_per_unit (real, nullable), cached_at
 ```
 Cache lookup prodotti. Chiave `barcode:{code}` per lookup da barcode.
+`co2_per_unit`: kg CO2 risparmiata per unità, da `ecoscore_data.agribalyse.co2_total` (OFF) o stima da categoria.
 
 ### `badges`
 ```
@@ -405,12 +406,21 @@ scanning → looking-up → preview → confirming → confirmed
                 ↓ errore              ↓ annulla
               scanning             scanning
 ```
+Il footer della schermata fotocamera include anche un link **"Non riesci a scansionare? Inserisci il codice"**: apre un Modal con `TextInput` numerico. Il codice digitato segue lo stesso identico flusso `lookupMutation` → preview → conferma.
+
+### Calcolo Impatto Ambientale (`GET /api/profile/impact`)
+- Per ogni prodotto in `greenItemsJson` cerca `co2_per_unit` in `product_cache`
+- Se presente → usa il valore reale (da Agribalyse via Open Food Facts)
+- Fallback a coefficienti per categoria: Bio=0.8 kg, Km0=0.4 kg, Vegano=2.0 kg, Equo Solidale=0.2 kg
+- Acqua: Bio=80L, Km0=10L, Vegano=200L, DOP=30L
+- Compatibile con vecchi scontrini senza `greenItemsJson` (usa `r.categories`)
+- Il frontend mostra disclaimer: *"Stime indicative basate sulla categoria del prodotto, non dati precisi per singolo articolo."*
 
 ### Classificazione Prodotti
-- **Open Food Facts** (primario): API gratuita, nessuna API key
-- **Claude Haiku Vision** (`validateReceiptWithAI`): valida scontrino + estrae metadati (negozio, data, totale) + lista prodotti in un'unica chiamata. Usato come primo step in `POST /scan`.
+- **Open Food Facts** (primario): API gratuita, nessuna API key. Le chiamate includono `ecoscore_data` per ottenere dati Agribalyse (CO2 reale per kg)
+- **Claude Haiku Vision** (`validateReceiptWithAI`): valida scontrino + estrae metadati (negozio, data, totale) + lista prodotti in un'unica chiamata. `temperature: 0`, formato prodotti `{raw, name}`. Usato come primo step in `POST /scan`.
 - **Claude Haiku** (`classifyProductsBatch`): classifica i prodotti estratti in batch, assegna punti 0-20 per sostenibilità
-- **Cache**: `product_cache` table, key `barcode:{code}` o nome normalizzato
+- **Cache**: `product_cache` table, key `barcode:{code}` o nome normalizzato. Tutti i punti di inserimento salvano `co2_per_unit` (da Agribalyse o stimato da categoria)
 
 ### Transazione Atomica Barcode Confirm
 ```ts
