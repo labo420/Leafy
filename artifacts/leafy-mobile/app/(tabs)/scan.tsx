@@ -74,42 +74,6 @@ function formatTimeRemaining(minutes: number): string {
   return `${minutes} min`;
 }
 
-function getMotivationMessage(profile: Profile | undefined): { emoji: string; line1: string; line2: string } {
-  if (!profile) return { emoji: "🌿", line1: "Benvenuto!", line2: "Scansiona il tuo primo scontrino" };
-  const { totalPoints, streak } = profile;
-  if (streak >= 7) return { emoji: "🔥", line1: `${streak} giorni di streak!`, line2: `${totalPoints} punti accumulati — fantastico` };
-  if (streak >= 3) return { emoji: "⚡", line1: `Streak di ${streak} giorni`, line2: `Hai guadagnato ${totalPoints} punti — continua!` };
-  if (totalPoints > 500) return { emoji: "🌟", line1: `${totalPoints} punti totali`, line2: "Sei un eco-campione — vai avanti!" };
-  if (totalPoints > 0) return { emoji: "🌱", line1: `${totalPoints} punti guadagnati`, line2: "Ogni acquisto conta per il pianeta" };
-  return { emoji: "👋", line1: "Prima scansione?", line2: "Guadagna subito i tuoi primi punti" };
-}
-
-function MotivationCard({ profile }: { profile: Profile | undefined }) {
-  const msg = getMotivationMessage(profile);
-  return (
-    <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.motivCard}>
-      <LinearGradient
-        colors={["#f0f9f4", "#e8f5ed"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.motivGradient}
-      >
-        <Text style={styles.motivEmoji}>{msg.emoji}</Text>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.motivLine1}>{msg.line1}</Text>
-          <Text style={styles.motivLine2}>{msg.line2}</Text>
-        </View>
-        {profile && profile.streak > 0 && (
-          <View style={styles.motivStreak}>
-            <MaterialCommunityIcons name="fire" size={14} color={Colors.leaf} />
-            <Text style={styles.motivStreakText}>{profile.streak}</Text>
-          </View>
-        )}
-      </LinearGradient>
-    </Animated.View>
-  );
-}
-
 function AcceptedStoresSection() {
   const [open, setOpen] = useState(false);
   const { data } = useQuery<AcceptedStoresData>({
@@ -121,7 +85,7 @@ function AcceptedStoresSection() {
 
   return (
     <View style={styles.storesSection}>
-      <Pressable style={styles.storesToggle} onPress={() => setOpen(!open)}>
+      <Pressable style={styles.storesToggle} onPress={() => setOpen(!open)} accessibilityRole="button" accessibilityLabel="Negozi accettati" accessibilityState={{ expanded: open }}>
         <View style={styles.storesToggleLeft}>
           <Feather name="shopping-bag" size={16} color={Colors.textSecondary} />
           <Text style={styles.storesToggleText}>Negozi accettati</Text>
@@ -152,7 +116,7 @@ function HowItWorksSection() {
   const [open, setOpen] = useState(false);
   return (
     <View style={styles.howSection}>
-      <Pressable style={styles.howToggle} onPress={() => setOpen(!open)}>
+      <Pressable style={styles.howToggle} onPress={() => setOpen(!open)} accessibilityRole="button" accessibilityLabel="Come funziona" accessibilityState={{ expanded: open }}>
         <View style={styles.howToggleLeft}>
           <Feather name="help-circle" size={16} color={Colors.textSecondary} />
           <Text style={styles.howToggleText}>Come funziona</Text>
@@ -227,7 +191,7 @@ export default function ScanScreen() {
     refetchInterval: 60000,
   });
 
-  const { data: profile } = useQuery<Profile>({
+  useQuery<Profile>({
     queryKey: ["profile"],
     queryFn: () => apiFetch("/profile"),
     enabled: !!user,
@@ -468,7 +432,11 @@ export default function ScanScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: topPadding, paddingBottom: bottomPad }]}>
+    <ScrollView
+      style={[styles.container, { paddingTop: topPadding }]}
+      contentContainerStyle={[styles.idleContent, { paddingBottom: bottomPad }]}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.idleHeader}>
         <Text style={styles.idleTitle}>Scansiona</Text>
         <Text style={styles.idleSub}>Guadagna punti per ogni acquisto sostenibile</Text>
@@ -478,7 +446,7 @@ export default function ScanScreen() {
         <ActivityIndicator size="large" color={Colors.leaf} style={{ marginTop: 40 }} />
       ) : (
         <>
-          <View style={styles.bigBtnCenter}>
+          <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.bigBtnCenter}>
             <Pressable
               onPressIn={() => { cameraScale.value = withSpring(0.92, { damping: 15, stiffness: 250 }); }}
               onPressOut={() => { cameraScale.value = withSpring(1, { damping: 10, stiffness: 180 }); }}
@@ -498,39 +466,59 @@ export default function ScanScreen() {
                     end={{ x: 0.8, y: 1 }}
                     style={styles.bigBtnGrad}
                   >
-                    <Feather name="camera" size={72} color="#fff" />
+                    <Feather name="camera" size={56} color="#fff" />
                     <Text style={styles.bigBtnLabel}>Fotografa lo scontrino</Text>
                     <Text style={styles.bigBtnHint}>Totale e data visibili</Text>
                   </LinearGradient>
                 </Animated.View>
               </View>
             </Pressable>
-          </View>
-
-          <View style={styles.bottomActions}>
             <Pressable
               style={({ pressed }) => [styles.galleryLink, pressed && { opacity: 0.6 }]}
               onPress={() => pickImage("gallery")}
             >
-              <Feather name="image" size={16} color={Colors.textSecondary} />
+              <Feather name="image" size={15} color={Colors.textSecondary} />
               <Text style={styles.galleryLinkText}>Scegli dalla galleria</Text>
             </Pressable>
+          </Animated.View>
 
+          <Animated.View entering={FadeInDown.delay(200).springify()}>
             <Pressable
-              style={({ pressed }) => [styles.shoppingLink, pressed && { opacity: 0.6 }]}
+              style={({ pressed }) => [styles.shoppingModeBtn, pressed && { opacity: 0.85 }]}
               onPress={() => {
                 if (!user) { router.push("/login"); return; }
                 router.push("/shopping-scanner");
               }}
             >
-              <MaterialCommunityIcons name="cart-outline" size={16} color={Colors.leaf} />
-              <Text style={styles.shoppingLinkText}>Modalità Spesa</Text>
-              <Feather name="chevron-right" size={14} color={Colors.leaf} />
+              <LinearGradient
+                colors={["#f5fbf7", "#edf7f1"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.shoppingModeInner}
+              >
+                <View style={styles.shoppingModeLeft}>
+                  <View style={styles.shoppingModeIcon}>
+                    <MaterialCommunityIcons name="cart-outline" size={20} color={Colors.leaf} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.shoppingModeTitle}>Modalità Spesa</Text>
+                    <Text style={styles.shoppingModeSub}>Scopri i punti prima di pagare</Text>
+                  </View>
+                </View>
+                <View style={styles.shoppingModeArrow}>
+                  <Feather name="chevron-right" size={16} color={Colors.leaf} />
+                </View>
+              </LinearGradient>
             </Pressable>
-          </View>
+          </Animated.View>
+
+          <Animated.View entering={FadeInDown.delay(300).springify()}>
+            <HowItWorksSection />
+            <AcceptedStoresSection />
+          </Animated.View>
         </>
       )}
-    </View>
+    </ScrollView>
   );
 }
 
@@ -542,72 +530,72 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center",
   },
 
-  idleHeader: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 8 },
-  idleTitle: { fontSize: 32, fontFamily: "DMSans_700Bold", color: Colors.text, marginBottom: 4 },
-  idleSub: { fontSize: 15, fontFamily: "Inter_400Regular", color: Colors.textSecondary },
-
-  motivCard: { marginHorizontal: 20, marginBottom: 20, borderRadius: 20, overflow: "hidden" },
-  motivGradient: {
-    flexDirection: "row", alignItems: "center", gap: 12,
-    paddingHorizontal: 16, paddingVertical: 14,
-  },
-  motivEmoji: { fontSize: 28 },
-  motivLine1: { fontSize: 14, fontFamily: "Inter_700Bold", color: Colors.leaf },
-  motivLine2: { fontSize: 12, fontFamily: "Inter_400Regular", color: Colors.textSecondary, marginTop: 1 },
-  motivStreak: {
-    flexDirection: "row", alignItems: "center", gap: 2,
-    backgroundColor: Colors.primaryLight, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 4,
-  },
-  motivStreakText: { fontSize: 13, fontFamily: "Inter_700Bold", color: Colors.leaf },
+  idleHeader: { paddingHorizontal: 24, paddingTop: 12, paddingBottom: 4 },
+  idleTitle: { fontSize: 26, fontFamily: "DMSans_700Bold", color: Colors.text, marginBottom: 2 },
+  idleSub: { fontSize: 14, fontFamily: "Inter_400Regular", color: Colors.textSecondary },
 
   bigBtnCenter: {
-    flex: 1, alignItems: "center", justifyContent: "center",
+    alignItems: "center", justifyContent: "center",
+    paddingTop: 10, paddingBottom: 4,
   },
   bigBtnPulseContainer: {
-    width: 280, height: 280,
+    width: 240, height: 240,
     alignItems: "center", justifyContent: "center",
   },
   bigBtnPulseRing: {
     position: "absolute",
-    width: 260, height: 260, borderRadius: 130,
+    width: 220, height: 220, borderRadius: 110,
     borderWidth: 2,
     borderColor: "rgba(46,107,80,0.35)",
   },
   bigBtnOuter: {
-    width: 260, height: 260, borderRadius: 130,
+    width: 220, height: 220, borderRadius: 110,
     overflow: "hidden",
     shadowColor: Colors.forest,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.35,
-    shadowRadius: 24,
-    elevation: 12,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
   },
   bigBtnGrad: {
     flex: 1, alignItems: "center", justifyContent: "center",
-    gap: 10,
+    gap: 8,
   },
   bigBtnLabel: {
-    fontSize: 20, fontFamily: "DMSans_700Bold", color: "#fff",
-    textAlign: "center", marginTop: 4,
+    fontSize: 18, fontFamily: "DMSans_700Bold", color: "#fff",
+    textAlign: "center", marginTop: 2,
   },
   bigBtnHint: {
-    fontSize: 13, fontFamily: "Inter_400Regular",
+    fontSize: 12, fontFamily: "Inter_400Regular",
     color: "rgba(255,255,255,0.75)", textAlign: "center",
   },
 
-  bottomActions: {
-    paddingHorizontal: 24, paddingBottom: 8, gap: 12,
-  },
   galleryLink: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
-    paddingVertical: 8,
+    paddingVertical: 10, marginTop: 2,
   },
-  galleryLinkText: { fontSize: 14, fontFamily: "Inter_500Medium", color: Colors.textSecondary },
-  shoppingLink: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
-    paddingVertical: 8,
+  galleryLinkText: { fontSize: 13, fontFamily: "Inter_500Medium", color: Colors.textSecondary },
+
+  shoppingModeBtn: {
+    marginHorizontal: 20, marginBottom: 4, marginTop: 4,
+    borderRadius: 18, overflow: "hidden",
+    borderWidth: 1.5, borderColor: "rgba(46,107,80,0.15)",
   },
-  shoppingLinkText: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: Colors.leaf },
+  shoppingModeInner: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 14, paddingVertical: 14,
+  },
+  shoppingModeLeft: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
+  shoppingModeIcon: {
+    width: 38, height: 38, borderRadius: 12,
+    backgroundColor: Colors.primaryLight, alignItems: "center", justifyContent: "center",
+  },
+  shoppingModeTitle: { fontSize: 14, fontFamily: "Inter_700Bold", color: Colors.text },
+  shoppingModeSub: { fontSize: 12, fontFamily: "Inter_400Regular", color: Colors.textSecondary, marginTop: 1 },
+  shoppingModeArrow: {
+    width: 28, height: 28, borderRadius: 8,
+    backgroundColor: Colors.primaryLight, alignItems: "center", justifyContent: "center",
+  },
 
   howSection: { paddingHorizontal: 20, marginTop: 8 },
   howToggle: {
