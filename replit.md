@@ -4,7 +4,7 @@
 
 Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti scansionano scontrini come prova d'acquisto, poi inquadrano i codici a barre dei prodotti per guadagnare punti basati sull'**Eco-Score** di Open Food Facts. Salgono di livello (Bronzo → Argento → Oro → Platino), completano sfide mensili e riscattano voucher nel marketplace.
 
-**Stato attuale**: App Expo React Native funzionante (SDK 54) + backend Express/PostgreSQL + admin panel web + frontend web con sistema badge a due livelli (lifetime + temporali) + whitelist 51 supermercati italiani con validazione AI di catena e provincia. Sistema barcode con validazione obbligatoria, catena lookup multi-sorgente (OFF → Nutritionix → USDA → AI+GS1), economia Leafy con bonus/cap, "No, aggiungi" per correzione prodotti e apprendimento AI.
+**Stato attuale**: App Expo React Native funzionante (SDK 54) + backend Express/PostgreSQL + admin panel web + frontend web con sistema badge a due livelli (lifetime + temporali) + whitelist 51 supermercati italiani con validazione AI di catena e provincia. UI mobile allineata al design web (Task #2 completato).
 
 ---
 
@@ -41,9 +41,6 @@ Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti 
 | `FACEBOOK_APP_SECRET` | Auth Facebook | App Secret da Facebook Developers |
 | `GOOGLE_CLOUD_VISION_API_KEY` | Consigliata | Google Vision API per OCR scontrini. Senza, usa keyword matching. |
 | `ADMIN_PASSWORD` | No | Password pannello admin. Default: `leafy2026` |
-| `NUTRITIONIX_APP_ID` | No | Nutritionix API App ID (free: 500 chiamate/giorno). Senza, il lookup barcode salta questa sorgente. |
-| `NUTRITIONIX_API_KEY` | No | Nutritionix API Key. Entrambe le variabili (APP_ID + API_KEY) servono per attivare il lookup. |
-| `USDA_API_KEY` | No | USDA FoodData Central API Key. Senza, usa `DEMO_KEY` (rate limit basso ma funzionante). |
 | `AI_INTEGRATIONS_ANTHROPIC_BASE_URL` | Auto (Replit) | Fornita automaticamente da Replit AI Integrations |
 | `AI_INTEGRATIONS_ANTHROPIC_API_KEY` | Auto (Replit) | Fornita automaticamente da Replit AI Integrations |
 | `DEFAULT_OBJECT_STORAGE_BUCKET_ID` | Auto (Replit) | Bucket ID GCS per Object Storage (foto scontrini) |
@@ -78,15 +75,19 @@ git push origin main
 ### Pull / Clone (GitHub → nuovo ambiente)
 
 ```bash
+# Clona il repo
 git clone https://github.com/labo420/Leafy.git
 cd Leafy
 
+# Copia il template variabili d'ambiente e compila i valori
 cp .env.example .env
 # edita .env con DATABASE_URL, SESSION_SECRET, NGROK_AUTH_TOKEN, ecc.
 
+# Installa dipendenze e inizializza DB
 pnpm install
 pnpm --filter @workspace/db run push
 
+# Avvia
 PORT=8080 pnpm --filter @workspace/api-server run dev
 ```
 
@@ -95,17 +96,15 @@ PORT=8080 pnpm --filter @workspace/api-server run dev
 | File | Scopo |
 |------|-------|
 | `.env.example` | Template di tutti i secrets necessari — committato nel repo |
-| `.gitignore` | Esclude `.env`, `node_modules`, `.local/`, `.cache/`, `dist/`, `.replit`, `artifact.toml` |
+| `.gitignore` | Esclude `.env`, `node_modules`, `.local/`, `.cache/`, `dist/` |
+| `.github/workflows/ci.yml` | GitHub Actions: typecheck + build ad ogni push su `main` |
 | `pnpm-workspace.yaml` | Definisce il monorepo pnpm |
-| `pnpm-lock.yaml` | Lockfile — garantisce le stesse versioni su ogni clone |
 | `lib/db/src/schema/` | Schema Drizzle — il DB viene ricreato con `pnpm --filter @workspace/db run push` |
-| `tsconfig.base.json` + `tsconfig.json` | TypeScript composite project config |
 
 ### Cosa NON viene committato
 
 - `.env` — i secrets reali rimangono solo in locale o su Replit Secrets
 - `node_modules/`, `dist/`, `.cache/`, `.local/` — ricostruibili
-- `.replit`, `artifact.toml` — file di configurazione Replit (generati automaticamente)
 - Token ngrok, API key, password — usare `.env.example` come guida
 
 ---
@@ -123,8 +122,7 @@ pnpm install
 # 2. Configura i secrets obbligatori (vedi tabella env vars sopra):
 #    DATABASE_URL, SESSION_SECRET, NGROK_AUTH_TOKEN
 #    Opzionali: GOOGLE_CLIENT_ID/SECRET, FACEBOOK_APP_ID/SECRET,
-#               GOOGLE_CLOUD_VISION_API_KEY, ADMIN_PASSWORD,
-#               NUTRITIONIX_APP_ID, NUTRITIONIX_API_KEY, USDA_API_KEY
+#               GOOGLE_CLOUD_VISION_API_KEY, ADMIN_PASSWORD
 
 # 3. Crea lo schema PostgreSQL
 pnpm --filter @workspace/db run push
@@ -158,6 +156,7 @@ EXPO_PUBLIC_DOMAIN=$REPLIT_DEV_DOMAIN EXPO_PUBLIC_REPL_ID=$REPL_ID \
 ### App Mobile (Expo)
 
 ```bash
+# Avvia il dev server Expo
 pnpm --filter @workspace/leafy-mobile run dev
 # oppure usa il workflow Replit "artifacts/leafy-mobile: expo"
 ```
@@ -221,7 +220,7 @@ Le seguenti funzionalità **non funzionano fuori dall'ambiente Replit** senza mo
 | Auth | Passport.js (Google, Facebook), openid-client (Replit OIDC), bcryptjs |
 | Sessioni | Cookie-based (SHA256 session store custom in-memory) |
 | AI | Claude Haiku via Replit AI Integrations (classificazione prodotti fallback) |
-| Eco-Score | Open Food Facts API (gratuita, no API key) + Nutritionix + USDA FoodData Central |
+| Eco-Score | Open Food Facts API (gratuita, no API key) |
 | Fonts | DM Sans (display), Inter (body) |
 | Build | esbuild (CJS), Vite |
 
@@ -235,10 +234,10 @@ workspace/
 │   ├── api-server/          # Express 5 API server
 │   │   └── src/
 │   │       ├── routes/
-│   │       │   ├── scan.ts         # Flusso scontrino + barcode lookup/confirm/manual-classify
-│   │       │   ├── receipts.ts     # GET lista + dettaglio (con isPending, remainingHours, pendingProductsCount)
+│   │       │   ├── scan.ts         # Flusso scontrino (proof-only) + barcode lookup/confirm
+│   │       │   ├── receipts.ts     # GET lista + dettaglio con barcode scans
 │   │       │   ├── auth.ts         # Login email, Google, Facebook, Replit OIDC
-│   │       │   ├── profile.ts      # Profilo utente + pendingValidations array
+│   │       │   ├── profile.ts      # Profilo utente, requireUser middleware
 │   │       │   ├── admin.ts        # Admin panel backend (password protected)
 │   │       │   ├── badges.ts       # GET /api/badges/my — badge lifetime + temporali
 │   │       │   ├── challenges.ts
@@ -246,7 +245,7 @@ workspace/
 │   │       │   └── marketplace.ts
 │   │       ├── seed-badges.ts      # 15 badge seed idempotenti (per nome)
 │   │       └── lib/
-│   │           ├── productClassifier.ts  # OFF + Nutritionix + USDA + AI fallback + GS1 brand hints + cache
+│   │           ├── productClassifier.ts  # Open Food Facts + Claude AI fallback + cache
 │   │           ├── supermarketWhitelist.ts # 51 catene italiane (standard/bio/discount) + matchChain()
 │   │           ├── antiFraud.ts          # 8-layer anti-frode system
 │   │           ├── scanner.ts            # Google Vision OCR + keyword matching
@@ -258,12 +257,11 @@ workspace/
 │   │   └── app/
 │   │       ├── (tabs)/
 │   │       │   ├── index.tsx       # Home: punti, livello, impatto
-│   │       │   ├── scan.tsx        # Flusso scontrino: camera → conferma → lista prodotti pending → barcode
-│   │       │   ├── storico.tsx     # Lista scontrini + dettaglio con isPending/badge/verifica
+│   │       │   ├── scan.tsx        # Flusso scontrino: camera → conferma → sessione barcode
+│   │       │   ├── storico.tsx     # Lista scontrini + dettaglio con barcode scans
 │   │       │   ├── marketplace.tsx
 │   │       │   └── profilo.tsx
-│   │       ├── barcode-scanner.tsx # Scanner barcode: scan → preview → conferma/rifiuto → "No, aggiungi"
-│   │       ├── shopping-scanner.tsx # Modalità Spesa (stima punti senza scontrino)
+│   │       ├── barcode-scanner.tsx # Scanner barcode: scan → preview → conferma/rifiuto
 │   │       ├── login.tsx
 │   │       └── _layout.tsx
 │   ├── leafy/               # Frontend React/Vite (web principale)
@@ -281,7 +279,7 @@ workspace/
 │   └── mockup-sandbox/      # Sandbox mockup per canvas Replit
 │       └── src/components/mockups/
 │           └── badge-demo/
-│               └── BadgeDemo.tsx   # Preview canvas badge
+│               └── BadgeDemo.tsx   # Preview canvas badge (/__mockup/preview/badge-demo/BadgeDemo)
 ├── lib/
 │   ├── api-spec/            # OpenAPI 3.1 spec + Orval config
 │   ├── api-client-react/    # React Query hooks generati
@@ -292,184 +290,13 @@ workspace/
 │   │       ├── receipts.ts       # incl. barcodeExpiry, barcodeMode
 │   │       ├── barcode-scans.ts  # unique(receipt_id, barcode)
 │   │       ├── badges.ts         # badges + user_badges con periodKey
-│   │       ├── product-cache.ts  # cache lookup prodotti (chiave barcode:{code} o nome)
-│   │       ├── user-product-submissions.ts  # submission manuali prodotti (apprendimento AI)
-│   │       ├── oauth-accounts.ts
-│   │       ├── challenges.ts
-│   │       ├── vouchers.ts
-│   │       ├── products.ts
-│   │       ├── conversations.ts
-│   │       ├── messages.ts
-│   │       └── index.ts          # re-export di tutte le tabelle
+│   │       ├── product-cache.ts
+│   │       └── ...
 │   └── integrations-anthropic-ai/  # Anthropic client via Replit proxy
-├── .env.example             # Template secrets per GitHub clone
-├── .gitignore               # Esclude .env, node_modules, .local, .cache, .replit, artifact.toml
 ├── pnpm-workspace.yaml
-├── pnpm-lock.yaml
 ├── tsconfig.base.json
 └── tsconfig.json
 ```
-
----
-
-## Economia Leafy (Sistema Punti)
-
-### Conversione
-100 punti = 1 euro di valore voucher
-
-### Punti da Scontrino (Fase 1)
-| Evento | Punti | Note |
-|--------|-------|------|
-| Scansione scontrino valido | +5 pt | `RECEIPT_SCAN_BONUS`, sempre assegnati |
-| Primo scontrino in assoluto (welcome) | +100 pt | `WELCOME_BONUS`, una tantum |
-
-### Punti da Barcode (Fase 2)
-| Eco-Score | Punti base | Con Eco-Hero x2 |
-|-----------|-----------|-----------------|
-| A | 20 | 40 (max) |
-| B | 15 | 30 |
-| C | 8 | 16 |
-| D | 3 | 6 |
-| E | 0 | 0 |
-
-### Bonus e Cap
-| Regola | Valore | Costante nel codice |
-|--------|--------|---------------------|
-| Cap per scontrino | 150 pt (barcode) | `PER_RECEIPT_CAP` in scan.ts |
-| Cap giornaliero | 200 pt (barcode) | `DAILY_POINTS_CAP` in scan.ts |
-| Scontrino Virtuoso | +20 pt | 3+ prodotti green (≥10pt) nello stesso scontrino |
-| Eco-Hero | x2 punti (max 40pt) | Prodotti con keyword bio/organic/equo/vegan in `productClassifier.ts` |
-
-### Scontrino Virtuoso
-Quando il 3° prodotto green (eco-score ≥ C, punti ≥ 10) viene confermato sullo stesso scontrino, l'utente riceve un bonus di +20 punti. Animazione stella nell'app mobile. Si attiva una sola volta per scontrino.
-
----
-
-## Flusso di Scansione (Two-Phase Flow con Validazione Obbligatoria)
-
-### Fase 1 — Scontrino come prova d'acquisto
-1. Utente fotografa lo scontrino (hint: "totale e data devono essere visibili")
-2. `POST /api/scan` → AI validation → whitelist check → semantic dedup → anti-frode → AI product extraction
-3. Lo scontrino viene salvato con `status: "pending_barcode"` e `barcodeExpiry: now + 24h`
-4. L'AI estrae i nomi dei prodotti dallo scontrino → salvati come `greenItemsJson` con `matched: false`
-5. Risposta include `greenItemsFound[]` — lista prodotti da verificare con barcode
-6. App mostra la lista prodotti con pulsante "Scansiona" per ognuno
-7. L'utente può scegliere "Lo faccio dopo — riprendo dallo storico"
-
-### Fase 2 — Barcode scanner per validazione prodotti
-1. Utente apre lo scanner (da lista prodotti o da storico)
-2. Banner "Stai verificando: [nome prodotto]" quando si arriva da un prodotto specifico
-3. `POST /api/scan/barcode/lookup` → catena lookup multi-sorgente → preview (nome, Eco-Score, punti)
-4. App mostra la preview, utente preme **Conferma** o **"No, aggiungi"** (icona matita)
-5. **Conferma**: `POST /api/scan/barcode/confirm` → credito punti + `matched: true` nel greenItemsJson
-6. **"No, aggiungi"**: apre form manuale "Correggi prodotto" → `POST /api/scan/barcode/manual-classify`
-7. Dopo conferma: pulsante "Torna alla lista" riporta alla lista prodotti pending
-8. Sessione valida 24h; prodotti non verificati entro scadenza restano senza punti
-
-### Storico — Verifica in sospeso
-- Scontrini con `status: "pending_barcode"` mostrano badge "In sospeso" (icona orologio)
-- Banner giallo con ore rimaste e pulsanti "Scansiona" per ogni prodotto non verificato
-- Prodotti verificati mostrano badge verde "Verificato"
-- `GET /api/receipts` include: `isPending`, `remainingHours`, `pendingProductsCount`
-- `GET /api/profile` include: `pendingValidations[]` con receiptId, storeName, remainingHours, pendingCount
-
-### Modalità Spesa (Shopping Mode)
-Funzione aggiuntiva: l'utente scansiona barcode **mentre fa la spesa** (senza scontrino) per ottenere una **stima** dei punti.
-- Endpoint: `POST /api/scan/barcode/preview` — lookup prodotto senza receiptId, nessun credito punti
-- Schermata mobile: `app/shopping-scanner.tsx` — camera scanner + lista prodotti in-memory + report finale
-- Accesso: bottone "Modalità Spesa" nella tab Scansiona (visivamente secondario)
-- Tutti i punti mostrati sono stime (~) — disclaimer visivo sempre presente
-- Nessuna scrittura DB, sessione completamente in-memory
-
----
-
-## Catena Lookup Barcode (productClassifier.ts)
-
-La funzione `lookupBarcode()` segue questa catena di fallback:
-
-```
-1. Cache locale (product_cache con key barcode:{code})
-     ↓ miss
-2. Open Food Facts (IT + world) — gratuito, no API key
-     ↓ miss
-3. Nutritionix — richiede NUTRITIONIX_APP_ID + NUTRITIONIX_API_KEY (skipped se assenti)
-     ↓ miss
-4. USDA FoodData Central — usa USDA_API_KEY o DEMO_KEY
-     ↓ miss
-5. Claude AI Vision (se imageBase64 presente) — analizza foto del barcode
-     ↓ miss
-6. Claude AI + GS1 brand hint — classifica usando prefisso produttore
-     ↓ miss
-7. Claude AI puro — classificazione solo da barcode (punti conservativi 5-10)
-```
-
-### GS1 Italia Brand Hints
-Mappa `GS1_ITALY_PREFIXES` con 40+ prefissi (6-7 cifre) → brand italiani:
-- Mondelez (Fonzies, TUC, Oreo), Ferrero (Nutella, Kinder), Barilla, Nestlé, De Cecco, Granarolo, Mutti, San Benedetto, Lavazza, Illy, Parmalat, ecc.
-- Usato come `brandHint` nel prompt AI per migliorare la classificazione
-
-### Correzione Prodotti e Apprendimento AI
-- **"No, aggiungi"** nel barcode scanner → form manuale "Correggi prodotto"
-- `POST /api/scan/barcode/manual-classify` → classifica, salva in `product_cache` (chiave `barcode:{code}`) + `user_product_submissions`
-- La prossima scansione dello stesso barcode trova il risultato in cache (step 1) → risposta istantanea
-- Tabella `user_product_submissions`: traccia userId, barcode, productName, weight, ecoScore, pointsAwarded, classifiedByAI
-
----
-
-## API Endpoints
-
-Base URL: `/api`
-
-### Auth
-| Endpoint | Descrizione |
-|----------|-------------|
-| `POST /api/auth/login` | Login email/password |
-| `POST /api/auth/register` | Registrazione email/password |
-| `GET /api/auth/google` | OAuth Google |
-| `GET /api/auth/facebook` | OAuth Facebook |
-| `GET /api/login` | Replit OIDC |
-| `GET /api/logout` | Termina sessione |
-| `GET /api/auth/user` | Utente corrente |
-
-### Profilo
-| Endpoint | Descrizione |
-|----------|-------------|
-| `GET /api/profile` | Profilo (livello, badge, sfide, `pendingValidations[]`) |
-| `PUT /api/profile/username` | Aggiorna username |
-| `PUT /api/profile/image` | Aggiorna foto profilo (base64) |
-| `DELETE /api/profile/account` | Cancella account |
-| `GET /api/profile/impact` | Statistiche impatto ambientale |
-| `GET /api/profile/referral` | Codice referral |
-| `POST /api/profile/referral/apply` | Applica codice referral |
-
-### Scontrini e Scan
-| Endpoint | Descrizione |
-|----------|-------------|
-| `POST /api/scan` | Valida scontrino + whitelist → status `pending_barcode`, sessione 24h |
-| `POST /api/scan/barcode/lookup` | Preview prodotto da barcode (NO credito, richiede receiptId) |
-| `POST /api/scan/barcode/preview` | Preview standalone (Modalità Spesa) — solo stima punti, no receiptId |
-| `POST /api/scan/barcode/confirm` | Conferma e accredita punti, aggiorna `matched: true` in greenItemsJson |
-| `POST /api/scan/barcode/manual-classify` | Inserimento manuale prodotto → cache + user_product_submissions |
-| `GET /api/scan/active-session` | Sessione barcode attiva + prodotti scansionati |
-| `GET /api/receipts` | Lista scontrini (incl. `isPending`, `remainingHours`, `pendingProductsCount`) |
-| `GET /api/receipts/:id` | Dettaglio: greenItems + barcodeScans + `isPending` + `remainingHours` |
-| `GET /api/receipts/:id/image` | Serve foto scontrino (auth-protected, 30gg retention) |
-| `GET /api/accepted-stores` | Lista supermercati accettati per categoria `{ standard, bio, discount }` |
-
-### Badge
-| Endpoint | Descrizione |
-|----------|-------------|
-| `GET /api/badges/my` | Badge dell'utente: lifetime + temporali con progresso |
-
-### Altro
-| Endpoint | Descrizione |
-|----------|-------------|
-| `GET /api/challenges` | Sfide mensili con progress |
-| `GET /api/leaderboard` | Classifica utenti |
-| `GET /api/marketplace/vouchers` | Voucher disponibili |
-| `POST /api/marketplace/vouchers/:id/redeem` | Riscatta voucher |
-| `GET /api/admin/*` | Rotte admin (`x-admin-password` header richiesto) |
-| `GET /api/healthz` | Health check |
 
 ---
 
@@ -499,6 +326,100 @@ File: `artifacts/api-server/src/seed-badges.ts`
 - **Tab Traguardi**: badge lifetime — sblocati con data, locked con barra di progresso
 - **Tab Sfide**: badge temporali — attivi del periodo corrente + archivio periodi passati
 - Autenticazione richiesta (protetta da `AuthGate` in `App.tsx`)
+
+---
+
+## Flusso di Scansione (Two-Phase Flow)
+
+### Fase 1 — Scontrino come prova d'acquisto
+1. Utente fotografa lo scontrino (hint: "totale e data devono essere visibili")
+2. `POST /api/scan` → AI validation (is receipt? complete? `storeChain`? `province`? metadata) → whitelist check → semantic dedup → anti-frode → AI product extraction → classification → punti
+3. Se non è uno scontrino → errore "Non sembra uno scontrino"
+4. Se incompleto (data/totale mancanti) → errore con lista info mancanti
+5. **Se negozio non in whitelist** → HTTP 400 "Scontrino non accettato — Leafy funziona con i principali supermercati italiani."
+6. Se duplicato semantico (stessa data + totale) → errore "Già scansionato"
+7. Risposta: `{ receiptId, barcodeExpiry (now+24h), pointsEarned, greenItemsFound, ... }`
+8. App mostra risultato con prodotti trovati e CTA per scansionare barcode
+
+### Fase 2 — Barcode scanner per i punti
+1. Utente apre lo scanner e inquadra il codice a barre
+2. `POST /api/scan/barcode/lookup` → cerca su Open Food Facts → ritorna preview (nome, Eco-Score, punti) **senza credito**
+3. App mostra la preview, utente preme **Conferma** o **Annulla**
+4. `POST /api/scan/barcode/confirm` → transazione DB atomica → credito punti
+5. Sessione valida 24h; max 200 punti/giorno; no duplicati per scontrino
+
+### Modalità Spesa (Shopping Mode)
+Funzione aggiuntiva: l'utente scansiona barcode **mentre fa la spesa** (senza scontrino) per ottenere una **stima** dei punti.
+- Endpoint: `POST /api/scan/barcode/preview` — lookup prodotto senza receiptId, nessun credito punti
+- Schermata mobile: `app/shopping-scanner.tsx` — camera scanner + lista prodotti in-memory + report finale
+- Accesso: bottone "Modalità Spesa" nella tab Scansiona (visivamente secondario)
+- Tutti i punti mostrati sono stime (~) — disclaimer visivo sempre presente
+- Nessuna scrittura DB, sessione completamente in-memory
+
+### Eco-Score → Punti
+| Eco-Score | Punti |
+|-----------|-------|
+| A | 20 |
+| B | 15 |
+| C | 8 |
+| D | 3 |
+| E | 0 |
+
+---
+
+## API Endpoints
+
+Base URL: `/api`
+
+### Auth
+| Endpoint | Descrizione |
+|----------|-------------|
+| `POST /api/auth/login` | Login email/password |
+| `POST /api/auth/register` | Registrazione email/password |
+| `GET /api/auth/google` | OAuth Google |
+| `GET /api/auth/facebook` | OAuth Facebook |
+| `GET /api/login` | Replit OIDC |
+| `GET /api/logout` | Termina sessione |
+| `GET /api/auth/user` | Utente corrente |
+
+### Profilo
+| Endpoint | Descrizione |
+|----------|-------------|
+| `GET /api/profile` | Profilo (livello, badge, sfide) |
+| `PUT /api/profile/username` | Aggiorna username |
+| `PUT /api/profile/image` | Aggiorna foto profilo (base64) |
+| `DELETE /api/profile/account` | Cancella account |
+| `GET /api/profile/impact` | Statistiche impatto ambientale |
+| `GET /api/profile/referral` | Codice referral |
+| `POST /api/profile/referral/apply` | Applica codice referral |
+
+### Scontrini e Scan
+| Endpoint | Descrizione |
+|----------|-------------|
+| `POST /api/scan` | Valida scontrino + whitelist check → apre sessione 24h |
+| `POST /api/scan/barcode/lookup` | Preview prodotto da barcode (NO credito punti, richiede receiptId) |
+| `POST /api/scan/barcode/preview` | Preview standalone (Modalità Spesa) — solo stima punti, no receiptId |
+| `POST /api/scan/barcode/confirm` | Conferma e accredita punti |
+| `GET /api/scan/active-session` | Sessione barcode attiva + prodotti scansionati |
+| `GET /api/receipts` | Lista scontrini (incl. `storeChain`, `province`, `hasImage`) |
+| `GET /api/receipts/:id` | Dettaglio: greenItems + barcodeScans + Eco-Score + foto |
+| `GET /api/receipts/:id/image` | Serve foto scontrino (auth-protected, 30gg retention) |
+| `GET /api/accepted-stores` | Lista supermercati accettati per categoria `{ standard, bio, discount }` |
+
+### Badge
+| Endpoint | Descrizione |
+|----------|-------------|
+| `GET /api/badges/my` | Badge dell'utente: lifetime + temporali con progresso |
+
+### Altro
+| Endpoint | Descrizione |
+|----------|-------------|
+| `GET /api/challenges` | Sfide mensili con progress |
+| `GET /api/leaderboard` | Classifica utenti |
+| `GET /api/marketplace/vouchers` | Voucher disponibili |
+| `POST /api/marketplace/vouchers/:id/redeem` | Riscatta voucher |
+| `GET /api/admin/*` | Rotte admin (`x-admin-password` header richiesto) |
+| `GET /api/healthz` | Health check |
 
 ---
 
@@ -542,14 +463,13 @@ barcode_mode, receipt_date, receipt_total, image_url, image_expires_at
 ```
 - `barcode_expiry` = scadenza sessione barcode (24h dopo scan)
 - `barcode_mode` = 1 (indica flusso barcode attivo)
-- `status` = `approved` | `pending` | `rejected` | `pending_barcode` (in attesa di validazione barcode)
+- `status` = `approved` | `pending` | `rejected`
 - `receipt_date` = data scontrino (YYYY-MM-DD) estratta dall'AI per anti-duplicato semantico
 - `receipt_total` = totale scontrino in centesimi estratto dall'AI per anti-duplicato semantico
 - `image_url` = path GCS della foto scontrino (pattern: `receipts/{userId}/{receiptId}.jpg`)
 - `image_expires_at` = scadenza foto (30 giorni dopo upload)
 - `store_chain` = nome normalizzato della catena (es. "Esselunga", "Lidl") estratto dall'AI
-- `province` = provincia italiana dedotta dall'indirizzo sullo scontrino (es. "Milano"), estratta dall'AI
-- `green_items_json` = JSON array di prodotti estratti con campo `matched: boolean` (true se verificato via barcode)
+- `province` = provincia italiana dedotta dall'indirizzo sullo scontrino (es. "Milano"), estratta dall'AI. Sempre `null` se non determinabile
 
 ### `barcode_scans`
 ```
@@ -565,13 +485,6 @@ category, source, reasoning, emoji, co2_per_unit (real, nullable), cached_at
 ```
 Cache lookup prodotti. Chiave `barcode:{code}` per lookup da barcode.
 `co2_per_unit`: kg CO2 risparmiata per unità, da `ecoscore_data.agribalyse.co2_total` (OFF) o stima da categoria.
-
-### `user_product_submissions`
-```
-id, user_id (FK), barcode, product_name, weight_value, weight_unit,
-eco_score, points_awarded, classified_by_ai (boolean, default true), created_at
-```
-Traccia ogni prodotto inserito manualmente dall'utente (tramite "No, aggiungi"). Usato per analisi e miglioramento del sistema di classificazione.
 
 ### `badges`
 ```
@@ -597,30 +510,25 @@ Schema gestito da Drizzle ORM in `lib/db/src/schema/`.
 
 | Tab | File | Descrizione |
 |-----|------|-------------|
-| Home | `(tabs)/index.tsx` | Header logo+avatar, progress ring SVG circolare animato (220px), messaggio motivazionale, CTA verde "Analizza la tua spesa". |
-| Scansiona | `(tabs)/scan.tsx` | Flusso scontrino + lista prodotti pending con pulsanti "Scansiona" + "Lo faccio dopo". Chips bonus welcome/scontrino. |
-| Storico | `(tabs)/storico.tsx` | Lista scontrini con badge "In sospeso"/"Verificato", banner verifica con ore rimaste, pulsanti scansiona per prodotto. Badge colorati per categoria. |
-| Premi | `(tabs)/marketplace.tsx` | VoucherCard con header LinearGradient, badge categoria, progress bar, badge "Quasi!" animato a ≥80%, modale codice post-riscatto. |
-| Profilo | `(tabs)/profilo.tsx` | Header verde con cerchi decorativi, avatar card con upload foto, griglia impatto 2-colonne, badge con tab Traguardi/Sfide. |
-| Impostazioni | `impostazioni.tsx` | Schermata impostazioni utente |
-| Scanner | `barcode-scanner.tsx` | Full-screen camera barcode, preview prodotto, "No, aggiungi" (form manuale "Correggi prodotto"), banner "Stai verificando", "Torna alla lista" dopo confirm. |
-| Shopping | `shopping-scanner.tsx` | Modalità Spesa — scanner barcode senza scontrino, stima punti. |
+| Home | `(tabs)/index.tsx` | **Semplificata (Task #2)**: solo header logo+avatar, progress ring SVG circolare animato (220px, react-native-svg + reanimated), messaggio motivazionale, CTA verde "Analizza la tua spesa". Niente stats/sfide extra — allineata alla Home web. |
+| Scansiona | `(tabs)/scan.tsx` | Flusso scontrino + sessione barcode attiva |
+| Storico | `(tabs)/storico.tsx` | **Badge colorati categoria (Task #2)**: ReceiptCard con pill badge punti verde, sezione categoria separata con badge colorati (Bio=verde, Km 0=blu, Senza Plastica=teal, Equo Solidale=rosso, Vegano=ambra). Colori centralizzati in `Colors.categoryColors`. |
+| Premi | `(tabs)/marketplace.tsx` | **VoucherCard redesign (Task #2)**: header `LinearGradient` (rgba amber), badge categoria con icona tag, valore sconto grande, progress bar per voucher non raggiungibili, badge "Quasi!" animato (pulse Reanimated) a ≥80%, bottone inline redeem con costo foglie. Modale codice post-riscatto con stripe colorata al posto dell'`Alert.alert`. |
+| Profilo | `(tabs)/profilo.tsx` | Header verde (`Colors.leaf`) con cerchi decorativi, avatar card flottante (−40px overlap) con upload foto via `expo-image-picker` → `PUT /api/profile/image`, griglia impatto 2-colonne (CO₂ + acqua), badge con tab Traguardi/Sfide da `GET /api/badges/my`. |
+| Impostazioni | `impostazioni.tsx` | Schermata impostazioni utente (Task #7, placeholder attuale) |
+| Scanner | `barcode-scanner.tsx` | Schermata full-screen camera barcode |
 
 ### Campi API chiave per mobile
 
 ```ts
 // GET /api/profile
-{ totalPoints, nextLevelPoints, levelProgress /* 0-100 */, level /* "Bronzo"/"Argento"/"Oro"/"Platino" */,
-  pendingValidations: [{ receiptId, storeName, remainingHours, pendingCount }] }
+{ totalPoints, nextLevelPoints, levelProgress /* 0-100 */, level /* "Bronzo"/"Argento"/"Oro"/"Platino" */ }
 
 // GET /api/badges/my  (NON /profile/badges)
 { lifetime: BadgeItem[], temporal: TemporalBadgeItem[] }
 
-// GET /api/receipts (lista)
-[{ id, storeName, storeChain, pointsEarned, isPending, remainingHours, pendingProductsCount, ... }]
-
-// POST /api/scan (risposta)
-{ receiptId, barcodeExpiry, pointsEarned, greenItemsFound: [{ name, matched: false }], ... }
+// Challenge fields
+{ title, isCompleted, rewardPoints, currentCount, targetCount, progressPercent }
 
 // profileImageUrl: su AuthUser (da useAuth), NON sul tipo Profile
 ```
@@ -631,17 +539,15 @@ Schema gestito da Drizzle ORM in `lib/db/src/schema/`.
 
 ### Express 5 — Wildcard Route
 ```ts
-app.get(/(.*)/,  handler)  // Corretto per Express 5
-// NON: app.get("*", handler)  // genera errore pathToRegexp
+app.get(/(.*)/,  handler)  // ✅ Corretto per Express 5
+// NON: app.get("*", handler)  // ❌ genera errore pathToRegexp
 ```
 
 ### Barcode Scanner — Flusso States
 ```
 scanning → looking-up → preview → confirming → confirmed
-                ↓ errore              ↓ "No, aggiungi"
-              scanning          manual-form (cameFromReject)
-                                     ↓ submit
-                                  confirmed → "Torna alla lista"
+                ↓ errore              ↓ annulla
+              scanning             scanning
 ```
 Il footer della schermata fotocamera include anche un link **"Non riesci a scansionare? Inserisci il codice"**: apre un Modal con `TextInput` numerico. Il codice digitato segue lo stesso identico flusso `lookupMutation` → preview → conferma.
 
@@ -662,17 +568,14 @@ Il footer della schermata fotocamera include anche un link **"Non riesci a scans
 
 **Storico**: web e mobile mostrano `storeChain` come nome del negozio (se disponibile), con `province` accanto alla data (icona MapPin).
 
-### Classificazione Prodotti (productClassifier.ts)
+### Classificazione Prodotti
 - **Open Food Facts** (primario): API gratuita, nessuna API key. Le chiamate includono `ecoscore_data` per ottenere dati Agribalyse (CO2 reale per kg)
-- **Nutritionix** (secondario): richiede `NUTRITIONIX_APP_ID` + `NUTRITIONIX_API_KEY`. Free tier: 500 chiamate/giorno. Skipped se le env vars non sono configurate
-- **USDA FoodData Central** (terziario): usa `USDA_API_KEY` o `DEMO_KEY` di fallback. Gratuito
-- **GS1 Italia brand hints**: mappa `GS1_ITALY_PREFIXES` con 40+ prefissi produttori → nome brand. Fornito all'AI come `brandHint` per migliorare la classificazione
-- **Claude AI Vision/Text fallback**: classificazione quando nessun database trova il prodotto. Punti conservativi (5-10)
-- **Eco-Hero multiplier**: prodotti con keyword bio/organic/equo/vegan → punti x2 (max 40pt)
-- **`resolveProductEmoji()`**: emoji intelligente basata su keyword nel nome prodotto (🥛🧀🍕🥩🫒🍝 ecc.)
-- **`classifyManualProduct()`**: classificazione per inserimento manuale (form "No, aggiungi")
-- **Cache**: `product_cache` table, key `barcode:{code}` o nome normalizzato. Salva `co2_per_unit`
-- **Correzione prodotti**: `POST /api/scan/products/correct` per correggere un nome prodotto errato
+- **Barcode lookup con fallback AI**: `lookupBarcode()` prova Open Food Facts (con normalizzazione barcode — pad EAN-12→13, strip leading zero). Se OFF non trova il prodotto, **fallback a Claude AI** che classifica in base al prefisso paese del barcode (EAN country codes) e conoscenza generale dei prodotti. Punti conservativi (5-10) per il fallback AI.
+- **Claude Haiku Vision** (`validateReceiptWithAI`): valida scontrino + estrae metadati (negozio, data, totale, `storeChain` normalizzato, `province` dalla rubrica indirizzo) + lista prodotti in un'unica chiamata. `temperature: 0`, formato prodotti `{raw, name}`. **Il campo `raw` (testo verbatim) ha priorità su `name` (normalizzato dall'AI)** per evitare allucinazioni OCR. Usato come primo step in `POST /scan`.
+- **Claude Haiku** (`classifyProductsBatch`): classifica i prodotti estratti in batch, assegna punti 0-20 per sostenibilità
+- **Claude Haiku Vision** (`validateBarcodeImage`): anti-frode barcode — analizza la foto catturata dalla camera per rilevare foto di schermi, screenshot, stampe
+- **Cache**: `product_cache` table, key `barcode:{code}` o nome normalizzato. Tutti i punti di inserimento salvano `co2_per_unit` (da Agribalyse o stimato da categoria)
+- **Correzione prodotti**: `POST /api/scan/products/correct` permette di correggere un nome prodotto errato. Cancella la vecchia cache entry, riclassifica il nome corretto e aggiorna `greenItemsJson` nello scontrino. UI nel tab Storico (icona ✏️ su ogni prodotto green).
 
 ### Transazione Atomica Barcode Confirm
 ```ts
@@ -681,7 +584,6 @@ db.transaction(async (tx) => {
   // 2. Insert barcode_scan
   // 3. Update users.total_points
   // 4. Update receipts.points_earned
-  // 5. Update greenItemsJson matched: true
 }).catch(err => {
   if (err.code === "23505") return { error: "Già scansionato" }
   throw err
@@ -701,6 +603,8 @@ Colors.cardAlt       // #E3EBE0 (sfondo card alternativo)
 Colors.tabActive     // = Colors.leaf
 Colors.tabInactive   // = Colors.textMuted (#628477)
 Colors.categoryColors  // mappa categoria → { bg, text } per badge Storico
+                       // "Bio"=verde, "Km 0"=blu, "Senza Plastica"=teal,
+                       // "Equo Solidale"=rosso, "Vegano"=ambra
 ```
 
 ### Zod / Orval Date Bug
@@ -718,7 +622,7 @@ Orval con `useDates: true` genera schemi Zod che si aspettano oggetti `Date`, **
 ## Design Tokens Mobile
 
 ```ts
-// Tema verde foresta — constants/colors.ts
+// Tema verde foresta — constants/colors.ts (Task #1 redesign)
 PRIMARY_LIGHT = "#D6EFE2"  // sfondi badge / icone
 LEAF = "#2E6B50"            // colore principale (verde)
 MINT = "#51B888"            // verde chiaro (accenti)
