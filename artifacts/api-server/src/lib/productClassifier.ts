@@ -460,7 +460,7 @@ Regole:
     const text = message.content[0].type === "text" ? message.content[0].text : "{}";
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      return { valid: true, complete: false, missingInfo: [], store: null, date: null, totalCents: null, products: [], reason: "Risposta AI non parsabile" };
+      return { valid: true, complete: false, missingInfo: [], store: null, storeChain: null, province: null, date: null, totalCents: null, products: [], reason: "Risposta AI non parsabile" };
     }
 
     const parsed = JSON.parse(jsonMatch[0]) as {
