@@ -23,7 +23,7 @@ Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti 
 | `leafy-mobile` | Expo app | App principale React Native (iOS/Android/web) |
 | `api-server` | Express 5 | Backend REST API su porta 8080 |
 | `leafy` | React/Vite | Frontend web con sistema badge a due livelli (porta 24389, preview path `/`) |
-| `leafy-register` | React/Vite | Pannello admin web |
+| `leafy-register` | React/Vite | Pannello admin web (porta 5000, preview path `/leafy-register/`) |
 | `mockup-sandbox` | Vite | Sandbox per mockup componenti su canvas |
 
 ---
@@ -40,7 +40,8 @@ Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti 
 | `GOOGLE_CLOUD_VISION_API_KEY` | Consigliata | Google Vision API per OCR scontrini. Senza, usa keyword matching. |
 | `ADMIN_PASSWORD` | No | Password pannello admin. Default: `leafy2026` |
 | `SESSION_SECRET` | Produzione | Segreto per la firma dei cookie di sessione |
-| `ANTHROPIC_API_KEY` | Auto | Fornita da Replit AI Integrations (Claude Haiku fallback per classificazione) |
+| `AI_INTEGRATIONS_ANTHROPIC_BASE_URL` | Auto | Fornita automaticamente da Replit AI Integrations |
+| `AI_INTEGRATIONS_ANTHROPIC_API_KEY` | Auto | Fornita automaticamente da Replit AI Integrations |
 
 Per impostare i secrets su Replit: **Tools → Secrets**.
 
@@ -60,7 +61,7 @@ pnpm install
 pnpm --filter @workspace/db run push
 
 # Avvia tutto insieme (workflow Replit "Start application")
-PORT=8080 pnpm --filter @workspace/api-server run dev & PORT=5000 BASE_PATH=/ pnpm --filter @workspace/leafy run dev
+PORT=8080 pnpm --filter @workspace/api-server run dev & PORT=24389 BASE_PATH=/ pnpm --filter @workspace/leafy run dev
 ```
 
 I workflow Replit gestiscono questi comandi automaticamente.
@@ -145,14 +146,17 @@ workspace/
 │   │       ├── barcode-scanner.tsx # Scanner barcode: scan → preview → conferma/rifiuto
 │   │       ├── login.tsx
 │   │       └── _layout.tsx
-│   ├── leafy/               # Frontend React/Vite (web legacy)
-│   ├── leafy-v2/            # Frontend React/Vite v2 — badge system
+│   ├── leafy/               # Frontend React/Vite (web principale)
 │   │   └── src/
 │   │       ├── pages/
-│   │       │   ├── Profile.tsx     # Pagina profilo reale (Traguardi + Sfide tabs)
-│   │       │   ├── ProfileDemo.tsx # Demo pubblica senza auth (/leafy-v2/demo)
-│   │       │   └── ...
-│   │       └── App.tsx             # /demo route prima di AuthGate (Wouter Switch)
+│   │       │   ├── Profile.tsx     # Pagina profilo (Traguardi + Sfide tabs, badge system)
+│   │       │   ├── Home.tsx        # Dashboard punti, livello, impatto
+│   │       │   ├── Scan.tsx        # Flusso scontrino + sessione barcode
+│   │       │   ├── History.tsx     # Lista scontrini con dettaglio barcode scans
+│   │       │   ├── Marketplace.tsx # Voucher riscattabili
+│   │       │   ├── Settings.tsx    # Impostazioni account
+│   │       │   └── Admin.tsx       # Pannello admin interno
+│   │       └── App.tsx             # Router Wouter + AuthGate
 │   ├── leafy-register/      # Admin panel web (React/Vite)
 │   └── mockup-sandbox/      # Sandbox mockup per canvas Replit
 │       └── src/components/mockups/
@@ -178,7 +182,7 @@ workspace/
 
 ---
 
-## Sistema Badge (leafy-v2)
+## Sistema Badge (leafy)
 
 ### Architettura a Due Livelli
 
@@ -200,22 +204,10 @@ File: `artifacts/api-server/src/seed-badges.ts`
 - 5 temporali: weekly "Eroe Settimanale", monthly "Campione del Mese", seasonal "Guerriero Invernale" ecc.
 - Idempotente: upsert per nome (non duplica a ogni restart)
 
-### Pagina Profilo (leafy-v2)
+### Pagina Profilo (leafy — `src/pages/Profile.tsx`)
 - **Tab Traguardi**: badge lifetime — sblocati con data, locked con barra di progresso
 - **Tab Sfide**: badge temporali — attivi del periodo corrente + archivio periodi passati
-- **Route demo**: `/leafy-v2/demo` → `ProfileDemo.tsx` — dati mock, nessun auth richiesto
-
-### Route Demo (senza autenticazione)
-```tsx
-// App.tsx — /demo è prima di AuthGate nel Wouter Switch
-<WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-  <Switch>
-    <Route path="/demo" component={ProfileDemo} />
-    <Route><AuthGate /></Route>
-  </Switch>
-</WouterRouter>
-```
-Nota: sulla porta 20040 (accesso diretto) funziona. Sulla porta 80, il proxy di `leafy` (BASE_PATH=/) intercetta tutto → usa il canvas iframe o il workflow `artifacts/leafy-v2: web`.
+- Autenticazione richiesta (protetta da `AuthGate` in `App.tsx`)
 
 ---
 
@@ -452,7 +444,7 @@ Orval con `useDates: true` genera schemi Zod che si aspettano oggetti `Date`, **
 - Non eseguire `tsc` dentro un singolo pacchetto (fallisce se deps non sono buildate)
 
 ### Proxy Routing (nota architetturale)
-`leafy` gira su porta 24389 con `BASE_PATH=/` — cattura tutti i path sul proxy porta 80. `leafy-v2` (porta 20040, `BASE_PATH=/leafy-v2/`) è accessibile direttamente via artifact dropdown nel preview pane. Il path `/leafy-v2/*` sulla porta 80 viene intercettato da `leafy`.
+`leafy` gira su porta 24389 con `BASE_PATH=/` — cattura tutti i path sul proxy porta 80. `leafy-register` gira su porta 5000 con `BASE_PATH=/leafy-register/` ed è accessibile tramite il dropdown degli artifact nel preview pane.
 
 ---
 
