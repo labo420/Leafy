@@ -105,20 +105,20 @@ function AcceptedStoresSection() {
         <Feather name={open ? "chevron-up" : "chevron-down"} size={16} color={Colors.textSecondary} />
       </Pressable>
       {open && (
-        <View style={styles.storesList}>
+        <ScrollView style={styles.storesList} nestedScrollEnabled showsVerticalScrollIndicator={false}>
           <View style={styles.storesCategory}>
             <Text style={styles.storesCatTitle}>Supermercati</Text>
-            <Text style={styles.storesCatList}>{data.standard.join(", ")}</Text>
+            <Text style={styles.storesCatList} numberOfLines={0}>{data.standard.join(", ")}</Text>
           </View>
           <View style={styles.storesCategory}>
             <Text style={styles.storesCatTitle}>Bio / Naturale</Text>
-            <Text style={styles.storesCatList}>{data.bio.join(", ")}</Text>
+            <Text style={styles.storesCatList} numberOfLines={0}>{data.bio.join(", ")}</Text>
           </View>
           <View style={styles.storesCategory}>
             <Text style={styles.storesCatTitle}>Discount</Text>
-            <Text style={styles.storesCatList}>{data.discount.join(", ")}</Text>
+            <Text style={styles.storesCatList} numberOfLines={0}>{data.discount.join(", ")}</Text>
           </View>
-        </View>
+        </ScrollView>
       )}
     </View>
   );
