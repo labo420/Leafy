@@ -1,12 +1,28 @@
 import React, { useState, useRef } from "react";
-import { useScanReceipt, useGetProfile, getGetProfileQueryKey, useGetAcceptedStores } from "@workspace/api-client-react";
+import { useScanReceipt, useGetProfile, getGetProfileQueryKey, useGetAcceptedStores, useBarcodePreview } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LeafAnimation } from "@/components/shared/LeafAnimation";
-import { Camera, CheckCircle2, ArrowRight, ScanLine, ImageIcon, Sparkles, ChevronDown, Store } from "lucide-react";
+import { Camera, CheckCircle2, ArrowRight, ScanLine, ImageIcon, Sparkles, ChevronDown, Store, ShoppingCart, Search, X, Leaf, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+
+type ShoppingItem = {
+  barcode: string;
+  productName: string;
+  ecoScore: string | null;
+  pointsEstimate: number;
+  found: boolean;
+};
+
+const ECO_SCORE_COLOR: Record<string, string> = {
+  A: "text-green-600 bg-green-50",
+  B: "text-lime-600 bg-lime-50",
+  C: "text-yellow-600 bg-yellow-50",
+  D: "text-orange-600 bg-orange-50",
+  E: "text-red-600 bg-red-50",
+};
 
 export default function Scan() {
   const [file, setFile] = useState<File | null>(null);
@@ -19,6 +35,52 @@ export default function Scan() {
   const { data: profile } = useGetProfile();
   const { data: acceptedStores } = useGetAcceptedStores();
   const hasActiveSession = !!(profile as any)?.activeBarcodeSession;
+
+  // Shopping mode state
+  const [shoppingOpen, setShoppingOpen] = useState(false);
+  const [barcodeInput, setBarcodeInput] = useState("");
+  const [shoppingList, setShoppingList] = useState<ShoppingItem[]>([]);
+  const barcodeInputRef = useRef<HTMLInputElement>(null);
+
+  const barcodePreviewMutation = useBarcodePreview({
+    mutation: {
+      onSuccess: (result, variables) => {
+        const newItem: ShoppingItem = {
+          barcode: variables.data.barcode,
+          productName: result.productName,
+          ecoScore: result.ecoScore,
+          pointsEstimate: result.pointsEstimate,
+          found: result.found,
+        };
+        setShoppingList((prev) => {
+          const exists = prev.findIndex((i) => i.barcode === newItem.barcode);
+          if (exists >= 0) {
+            const copy = [...prev];
+            copy[exists] = newItem;
+            return copy;
+          }
+          return [newItem, ...prev];
+        });
+        setBarcodeInput("");
+        setTimeout(() => barcodeInputRef.current?.focus(), 100);
+      },
+      onError: () => {
+        toast.error("Prodotto non trovato. Riprova con un altro barcode.");
+      },
+    },
+  });
+
+  const handleBarcodeLookup = () => {
+    const code = barcodeInput.trim();
+    if (!code) return;
+    barcodePreviewMutation.mutate({ data: { barcode: code } });
+  };
+
+  const removeShoppingItem = (barcode: string) => {
+    setShoppingList((prev) => prev.filter((i) => i.barcode !== barcode));
+  };
+
+  const totalEstimate = shoppingList.reduce((sum, i) => sum + i.pointsEstimate, 0);
 
   const scanMutation = useScanReceipt({
     mutation: {
@@ -268,6 +330,129 @@ export default function Scan() {
         >
           {scanMutation.isPending ? "Analizzando..." : "Analizza la tua spesa"}
         </Button>
+
+        {/* ─── Modalità Spesa ─── */}
+        <div className="border border-border/60 rounded-2xl overflow-hidden bg-card shadow-sm">
+          <button
+            onClick={() => {
+              setShoppingOpen((v) => !v);
+              if (!shoppingOpen) setTimeout(() => barcodeInputRef.current?.focus(), 200);
+            }}
+            className="w-full flex items-center justify-between px-4 py-3.5 text-sm font-medium text-foreground hover:bg-muted/40 transition-colors"
+          >
+            <span className="flex items-center gap-2.5">
+              <span className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                <ShoppingCart className="w-4 h-4 text-primary" />
+              </span>
+              <span>
+                Modalità Spesa
+                {shoppingList.length > 0 && (
+                  <span className="ml-2 text-xs font-semibold text-primary">
+                    ~{totalEstimate} pt stimati
+                  </span>
+                )}
+              </span>
+            </span>
+            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${shoppingOpen ? "rotate-180" : ""}`} />
+          </button>
+
+          <AnimatePresence>
+            {shoppingOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="px-4 pb-4 space-y-3 border-t border-border/40 pt-3">
+                  <p className="text-xs text-muted-foreground leading-snug">
+                    Digita un codice a barre per vedere la stima dei punti prima di fare la spesa.
+                  </p>
+
+                  {/* Barcode input */}
+                  <div className="flex gap-2">
+                    <input
+                      ref={barcodeInputRef}
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Codice a barre (es. 3017620422003)"
+                      value={barcodeInput}
+                      onChange={(e) => setBarcodeInput(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleBarcodeLookup()}
+                      className="flex-1 text-sm border border-border rounded-xl px-3 py-2.5 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground/60"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={handleBarcodeLookup}
+                      disabled={!barcodeInput.trim() || barcodePreviewMutation.isPending}
+                      className="rounded-xl px-4 shrink-0"
+                      isLoading={barcodePreviewMutation.isPending}
+                    >
+                      <Search className="w-4 h-4" />
+                    </Button>
+                  </div>
+
+                  {/* Product list */}
+                  {shoppingList.length > 0 && (
+                    <div className="space-y-2">
+                      {shoppingList.map((item) => (
+                        <div
+                          key={item.barcode}
+                          className="flex items-center gap-3 bg-muted/30 rounded-xl px-3 py-2.5"
+                        >
+                          <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                            <Leaf className="w-4 h-4 text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{item.productName}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              {item.ecoScore ? (
+                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${ECO_SCORE_COLOR[item.ecoScore.toUpperCase()] ?? "text-muted-foreground bg-muted"}`}>
+                                  Eco-Score {item.ecoScore.toUpperCase()}
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-muted-foreground">Score non disponibile</span>
+                              )}
+                              <span className="text-[10px] text-muted-foreground">·</span>
+                              <span className="text-xs font-semibold text-primary">
+                                {item.pointsEstimate > 0 ? `~+${item.pointsEstimate} pt` : "0 pt"}
+                              </span>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => removeShoppingItem(item.barcode)}
+                            className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+
+                      {/* Total estimate */}
+                      <div className="flex items-center justify-between bg-primary/5 border border-primary/20 rounded-xl px-3 py-2.5">
+                        <span className="text-sm font-semibold text-foreground">Stima totale</span>
+                        <span className="text-sm font-bold text-primary">~+{totalEstimate} pt</span>
+                      </div>
+
+                      <div className="flex items-start gap-2 text-[11px] text-muted-foreground">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                        <span>I punti reali dipendono dallo scontrino e dalla verifica d'acquisto.</span>
+                      </div>
+
+                      <button
+                        onClick={() => setShoppingList([])}
+                        className="w-full text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
+                      >
+                        Svuota lista
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         {acceptedStores && (
           <div className="mt-2">
