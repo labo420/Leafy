@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq, and, gte, desc, sql } from "drizzle-orm";
+import { eq, and, gte, gt, ne, desc, sql } from "drizzle-orm";
 import { db, usersTable, receiptsTable, barcodeScansTable, productCacheTable } from "@workspace/db";
 import { ScanReceiptBody } from "@workspace/api-zod";
 import { hashImage, extractTextViaGoogleVision, calculateLevel } from "../lib/scanner";
@@ -61,13 +61,18 @@ router.post("/scan", async (req, res): Promise<void> => {
 
   if (validation.date && validation.totalCents !== null) {
     const dupConditions = [
+      eq(receiptsTable.userId, user.id),
       eq(receiptsTable.receiptDate, validation.date),
       eq(receiptsTable.receiptTotal, validation.totalCents),
+      gt(receiptsTable.pointsEarned, 0),
     ];
     if (validation.store) {
       dupConditions.push(
         sql`lower(trim(coalesce(${receiptsTable.storeName}, ''))) = ${validation.store.toLowerCase().trim()}`
       );
+    }
+    if (selfDuplicate) {
+      dupConditions.push(ne(receiptsTable.id, selfDuplicate.id));
     }
 
     const [semanticDuplicate] = await db
