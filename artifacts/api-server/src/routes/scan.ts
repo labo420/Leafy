@@ -344,6 +344,36 @@ router.post("/scan/barcode/lookup", async (req, res): Promise<void> => {
   });
 });
 
+router.post("/scan/barcode/preview", async (req, res): Promise<void> => {
+  const { barcode } = req.body;
+
+  if (!barcode || typeof barcode !== "string") {
+    res.status(400).json({ error: "Codice a barre mancante." });
+    return;
+  }
+
+  const user = await requireUser(req, res);
+  if (!user) return;
+
+  const product = await lookupBarcode(barcode.trim());
+
+  if (!product) {
+    res.status(404).json({ error: "Prodotto non trovato su Open Food Facts. Verifica che il codice a barre sia leggibile." });
+    return;
+  }
+
+  res.json({
+    barcode: barcode.trim(),
+    productName: product.productName,
+    ecoScore: product.ecoScore,
+    pointsEstimate: product.points,
+    category: product.category,
+    emoji: product.emoji,
+    reasoning: product.reasoning,
+    source: product.source,
+  });
+});
+
 router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
   const validated = await validateBarcodeRequest(req, res);
   if (!validated) return;

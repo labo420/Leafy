@@ -404,6 +404,30 @@ export default function ScanScreen() {
             </Pressable>
           </View>
 
+          <Pressable
+            style={styles.shoppingModeBtn}
+            onPress={() => {
+              if (!user) {
+                router.push("/login");
+                return;
+              }
+              router.push("/shopping-scanner");
+            }}
+          >
+            <View style={styles.shoppingModeInner}>
+              <View style={styles.shoppingModeLeft}>
+                <View style={styles.shoppingModeIcon}>
+                  <MaterialCommunityIcons name="cart-outline" size={22} color={Colors.leaf} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.shoppingModeTitle}>Modalità Spesa</Text>
+                  <Text style={styles.shoppingModeSub}>Scansiona prodotti per una stima punti</Text>
+                </View>
+              </View>
+              <Feather name="chevron-right" size={20} color={Colors.textMuted} />
+            </View>
+          </Pressable>
+
           <View style={styles.steps}>
             <Text style={styles.stepsTitle}>Come funziona</Text>
             {[
@@ -544,4 +568,21 @@ const styles = StyleSheet.create({
   storesCategory: { gap: 4 },
   storesCatTitle: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: Colors.text },
   storesCatList: { fontSize: 12, fontFamily: "Inter_400Regular", color: Colors.textSecondary, lineHeight: 18 },
+  shoppingModeBtn: {
+    marginHorizontal: 20, marginBottom: 20,
+    backgroundColor: Colors.card, borderRadius: 16,
+    borderWidth: 1.5, borderColor: Colors.border,
+    borderStyle: "dashed" as const,
+  },
+  shoppingModeInner: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 16, paddingVertical: 14,
+  },
+  shoppingModeLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
+  shoppingModeIcon: {
+    width: 40, height: 40, borderRadius: 12,
+    backgroundColor: Colors.primaryLight, alignItems: "center", justifyContent: "center",
+  },
+  shoppingModeTitle: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: Colors.text },
+  shoppingModeSub: { fontSize: 12, fontFamily: "Inter_400Regular", color: Colors.textSecondary, marginTop: 1 },
 });

@@ -237,6 +237,14 @@ File: `artifacts/api-server/src/seed-badges.ts`
 4. `POST /api/scan/barcode/confirm` → transazione DB atomica → credito punti
 5. Sessione valida 24h; max 200 punti/giorno; no duplicati per scontrino
 
+### Modalità Spesa (Shopping Mode)
+Funzione aggiuntiva: l'utente scansiona barcode **mentre fa la spesa** (senza scontrino) per ottenere una **stima** dei punti.
+- Endpoint: `POST /api/scan/barcode/preview` — lookup prodotto senza receiptId, nessun credito punti
+- Schermata mobile: `app/shopping-scanner.tsx` — camera scanner + lista prodotti in-memory + report finale
+- Accesso: bottone "Modalità Spesa" nella tab Scansiona (visivamente secondario)
+- Tutti i punti mostrati sono stime (~) — disclaimer visivo sempre presente
+- Nessuna scrittura DB, sessione completamente in-memory
+
 ### Eco-Score → Punti
 | Eco-Score | Punti |
 |-----------|-------|
@@ -278,7 +286,8 @@ Base URL: `/api`
 | Endpoint | Descrizione |
 |----------|-------------|
 | `POST /api/scan` | Valida scontrino + whitelist check → apre sessione 24h |
-| `POST /api/scan/barcode/lookup` | Preview prodotto da barcode (NO credito punti) |
+| `POST /api/scan/barcode/lookup` | Preview prodotto da barcode (NO credito punti, richiede receiptId) |
+| `POST /api/scan/barcode/preview` | Preview standalone (Modalità Spesa) — solo stima punti, no receiptId |
 | `POST /api/scan/barcode/confirm` | Conferma e accredita punti |
 | `GET /api/scan/active-session` | Sessione barcode attiva + prodotti scansionati |
 | `GET /api/receipts` | Lista scontrini (incl. `storeChain`, `province`, `hasImage`) |
