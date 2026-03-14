@@ -350,6 +350,7 @@ export interface ReceiptValidation {
   date: string | null;
   totalCents: number | null;
   products: string[];
+  reason: string;
 }
 
 export async function validateReceiptWithAI(imageBase64: string): Promise<ReceiptValidation> {
@@ -401,7 +402,7 @@ Regole:
     const text = message.content[0].type === "text" ? message.content[0].text : "{}";
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      return { valid: true, complete: false, missingInfo: [], store: null, date: null, totalCents: null, products: [] };
+      return { valid: true, complete: false, missingInfo: [], store: null, date: null, totalCents: null, products: [], reason: "Risposta AI non parsabile" };
     }
 
     const parsed = JSON.parse(jsonMatch[0]) as {
@@ -418,18 +419,28 @@ Regole:
       .filter((p): p is string => typeof p === "string" && p.trim().length >= 2)
       .slice(0, 15);
 
+    const isValid = parsed.isReceipt !== false;
+    const isComplete = parsed.complete !== false;
+    const missingInfo = Array.isArray(parsed.missingInfo) ? parsed.missingInfo : [];
+
+    let reason = "";
+    if (!isValid) reason = "L'immagine non sembra uno scontrino.";
+    else if (!isComplete) reason = `Informazioni mancanti: ${missingInfo.length > 0 ? missingInfo.join(", ") : "data e/o totale"}.`;
+    else reason = "Scontrino valido e completo.";
+
     return {
-      valid: parsed.isReceipt !== false,
-      complete: parsed.complete !== false,
-      missingInfo: Array.isArray(parsed.missingInfo) ? parsed.missingInfo : [],
+      valid: isValid,
+      complete: isComplete,
+      missingInfo,
       store: typeof parsed.store === "string" ? parsed.store : null,
       date: typeof parsed.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(parsed.date) ? parsed.date : null,
       totalCents: typeof parsed.totalCents === "number" ? Math.round(parsed.totalCents) : null,
       products,
+      reason,
     };
   } catch (err) {
     console.error("[validateReceiptWithAI]", err);
-    return { valid: true, complete: false, missingInfo: [], store: null, date: null, totalCents: null, products: [] };
+    return { valid: true, complete: false, missingInfo: [], store: null, date: null, totalCents: null, products: [], reason: "Errore AI, validazione non disponibile" };
   }
 }
 

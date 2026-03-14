@@ -49,8 +49,10 @@ router.post("/scan", async (req, res): Promise<void> => {
     return;
   }
 
-  if (!validation.complete && validation.missingInfo.length > 0) {
-    const missing = validation.missingInfo.join(", ");
+  if (!validation.complete) {
+    const missing = validation.missingInfo.length > 0
+      ? validation.missingInfo.join(", ")
+      : "data, totale";
     res.status(400).json({
       error: `Scontrino incompleto — non riesco a leggere: ${missing}. Rifotografa mostrando l'intero scontrino.`,
     });
@@ -58,15 +60,19 @@ router.post("/scan", async (req, res): Promise<void> => {
   }
 
   if (validation.date && validation.totalCents !== null) {
+    const storeNorm = (validation.store ?? "").toLowerCase().trim();
+    const dupConditions = [
+      eq(receiptsTable.receiptDate, validation.date),
+      eq(receiptsTable.receiptTotal, validation.totalCents),
+    ];
+    if (storeNorm.length > 0) {
+      dupConditions.push(sql`lower(trim(coalesce(${receiptsTable.storeName}, ''))) = ${storeNorm}`);
+    }
+
     const [semanticDuplicate] = await db
       .select({ id: receiptsTable.id })
       .from(receiptsTable)
-      .where(
-        and(
-          eq(receiptsTable.receiptDate, validation.date),
-          eq(receiptsTable.receiptTotal, validation.totalCents),
-        ),
-      )
+      .where(and(...dupConditions))
       .limit(1);
 
     if (semanticDuplicate) {
