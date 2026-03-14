@@ -391,7 +391,7 @@ export default function ProfiloScreen() {
 
   const { data: badgesData } = useQuery<MyBadgesResponse>({
     queryKey: ["badges"],
-    queryFn: () => apiFetch("/profile/badges"),
+    queryFn: () => apiFetch("/badges/my"),
     enabled: !!user,
   });
 
@@ -470,7 +470,7 @@ export default function ProfiloScreen() {
         body: JSON.stringify({ imageData: base64Data }),
       });
       if (!res.ok) throw new Error("Upload failed");
-      await refetchProfile();
+      await Promise.all([refetchProfile(), refetch()]);
       Alert.alert("Fatto!", "Immagine aggiornata con successo.");
     } catch {
       Alert.alert("Errore", "Impossibile aggiornare l'immagine del profilo.");
@@ -500,7 +500,7 @@ export default function ProfiloScreen() {
   const username = profile?.username || user?.firstName || "Utente";
   const safeInitial = (username.trim().charAt(0) || "U").toUpperCase();
   const level = profile?.level ?? "Bronzo";
-  const profileImageUrl = (profile as any)?.profileImageUrl;
+  const profileImageUrl = user?.profileImageUrl;
 
   return (
     <ScrollView
@@ -515,7 +515,7 @@ export default function ProfiloScreen() {
           <Text style={styles.headerTitle}>Profilo</Text>
           <Pressable
             style={styles.settingsBtn}
-            onPress={() => router.push("/impostazioni" as any)}
+            onPress={() => router.push("/impostazioni")}
           >
             <Feather name="settings" size={20} color="#fff" />
           </Pressable>
