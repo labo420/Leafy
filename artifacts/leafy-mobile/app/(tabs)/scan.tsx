@@ -536,7 +536,7 @@ const styles = StyleSheet.create({
 
   bigBtnCenter: {
     alignItems: "center", justifyContent: "center",
-    paddingTop: 10, paddingBottom: 4,
+    paddingTop: 30, paddingBottom: 12,
   },
   bigBtnPulseContainer: {
     width: 320, height: 320,
