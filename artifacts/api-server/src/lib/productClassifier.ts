@@ -133,6 +133,102 @@ function capitalizeProductName(name: string): string {
   return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
 }
 
+function resolveProductEmoji(productName: string, category: string, aiEmoji: string): string {
+  const name = productName.toLowerCase();
+
+  const keywordMap: Array<[string[], string]> = [
+    [["mozzarella", "ricotta", "mascarpone", "brie", "camembert", "fontina", "asiago", "provolone", "grana", "parmigian", "pecorino", "fetta", "formaggio"], "🧀"],
+    [["burro", "margarina"], "🧈"],
+    [["yogurt", "yoghurt"], "🥛"],
+    [["latte", "latticin", "panna"], "🥛"],
+    [["uova", "uovo"], "🥚"],
+    [["salame", "prosciutto", "mortadella", "bresaola", "speck", "pancetta", "coppa", "guanciale", "salumi"], "🥩"],
+    [["pollo", "tacchino", "petto di pollo"], "🍗"],
+    [["salsiccia", "wurstel", "würstel", "cotechino"], "🌭"],
+    [["maiale", "suino", "bistecca", "manzo", "vitello", "agnello", "carne", "hamburger", "burger"], "🥩"],
+    [["salmone", "tonno", "baccalà", "merluzzo", "branzino", "orata", "sgombro", "acciuga", "sardina", "pesce"], "🐟"],
+    [["gambero", "cozza", "vongola", "polpo", "calamaro", "surimi", "frutti di mare"], "🦐"],
+    [["pasta", "spaghetti", "penne", "rigatoni", "fusilli", "lasagne", "maccheroni", "tagliatelle", "linguine", "bucatini", "farfalle", "orecchiette", "gnocchi", "tortellini", "ravioli"], "🍝"],
+    [["pizza", "calzone"], "🍕"],
+    [["pane", "pancarré", "focaccia", "grissini", "taralli", "brioche", "cornetto", "ciabatta", "baguette", "panino"], "🍞"],
+    [["riso", "risotto", "arborio"], "🍚"],
+    [["farina", "semola", "fecola", "amido"], "🌾"],
+    [["cereali", "muesli", "fiocchi d'avena", "cornflakes", "granola"], "🥣"],
+    [["banana", "banane"], "🍌"],
+    [["arancia", "arance", "mandarino", "clementina"], "🍊"],
+    [["limone", "limoni", "lime"], "🍋"],
+    [["mela", "mele", "golden", "fuji", "granny smith"], "🍎"],
+    [["pera", "pere", "conference"], "🍐"],
+    [["uva", "uvetta"], "🍇"],
+    [["anguria", "cocomero"], "🍉"],
+    [["fragola", "lampone", "mirtillo", "mora"], "🍓"],
+    [["ciliegia", "ciliegie"], "🍒"],
+    [["pesca", "pesche", "albicocca", "nettarina"], "🍑"],
+    [["kiwi"], "🥝"],
+    [["avocado"], "🥑"],
+    [["ananas", "mango", "papaya"], "🍍"],
+    [["melon", "melone", "cantalupo"], "🍈"],
+    [["pomodoro", "pomodori", "passata", "pelati", "pachino"], "🍅"],
+    [["mais", "grano turco"], "🌽"],
+    [["patata", "patate", "patatine", "chips"], "🥔"],
+    [["carota", "carote"], "🥕"],
+    [["melanzana", "melanzane"], "🍆"],
+    [["peperone", "peperoni", "peperoncino"], "🫑"],
+    [["broccoli", "cavolfiore", "cavolo", "verza", "cavolini"], "🥦"],
+    [["cipolla", "cipolle", "scalogno"], "🧅"],
+    [["aglio"], "🧄"],
+    [["fungo", "funghi", "champignon", "porcini"], "🍄"],
+    [["insalata", "lattuga", "rucola", "spinaci", "bietola", "radicchio", "misticanza"], "🥗"],
+    [["zucchina", "zucchine", "zucchini", "cetriolo", "cetrioli"], "🥒"],
+    [["fagioli", "lenticchie", "ceci", "piselli", "soia", "legumi"], "🫘"],
+    [["olio", "oliva", "olive"], "🫒"],
+    [["miele"], "🍯"],
+    [["zucchero", "saccarosio", "fruttosio"], "🍚"],
+    [["sale", "salgemma"], "🧂"],
+    [["spezie", "pepe", "cannella", "curcuma", "paprika", "zafferano", "origano", "basilico", "rosmarino"], "🌿"],
+    [["salsa", "ketchup", "maionese", "senape", "pesto", "ragù", "sugo"], "🧂"],
+    [["aceto", "balsamico"], "🫙"],
+    [["caffè", "espresso", "capsule", "cialde", "nescafé", "coffee"], "☕"],
+    [["tè", "tea", "camomilla", "tisana", "infuso", "erboristeria"], "🍵"],
+    [["acqua", "water", "minerale"], "💧"],
+    [["succo", "juice", "nettare", "smoothie", "centrifugato"], "🧃"],
+    [["vino", "wine", "rosso doc", "bianco doc", "prosecco", "spumante", "champagne", "lambrusco"], "🍷"],
+    [["birra", "beer", "lager", "pilsner", "ipa", "ale"], "🍺"],
+    [["bibita", "cola", "fanta", "sprite", "aranciata", "limonata", "soda", "energy drink"], "🥤"],
+    [["cioccolato", "cacao", "gianduia", "nutella", "crema spalmabile", "fondente"], "🍫"],
+    [["biscotti", "wafer", "crackers", "gallette", "frollini"], "🍪"],
+    [["torta", "cake", "merendine", "plumcake", "pan di spagna", "crostata", "crostatina"], "🍰"],
+    [["gelato", "ghiacciolo", "sorbetto"], "🍦"],
+    [["caramelle", "gomme da masticare", "bonbon", "lollipop", "gommose"], "🍬"],
+    [["popcorn", "nachos", "pretzel", "snack"], "🍿"],
+    [["detersivo", "detergente", "candeggina", "ammorbidente", "lavatrice", "lavastoviglie"], "🧼"],
+    [["sapone", "shampoo", "balsamo", "doccia", "bagnoschiuma", "igiene"], "🧴"],
+    [["dentifricio", "spazzolino", "collutorio"], "🪥"],
+    [["carta", "scottex", "tovaglioli", "fazzoletti", "rotoli"], "🧻"],
+    [["pannolini", "pampers", "neonato", "bebè"], "👶"],
+  ];
+
+  for (const [keywords, emoji] of keywordMap) {
+    if (keywords.some(kw => name.includes(kw))) return emoji;
+  }
+
+  const categoryMap: Record<string, string> = {
+    "Bio": "🌿",
+    "Vegano": "🌱",
+    "Km 0": "📍",
+    "DOP/IGP": "🏆",
+    "Equo Solidale": "🤝",
+    "Artigianale": "👨‍🍳",
+    "Senza Plastica": "♻️",
+  };
+  if (category && categoryMap[category]) return categoryMap[category];
+
+  const badEmojis = ["🛒", "🏪", "💰", "💵", "🧾", "📝", "📦", "❓"];
+  if (aiEmoji && !badEmojis.includes(aiEmoji)) return aiEmoji;
+
+  return "🌿";
+}
+
 export function extractProductLines(ocrText: string): string[] {
   const lines = ocrText.split("\n");
   const products: string[] = [];
@@ -317,13 +413,14 @@ LINEE GUIDA per la stima eco-score:
 
     const brandPrefix = brand ? `${brand} - ` : "";
     const productName = name ? `${brandPrefix}${name}` : `Prodotto ${barcode}`;
+    const category = parsed.category || "Altro";
 
     return {
       productName,
       ecoScore: parsed.ecoScore || null,
       points: Math.max(0, Math.min(20, parsed.points ?? 5)),
-      category: parsed.category || "Altro",
-      emoji: parsed.emoji || "🌿",
+      category,
+      emoji: resolveProductEmoji(productName, category, parsed.emoji || "🌿"),
       reasoning: parsed.reasoning || "Classificato con dati Open Food Facts + AI",
       source: "openfoodfacts-ai",
     };
@@ -336,7 +433,7 @@ LINEE GUIDA per la stima eco-score:
       ecoScore: null,
       points: 5,
       category: "Altro",
-      emoji: "🌿",
+      emoji: resolveProductEmoji(productName, "Altro", "🌿"),
       reasoning: "Classificato da Open Food Facts",
       source: "openfoodfacts",
     };
@@ -409,13 +506,14 @@ Rispondi SOLO con un JSON valido:
     const productName = parsed.productName && parsed.productName !== "Prodotto alimentare"
       ? `${brandPrefix}${parsed.productName}`
       : `Prodotto ${barcode}`;
+    const category = parsed.category || "Altro";
 
     return {
       productName,
       ecoScore: parsed.ecoScore || null,
       points: Math.max(0, Math.min(20, parsed.points ?? 5)),
-      category: parsed.category || "Altro",
-      emoji: parsed.emoji || "🌿",
+      category,
+      emoji: resolveProductEmoji(productName, category, parsed.emoji || "🌿"),
       reasoning: parsed.reasoning || "Classificato tramite analisi visiva",
       source: "vision",
     };
@@ -469,12 +567,14 @@ IMPORTANTE: Sii conservativo. Se non riesci a identificare il prodotto, usa "Pro
       ecoScore?: string;
     };
 
+    const productName = parsed.productName || `Prodotto ${barcode}`;
+    const category = parsed.category || "Altro";
     return {
-      productName: parsed.productName || `Prodotto ${barcode}`,
+      productName,
       ecoScore: parsed.ecoScore || null,
       points: Math.max(0, Math.min(15, parsed.points ?? 5)),
-      category: parsed.category || "Altro",
-      emoji: parsed.emoji || "🌿",
+      category,
+      emoji: resolveProductEmoji(productName, category, parsed.emoji || "🌿"),
       reasoning: parsed.reasoning || "Classificato tramite AI",
       source: "ai",
     };
@@ -488,6 +588,95 @@ IMPORTANTE: Sii conservativo. Se non riesci a identificare il prodotto, usa "Pro
       emoji: "🌿",
       reasoning: "Prodotto non trovato nei database — classificazione base",
       source: "ai-fallback",
+    };
+  }
+}
+
+export async function classifyManualProduct(
+  barcode: string,
+  name: string,
+  weightValue: number,
+  weightUnit: "g" | "kg",
+  frontImageBase64?: string,
+  backImageBase64?: string,
+): Promise<BarcodeResult> {
+  const weightGrams = weightUnit === "kg" ? weightValue * 1000 : weightValue;
+  const weightText = weightGrams >= 1000 ? `${(weightGrams / 1000).toFixed(2)} kg` : `${weightGrams} g`;
+
+  try {
+    const images: Array<{ type: "image"; source: { type: "base64"; media_type: "image/jpeg"; data: string } }> = [];
+    if (frontImageBase64) {
+      images.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: frontImageBase64 } });
+    }
+    if (backImageBase64) {
+      images.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: backImageBase64 } });
+    }
+
+    const textPrompt = `Sei un esperto di prodotti alimentari e sostenibilità. Un utente ha inserito manualmente questo prodotto perché non è stato trovato nei database automatici.
+
+Nome inserito dall'utente: ${name}
+Peso/Quantità: ${weightText}
+Codice a barre: ${barcode}
+${images.length > 0 ? `Foto confezione: ${images.length} immagine/i allegate — analizzale attentamente per confermare o correggere il nome.` : "Nessuna foto fornita."}
+
+Rispondi SOLO con un JSON valido:
+{
+  "productName": <nome corretto del prodotto, preferisci quello letto dalla confezione se visibile, altrimenti usa esattamente "${name}">,
+  "brand": <marca se visibile nella confezione o nel nome, null altrimenti>,
+  "points": <numero 0-20>,
+  "category": <una di: "Bio", "Km 0", "Vegano", "Senza Plastica", "Equo Solidale", "DOP/IGP", "Artigianale", "Altro">,
+  "emoji": <emoji appropriato al prodotto specifico>,
+  "reasoning": <spiegazione breve in italiano max 80 caratteri>,
+  "ecoScore": <lettera a-e basata su tipo prodotto e certificazioni visibili>
+}`;
+
+    const content: Array<{ type: "image"; source: { type: "base64"; media_type: "image/jpeg"; data: string } } | { type: "text"; text: string }> = [
+      ...images,
+      { type: "text", text: textPrompt },
+    ];
+
+    const message = await anthropic.messages.create({
+      model: "claude-haiku-4-5",
+      max_tokens: 512,
+      messages: [{ role: "user", content }],
+    });
+
+    const text = message.content[0].type === "text" ? message.content[0].text : "{}";
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error("No JSON in response");
+    const parsed = JSON.parse(jsonMatch[0]) as {
+      productName?: string;
+      brand?: string;
+      points?: number;
+      category?: string;
+      emoji?: string;
+      reasoning?: string;
+      ecoScore?: string;
+    };
+
+    const brandPrefix = parsed.brand ? `${parsed.brand} - ` : "";
+    const productName = parsed.productName ? `${brandPrefix}${parsed.productName}` : name;
+    const category = parsed.category || "Altro";
+
+    return {
+      productName,
+      ecoScore: parsed.ecoScore || null,
+      points: Math.max(0, Math.min(20, parsed.points ?? 5)),
+      category,
+      emoji: resolveProductEmoji(productName, category, parsed.emoji || "🌿"),
+      reasoning: parsed.reasoning || "Inserito e classificato manualmente",
+      source: "manual",
+    };
+  } catch (err) {
+    console.error("[classifyManualProduct]", err);
+    return {
+      productName: name,
+      ecoScore: null,
+      points: 5,
+      category: "Altro",
+      emoji: resolveProductEmoji(name, "Altro", "🌿"),
+      reasoning: "Inserito manualmente",
+      source: "manual",
     };
   }
 }
@@ -571,7 +760,7 @@ export async function lookupBarcode(barcode: string, imageBase64?: string): Prom
       }
 
       const points = validGrade ? (ECO_SCORE_POINTS[validGrade] ?? 5) : 5;
-      const emoji = validGrade ? (ECO_SCORE_EMOJI[validGrade] ?? "🌿") : "🌿";
+      const ecoEmoji = validGrade ? (ECO_SCORE_EMOJI[validGrade] ?? "🌿") : "🌿";
 
       const cats: string[] = [];
       if (product.labels?.toLowerCase().includes("bio") || product.labels?.toLowerCase().includes("organic")) cats.push("Bio");
@@ -586,6 +775,7 @@ export async function lookupBarcode(barcode: string, imageBase64?: string): Prom
       const reasoning = validGrade
         ? `Eco-Score ${validGrade.toUpperCase()} da Open Food Facts`
         : "Classificato da Open Food Facts";
+      const emoji = resolveProductEmoji(productName, category, ecoEmoji);
 
       const result: BarcodeResult = {
         productName,
@@ -817,10 +1007,9 @@ Criteri punti:
       const normalized = normalizeProductName(name);
       const points = Math.max(0, Math.min(20, cls.points ?? 0));
       const category = cls.category ?? "Altro";
-      const emoji = cls.emoji ?? "🌿";
-      const reasoning = cls.reasoning ?? "Classificato da AI";
-
       const capitalizedName = capitalizeProductName(name);
+      const emoji = resolveProductEmoji(capitalizedName, category, cls.emoji ?? "🌿");
+      const reasoning = cls.reasoning ?? "Classificato da AI";
       savePromises.push(
         db.insert(productCacheTable).values({
           productNameNormalized: normalized,

@@ -1,6 +1,7 @@
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as Haptics from "expo-haptics";
+import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useState, useCallback, useRef } from "react";
@@ -8,10 +9,12 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -65,7 +68,7 @@ const ECO_COLORS: Record<string, string> = {
   e: "#E63E11",
 };
 
-type ScanPhase = "scanning" | "looking-up" | "preview" | "confirming" | "confirmed";
+type ScanPhase = "scanning" | "looking-up" | "preview" | "confirming" | "confirmed" | "manual-form" | "manual-classifying";
 
 function EcoScoreBadge({ score }: { score: string | null }) {
   if (!score) return null;
@@ -94,6 +97,12 @@ export default function BarcodeScannerScreen() {
   const [cooldown, setCooldown] = useState(false);
   const [showManualInput, setShowManualInput] = useState(false);
   const [manualCode, setManualCode] = useState("");
+  const lastBarcodeRef = useRef<string>("");
+  const [manualName, setManualName] = useState("");
+  const [manualWeight, setManualWeight] = useState("");
+  const [manualUnit, setManualUnit] = useState<"g" | "kg">("g");
+  const [manualFrontPhoto, setManualFrontPhoto] = useState<{ uri: string; base64: string } | null>(null);
+  const [manualBackPhoto, setManualBackPhoto] = useState<{ uri: string; base64: string } | null>(null);
 
   const topPadding = Platform.OS === "web" ? 20 : insets.top;
 
@@ -125,10 +134,46 @@ export default function BarcodeScannerScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     },
     onError: (err: Error) => {
-      setPhase("scanning");
-      setCooldown(true);
-      setTimeout(() => setCooldown(false), 2000);
-      Alert.alert("Attenzione", err.message ?? "Errore nella ricerca del prodotto");
+      const msg = err.message ?? "";
+      if (msg.toLowerCase().includes("già stato scansionato") || msg.toLowerCase().includes("limite")) {
+        setPhase("scanning");
+        setCooldown(true);
+        setTimeout(() => setCooldown(false), 2000);
+        Alert.alert("Attenzione", msg);
+      } else {
+        setManualName("");
+        setManualWeight("");
+        setManualUnit("g");
+        setManualFrontPhoto(null);
+        setManualBackPhoto(null);
+        setPhase("manual-form");
+      }
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    },
+  });
+
+  const manualMutation = useMutation({
+    mutationFn: (params: { name: string; weightValue: number; weightUnit: "g" | "kg"; frontImageBase64?: string; backImageBase64?: string }) =>
+      apiFetch<LookupResult>("/scan/barcode/manual-classify", {
+        method: "POST",
+        body: JSON.stringify({
+          barcode: lastBarcodeRef.current,
+          receiptId,
+          name: params.name,
+          weightValue: params.weightValue,
+          weightUnit: params.weightUnit,
+          frontImageBase64: params.frontImageBase64,
+          backImageBase64: params.backImageBase64,
+        }),
+      }),
+    onSuccess: (data) => {
+      setLookupData(data);
+      setPhase("preview");
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    },
+    onError: (err: Error) => {
+      setPhase("manual-form");
+      Alert.alert("Errore", err.message ?? "Impossibile classificare il prodotto");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     },
   });
@@ -170,6 +215,7 @@ export default function BarcodeScannerScreen() {
     async ({ data }: { data: string }) => {
       if (phase !== "scanning" || cooldown) return;
       setPhase("looking-up");
+      lastBarcodeRef.current = data;
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
       let imageBase64: string | undefined;
@@ -190,6 +236,46 @@ export default function BarcodeScannerScreen() {
     },
     [phase, cooldown],
   );
+
+  const takeManualPhoto = async (side: "front" | "back") => {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert("Permesso negato", "Abilita l'accesso alla fotocamera nelle impostazioni");
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.6, mediaTypes: "images" });
+    if (!result.canceled && result.assets[0]) {
+      const { uri, base64 } = result.assets[0];
+      if (base64) {
+        if (side === "front") setManualFrontPhoto({ uri, base64 });
+        else setManualBackPhoto({ uri, base64 });
+      }
+    }
+  };
+
+  const submitManualEntry = () => {
+    const weightNum = parseFloat(manualWeight.replace(",", "."));
+    if (!manualName.trim() || manualName.trim().length < 2) {
+      Alert.alert("Attenzione", "Inserisci il nome del prodotto (minimo 2 caratteri).");
+      return;
+    }
+    if (!manualWeight || isNaN(weightNum) || weightNum <= 0) {
+      Alert.alert("Attenzione", "Inserisci un peso valido.");
+      return;
+    }
+    if (!manualFrontPhoto && !manualBackPhoto) {
+      Alert.alert("Attenzione", "Scatta almeno una foto della confezione.");
+      return;
+    }
+    setPhase("manual-classifying");
+    manualMutation.mutate({
+      name: manualName.trim(),
+      weightValue: weightNum,
+      weightUnit: manualUnit,
+      frontImageBase64: manualFrontPhoto?.base64,
+      backImageBase64: manualBackPhoto?.base64,
+    });
+  };
 
   const handleConfirm = () => {
     if (!lookupData) return;
@@ -261,6 +347,7 @@ export default function BarcodeScannerScreen() {
   }
 
   if (phase === "preview" && lookupData) {
+    const isGeneric = lookupData.source === "ai-fallback" || lookupData.source === "ai" || lookupData.productName.startsWith("Prodotto ");
     return (
       <View style={[styles.container, { paddingTop: topPadding }]}>
         <LinearGradient colors={[Colors.forest, Colors.leaf]} style={styles.previewBanner}>
@@ -279,21 +366,45 @@ export default function BarcodeScannerScreen() {
           </Animated.View>
         </LinearGradient>
 
-        <Animated.View entering={FadeInDown.delay(200)} style={styles.previewActions}>
+        <Animated.View entering={FadeInDown.delay(200)} style={styles.previewConfirmQuestion}>
+          <Feather name="help-circle" size={16} color={Colors.text} />
+          <Text style={styles.previewConfirmText}>Il prodotto rilevato è corretto?</Text>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.delay(250)} style={styles.previewActions}>
           <Pressable style={styles.rejectBtn} onPress={handleReject}>
             <Feather name="x" size={18} color={Colors.red} />
-            <Text style={styles.rejectBtnText}>Annulla</Text>
+            <Text style={styles.rejectBtnText}>No, salta</Text>
           </Pressable>
           <Pressable style={styles.confirmBtn} onPress={handleConfirm}>
             <Feather name="check" size={18} color="#fff" />
-            <Text style={styles.confirmBtnText}>Conferma</Text>
+            <Text style={styles.confirmBtnText}>Sì, aggiungi</Text>
           </Pressable>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(300)} style={styles.previewHintBox}>
+        {isGeneric && (
+          <Animated.View entering={FadeInDown.delay(300)}>
+            <Pressable
+              style={styles.manualEntryLink}
+              onPress={() => {
+                setManualName("");
+                setManualWeight("");
+                setManualUnit("g");
+                setManualFrontPhoto(null);
+                setManualBackPhoto(null);
+                setPhase("manual-form");
+              }}
+            >
+              <Feather name="edit-3" size={14} color={Colors.leaf} />
+              <Text style={styles.manualEntryLinkText}>Non è corretto? Inseriscilo tu manualmente</Text>
+            </Pressable>
+          </Animated.View>
+        )}
+
+        <Animated.View entering={FadeInDown.delay(350)} style={styles.previewHintBox}>
           <Feather name="info" size={14} color={Colors.textSecondary} />
           <Text style={styles.previewHintText}>
-            Conferma se hai acquistato questo prodotto per ricevere i punti
+            Conferma solo se hai acquistato questo prodotto
           </Text>
         </Animated.View>
       </View>
@@ -381,6 +492,132 @@ export default function BarcodeScannerScreen() {
           </Animated.View>
         )}
       </View>
+    );
+  }
+
+  if (phase === "manual-classifying") {
+    return (
+      <View style={[styles.centered, { paddingTop: topPadding }]}>
+        <ActivityIndicator size="large" color={Colors.leaf} />
+        <Text style={styles.processingFullText}>Classificazione in corso...</Text>
+        <Text style={[styles.processingFullText, { fontSize: 14, color: Colors.textSecondary, marginTop: 4 }]}>
+          Claude sta analizzando il prodotto
+        </Text>
+      </View>
+    );
+  }
+
+  if (phase === "manual-form") {
+    const weightNum = parseFloat(manualWeight.replace(",", "."));
+    const canSubmit = manualName.trim().length >= 2 && !isNaN(weightNum) && weightNum > 0 && (manualFrontPhoto !== null || manualBackPhoto !== null);
+    return (
+      <KeyboardAvoidingView
+        style={[styles.container, { paddingTop: topPadding }]}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <ScrollView contentContainerStyle={{ paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
+          <View style={styles.manualFormHeader}>
+            <Pressable onPress={() => setPhase("scanning")} style={styles.manualFormBack}>
+              <Feather name="x" size={22} color={Colors.text} />
+            </Pressable>
+            <Text style={styles.manualFormTitle}>Inserimento manuale</Text>
+            <View style={{ width: 36 }} />
+          </View>
+
+          <View style={styles.manualFormSection}>
+            <Text style={styles.manualFormLabel}>Nome prodotto *</Text>
+            <TextInput
+              style={styles.manualFormInput}
+              value={manualName}
+              onChangeText={setManualName}
+              placeholder="Es. Pane integrale Mulino Bianco"
+              placeholderTextColor={Colors.textSecondary}
+              returnKeyType="next"
+              autoFocus
+            />
+          </View>
+
+          <View style={styles.manualFormSection}>
+            <Text style={styles.manualFormLabel}>Peso / Quantità *</Text>
+            <View style={styles.manualWeightRow}>
+              <TextInput
+                style={[styles.manualFormInput, { flex: 1, marginRight: 10 }]}
+                value={manualWeight}
+                onChangeText={setManualWeight}
+                placeholder="Es. 500"
+                placeholderTextColor={Colors.textSecondary}
+                keyboardType="decimal-pad"
+                returnKeyType="done"
+              />
+              <View style={styles.unitToggle}>
+                <Pressable
+                  style={[styles.unitBtn, manualUnit === "g" && styles.unitBtnActive]}
+                  onPress={() => setManualUnit("g")}
+                >
+                  <Text style={[styles.unitBtnText, manualUnit === "g" && styles.unitBtnTextActive]}>g</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.unitBtn, manualUnit === "kg" && styles.unitBtnActive]}
+                  onPress={() => setManualUnit("kg")}
+                >
+                  <Text style={[styles.unitBtnText, manualUnit === "kg" && styles.unitBtnTextActive]}>kg</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.manualFormSection}>
+            <Text style={styles.manualFormLabel}>Foto confezione * (almeno una)</Text>
+            <Text style={styles.manualFormSublabel}>Includi il codice a barre nel fronte o retro</Text>
+            <View style={styles.photoRow}>
+              <Pressable style={styles.photoBtn} onPress={() => takeManualPhoto("front")}>
+                {manualFrontPhoto ? (
+                  <Image source={{ uri: manualFrontPhoto.uri }} style={styles.photoPreview} />
+                ) : (
+                  <View style={styles.photoPlaceholder}>
+                    <Feather name="camera" size={28} color={Colors.textSecondary} />
+                    <Text style={styles.photoBtnLabel}>Fronte</Text>
+                  </View>
+                )}
+                {manualFrontPhoto && (
+                  <View style={styles.photoCheckBadge}>
+                    <Feather name="check" size={12} color="#fff" />
+                  </View>
+                )}
+              </Pressable>
+              <Pressable style={styles.photoBtn} onPress={() => takeManualPhoto("back")}>
+                {manualBackPhoto ? (
+                  <Image source={{ uri: manualBackPhoto.uri }} style={styles.photoPreview} />
+                ) : (
+                  <View style={styles.photoPlaceholder}>
+                    <Feather name="camera" size={28} color={Colors.textSecondary} />
+                    <Text style={styles.photoBtnLabel}>Retro</Text>
+                    <Text style={styles.photoBtnSublabel}>con barcode</Text>
+                  </View>
+                )}
+                {manualBackPhoto && (
+                  <View style={styles.photoCheckBadge}>
+                    <Feather name="check" size={12} color="#fff" />
+                  </View>
+                )}
+              </Pressable>
+            </View>
+          </View>
+
+          <Pressable
+            style={[styles.manualSubmitBtn, !canSubmit && styles.manualSubmitBtnDisabled]}
+            onPress={submitManualEntry}
+            disabled={!canSubmit}
+          >
+            <Feather name="zap" size={18} color="#fff" />
+            <Text style={styles.manualSubmitBtnText}>Classifica con AI</Text>
+          </Pressable>
+
+          <Pressable style={styles.manualCancelScan} onPress={() => setPhase("scanning")}>
+            <Text style={styles.manualCancelScanText}>← Torna alla scansione</Text>
+          </Pressable>
+        </ScrollView>
+      </KeyboardAvoidingView>
     );
   }
 
@@ -595,5 +832,109 @@ const styles = StyleSheet.create({
   },
   targetProductText: {
     fontSize: 13, fontFamily: "Inter_600SemiBold", color: "#fff", flex: 1,
+  },
+  previewConfirmQuestion: {
+    flexDirection: "row", alignItems: "center", gap: 8,
+    paddingHorizontal: 20, paddingTop: 18, paddingBottom: 4,
+  },
+  previewConfirmText: {
+    fontSize: 16, fontFamily: "Inter_600SemiBold", color: Colors.text,
+  },
+  manualEntryLink: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    paddingHorizontal: 20, paddingVertical: 10,
+  },
+  manualEntryLinkText: {
+    fontSize: 14, fontFamily: "Inter_500Medium", color: Colors.leaf,
+    textDecorationLine: "underline",
+  },
+  manualFormHeader: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 20, paddingVertical: 16,
+  },
+  manualFormBack: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: Colors.card, alignItems: "center", justifyContent: "center",
+  },
+  manualFormTitle: {
+    fontSize: 18, fontFamily: "DMSans_700Bold", color: Colors.text,
+  },
+  manualFormSection: {
+    paddingHorizontal: 20, marginBottom: 18,
+  },
+  manualFormLabel: {
+    fontSize: 13, fontFamily: "Inter_600SemiBold", color: Colors.text,
+    marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5,
+  },
+  manualFormSublabel: {
+    fontSize: 12, fontFamily: "Inter_400Regular", color: Colors.textSecondary,
+    marginBottom: 10,
+  },
+  manualFormInput: {
+    backgroundColor: Colors.card, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13,
+    fontSize: 16, fontFamily: "Inter_400Regular", color: Colors.text,
+    borderWidth: 1.5, borderColor: Colors.border,
+  },
+  manualWeightRow: {
+    flexDirection: "row", alignItems: "center",
+  },
+  unitToggle: {
+    flexDirection: "row", backgroundColor: Colors.card, borderRadius: 10,
+    borderWidth: 1.5, borderColor: Colors.border, overflow: "hidden",
+  },
+  unitBtn: {
+    paddingHorizontal: 16, paddingVertical: 13,
+    alignItems: "center", justifyContent: "center",
+  },
+  unitBtnActive: {
+    backgroundColor: Colors.leaf,
+  },
+  unitBtnText: {
+    fontSize: 15, fontFamily: "Inter_600SemiBold", color: Colors.textSecondary,
+  },
+  unitBtnTextActive: {
+    color: "#fff",
+  },
+  photoRow: {
+    flexDirection: "row", gap: 12,
+  },
+  photoBtn: {
+    flex: 1, borderRadius: 14, overflow: "hidden",
+    borderWidth: 1.5, borderColor: Colors.border, borderStyle: "dashed",
+    minHeight: 120, position: "relative",
+  },
+  photoPreview: {
+    width: "100%", height: 120, resizeMode: "cover",
+  },
+  photoPlaceholder: {
+    flex: 1, alignItems: "center", justifyContent: "center",
+    padding: 16, gap: 6, minHeight: 120, backgroundColor: Colors.card,
+  },
+  photoBtnLabel: {
+    fontSize: 13, fontFamily: "Inter_600SemiBold", color: Colors.textSecondary,
+  },
+  photoBtnSublabel: {
+    fontSize: 11, fontFamily: "Inter_400Regular", color: Colors.textSecondary,
+  },
+  photoCheckBadge: {
+    position: "absolute", top: 6, right: 6, width: 20, height: 20, borderRadius: 10,
+    backgroundColor: Colors.leaf, alignItems: "center", justifyContent: "center",
+  },
+  manualSubmitBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    backgroundColor: Colors.leaf, borderRadius: 16, paddingVertical: 16,
+    marginHorizontal: 20, marginTop: 8, marginBottom: 12,
+  },
+  manualSubmitBtnDisabled: {
+    opacity: 0.4,
+  },
+  manualSubmitBtnText: {
+    fontSize: 16, fontFamily: "Inter_700Bold", color: "#fff",
+  },
+  manualCancelScan: {
+    alignItems: "center", paddingVertical: 8,
+  },
+  manualCancelScanText: {
+    fontSize: 14, fontFamily: "Inter_500Medium", color: Colors.textSecondary,
   },
 });

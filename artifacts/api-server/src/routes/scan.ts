@@ -4,7 +4,7 @@ import { db, usersTable, receiptsTable, barcodeScansTable, productCacheTable } f
 import { ScanReceiptBody } from "@workspace/api-zod";
 import { hashImage, extractTextViaGoogleVision, calculateLevel } from "../lib/scanner";
 import { runAntiFraudChecks, approvePendingPoints } from "../lib/antiFraud";
-import { lookupBarcode, validateReceiptWithAI, classifyProductsBatch, validateBarcodeImage, isValidBarcode, matchProductToReceipt, type PendingProduct } from "../lib/productClassifier";
+import { lookupBarcode, validateReceiptWithAI, classifyProductsBatch, validateBarcodeImage, isValidBarcode, matchProductToReceipt, classifyManualProduct, type PendingProduct } from "../lib/productClassifier";
 import { uploadReceiptImage } from "../lib/receiptImages";
 import { matchChain, isAcceptedStore } from "../lib/supermarketWhitelist";
 import { requireUser } from "./profile";
@@ -434,6 +434,88 @@ router.post("/scan/barcode/preview", async (req, res): Promise<void> => {
     emoji: product.emoji,
     reasoning: product.reasoning,
     source: product.source,
+  });
+});
+
+router.post("/scan/barcode/manual-classify", async (req, res): Promise<void> => {
+  const user = await requireUser(req, res);
+  if (!user) return;
+
+  const { barcode, receiptId: receiptIdRaw, name, weightValue, weightUnit, frontImageBase64, backImageBase64 } = req.body as {
+    barcode?: string;
+    receiptId?: string | number;
+    name?: string;
+    weightValue?: number;
+    weightUnit?: string;
+    frontImageBase64?: string;
+    backImageBase64?: string;
+  };
+
+  if (!name || typeof name !== "string" || name.trim().length < 2) {
+    res.status(400).json({ error: "Nome prodotto obbligatorio (minimo 2 caratteri)." });
+    return;
+  }
+  if (typeof weightValue !== "number" || weightValue <= 0 || weightValue > 100000) {
+    res.status(400).json({ error: "Peso non valido. Inserisci un valore tra 1 e 100000." });
+    return;
+  }
+  if (!["g", "kg"].includes(weightUnit ?? "")) {
+    res.status(400).json({ error: "Unità di peso non valida. Usa 'g' o 'kg'." });
+    return;
+  }
+
+  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const [pointsSumRow] = await db
+    .select({ total: sql<number>`coalesce(sum(points_earned), 0)::int` })
+    .from(barcodeScansTable)
+    .where(and(eq(barcodeScansTable.userId, user.id), gte(barcodeScansTable.scannedAt, oneDayAgo)));
+  const pointsEarnedToday = pointsSumRow?.total ?? 0;
+  const MAX_DAILY_POINTS = 200;
+  const remainingCap = MAX_DAILY_POINTS - pointsEarnedToday;
+
+  if (remainingCap <= 0) {
+    res.status(400).json({ error: `Hai raggiunto il limite di ${MAX_DAILY_POINTS} punti al giorno. Torna domani!` });
+    return;
+  }
+
+  const cleanBarcode = (barcode ?? "").trim().replace(/[^0-9]/g, "") || `manual_${user.id}_${Date.now()}`;
+
+  if (cleanBarcode && cleanBarcode.startsWith("manual") === false) {
+    await db.delete(productCacheTable).where(eq(productCacheTable.productNameNormalized, `barcode:${cleanBarcode}`));
+  }
+
+  const result = await classifyManualProduct(
+    cleanBarcode,
+    name.trim(),
+    weightValue,
+    weightUnit as "g" | "kg",
+    frontImageBase64 && typeof frontImageBase64 === "string" && frontImageBase64.length > 100 ? frontImageBase64 : undefined,
+    backImageBase64 && typeof backImageBase64 === "string" && backImageBase64.length > 100 ? backImageBase64 : undefined,
+  );
+
+  await db.insert(productCacheTable).values({
+    productNameNormalized: `barcode:${cleanBarcode}`,
+    productNameOriginal: result.productName,
+    ecoScore: result.ecoScore,
+    points: result.points,
+    category: result.category,
+    source: result.source,
+    reasoning: result.reasoning,
+    emoji: result.emoji,
+    co2PerUnit: 0.1,
+  }).onConflictDoNothing();
+
+  res.json({
+    barcode: cleanBarcode,
+    productName: result.productName,
+    ecoScore: result.ecoScore,
+    pointsToAward: Math.min(result.points, remainingCap),
+    category: result.category,
+    emoji: result.emoji,
+    reasoning: result.reasoning,
+    source: result.source,
+    remainingDailyPoints: remainingCap,
+    isManual: true,
   });
 });
 

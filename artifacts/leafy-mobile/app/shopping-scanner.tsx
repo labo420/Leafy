@@ -360,21 +360,26 @@ export default function ShoppingScannerScreen() {
           </Animated.View>
         </LinearGradient>
 
-        <Animated.View entering={FadeInDown.delay(200)} style={styles.previewActions}>
+        <Animated.View entering={FadeInDown.delay(200)} style={styles.previewConfirmQuestion}>
+          <Feather name="help-circle" size={16} color={Colors.text} />
+          <Text style={styles.previewConfirmText}>Il prodotto rilevato è corretto?</Text>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.delay(250)} style={styles.previewActions}>
           <Pressable style={styles.skipBtn} onPress={handleSkip}>
             <Feather name="x" size={18} color={Colors.textSecondary} />
-            <Text style={styles.skipBtnText}>Salta</Text>
+            <Text style={styles.skipBtnText}>No, salta</Text>
           </Pressable>
           <Pressable style={styles.addBtn} onPress={handleAddProduct}>
             <Feather name="plus" size={18} color="#fff" />
-            <Text style={styles.addBtnText}>Aggiungi</Text>
+            <Text style={styles.addBtnText}>Sì, aggiungi</Text>
           </Pressable>
         </Animated.View>
 
         <View style={styles.previewHintBox}>
           <Feather name="info" size={14} color={Colors.textSecondary} />
           <Text style={styles.previewHintText}>
-            Questa è una stima — i punti reali verranno assegnati dopo la scansione dello scontrino
+            Stima — i punti reali verranno assegnati dopo la scansione dello scontrino
           </Text>
         </View>
       </View>
@@ -596,6 +601,13 @@ const styles = StyleSheet.create({
   },
   addBtnText: { fontSize: 16, fontFamily: "Inter_700Bold", color: "#fff" },
 
+  previewConfirmQuestion: {
+    flexDirection: "row", alignItems: "center", gap: 8,
+    paddingHorizontal: 20, paddingTop: 18, paddingBottom: 4,
+  },
+  previewConfirmText: {
+    fontSize: 16, fontFamily: "Inter_600SemiBold", color: Colors.text,
+  },
   previewHintBox: {
     flexDirection: "row", alignItems: "center", gap: 8,
     marginHorizontal: 20, backgroundColor: Colors.cardAlt, borderRadius: 12, padding: 14,
