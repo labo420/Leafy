@@ -613,14 +613,14 @@ export default function ProfiloScreen() {
           {challenges.map((c) => (
             <View key={c.id} style={styles.challengeCard}>
               <View style={styles.challengeHeader}>
-                <Text style={styles.challengeName}>{c.name}</Text>
-                {c.completed ? (
+                <Text style={styles.challengeName}>{c.title}</Text>
+                {c.isCompleted ? (
                   <View style={styles.completedBadge}>
                     <Feather name="check" size={12} color={Colors.leaf} />
                     <Text style={styles.completedText}>Completata</Text>
                   </View>
                 ) : (
-                  <Text style={styles.challengeBonus}>+{c.bonusPoints} pt</Text>
+                  <Text style={styles.challengeBonus}>+{c.rewardPoints} pt</Text>
                 )}
               </View>
               <Text style={styles.challengeDesc}>{c.description}</Text>
@@ -629,14 +629,14 @@ export default function ProfiloScreen() {
                   style={[
                     styles.challengeProgressFill,
                     {
-                      width: `${Math.min(100, ((c.currentProgress ?? 0) / c.targetValue) * 100)}%`,
-                      backgroundColor: c.completed ? Colors.leaf : Colors.primary,
+                      width: `${Math.min(100, c.progressPercent)}%`,
+                      backgroundColor: c.isCompleted ? Colors.leaf : Colors.primary,
                     },
                   ]}
                 />
               </View>
               <Text style={styles.challengeProgressLabel}>
-                {c.currentProgress ?? 0} / {c.targetValue}
+                {c.currentCount} / {c.targetCount}
               </Text>
             </View>
           ))}
