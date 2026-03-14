@@ -138,7 +138,7 @@ function HowItWorksSection() {
       {open && (
         <View style={styles.howSteps}>
           {[
-            { icon: "file-text" as const, text: "Fotografa lo scontrino (totale e data visibili)" },
+            { icon: "file-text" as const, text: "Fotografa lo scontrino" },
             { icon: "maximize" as const, text: "Scansiona i codici a barre dei prodotti" },
             { icon: "award" as const, text: "Guadagna punti in base al Punteggio Verde" },
           ].map((step, i) => (
@@ -536,18 +536,21 @@ export default function ScanScreen() {
                   >
                     <Feather name="camera" size={72} color="#fff" />
                     <Text style={styles.bigBtnLabel}>Fotografa lo scontrino</Text>
-                    <Text style={styles.bigBtnHint}>Totale e data visibili</Text>
                   </LinearGradient>
                 </Animated.View>
               </View>
             </Pressable>
             <Pressable
-              style={({ pressed }) => [styles.galleryLink, pressed && { opacity: 0.6 }]}
+              style={({ pressed }) => [styles.galleryLink, pressed && { opacity: 0.65 }]}
               onPress={() => pickImage("gallery")}
             >
-              <Feather name="image" size={15} color={Colors.textSecondary} />
+              <Feather name="image" size={15} color={Colors.leaf} />
               <Text style={styles.galleryLinkText}>Scegli dalla galleria</Text>
             </Pressable>
+            <View style={styles.scanHint}>
+              <Feather name="info" size={13} color={Colors.textSecondary} />
+              <Text style={styles.scanHintText}>Assicurati che totale e data siano leggibili</Text>
+            </View>
           </Animated.View>
 
           <Animated.View entering={FadeInDown.delay(200).springify()}>
@@ -604,7 +607,7 @@ const styles = StyleSheet.create({
 
   bigBtnCenter: {
     alignItems: "center", justifyContent: "center",
-    paddingTop: 30, paddingBottom: 12,
+    paddingTop: 30, paddingBottom: 20,
   },
   bigBtnPulseContainer: {
     width: 320, height: 320,
@@ -639,10 +642,24 @@ const styles = StyleSheet.create({
   },
 
   galleryLink: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
-    paddingVertical: 10, marginTop: 2,
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7,
+    paddingVertical: 11, paddingHorizontal: 24,
+    marginTop: 16,
+    borderRadius: 50,
+    borderWidth: 1.5,
+    borderColor: "rgba(46,107,80,0.3)",
+    backgroundColor: "rgba(46,107,80,0.06)",
   },
-  galleryLinkText: { fontSize: 13, fontFamily: "Inter_500Medium", color: Colors.textSecondary },
+  galleryLinkText: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: Colors.leaf },
+
+  scanHint: {
+    flexDirection: "row", alignItems: "center", gap: 5,
+    marginTop: 12, paddingHorizontal: 20,
+  },
+  scanHintText: {
+    fontSize: 12, fontFamily: "Inter_400Regular",
+    color: Colors.textSecondary, textAlign: "center", flexShrink: 1,
+  },
 
   shoppingModeBtn: {
     marginHorizontal: 20, marginBottom: 4, marginTop: 4,
