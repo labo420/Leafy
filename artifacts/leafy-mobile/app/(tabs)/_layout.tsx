@@ -29,7 +29,7 @@ function TabIcon({ focused, children }: { focused: boolean; children: React.Reac
 
 function FloatingScanButton({ focused }: { focused: boolean }) {
   const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: withSpring(focused ? 1.05 : 1) }],
+    transform: [{ scale: withSpring(focused ? 1.08 : 1) }],
   }));
 
   return (
@@ -40,7 +40,7 @@ function FloatingScanButton({ focused }: { focused: boolean }) {
         end={{ x: 1, y: 1 }}
         style={styles.scanBtnGradient}
       >
-        <Feather name="camera" size={26} color="#fff" />
+        <Feather name="camera" size={32} color="#fff" />
       </LinearGradient>
       {focused && <View style={styles.scanBtnRing} />}
     </Animated.View>
@@ -122,7 +122,7 @@ export default function TabLayout() {
           tabBarIcon: ({ focused }) => <FloatingScanButton focused={focused} />,
           tabBarLabel: () => null,
           tabBarItemStyle: {
-            top: -16,
+            top: -20,
           },
         }}
         listeners={{
@@ -164,29 +164,29 @@ const styles = StyleSheet.create({
     padding: 6,
   },
   scanBtnOuter: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 75,
+    height: 75,
+    borderRadius: 37.5,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: Colors.leaf,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 14,
+    elevation: 10,
   },
   scanBtnGradient: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 75,
+    height: 75,
+    borderRadius: 37.5,
     alignItems: "center",
     justifyContent: "center",
   },
   scanBtnRing: {
     position: "absolute",
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: 85,
+    height: 85,
+    borderRadius: 42.5,
     borderWidth: 3,
     borderColor: "rgba(46,107,80,0.20)",
   },
