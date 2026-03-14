@@ -216,9 +216,9 @@ export default function History() {
                       <div>
                         <p className="text-xs font-semibold text-foreground mb-1">Come funziona l'analisi</p>
                         <p className="text-xs text-muted-foreground leading-relaxed">
-                          Il testo dello scontrino viene analizzato cercando parole chiave green:
-                          <span className="font-medium text-foreground"> bio, biologico, km 0, vegano, senza plastica, fairtrade, artigianale, DOP/IGP</span>.
-                          Ogni categoria riconosciuta assegna un punteggio diverso basato sull'impatto ambientale.
+                          I prodotti vengono classificati tramite i dati di
+                          <span className="font-medium text-foreground"> Open Food Facts</span>,
+                          il database aperto di prodotti alimentari. Ogni categoria assegna un punteggio diverso basato sull'impatto ambientale.
                         </p>
                       </div>
                     </section>
