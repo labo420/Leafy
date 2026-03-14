@@ -465,9 +465,12 @@ Regole:
           const obj = p as Record<string, unknown>;
           const name = typeof obj.name === "string" ? obj.name.trim() : "";
           const raw = typeof obj.raw === "string" ? obj.raw.trim() : "";
-          if (name.length >= 2) {
-            if (raw) console.log(`[products] raw="${raw}" → name="${name}"`);
-            return [name];
+          const preferred = raw.length >= 2 ? raw : name;
+          if (preferred.length >= 2) {
+            if (raw && name && raw !== name) {
+              console.log(`[products] raw="${raw}" → name="${name}" → using raw`);
+            }
+            return [preferred];
           }
         }
         return [];

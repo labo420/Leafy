@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { eq, and, gte, desc, sql } from "drizzle-orm";
-import { db, usersTable, receiptsTable, barcodeScansTable } from "@workspace/db";
+import { db, usersTable, receiptsTable, barcodeScansTable, productCacheTable } from "@workspace/db";
 import { ScanReceiptBody } from "@workspace/api-zod";
 import { hashImage, extractTextViaGoogleVision, calculateLevel } from "../lib/scanner";
 import { runAntiFraudChecks, approvePendingPoints } from "../lib/antiFraud";
@@ -485,6 +485,60 @@ router.get("/scan/active-session", async (req, res): Promise<void> => {
       scannedAt: s.scannedAt,
     })),
   });
+});
+
+router.post("/scan/products/correct", async (req, res): Promise<void> => {
+  const user = await requireUser(req, res);
+  if (!user) return;
+
+  const { receiptId, originalName, correctedName } = req.body as {
+    receiptId?: number;
+    originalName?: string;
+    correctedName?: string;
+  };
+
+  if (!receiptId || !originalName?.trim() || !correctedName?.trim()) {
+    res.status(400).json({ error: "receiptId, originalName e correctedName sono obbligatori" });
+    return;
+  }
+
+  const trimmedCorrection = correctedName.trim();
+
+  const [receipt] = await db
+    .select()
+    .from(receiptsTable)
+    .where(and(eq(receiptsTable.id, receiptId), eq(receiptsTable.userId, user.id)))
+    .limit(1);
+
+  if (!receipt) {
+    res.status(404).json({ error: "Scontrino non trovato" });
+    return;
+  }
+
+  const normalizeProductName = (name: string) =>
+    name.toLowerCase().trim().replace(/\s+/g, " ").replace(/[^a-z0-9àèéìòù ]/g, "");
+
+  const normalizedOld = normalizeProductName(originalName.trim());
+  await db.delete(productCacheTable).where(eq(productCacheTable.productNameNormalized, normalizedOld));
+
+  const classified = await classifyProductsBatch([trimmedCorrection]);
+  const newItem = classified[0] ?? { name: trimmedCorrection, category: "Altro", points: 5, emoji: "🌿" };
+
+  let greenItems: Array<{ name: string; category: string; points: number; emoji: string }> = [];
+  try { greenItems = JSON.parse(receipt.greenItemsJson ?? "[]"); } catch {}
+
+  const updatedItems = greenItems.map((item) =>
+    item.name === originalName.trim()
+      ? { ...item, name: newItem.name, category: newItem.category, points: newItem.points, emoji: newItem.emoji }
+      : item
+  );
+
+  await db
+    .update(receiptsTable)
+    .set({ greenItemsJson: JSON.stringify(updatedItems) })
+    .where(eq(receiptsTable.id, receiptId));
+
+  res.json({ success: true, item: newItem });
 });
 
 export default router;

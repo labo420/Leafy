@@ -2,6 +2,7 @@ import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Modal,
   Platform,
@@ -9,11 +10,12 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import Colors from "@/constants/colors";
 import { apiFetch } from "@/lib/api";
@@ -42,12 +44,19 @@ interface BarcodeScanItem {
   scannedAt: string;
 }
 
+interface GreenItem {
+  name: string;
+  category: string;
+  points: number;
+  emoji: string;
+}
+
 interface ReceiptDetailData {
   id: number;
   storeName: string | null;
   purchaseDate: string | null;
   pointsEarned: number;
-  greenItems: Array<{ itemName: string; category: string; pointsAwarded: number }>;
+  greenItems: GreenItem[];
   scannedAt: string;
   barcodeExpiry: string | null;
   barcodeScans: BarcodeScanItem[];
@@ -83,10 +92,40 @@ function EcoScoreBadge({ score }: { score: string | null }) {
 }
 
 function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }) {
+  const queryClient = useQueryClient();
   const { data, isLoading } = useQuery<ReceiptDetailData>({
     queryKey: ["receipt", id],
     queryFn: () => apiFetch(`/receipts/${id}`),
   });
+
+  const [editingItem, setEditingItem] = useState<GreenItem | null>(null);
+  const [correctionText, setCorrectionText] = useState("");
+
+  const correctMutation = useMutation({
+    mutationFn: ({ originalName, correctedName }: { originalName: string; correctedName: string }) =>
+      apiFetch("/scan/products/correct", {
+        method: "POST",
+        body: JSON.stringify({ receiptId: id, originalName, correctedName }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["receipt", id] });
+      setEditingItem(null);
+      setCorrectionText("");
+    },
+    onError: () => {
+      Alert.alert("Errore", "Impossibile correggere il nome. Riprova.");
+    },
+  });
+
+  const openEdit = (item: GreenItem) => {
+    setEditingItem(item);
+    setCorrectionText(item.name);
+  };
+
+  const confirmCorrection = () => {
+    if (!editingItem || !correctionText.trim()) return;
+    correctMutation.mutate({ originalName: editingItem.name, correctedName: correctionText.trim() });
+  };
 
   const insets = useSafeAreaInsets();
 
@@ -148,19 +187,27 @@ function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }
 
             {data.greenItems && data.greenItems.length > 0 && (
               <>
-                <Text style={[styles.itemsTitle, { marginTop: 16 }]}>
-                  Prodotti green ({data.greenItems.length})
-                </Text>
+                <View style={styles.itemsTitleRow}>
+                  <Text style={[styles.itemsTitle, { marginTop: 16 }]}>
+                    Prodotti green ({data.greenItems.length})
+                  </Text>
+                  <Text style={styles.itemsHint}>Tocca ✏️ per correggere</Text>
+                </View>
                 {data.greenItems.map((item, i) => (
                   <View key={i} style={styles.itemRow}>
-                    <View style={styles.itemLeft}>
-                      <View style={styles.itemDot} />
-                      <View>
-                        <Text style={styles.itemName}>{item.itemName}</Text>
-                        <Text style={styles.itemCat}>{item.category}</Text>
-                      </View>
+                    <Text style={styles.itemEmoji}>{item.emoji ?? "🌿"}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.itemName}>{item.name}</Text>
+                      <Text style={styles.itemCat}>{item.category}</Text>
                     </View>
-                    <Text style={styles.itemPts}>+{item.pointsAwarded} pt</Text>
+                    <Text style={styles.itemPts}>+{item.points} pt</Text>
+                    <Pressable
+                      style={styles.editBtn}
+                      onPress={() => openEdit(item)}
+                      hitSlop={8}
+                    >
+                      <Feather name="edit-2" size={14} color={Colors.textSecondary} />
+                    </Pressable>
                   </View>
                 ))}
               </>
@@ -178,6 +225,51 @@ function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }
           </ScrollView>
         ) : null}
       </View>
+
+      {editingItem && (
+        <Modal visible animationType="fade" transparent onRequestClose={() => setEditingItem(null)}>
+          <View style={styles.correctionOverlay}>
+            <View style={styles.correctionSheet}>
+              <Text style={styles.correctionTitle}>Correggi il nome</Text>
+              <Text style={styles.correctionSub}>
+                Il sistema imparerà per le prossime scansioni.
+              </Text>
+              <TextInput
+                style={styles.correctionInput}
+                value={correctionText}
+                onChangeText={setCorrectionText}
+                autoFocus
+                returnKeyType="done"
+                onSubmitEditing={confirmCorrection}
+                placeholder="Nome corretto del prodotto"
+                placeholderTextColor={Colors.textMuted}
+              />
+              <View style={styles.correctionActions}>
+                <Pressable
+                  style={styles.correctionCancel}
+                  onPress={() => setEditingItem(null)}
+                >
+                  <Text style={styles.correctionCancelText}>Annulla</Text>
+                </Pressable>
+                <Pressable
+                  style={[
+                    styles.correctionConfirm,
+                    (!correctionText.trim() || correctMutation.isPending) && { opacity: 0.5 },
+                  ]}
+                  onPress={confirmCorrection}
+                  disabled={!correctionText.trim() || correctMutation.isPending}
+                >
+                  {correctMutation.isPending ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={styles.correctionConfirmText}>Conferma</Text>
+                  )}
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
     </Modal>
   );
 }
@@ -360,13 +452,45 @@ const styles = StyleSheet.create({
     borderRadius: 12, padding: 16,
   },
   noProductsText: { fontSize: 14, fontFamily: "Inter_400Regular", color: Colors.textSecondary, flex: 1 },
+  itemsTitleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  itemsHint: { fontSize: 11, fontFamily: "Inter_400Regular", color: Colors.textMuted, marginTop: 16 },
   itemRow: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    flexDirection: "row", alignItems: "center", gap: 10,
     backgroundColor: Colors.card, borderRadius: 12, padding: 14, marginBottom: 8,
   },
-  itemLeft: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
-  itemDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.primary },
+  itemEmoji: { fontSize: 20 },
   itemName: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: Colors.text },
-  itemCat: { fontSize: 11, fontFamily: "Inter_400Regular", color: Colors.textSecondary },
+  itemCat: { fontSize: 11, fontFamily: "Inter_400Regular", color: Colors.textSecondary, marginTop: 1 },
   itemPts: { fontSize: 14, fontFamily: "Inter_700Bold", color: Colors.leaf },
+  editBtn: {
+    width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.background,
+    alignItems: "center", justifyContent: "center", marginLeft: 2,
+  },
+  correctionOverlay: {
+    flex: 1, backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  correctionSheet: {
+    backgroundColor: Colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    padding: 24, gap: 12,
+  },
+  correctionTitle: { fontSize: 18, fontFamily: "Inter_700Bold", color: Colors.text },
+  correctionSub: { fontSize: 13, fontFamily: "Inter_400Regular", color: Colors.textSecondary, marginTop: -4 },
+  correctionInput: {
+    backgroundColor: Colors.card, borderWidth: 1.5, borderColor: Colors.border,
+    borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14,
+    fontSize: 15, fontFamily: "Inter_400Regular", color: Colors.text, marginTop: 4,
+  },
+  correctionActions: { flexDirection: "row", gap: 12, marginTop: 4, paddingBottom: 8 },
+  correctionCancel: {
+    flex: 1, alignItems: "center", justifyContent: "center",
+    backgroundColor: Colors.card, borderRadius: 14, paddingVertical: 14,
+    borderWidth: 1, borderColor: Colors.border,
+  },
+  correctionCancelText: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: Colors.textSecondary },
+  correctionConfirm: {
+    flex: 1, alignItems: "center", justifyContent: "center",
+    backgroundColor: Colors.leaf, borderRadius: 14, paddingVertical: 14,
+  },
+  correctionConfirmText: { fontSize: 15, fontFamily: "Inter_700Bold", color: "#fff" },
 });
