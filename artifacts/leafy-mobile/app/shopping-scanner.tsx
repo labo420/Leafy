@@ -215,28 +215,30 @@ export default function ShoppingScannerScreen() {
     );
   }
 
-  if (!permission) {
-    return (
-      <View style={[styles.centered, { paddingTop: topPadding }]}>
-        <ActivityIndicator size="large" color={Colors.leaf} />
-      </View>
-    );
-  }
+  if (Platform.OS !== "web") {
+    if (!permission) {
+      return (
+        <View style={[styles.centered, { paddingTop: topPadding }]}>
+          <ActivityIndicator size="large" color={Colors.leaf} />
+        </View>
+      );
+    }
 
-  if (!permission.granted) {
-    return (
-      <View style={[styles.centered, { paddingTop: topPadding }]}>
-        <Feather name="camera-off" size={56} color={Colors.textSecondary} />
-        <Text style={styles.permTitle}>Fotocamera richiesta</Text>
-        <Text style={styles.permSub}>Per scansionare i codici a barre serve accesso alla fotocamera</Text>
-        <Pressable style={styles.permBtn} onPress={requestPermission}>
-          <Text style={styles.permBtnText}>Abilita fotocamera</Text>
-        </Pressable>
-        <Pressable onPress={() => router.back()} style={{ marginTop: 16 }}>
-          <Text style={[styles.permSub, { color: Colors.leaf }]}>Torna indietro</Text>
-        </Pressable>
-      </View>
-    );
+    if (!permission.granted) {
+      return (
+        <View style={[styles.centered, { paddingTop: topPadding }]}>
+          <Feather name="camera-off" size={56} color={Colors.textSecondary} />
+          <Text style={styles.permTitle}>Fotocamera richiesta</Text>
+          <Text style={styles.permSub}>Per scansionare i codici a barre serve accesso alla fotocamera</Text>
+          <Pressable style={styles.permBtn} onPress={requestPermission}>
+            <Text style={styles.permBtnText}>Abilita fotocamera</Text>
+          </Pressable>
+          <Pressable onPress={() => router.back()} style={{ marginTop: 16 }}>
+            <Text style={[styles.permSub, { color: Colors.leaf }]}>Torna indietro</Text>
+          </Pressable>
+        </View>
+      );
+    }
   }
 
   if (phase === "report") {
@@ -381,6 +383,49 @@ export default function ShoppingScannerScreen() {
           <Text style={styles.previewHintText}>
             Stima — i punti reali verranno assegnati dopo la scansione dello scontrino
           </Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (Platform.OS === "web") {
+    return (
+      <View style={[styles.container, { paddingTop: topPadding }]}>
+        <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.border }}>
+          <Pressable onPress={finish} style={{ padding: 8 }}>
+            <Feather name="x" size={24} color={Colors.text} />
+          </Pressable>
+          <Text style={[styles.cameraTitle, { color: Colors.text, flex: 1, textAlign: "center" }]}>Modalità Spesa</Text>
+          <View style={{ width: 40 }} />
+        </View>
+        <View style={[styles.centered, { flex: 1, paddingHorizontal: 32 }]}>
+          <MaterialCommunityIcons name="barcode-scan" size={64} color={Colors.leaf} />
+          <Text style={styles.permTitle}>Inserisci codice a barre</Text>
+          <Text style={styles.permSub}>La fotocamera non è disponibile su web. Inserisci il codice del prodotto manualmente.</Text>
+          <TextInput
+            style={[styles.manualInput, { width: "100%", marginTop: 24 }]}
+            value={manualCode}
+            onChangeText={setManualCode}
+            keyboardType="number-pad"
+            placeholder="Es. 8712345678900"
+            placeholderTextColor={Colors.textSecondary}
+            maxLength={14}
+            autoFocus
+            returnKeyType="search"
+            onSubmitEditing={handleManualSearch}
+          />
+          <Pressable
+            style={[styles.permBtn, { marginTop: 12, flexDirection: "row", gap: 8, alignSelf: "stretch", justifyContent: "center", opacity: manualCode.trim().length < 8 || phase === "looking-up" ? 0.5 : 1 }]}
+            onPress={handleManualSearch}
+            disabled={manualCode.trim().length < 8 || phase === "looking-up"}
+          >
+            {phase === "looking-up" ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Feather name="search" size={16} color="#fff" />
+            )}
+            <Text style={styles.permBtnText}>Cerca prodotto</Text>
+          </Pressable>
         </View>
       </View>
     );
