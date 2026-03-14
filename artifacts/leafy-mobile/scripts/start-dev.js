@@ -9,6 +9,11 @@ const TUNNEL_FILE = "/tmp/expo-tunnel-url.txt";
 const NGROK_API = "http://127.0.0.1:4040/api/tunnels";
 const NGROK_AUTH_TOKEN = process.env.NGROK_AUTH_TOKEN || "";
 
+// Workaround: The system-managed .replit workflow file may specify a different PORT
+// than artifact.toml's localPort. The canvas health check uses the artifact port,
+// so we read it here and override the CLI --port arg to ensure Expo starts on the
+// correct port. A TCP bridge from the workflow port is created as a fallback so
+// the workflow's waitForPort check still passes.
 function readArtifactPort() {
   try {
     const tomlPath = path.join(__dirname, "..", ".replit-artifact", "artifact.toml");
