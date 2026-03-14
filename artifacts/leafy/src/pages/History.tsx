@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format, parseISO } from "date-fns";
 import { it } from "date-fns/locale";
-import { Receipt, CalendarDays, ShoppingBag, X, Info, Star } from "lucide-react";
+import { Receipt, CalendarDays, ShoppingBag, X, Info, Star, Camera, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function History() {
@@ -162,6 +162,27 @@ export default function History() {
               </div>
 
               <div className="px-6 py-5 space-y-6 pb-10">
+                {!loadingDetail && detail?.hasImage && (
+                  <section className="space-y-2">
+                    <div className="rounded-2xl overflow-hidden border border-border/50 bg-muted/30">
+                      <img
+                        src={`${import.meta.env.BASE_URL}api/receipts/${selectedId}/image`}
+                        alt="Foto scontrino"
+                        className="w-full max-h-64 object-contain"
+                        loading="lazy"
+                      />
+                    </div>
+                    {detail.imageExpiresAt && (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Clock className="w-3 h-3" />
+                        <span>
+                          Foto disponibile fino al {format(parseISO(detail.imageExpiresAt), "dd MMM yyyy", { locale: it })}
+                        </span>
+                      </div>
+                    )}
+                  </section>
+                )}
+
                 {loadingDetail ? (
                   <div className="space-y-3">
                     {[1, 2, 3].map(i => (

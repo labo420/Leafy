@@ -42,6 +42,9 @@ Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti 
 | `SESSION_SECRET` | Produzione | Segreto per la firma dei cookie di sessione |
 | `AI_INTEGRATIONS_ANTHROPIC_BASE_URL` | Auto | Fornita automaticamente da Replit AI Integrations |
 | `AI_INTEGRATIONS_ANTHROPIC_API_KEY` | Auto | Fornita automaticamente da Replit AI Integrations |
+| `DEFAULT_OBJECT_STORAGE_BUCKET_ID` | Auto | Bucket ID GCS per Object Storage (foto scontrini) |
+| `PRIVATE_OBJECT_DIR` | Auto | Directory privata su GCS |
+| `PUBLIC_OBJECT_SEARCH_PATHS` | Auto | Path ricerca oggetti pubblici |
 
 Per impostare i secrets su Replit: **Tools → Secrets**.
 
@@ -134,7 +137,10 @@ workspace/
 │   │           ├── productClassifier.ts  # Open Food Facts + Claude AI fallback + cache
 │   │           ├── antiFraud.ts          # 8-layer anti-frode system
 │   │           ├── scanner.ts            # Google Vision OCR + keyword matching
-│   │           └── auth.ts               # Session store
+│   │           ├── auth.ts               # Session store
+│   │           ├── receiptImages.ts      # Upload/serve/delete foto scontrini (GCS)
+│   │           ├── receiptImageCleanup.ts # Pulizia automatica foto scadute (30gg)
+│   │           └── objectStorage.ts      # GCS client wrapper (Replit sidecar auth)
 │   ├── leafy-mobile/        # App Expo React Native
 │   │   └── app/
 │   │       ├── (tabs)/
@@ -273,8 +279,9 @@ Base URL: `/api`
 | `POST /api/scan/barcode/lookup` | Preview prodotto da barcode (NO credito punti) |
 | `POST /api/scan/barcode/confirm` | Conferma e accredita punti |
 | `GET /api/scan/active-session` | Sessione barcode attiva + prodotti scansionati |
-| `GET /api/receipts` | Lista scontrini |
-| `GET /api/receipts/:id` | Dettaglio: greenItems + barcodeScans + Eco-Score |
+| `GET /api/receipts` | Lista scontrini (incl. `hasImage`, `imageExpiresAt`) |
+| `GET /api/receipts/:id` | Dettaglio: greenItems + barcodeScans + Eco-Score + foto |
+| `GET /api/receipts/:id/image` | Serve foto scontrino (auth-protected, 30gg retention) |
 
 ### Badge
 | Endpoint | Descrizione |
@@ -328,13 +335,15 @@ Indice unico su `(provider, provider_account_id)`.
 id, user_id (FK), store_name, purchase_date, image_hash, raw_text,
 points_earned, green_items_count, categories[], green_items_json,
 scanned_at, status, flag_reason, barcode_expiry, barcode_mode,
-receipt_date, receipt_total
+receipt_date, receipt_total, image_url, image_expires_at
 ```
 - `barcode_expiry` = scadenza sessione barcode (24h dopo scan)
 - `barcode_mode` = 1 (indica flusso barcode attivo)
 - `status` = `approved` | `pending` | `rejected`
 - `receipt_date` = data scontrino (YYYY-MM-DD) estratta dall'AI per anti-duplicato semantico
 - `receipt_total` = totale scontrino in centesimi estratto dall'AI per anti-duplicato semantico
+- `image_url` = path GCS della foto scontrino (pattern: `receipts/{userId}/{receiptId}.jpg`)
+- `image_expires_at` = scadenza foto (30 giorni dopo upload)
 
 ### `barcode_scans`
 ```

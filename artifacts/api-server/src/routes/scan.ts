@@ -5,6 +5,7 @@ import { ScanReceiptBody } from "@workspace/api-zod";
 import { hashImage, extractTextViaGoogleVision, calculateLevel } from "../lib/scanner";
 import { runAntiFraudChecks, approvePendingPoints } from "../lib/antiFraud";
 import { lookupBarcode, validateReceiptWithAI, classifyProductsBatch } from "../lib/productClassifier";
+import { uploadReceiptImage } from "../lib/receiptImages";
 import { requireUser } from "./profile";
 
 const router: IRouter = Router();
@@ -135,6 +136,16 @@ router.post("/scan", async (req, res): Promise<void> => {
       })
       .returning();
     receipt = newReceipt;
+
+    try {
+      const { imageUrl, imageExpiresAt } = await uploadReceiptImage(user.id, newReceipt.id, imageBase64);
+      await db
+        .update(receiptsTable)
+        .set({ imageUrl, imageExpiresAt })
+        .where(eq(receiptsTable.id, newReceipt.id));
+    } catch (e) {
+      console.error("[receipt-image] Upload failed:", e);
+    }
   }
 
   const today = new Date().toDateString();

@@ -21,6 +21,8 @@ export const receiptsTable = pgTable("receipts", {
   barcodeMode: integer("barcode_mode").notNull().default(1),
   receiptDate: text("receipt_date"),
   receiptTotal: integer("receipt_total"),
+  imageUrl: text("image_url"),
+  imageExpiresAt: timestamp("image_expires_at", { withTimezone: true }),
 });
 
 export const insertReceiptSchema = createInsertSchema(receiptsTable).omit({ id: true, scannedAt: true });

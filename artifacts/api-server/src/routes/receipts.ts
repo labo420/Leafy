@@ -3,6 +3,7 @@ import { eq, desc } from "drizzle-orm";
 import { db, receiptsTable, barcodeScansTable } from "@workspace/db";
 import { GetReceiptsResponse, GetReceiptParams } from "@workspace/api-zod";
 import { requireUser } from "./profile";
+import { getReceiptImageStream } from "../lib/receiptImages";
 
 const router: IRouter = Router();
 
@@ -14,7 +15,7 @@ router.get("/receipts", async (req, res): Promise<void> => {
     .where(eq(receiptsTable.userId, user.id))
     .orderBy(desc(receiptsTable.scannedAt));
 
-  const data = GetReceiptsResponse.parse(receipts.map(r => ({
+  const data = receipts.map(r => ({
     id: r.id,
     storeName: r.storeName,
     purchaseDate: r.purchaseDate,
@@ -22,7 +23,9 @@ router.get("/receipts", async (req, res): Promise<void> => {
     greenItemsCount: r.greenItemsCount,
     categories: r.categories,
     scannedAt: r.scannedAt,
-  })));
+    hasImage: !!r.imageUrl,
+    imageExpiresAt: r.imageExpiresAt?.toISOString() ?? null,
+  }));
 
   res.json(data);
 });
@@ -60,6 +63,8 @@ router.get("/receipts/:id", async (req, res): Promise<void> => {
     greenItems,
     scannedAt: receipt.scannedAt,
     barcodeExpiry: receipt.barcodeExpiry,
+    hasImage: !!receipt.imageUrl,
+    imageExpiresAt: receipt.imageExpiresAt?.toISOString() ?? null,
     barcodeScans: barcodeScans.map(s => ({
       id: s.id,
       barcode: s.barcode,
@@ -72,6 +77,52 @@ router.get("/receipts/:id", async (req, res): Promise<void> => {
       scannedAt: s.scannedAt,
     })),
   });
+});
+
+router.get("/receipts/:id/image", async (req, res): Promise<void> => {
+  const receiptId = parseInt(req.params.id, 10);
+  if (isNaN(receiptId)) {
+    res.status(400).json({ error: "ID non valido." });
+    return;
+  }
+
+  const user = await requireUser(req, res);
+  if (!user) return;
+
+  const [receipt] = await db.select().from(receiptsTable)
+    .where(eq(receiptsTable.id, receiptId));
+
+  if (!receipt || receipt.userId !== user.id) {
+    res.status(404).json({ error: "Scontrino non trovato." });
+    return;
+  }
+
+  if (!receipt.imageUrl) {
+    res.status(404).json({ error: "Nessuna foto disponibile." });
+    return;
+  }
+
+  if (receipt.imageExpiresAt && new Date() > receipt.imageExpiresAt) {
+    res.status(410).json({ error: "La foto è scaduta ed è stata rimossa." });
+    return;
+  }
+
+  const result = await getReceiptImageStream(receipt.imageUrl);
+  if (!result) {
+    res.status(404).json({ error: "Foto non trovata." });
+    return;
+  }
+
+  res.setHeader("Content-Type", result.contentType);
+  res.setHeader("Cache-Control", "private, max-age=3600");
+  result.stream.on("error", () => {
+    if (!res.headersSent) {
+      res.status(500).json({ error: "Errore nel caricamento della foto." });
+    } else {
+      res.end();
+    }
+  });
+  result.stream.pipe(res);
 });
 
 export default router;

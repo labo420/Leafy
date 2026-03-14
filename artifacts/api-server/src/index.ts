@@ -1,5 +1,6 @@
 import app from "./app";
 import { seedAllBadges } from "./seed-badges";
+import { cleanupExpiredReceiptImages } from "./lib/receiptImageCleanup";
 
 const rawPort = process.env["PORT"];
 
@@ -15,6 +16,8 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
+const CLEANUP_INTERVAL_MS = 60 * 60 * 1000;
+
 app.listen(port, async () => {
   console.log(`Server listening on port ${port}`);
   try {
@@ -22,4 +25,14 @@ app.listen(port, async () => {
   } catch (e) {
     console.error("Failed to seed badges:", e);
   }
+
+  cleanupExpiredReceiptImages().catch(e =>
+    console.error("[receipt-cleanup] Initial cleanup failed:", e)
+  );
+
+  setInterval(() => {
+    cleanupExpiredReceiptImages().catch(e =>
+      console.error("[receipt-cleanup] Scheduled cleanup failed:", e)
+    );
+  }, CLEANUP_INTERVAL_MS);
 });

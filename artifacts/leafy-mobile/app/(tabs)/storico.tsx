@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
   Modal,
   Platform,
   Pressable,
@@ -18,7 +19,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import Colors from "@/constants/colors";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, apiBase } from "@/lib/api";
 import { useAuth } from "@/context/auth";
 import { router } from "expo-router";
 
@@ -60,6 +61,8 @@ interface ReceiptDetailData {
   scannedAt: string;
   barcodeExpiry: string | null;
   barcodeScans: BarcodeScanItem[];
+  hasImage: boolean;
+  imageExpiresAt: string | null;
 }
 
 const ECO_COLORS: Record<string, string> = {
@@ -94,6 +97,24 @@ function EcoScoreBadge({ score }: { score: string | null }) {
       <Text style={styles.ecoBadgeText}>{letter.toUpperCase()}</Text>
     </View>
   );
+}
+
+function useReceiptImage(id: number, hasImage: boolean) {
+  return useQuery<string | null>({
+    queryKey: ["receipt-image", id],
+    queryFn: async () => {
+      const url = `${apiBase()}/receipts/${id}/image`;
+      const res = await fetch(url, { credentials: "include" });
+      if (!res.ok) return null;
+      const blob = await res.blob();
+      return new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+    },
+    enabled: hasImage,
+  });
 }
 
 function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }) {
@@ -132,6 +153,8 @@ function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }
     correctMutation.mutate({ originalName: editingItem.name, correctedName: correctionText.trim() });
   };
 
+  const { data: imageData } = useReceiptImage(id, data?.hasImage ?? false);
+
   const insets = useSafeAreaInsets();
 
   return (
@@ -157,6 +180,24 @@ function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }
               {data.storeName && <Text style={styles.detailStore}>{data.storeName}</Text>}
               {data.scannedAt && <Text style={styles.detailDate}>{formatDate(data.scannedAt)}</Text>}
             </View>
+
+            {data.hasImage && imageData && (
+              <View style={styles.imageSection}>
+                <Image
+                  source={{ uri: imageData }}
+                  style={styles.receiptImage}
+                  resizeMode="contain"
+                />
+                {data.imageExpiresAt && (
+                  <View style={styles.imageExpiry}>
+                    <Feather name="clock" size={12} color={Colors.textSecondary} />
+                    <Text style={styles.imageExpiryText}>
+                      Foto disponibile fino al {formatDate(data.imageExpiresAt)}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
 
             {data.barcodeScans && data.barcodeScans.length > 0 && (
               <>
@@ -498,4 +539,19 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.leaf, borderRadius: 14, paddingVertical: 14,
   },
   correctionConfirmText: { fontSize: 15, fontFamily: "Inter_700Bold", color: "#fff" },
+  imageSection: {
+    backgroundColor: Colors.card, borderRadius: 16, padding: 12,
+    marginBottom: 16, gap: 8,
+  },
+  receiptImage: {
+    width: "100%", height: 200, borderRadius: 12,
+    backgroundColor: Colors.background,
+  },
+  imageExpiry: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    paddingHorizontal: 4,
+  },
+  imageExpiryText: {
+    fontSize: 11, fontFamily: "Inter_400Regular", color: Colors.textSecondary,
+  },
 });
