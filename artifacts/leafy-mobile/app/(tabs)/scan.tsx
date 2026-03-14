@@ -464,24 +464,30 @@ export default function ScanScreen() {
           <Animated.View entering={FadeInDown.delay(150).springify()} style={styles.mainActionArea}>
             <View style={styles.cameraCircleArea}>
               <Pressable
-                onPressIn={() => { cameraScale.value = withSpring(0.91, { damping: 15, stiffness: 200 }); }}
-                onPressOut={() => { cameraScale.value = withSpring(1, { damping: 12, stiffness: 180 }); }}
+                onPressIn={() => { cameraScale.value = withSpring(0.92, { damping: 14, stiffness: 180 }); }}
+                onPressOut={() => { cameraScale.value = withSpring(1, { damping: 10, stiffness: 150 }); }}
                 onPress={() => pickImage("camera")}
               >
-                <Animated.View style={cameraAnimStyle}>
-                  <View style={styles.cameraBtnRing} />
+                <Animated.View style={[styles.cameraBtnContainer, cameraAnimStyle]}>
+                  <View style={styles.cameraBtnGlow} />
+                  <View style={styles.cameraBtnRingOuter} />
                   <LinearGradient
-                    colors={[Colors.leaf, Colors.forest]}
-                    start={{ x: 0.2, y: 0 }}
-                    end={{ x: 0.8, y: 1 }}
+                    colors={["#357a5b", Colors.leaf, Colors.forest]}
+                    locations={[0, 0.4, 1]}
+                    start={{ x: 0.15, y: 0 }}
+                    end={{ x: 0.85, y: 1 }}
                     style={styles.cameraBtnCircle}
                   >
-                    <Feather name="camera" size={68} color="#fff" />
+                    <View style={styles.cameraBtnInnerRing}>
+                      <Feather name="camera" size={52} color="#fff" />
+                    </View>
                   </LinearGradient>
                 </Animated.View>
               </Pressable>
-              <Text style={styles.cameraBtnTitle}>Fotografa lo scontrino</Text>
-              <Text style={styles.cameraBtnSub}>Totale e data devono essere visibili</Text>
+              <View style={styles.cameraBtnTextArea}>
+                <Text style={styles.cameraBtnTitle}>Fotografa lo scontrino</Text>
+                <Text style={styles.cameraBtnSub}>Totale e data devono essere visibili</Text>
+              </View>
             </View>
 
             <Pressable
@@ -564,24 +570,42 @@ const styles = StyleSheet.create({
 
   mainActionArea: { paddingHorizontal: 20, gap: 14, marginBottom: 16 },
 
-  cameraCircleArea: { alignItems: "center", gap: 18, paddingVertical: 8 },
-  cameraBtnCircle: {
-    width: 168, height: 168, borderRadius: 84,
+  cameraCircleArea: { alignItems: "center", gap: 20, paddingTop: 12, paddingBottom: 4 },
+  cameraBtnContainer: {
+    width: 180, height: 180,
     alignItems: "center", justifyContent: "center",
-    shadowColor: Colors.leaf,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.4,
-    shadowRadius: 24,
-    elevation: 12,
   },
-  cameraBtnRing: {
+  cameraBtnGlow: {
     position: "absolute",
-    width: 192, height: 192, borderRadius: 96,
-    borderWidth: 2.5,
-    borderColor: "rgba(46,107,80,0.22)",
-    top: -12, left: -12,
+    width: 200, height: 200, borderRadius: 100,
+    backgroundColor: "rgba(46,107,80,0.08)",
+    top: -10, left: -10,
   },
-  cameraBtnTitle: { fontSize: 21, fontFamily: "DMSans_700Bold", color: Colors.text, textAlign: "center" },
+  cameraBtnRingOuter: {
+    position: "absolute",
+    width: 180, height: 180, borderRadius: 90,
+    borderWidth: 2,
+    borderColor: "rgba(46,107,80,0.15)",
+    top: 0, left: 0,
+  },
+  cameraBtnCircle: {
+    width: 156, height: 156, borderRadius: 78,
+    alignItems: "center", justifyContent: "center",
+    shadowColor: "#1B4332",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.45,
+    shadowRadius: 28,
+    elevation: 14,
+  },
+  cameraBtnInnerRing: {
+    width: 100, height: 100, borderRadius: 50,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.2)",
+    alignItems: "center", justifyContent: "center",
+  },
+  cameraBtnTextArea: { alignItems: "center", gap: 4 },
+  cameraBtnTitle: { fontSize: 20, fontFamily: "DMSans_700Bold", color: Colors.text, textAlign: "center" },
   cameraBtnSub: { fontSize: 13, fontFamily: "Inter_400Regular", color: Colors.textSecondary, textAlign: "center" },
 
   galleryLink: {
