@@ -95,16 +95,16 @@ function RedemptionCard({ redemption }: { redemption: Redemption }) {
       <View style={styles.redemptionLeft}>
         <Feather name="gift" size={20} color={Colors.amber} />
         <View>
-          <Text style={styles.redemptionTitle}>{(redemption as any).voucherTitle ?? "Voucher"}</Text>
+          <Text style={styles.redemptionTitle}>{redemption.voucherTitle ?? "Voucher"}</Text>
           <Text style={styles.redemptionDate}>
-            {new Date((redemption as any).redeemedAt ?? Date.now()).toLocaleDateString("it-IT")}
+            {new Date(redemption.redeemedAt ?? Date.now()).toLocaleDateString("it-IT")}
           </Text>
         </View>
       </View>
       <View style={styles.redemptionRight}>
         {showCode ? (
           <View style={styles.codeBox}>
-            <Text style={styles.codeText}>{(redemption as any).code}</Text>
+            <Text style={styles.codeText}>{redemption.code}</Text>
           </View>
         ) : (
           <>

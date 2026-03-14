@@ -169,7 +169,7 @@ function ImpactCard({
   value,
   unit,
 }: {
-  icon: string;
+  icon: React.ComponentProps<typeof Feather>["name"];
   label: string;
   value: number;
   unit: string;
@@ -177,7 +177,7 @@ function ImpactCard({
   return (
     <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.impactCard}>
       <View style={styles.impactIcon}>
-        <Feather name={icon as any} size={20} color={Colors.leaf} />
+        <Feather name={icon} size={20} color={Colors.leaf} />
       </View>
       <Text style={styles.impactValue}>{value.toFixed(1)}</Text>
       <Text style={styles.impactUnit}>{unit}</Text>

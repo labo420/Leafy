@@ -22,7 +22,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import Colors from "@/constants/colors";
-import { Fonts } from "@/constants/typography";
 
 interface LookupResult {
   barcode: string;

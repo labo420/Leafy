@@ -24,7 +24,6 @@ import { useMutation } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/context/auth";
 import Colors from "@/constants/colors";
-import { Fonts } from "@/constants/typography";
 
 interface PreviewResult {
   barcode: string;

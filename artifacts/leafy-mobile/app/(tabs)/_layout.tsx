@@ -1,9 +1,9 @@
 import { BlurView } from "expo-blur";
 import { Tabs } from "expo-router";
-import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
-import { Platform, Pressable, StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   withSpring,
@@ -13,6 +13,19 @@ import * as Haptics from "expo-haptics";
 
 import Colors from "@/constants/colors";
 import { Fonts } from "@/constants/typography";
+
+function TabIcon({ focused, children }: { focused: boolean; children: React.ReactNode }) {
+  const pillStyle = useAnimatedStyle(() => ({
+    backgroundColor: withSpring(focused ? "rgba(46,107,80,0.10)" : "rgba(46,107,80,0)", { damping: 15, stiffness: 120 }),
+    transform: [{ scale: withSpring(focused ? 1 : 0.92, { damping: 15, stiffness: 120 }) }],
+  }));
+
+  return (
+    <Animated.View style={[styles.activeIconWrap, pillStyle]}>
+      {children}
+    </Animated.View>
+  );
+}
 
 function FloatingScanButton({ focused }: { focused: boolean }) {
   const animStyle = useAnimatedStyle(() => ({
@@ -85,9 +98,9 @@ export default function TabLayout() {
         options={{
           title: "Home",
           tabBarIcon: ({ color, focused }) => (
-            <View style={focused ? styles.activeIconWrap : undefined}>
+            <TabIcon focused={focused}>
               <Feather name="home" size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
-            </View>
+            </TabIcon>
           ),
         }}
       />
@@ -96,9 +109,9 @@ export default function TabLayout() {
         options={{
           title: "Storico",
           tabBarIcon: ({ color, focused }) => (
-            <View style={focused ? styles.activeIconWrap : undefined}>
+            <TabIcon focused={focused}>
               <Feather name="list" size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
-            </View>
+            </TabIcon>
           ),
         }}
       />
@@ -123,9 +136,9 @@ export default function TabLayout() {
         options={{
           title: "Premi",
           tabBarIcon: ({ color, focused }) => (
-            <View style={focused ? styles.activeIconWrap : undefined}>
+            <TabIcon focused={focused}>
               <Ionicons name="gift-outline" size={22} color={color} />
-            </View>
+            </TabIcon>
           ),
         }}
       />
@@ -134,9 +147,9 @@ export default function TabLayout() {
         options={{
           title: "Profilo",
           tabBarIcon: ({ color, focused }) => (
-            <View style={focused ? styles.activeIconWrap : undefined}>
+            <TabIcon focused={focused}>
               <Feather name="user" size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
-            </View>
+            </TabIcon>
           ),
         }}
       />
