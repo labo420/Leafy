@@ -413,6 +413,24 @@ export default function ShoppingScannerScreen() {
         )}
 
         <View style={[styles.cameraFooter, { paddingBottom: insets.bottom + 16 }]}>
+          {scannedProducts.length > 0 && (
+            <View style={styles.miniList}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.miniListScroll}
+              >
+                {scannedProducts.slice(0, 5).map((item, i) => (
+                  <Animated.View key={item.barcode + i} entering={FadeIn} style={styles.miniListItem}>
+                    <Text style={styles.miniListEmoji}>{item.emoji}</Text>
+                    <Text style={styles.miniListName} numberOfLines={1}>{item.productName}</Text>
+                    <Text style={styles.miniListPts}>~{item.pointsEstimate}</Text>
+                  </Animated.View>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
           <Text style={styles.cameraHint}>Inquadra il codice a barre del prodotto</Text>
 
           {scannedProducts.length > 0 && (
@@ -615,6 +633,17 @@ const styles = StyleSheet.create({
 
   closeReportBtn: { alignItems: "center", paddingVertical: 16, marginTop: 8 },
   closeReportText: { fontSize: 15, fontFamily: "Inter_500Medium", color: Colors.textSecondary },
+
+  miniList: { width: "100%", marginBottom: 4 },
+  miniListScroll: { paddingHorizontal: 16, gap: 8 },
+  miniListItem: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    backgroundColor: "rgba(0,0,0,0.6)", borderRadius: 12,
+    paddingHorizontal: 10, paddingVertical: 6, maxWidth: 180,
+  },
+  miniListEmoji: { fontSize: 16 },
+  miniListName: { fontSize: 12, fontFamily: "Inter_500Medium", color: "#fff", flex: 1 },
+  miniListPts: { fontSize: 12, fontFamily: "Inter_700Bold", color: Colors.mint },
 
   ecoBadge: { width: 28, height: 28, borderRadius: 6, alignItems: "center", justifyContent: "center" },
   ecoBadgeText: { fontSize: 16, fontFamily: "Inter_700Bold", color: "#fff" },
