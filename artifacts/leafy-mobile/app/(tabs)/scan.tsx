@@ -2,7 +2,7 @@ import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -17,6 +17,7 @@ import {
 import Animated, {
   FadeIn, FadeInDown, SlideInDown,
   useSharedValue, useAnimatedStyle, withSpring,
+  withRepeat, withSequence, withTiming, withDelay, Easing,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -190,9 +191,34 @@ export default function ScanScreen() {
 
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 + 84 : 100;
-  const cameraPressY = useSharedValue(0);
+  const cameraScale = useSharedValue(1);
   const cameraAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: cameraPressY.value }],
+    transform: [{ scale: cameraScale.value }],
+  }));
+
+  const pulse1Scale = useSharedValue(1);
+  const pulse1Opacity = useSharedValue(0.5);
+  const pulse2Scale = useSharedValue(1);
+  const pulse2Opacity = useSharedValue(0.5);
+
+  useEffect(() => {
+    const dur = 2200;
+    const expand = { duration: dur, easing: Easing.out(Easing.ease) };
+    pulse1Scale.value = withRepeat(withTiming(1.35, expand), -1, false);
+    pulse1Opacity.value = withRepeat(withTiming(0, expand), -1, false);
+    pulse2Scale.value = withDelay(700,
+      withRepeat(withTiming(1.35, expand), -1, false));
+    pulse2Opacity.value = withDelay(700,
+      withRepeat(withTiming(0, expand), -1, false));
+  }, []);
+
+  const pulse1Style = useAnimatedStyle(() => ({
+    transform: [{ scale: pulse1Scale.value }],
+    opacity: pulse1Opacity.value,
+  }));
+  const pulse2Style = useAnimatedStyle(() => ({
+    transform: [{ scale: pulse2Scale.value }],
+    opacity: pulse2Opacity.value,
   }));
 
   const { data: activeSession, isLoading: sessionLoading } = useQuery<ActiveSession>({
@@ -443,93 +469,66 @@ export default function ScanScreen() {
   }
 
   return (
-    <ScrollView
-      style={[styles.container, { paddingTop: topPadding }]}
-      contentContainerStyle={[styles.idleContent, { paddingBottom: bottomPad }]}
-      showsVerticalScrollIndicator={false}
-    >
+    <View style={[styles.container, { paddingTop: topPadding, paddingBottom: bottomPad }]}>
       <View style={styles.idleHeader}>
         <Text style={styles.idleTitle}>Scansiona</Text>
         <Text style={styles.idleSub}>Guadagna punti per ogni acquisto sostenibile</Text>
       </View>
 
-      {user && (
-        <MotivationCard profile={profile} />
-      )}
-
       {sessionLoading ? (
         <ActivityIndicator size="large" color={Colors.leaf} style={{ marginTop: 40 }} />
       ) : (
         <>
-          <Animated.View entering={FadeInDown.delay(150).springify()} style={styles.mainActionArea}>
-            <View style={styles.cameraCircleArea}>
-              <Pressable
-                onPressIn={() => { cameraPressY.value = withSpring(6, { damping: 25, stiffness: 500 }); }}
-                onPressOut={() => { cameraPressY.value = withSpring(0, { damping: 18, stiffness: 300 }); }}
-                onPress={() => pickImage("camera")}
-              >
-                <View style={styles.cameraBtnWrapper}>
-                  <View style={styles.cameraBtnShadow} />
-                  <Animated.View style={[styles.cameraBtnFace, cameraAnimStyle]}>
-                    <Feather name="camera" size={60} color="#fff" />
-                  </Animated.View>
-                </View>
-              </Pressable>
-              <View style={styles.cameraBtnTextArea}>
-                <Text style={styles.cameraBtnTitle}>Fotografa lo scontrino</Text>
-                <Text style={styles.cameraBtnSub}>Totale e data devono essere visibili</Text>
+          <View style={styles.bigBtnCenter}>
+            <Pressable
+              onPressIn={() => { cameraScale.value = withSpring(0.92, { damping: 15, stiffness: 250 }); }}
+              onPressOut={() => { cameraScale.value = withSpring(1, { damping: 10, stiffness: 180 }); }}
+              onPress={() => pickImage("camera")}
+            >
+              <View style={styles.bigBtnPulseContainer}>
+                <Animated.View style={[styles.bigBtnPulseRing, pulse1Style]} />
+                <Animated.View style={[styles.bigBtnPulseRing, pulse2Style]} />
+                <Animated.View style={[styles.bigBtnOuter, cameraAnimStyle]}>
+                  <LinearGradient
+                    colors={["#3a8f65", Colors.leaf, "#245a42"]}
+                    locations={[0, 0.45, 1]}
+                    start={{ x: 0.2, y: 0 }}
+                    end={{ x: 0.8, y: 1 }}
+                    style={styles.bigBtnGrad}
+                  >
+                    <Feather name="camera" size={72} color="#fff" />
+                    <Text style={styles.bigBtnLabel}>Fotografa lo scontrino</Text>
+                    <Text style={styles.bigBtnHint}>Totale e data visibili</Text>
+                  </LinearGradient>
+                </Animated.View>
               </View>
-            </View>
+            </Pressable>
+          </View>
 
+          <View style={styles.bottomActions}>
             <Pressable
               style={({ pressed }) => [styles.galleryLink, pressed && { opacity: 0.6 }]}
               onPress={() => pickImage("gallery")}
             >
               <Feather name="image" size={16} color={Colors.textSecondary} />
-              <Text style={styles.galleryLinkText}>Oppure scegli dalla galleria</Text>
+              <Text style={styles.galleryLinkText}>Scegli dalla galleria</Text>
             </Pressable>
-          </Animated.View>
 
-          <Animated.View entering={FadeInDown.delay(250).springify()}>
             <Pressable
-              style={({ pressed }) => [styles.shoppingModeBtn, pressed && { opacity: 0.85 }]}
+              style={({ pressed }) => [styles.shoppingLink, pressed && { opacity: 0.6 }]}
               onPress={() => {
-                if (!user) {
-                  router.push("/login");
-                  return;
-                }
+                if (!user) { router.push("/login"); return; }
                 router.push("/shopping-scanner");
               }}
             >
-              <LinearGradient
-                colors={["#f5fbf7", "#edf7f1"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.shoppingModeInner}
-              >
-                <View style={styles.shoppingModeLeft}>
-                  <View style={styles.shoppingModeIcon}>
-                    <MaterialCommunityIcons name="cart-outline" size={22} color={Colors.leaf} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.shoppingModeTitle}>Modalità Spesa</Text>
-                    <Text style={styles.shoppingModeSub}>Scopri i punti prima di pagare</Text>
-                  </View>
-                </View>
-                <View style={styles.shoppingModeArrow}>
-                  <Feather name="chevron-right" size={18} color={Colors.leaf} />
-                </View>
-              </LinearGradient>
+              <MaterialCommunityIcons name="cart-outline" size={16} color={Colors.leaf} />
+              <Text style={styles.shoppingLinkText}>Modalità Spesa</Text>
+              <Feather name="chevron-right" size={14} color={Colors.leaf} />
             </Pressable>
-          </Animated.View>
-
-          <Animated.View entering={FadeInDown.delay(320).springify()}>
-            <HowItWorksSection />
-            <AcceptedStoresSection />
-          </Animated.View>
+          </View>
         </>
       )}
-    </ScrollView>
+    </View>
   );
 }
 
@@ -559,60 +558,54 @@ const styles = StyleSheet.create({
   },
   motivStreakText: { fontSize: 13, fontFamily: "Inter_700Bold", color: Colors.leaf },
 
-  mainActionArea: { paddingHorizontal: 20, gap: 14, marginBottom: 16 },
-
-  cameraCircleArea: { alignItems: "center", gap: 22, paddingTop: 16, paddingBottom: 4 },
-
-  cameraBtnWrapper: {
-    width: 160, height: 166,
-    alignItems: "center",
+  bigBtnCenter: {
+    flex: 1, alignItems: "center", justifyContent: "center",
   },
-  cameraBtnShadow: {
-    position: "absolute",
-    width: 160, height: 160, borderRadius: 80,
-    backgroundColor: Colors.forest,
-    bottom: 0, left: 0,
-  },
-  cameraBtnFace: {
-    position: "absolute",
-    top: 0, left: 0,
-    width: 160, height: 160, borderRadius: 80,
-    backgroundColor: Colors.leaf,
-    borderWidth: 3.5,
-    borderColor: Colors.forest,
+  bigBtnPulseContainer: {
+    width: 280, height: 280,
     alignItems: "center", justifyContent: "center",
   },
+  bigBtnPulseRing: {
+    position: "absolute",
+    width: 260, height: 260, borderRadius: 130,
+    borderWidth: 2,
+    borderColor: "rgba(46,107,80,0.35)",
+  },
+  bigBtnOuter: {
+    width: 260, height: 260, borderRadius: 130,
+    overflow: "hidden",
+    shadowColor: Colors.forest,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.35,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  bigBtnGrad: {
+    flex: 1, alignItems: "center", justifyContent: "center",
+    gap: 10,
+  },
+  bigBtnLabel: {
+    fontSize: 20, fontFamily: "DMSans_700Bold", color: "#fff",
+    textAlign: "center", marginTop: 4,
+  },
+  bigBtnHint: {
+    fontSize: 13, fontFamily: "Inter_400Regular",
+    color: "rgba(255,255,255,0.75)", textAlign: "center",
+  },
 
-  cameraBtnTextArea: { alignItems: "center", gap: 5 },
-  cameraBtnTitle: { fontSize: 20, fontFamily: "DMSans_700Bold", color: Colors.text, textAlign: "center" },
-  cameraBtnSub: { fontSize: 13, fontFamily: "Inter_400Regular", color: Colors.textSecondary, textAlign: "center" },
-
+  bottomActions: {
+    paddingHorizontal: 24, paddingBottom: 8, gap: 12,
+  },
   galleryLink: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
-    paddingVertical: 4,
+    paddingVertical: 8,
   },
   galleryLinkText: { fontSize: 14, fontFamily: "Inter_500Medium", color: Colors.textSecondary },
-
-  shoppingModeBtn: {
-    marginHorizontal: 20, marginBottom: 8,
-    borderRadius: 20, overflow: "hidden",
-    borderWidth: 1.5, borderColor: "rgba(46,107,80,0.18)",
+  shoppingLink: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
+    paddingVertical: 8,
   },
-  shoppingModeInner: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 16, paddingVertical: 16,
-  },
-  shoppingModeLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
-  shoppingModeIcon: {
-    width: 44, height: 44, borderRadius: 14,
-    backgroundColor: Colors.primaryLight, alignItems: "center", justifyContent: "center",
-  },
-  shoppingModeTitle: { fontSize: 15, fontFamily: "Inter_700Bold", color: Colors.text },
-  shoppingModeSub: { fontSize: 12, fontFamily: "Inter_400Regular", color: Colors.textSecondary, marginTop: 2 },
-  shoppingModeArrow: {
-    width: 32, height: 32, borderRadius: 10,
-    backgroundColor: Colors.primaryLight, alignItems: "center", justifyContent: "center",
-  },
+  shoppingLinkText: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: Colors.leaf },
 
   howSection: { paddingHorizontal: 20, marginTop: 8 },
   howToggle: {
