@@ -116,3 +116,4 @@ channel = "stable-25_05"
 
 [userenv.shared]
 NGROK_AUTH_TOKEN = "5W1bR67GNbWcXqmxZzBG1_56GezNeaX6sSRvn8npeQ8"
+GOOGLE_CLOUD_VISION_API_KEY = "AIzaSyDjH95uFI4Z-m59PedIiN1xLEWj8L3gxU4"
