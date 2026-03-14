@@ -190,9 +190,9 @@ export default function ScanScreen() {
 
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 + 84 : 100;
-  const cameraScale = useSharedValue(1);
+  const cameraPressY = useSharedValue(0);
   const cameraAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: cameraScale.value }],
+    transform: [{ translateY: cameraPressY.value }],
   }));
 
   const { data: activeSession, isLoading: sessionLoading } = useQuery<ActiveSession>({
@@ -464,25 +464,16 @@ export default function ScanScreen() {
           <Animated.View entering={FadeInDown.delay(150).springify()} style={styles.mainActionArea}>
             <View style={styles.cameraCircleArea}>
               <Pressable
-                onPressIn={() => { cameraScale.value = withSpring(0.92, { damping: 14, stiffness: 180 }); }}
-                onPressOut={() => { cameraScale.value = withSpring(1, { damping: 10, stiffness: 150 }); }}
+                onPressIn={() => { cameraPressY.value = withSpring(6, { damping: 25, stiffness: 500 }); }}
+                onPressOut={() => { cameraPressY.value = withSpring(0, { damping: 18, stiffness: 300 }); }}
                 onPress={() => pickImage("camera")}
               >
-                <Animated.View style={[styles.cameraBtnContainer, cameraAnimStyle]}>
-                  <View style={styles.cameraBtnGlow} />
-                  <View style={styles.cameraBtnRingOuter} />
-                  <LinearGradient
-                    colors={["#357a5b", Colors.leaf, Colors.forest]}
-                    locations={[0, 0.4, 1]}
-                    start={{ x: 0.15, y: 0 }}
-                    end={{ x: 0.85, y: 1 }}
-                    style={styles.cameraBtnCircle}
-                  >
-                    <View style={styles.cameraBtnInnerRing}>
-                      <Feather name="camera" size={52} color="#fff" />
-                    </View>
-                  </LinearGradient>
-                </Animated.View>
+                <View style={styles.cameraBtnWrapper}>
+                  <View style={styles.cameraBtnShadow} />
+                  <Animated.View style={[styles.cameraBtnFace, cameraAnimStyle]}>
+                    <Feather name="camera" size={60} color="#fff" />
+                  </Animated.View>
+                </View>
               </Pressable>
               <View style={styles.cameraBtnTextArea}>
                 <Text style={styles.cameraBtnTitle}>Fotografa lo scontrino</Text>
@@ -570,41 +561,29 @@ const styles = StyleSheet.create({
 
   mainActionArea: { paddingHorizontal: 20, gap: 14, marginBottom: 16 },
 
-  cameraCircleArea: { alignItems: "center", gap: 20, paddingTop: 12, paddingBottom: 4 },
-  cameraBtnContainer: {
-    width: 180, height: 180,
-    alignItems: "center", justifyContent: "center",
+  cameraCircleArea: { alignItems: "center", gap: 22, paddingTop: 16, paddingBottom: 4 },
+
+  cameraBtnWrapper: {
+    width: 160, height: 166,
+    alignItems: "center",
   },
-  cameraBtnGlow: {
+  cameraBtnShadow: {
     position: "absolute",
-    width: 200, height: 200, borderRadius: 100,
-    backgroundColor: "rgba(46,107,80,0.08)",
-    top: -10, left: -10,
+    width: 160, height: 160, borderRadius: 80,
+    backgroundColor: Colors.forest,
+    bottom: 0, left: 0,
   },
-  cameraBtnRingOuter: {
+  cameraBtnFace: {
     position: "absolute",
-    width: 180, height: 180, borderRadius: 90,
-    borderWidth: 2,
-    borderColor: "rgba(46,107,80,0.15)",
     top: 0, left: 0,
-  },
-  cameraBtnCircle: {
-    width: 156, height: 156, borderRadius: 78,
-    alignItems: "center", justifyContent: "center",
-    shadowColor: "#1B4332",
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.45,
-    shadowRadius: 28,
-    elevation: 14,
-  },
-  cameraBtnInnerRing: {
-    width: 100, height: 100, borderRadius: 50,
-    backgroundColor: "rgba(255,255,255,0.12)",
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.2)",
+    width: 160, height: 160, borderRadius: 80,
+    backgroundColor: Colors.leaf,
+    borderWidth: 3.5,
+    borderColor: Colors.forest,
     alignItems: "center", justifyContent: "center",
   },
-  cameraBtnTextArea: { alignItems: "center", gap: 4 },
+
+  cameraBtnTextArea: { alignItems: "center", gap: 5 },
   cameraBtnTitle: { fontSize: 20, fontFamily: "DMSans_700Bold", color: Colors.text, textAlign: "center" },
   cameraBtnSub: { fontSize: 13, fontFamily: "Inter_400Regular", color: Colors.textSecondary, textAlign: "center" },
 
