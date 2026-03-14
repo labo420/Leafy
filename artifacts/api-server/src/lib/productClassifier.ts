@@ -127,6 +127,12 @@ function normalizeProductName(name: string): string {
   return name.toLowerCase().trim().replace(/\s+/g, " ").replace(/[^a-z0-9àèéìòù ]/g, "");
 }
 
+function capitalizeProductName(name: string): string {
+  const trimmed = name.trim();
+  if (trimmed.length === 0) return "";
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+}
+
 export function extractProductLines(ocrText: string): string[] {
   const lines = ocrText.split("\n");
   const products: string[] = [];
@@ -278,7 +284,7 @@ export async function classifyProductsBatch(productNames: string[]): Promise<Fou
     if (cached.length > 0) {
       const entry = cached[0];
       cachedMap.set(name, entry.points > 0 ? {
-        name: entry.productNameOriginal,
+        name: capitalizeProductName(entry.productNameOriginal || name),
         category: (entry.category || "Altro") as GreenCategory,
         points: entry.points,
         emoji: entry.emoji,
@@ -340,10 +346,11 @@ Criteri punti:
       const emoji = cls.emoji ?? "🌿";
       const reasoning = cls.reasoning ?? "Classificato da AI";
 
+      const capitalizedName = capitalizeProductName(name);
       savePromises.push(
         db.insert(productCacheTable).values({
           productNameNormalized: normalized,
-          productNameOriginal: name,
+          productNameOriginal: capitalizedName,
           ecoScore: null,
           points,
           category,
@@ -356,7 +363,7 @@ Criteri punti:
 
       if (points > 0) {
         results.push({
-          name,
+          name: capitalizedName,
           category: category as GreenCategory,
           points,
           emoji,
@@ -368,7 +375,7 @@ Criteri punti:
   } catch (err) {
     console.error("[classifyProductsBatch]", err);
     for (const name of uncachedNames) {
-      results.push({ name, category: "Altro" as GreenCategory, points: 5, emoji: "🌿" });
+      results.push({ name: capitalizeProductName(name), category: "Altro" as GreenCategory, points: 5, emoji: "🌿" });
     }
   }
 
@@ -459,7 +466,7 @@ Regole:
     const products = (parsed.products ?? [])
       .flatMap((p): string[] => {
         if (typeof p === "string" && p.trim().length >= 2) {
-          return [p.trim()];
+          return [capitalizeProductName(p.trim())];
         }
         if (p && typeof p === "object") {
           const obj = p as Record<string, unknown>;
@@ -470,7 +477,7 @@ Regole:
             if (raw && name && raw !== name) {
               console.log(`[products] raw="${raw}" → name="${name}" → using raw`);
             }
-            return [preferred];
+            return [capitalizeProductName(preferred)];
           }
         }
         return [];
