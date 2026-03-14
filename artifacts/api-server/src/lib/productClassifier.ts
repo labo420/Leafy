@@ -341,6 +341,116 @@ function getCountryFromBarcode(barcode: string): string | null {
   return null;
 }
 
+const GS1_ITALY_PREFIXES: Array<[string, string]> = [
+  ["8000430", "Mondelez Italia (Fonzies, TUC, Oreo, Chips Ahoy)"],
+  ["8000226", "Kraft Heinz Italia"],
+  ["8000040", "Unilever Italia (Algida, Cif, Dove)"],
+  ["8001620", "Nestlé Italia (Motta, Buitoni, Nescafé)"],
+  ["8001791", "Barilla (Barilla, Mulino Bianco, Pavesi)"],
+  ["8000849", "Ferrero (Nutella, Kinder, Raffaello, Rocher)"],
+  ["8000970", "Barilla / Mulino Bianco"],
+  ["8001120", "Divella"],
+  ["8001230", "Giovanni Rana (pasta fresca)"],
+  ["8003540", "Findus / Birds Eye Italia"],
+  ["8004610", "Lavazza"],
+  ["8003180", "illycaffè"],
+  ["8007340", "San Carlo Snack"],
+  ["8007530", "Saclà"],
+  ["8006120", "De Cecco"],
+  ["8007570", "Granarolo"],
+  ["8008480", "Mutti (pomodori)"],
+  ["8000790", "Coop Italia"],
+  ["8000570", "Parmalat (latte, yogurt)"],
+  ["8001800", "Danone Italia"],
+  ["8001590", "Colussi / Gran Turchese"],
+  ["8005110", "Star (Star, Pummarò)"],
+  ["8005310", "Callipo"],
+  ["8003660", "Zuegg"],
+  ["8001490", "Fiat / Agnesi pasta"],
+  ["8000920", "Acqua Minerale San Benedetto"],
+  ["8000280", "Ferrarelle"],
+  ["8001940", "Acqua Levissima / San Pellegrino"],
+  ["8004480", "Lurpak / Arla Italia"],
+  ["8004500", "Philadelphia / Kraft"],
+  ["8007940", "Surgital"],
+  ["8003510", "Orogel"],
+  ["8005700", "Arrigoni"],
+  ["8007140", "Forno d'Asolo"],
+  ["8007480", "Tre Marie"],
+  ["8001050", "Galbani / Lactalis Italia"],
+  ["8007430", "Sterilgarda"],
+  ["8001000", "Zara / Oleifici Zara"],
+  ["8000810", "Lidl Italia"],
+  ["8000600", "Esselunga (marca propria)"],
+  ["8007810", "Despar Italia"],
+  ["8007680", "Conad (marca propria)"],
+];
+
+function getItalianBrandHint(barcode: string): string | null {
+  if (!isItalianBarcode(barcode)) return null;
+  for (const [prefix, brand] of GS1_ITALY_PREFIXES) {
+    if (barcode.startsWith(prefix)) return brand;
+  }
+  return null;
+}
+
+interface ExternalProductResult {
+  productName: string;
+  brand?: string;
+  categories?: string;
+}
+
+async function lookupNutritionix(barcode: string): Promise<ExternalProductResult | null> {
+  const appId = process.env.NUTRITIONIX_APP_ID;
+  const apiKey = process.env.NUTRITIONIX_API_KEY;
+  if (!appId || !apiKey) return null;
+
+  try {
+    const res = await fetch(`https://trackapi.nutritionix.com/v2/search/item/?upc=${barcode}`, {
+      headers: {
+        "x-app-id": appId,
+        "x-app-key": apiKey,
+        "x-remote-user-id": "0",
+      },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) return null;
+    const data = await res.json() as { foods?: Array<{ food_name?: string; brand_name?: string; nf_ingredient_statement?: string }> };
+    const item = data.foods?.[0];
+    if (!item?.food_name) return null;
+    console.log(`[lookupNutritionix] Found "${item.food_name}" for ${barcode}`);
+    return {
+      productName: item.food_name,
+      brand: item.brand_name,
+    };
+  } catch (err) {
+    console.log(`[lookupNutritionix] Error for ${barcode}:`, (err as Error).message);
+    return null;
+  }
+}
+
+async function lookupUSDA(barcode: string): Promise<ExternalProductResult | null> {
+  const apiKey = process.env.USDA_API_KEY || "DEMO_KEY";
+
+  try {
+    const url = `https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(barcode)}&api_key=${apiKey}&pageSize=1`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    if (!res.ok) return null;
+    const data = await res.json() as { foods?: Array<{ description?: string; brandOwner?: string; foodCategory?: string; gtinUpc?: string }> };
+    const item = data.foods?.find(f => f.gtinUpc === barcode || f.gtinUpc === barcode.replace(/^0+/, ""));
+    if (!item?.description) return null;
+    console.log(`[lookupUSDA] Found "${item.description}" for ${barcode}`);
+    return {
+      productName: item.description,
+      brand: item.brandOwner,
+      categories: item.foodCategory,
+    };
+  } catch (err) {
+    console.log(`[lookupUSDA] Error for ${barcode}:`, (err as Error).message);
+    return null;
+  }
+}
+
 function isValidBarcode(barcode: string): boolean {
   if (!/^\d+$/.test(barcode)) return false;
   if (![8, 12, 13, 14].includes(barcode.length)) return false;
@@ -543,9 +653,10 @@ Rispondi SOLO con un JSON valido:
   }
 }
 
-async function classifyBarcodeWithAI(barcode: string): Promise<BarcodeResult> {
+async function classifyBarcodeWithAI(barcode: string, brandHint?: string): Promise<BarcodeResult> {
   const country = getCountryFromBarcode(barcode);
   const countryHint = country ? `\nIl prefisso del barcode indica produzione in: ${country}` : "";
+  const brandLine = brandHint ? `\nProduttore identificato dal prefisso GS1: ${brandHint}` : "";
 
   try {
     const message = await anthropic.messages.create({
@@ -556,13 +667,13 @@ async function classifyBarcodeWithAI(barcode: string): Promise<BarcodeResult> {
           role: "user",
           content: `Sei un esperto di prodotti alimentari. Un utente ha scansionato un codice a barre EAN/UPC in un supermercato italiano ma il prodotto non è stato trovato nel database Open Food Facts.
 
-Codice a barre: ${barcode}${countryHint}
+Codice a barre: ${barcode}${countryHint}${brandLine}
 
-Basandoti sulla struttura del codice a barre e sulla tua conoscenza dei prodotti alimentari, prova a identificare o stimare che tipo di prodotto potrebbe essere.
+Basandoti sulla struttura del codice a barre, sul produttore identificato (se disponibile) e sulla tua conoscenza dei prodotti alimentari, prova a identificare o stimare che tipo di prodotto potrebbe essere.
 
 Rispondi SOLO con un JSON valido:
 {
-  "productName": <nome stimato del prodotto, o "Prodotto alimentare" se non identificabile>,
+  "productName": <nome stimato del prodotto includendo il brand se noto, o "Prodotto alimentare" se non identificabile>,
   "points": <numero 5-10, stima conservativa>,
   "category": <una di: "Bio", "Km 0", "Vegano", "Senza Plastica", "Equo Solidale", "DOP/IGP", "Artigianale", "Altro">,
   "emoji": <emoji appropriato>,
@@ -570,7 +681,7 @@ Rispondi SOLO con un JSON valido:
   "ecoScore": <"c" come default, o altra lettera se hai info sufficienti>
 }
 
-IMPORTANTE: Sii conservativo. Se non riesci a identificare il prodotto, usa "Prodotto alimentare" come nome, "Altro" come categoria, e 5 come punti.`,
+IMPORTANTE: Se il produttore è fornito, usalo nel nome prodotto (es. "Mondelez - Snack" invece di "Prodotto alimentare"). Sii comunque conservativo sui punti.`,
         },
       ],
     });
@@ -828,6 +939,64 @@ export async function lookupBarcode(barcode: string, imageBase64?: string): Prom
     }
   }
 
+  const brandHint = getItalianBrandHint(normalizedBarcode);
+
+  const nutritionixResult = await lookupNutritionix(normalizedBarcode);
+  if (nutritionixResult) {
+    const aiResult = await classifyWithProductData(
+      normalizedBarcode,
+      nutritionixResult.productName,
+      nutritionixResult.brand ?? "",
+      nutritionixResult.categories ?? "",
+      "",
+    );
+    const heroCheck = applyEcoHeroMultiplier(aiResult.points, aiResult.productName, aiResult.category, aiResult.reasoning);
+    const finalResult = heroCheck.isEcoHero
+      ? { ...aiResult, points: heroCheck.points, reasoning: `${aiResult.reasoning} · Eco-Hero ⭐`, source: "nutritionix" as const }
+      : { ...aiResult, source: "nutritionix" as const };
+    const co2PerUnit = co2SavingsByCategory(finalResult.category, finalResult.points);
+    await db.insert(productCacheTable).values({
+      productNameNormalized: `barcode:${normalizedBarcode}`,
+      productNameOriginal: finalResult.productName,
+      ecoScore: finalResult.ecoScore,
+      points: finalResult.points,
+      category: finalResult.category,
+      source: finalResult.source,
+      reasoning: finalResult.reasoning,
+      emoji: finalResult.emoji,
+      co2PerUnit,
+    }).onConflictDoNothing();
+    return finalResult;
+  }
+
+  const usdaResult = await lookupUSDA(normalizedBarcode);
+  if (usdaResult) {
+    const aiResult = await classifyWithProductData(
+      normalizedBarcode,
+      usdaResult.productName,
+      usdaResult.brand ?? "",
+      usdaResult.categories ?? "",
+      "",
+    );
+    const heroCheck = applyEcoHeroMultiplier(aiResult.points, aiResult.productName, aiResult.category, aiResult.reasoning);
+    const finalResult = heroCheck.isEcoHero
+      ? { ...aiResult, points: heroCheck.points, reasoning: `${aiResult.reasoning} · Eco-Hero ⭐`, source: "usda" as const }
+      : { ...aiResult, source: "usda" as const };
+    const co2PerUnit = co2SavingsByCategory(finalResult.category, finalResult.points);
+    await db.insert(productCacheTable).values({
+      productNameNormalized: `barcode:${normalizedBarcode}`,
+      productNameOriginal: finalResult.productName,
+      ecoScore: finalResult.ecoScore,
+      points: finalResult.points,
+      category: finalResult.category,
+      source: finalResult.source,
+      reasoning: finalResult.reasoning,
+      emoji: finalResult.emoji,
+      co2PerUnit,
+    }).onConflictDoNothing();
+    return finalResult;
+  }
+
   if (imageBase64 && typeof imageBase64 === "string" && imageBase64.length > 100) {
     console.log(`[lookupBarcode] OFF miss for ${normalizedBarcode}, trying vision fallback`);
     const visionResult = await classifyWithVision(normalizedBarcode, imageBase64);
@@ -853,8 +1022,11 @@ export async function lookupBarcode(barcode: string, imageBase64?: string): Prom
     }
   }
 
-  console.log(`[lookupBarcode] OFF miss for ${normalizedBarcode}, falling back to AI`);
-  const aiResult = await classifyBarcodeWithAI(normalizedBarcode);
+  if (brandHint) {
+    console.log(`[lookupBarcode] GS1 brand hint for ${normalizedBarcode}: ${brandHint}`);
+  }
+  console.log(`[lookupBarcode] All sources miss for ${normalizedBarcode}, falling back to AI${brandHint ? " with brand hint" : ""}`);
+  const aiResult = await classifyBarcodeWithAI(normalizedBarcode, brandHint ?? undefined);
 
   const heroCheck = applyEcoHeroMultiplier(aiResult.points, aiResult.productName, aiResult.category, aiResult.reasoning);
   const finalAiResult = heroCheck.isEcoHero

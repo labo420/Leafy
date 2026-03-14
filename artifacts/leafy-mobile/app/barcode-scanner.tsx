@@ -112,6 +112,7 @@ export default function BarcodeScannerScreen() {
   const [manualUnit, setManualUnit] = useState<"g" | "kg">("g");
   const [manualFrontPhoto, setManualFrontPhoto] = useState<{ uri: string; base64: string } | null>(null);
   const [manualBackPhoto, setManualBackPhoto] = useState<{ uri: string; base64: string } | null>(null);
+  const [cameFromReject, setCameFromReject] = useState(false);
 
   const topPadding = Platform.OS === "web" ? 20 : insets.top;
 
@@ -177,6 +178,7 @@ export default function BarcodeScannerScreen() {
       }),
     onSuccess: (data) => {
       setLookupData(data);
+      setCameFromReject(false);
       setPhase("preview");
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     },
@@ -381,34 +383,26 @@ export default function BarcodeScannerScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(250)} style={styles.previewActions}>
-          <Pressable style={styles.rejectBtn} onPress={handleReject}>
-            <Feather name="x" size={18} color={Colors.red} />
-            <Text style={styles.rejectBtnText}>No, salta</Text>
+          <Pressable
+            style={styles.rejectBtn}
+            onPress={() => {
+              setManualName("");
+              setManualWeight("");
+              setManualUnit("g");
+              setManualFrontPhoto(null);
+              setManualBackPhoto(null);
+              setCameFromReject(true);
+              setPhase("manual-form");
+            }}
+          >
+            <Feather name="edit-2" size={18} color={Colors.leaf} />
+            <Text style={[styles.rejectBtnText, { color: Colors.leaf }]}>No, aggiungi</Text>
           </Pressable>
           <Pressable style={styles.confirmBtn} onPress={handleConfirm}>
             <Feather name="check" size={18} color="#fff" />
             <Text style={styles.confirmBtnText}>Sì, aggiungi</Text>
           </Pressable>
         </Animated.View>
-
-        {isGeneric && (
-          <Animated.View entering={FadeInDown.delay(300)}>
-            <Pressable
-              style={styles.manualEntryLink}
-              onPress={() => {
-                setManualName("");
-                setManualWeight("");
-                setManualUnit("g");
-                setManualFrontPhoto(null);
-                setManualBackPhoto(null);
-                setPhase("manual-form");
-              }}
-            >
-              <Feather name="edit-3" size={14} color={Colors.leaf} />
-              <Text style={styles.manualEntryLinkText}>Non è corretto? Inseriscilo tu manualmente</Text>
-            </Pressable>
-          </Animated.View>
-        )}
 
         <Animated.View entering={FadeInDown.delay(350)} style={styles.previewHintBox}>
           <Feather name="info" size={14} color={Colors.textSecondary} />
@@ -546,10 +540,22 @@ export default function BarcodeScannerScreen() {
       >
         <ScrollView contentContainerStyle={{ paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
           <View style={styles.manualFormHeader}>
-            <Pressable onPress={() => setPhase("scanning")} style={styles.manualFormBack}>
-              <Feather name="x" size={22} color={Colors.text} />
+            <Pressable
+              onPress={() => {
+                if (cameFromReject) {
+                  setCameFromReject(false);
+                  setPhase("preview");
+                } else {
+                  setPhase("scanning");
+                }
+              }}
+              style={styles.manualFormBack}
+            >
+              <Feather name={cameFromReject ? "arrow-left" : "x"} size={22} color={Colors.text} />
             </Pressable>
-            <Text style={styles.manualFormTitle}>Inserimento manuale</Text>
+            <Text style={styles.manualFormTitle}>
+              {cameFromReject ? "Correggi prodotto" : "Inserimento manuale"}
+            </Text>
             <View style={{ width: 36 }} />
           </View>
 

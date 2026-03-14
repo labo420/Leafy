@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { eq, and, gte, gt, ne, desc, sql } from "drizzle-orm";
-import { db, usersTable, receiptsTable, barcodeScansTable, productCacheTable } from "@workspace/db";
+import { db, usersTable, receiptsTable, barcodeScansTable, productCacheTable, userProductSubmissionsTable } from "@workspace/db";
 import { ScanReceiptBody } from "@workspace/api-zod";
 import { hashImage, extractTextViaGoogleVision, calculateLevel } from "../lib/scanner";
 import { runAntiFraudChecks, approvePendingPoints } from "../lib/antiFraud";
@@ -570,6 +570,17 @@ router.post("/scan/barcode/manual-classify", async (req, res): Promise<void> => 
     reasoning: result.reasoning,
     emoji: result.emoji,
     co2PerUnit: 0.1,
+  }).onConflictDoNothing();
+
+  await db.insert(userProductSubmissionsTable).values({
+    userId: user.id,
+    barcode: cleanBarcode.startsWith("manual_") ? null : cleanBarcode,
+    productName: result.productName,
+    weightValue: String(weightValue),
+    weightUnit: (weightUnit as string) ?? "g",
+    ecoScore: result.ecoScore,
+    pointsAwarded: Math.min(result.points, effectiveCap),
+    classifiedByAI: true,
   }).onConflictDoNothing();
 
   res.json({
