@@ -59,19 +59,21 @@ router.post("/scan", async (req, res): Promise<void> => {
     return;
   }
 
-  if (validation.date && validation.totalCents !== null && validation.store) {
-    const storeNorm = validation.store.toLowerCase().trim();
+  if (validation.date && validation.totalCents !== null) {
+    const dupConditions = [
+      eq(receiptsTable.receiptDate, validation.date),
+      eq(receiptsTable.receiptTotal, validation.totalCents),
+    ];
+    if (validation.store) {
+      dupConditions.push(
+        sql`lower(trim(coalesce(${receiptsTable.storeName}, ''))) = ${validation.store.toLowerCase().trim()}`
+      );
+    }
 
     const [semanticDuplicate] = await db
       .select({ id: receiptsTable.id })
       .from(receiptsTable)
-      .where(
-        and(
-          eq(receiptsTable.receiptDate, validation.date),
-          eq(receiptsTable.receiptTotal, validation.totalCents),
-          sql`lower(trim(coalesce(${receiptsTable.storeName}, ''))) = ${storeNorm}`,
-        ),
-      )
+      .where(and(...dupConditions))
       .limit(1);
 
     if (semanticDuplicate) {
