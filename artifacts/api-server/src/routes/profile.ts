@@ -205,7 +205,7 @@ router.get("/profile/referral", async (req, res): Promise<void> => {
   }));
 });
 
-router.post("/profile/referral", async (req, res): Promise<void> => {
+router.post("/profile/referral/apply", async (req, res): Promise<void> => {
   const parsed = ApplyReferralBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });

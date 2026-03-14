@@ -79,6 +79,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReferralInfo"
+
+  /profile/referral/apply:
     post:
       operationId: applyReferral
       tags: [profile]
@@ -301,7 +303,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/AcceptedStores"
 
-  /vouchers:
+  /marketplace/vouchers:
     get:
       operationId: getVouchers
       tags: [vouchers]
@@ -322,7 +324,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/Voucher"
 
-  /vouchers/{id}/redeem:
+  /marketplace/vouchers/{id}/redeem:
     post:
       operationId: redeemVoucher
       tags: [vouchers]
@@ -347,7 +349,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /redemptions:
+  /marketplace/redemptions:
     get:
       operationId: getRedemptions
       tags: [vouchers]

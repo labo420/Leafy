@@ -13,7 +13,7 @@ import { requireUser } from "./profile";
 
 const router: IRouter = Router();
 
-router.get("/vouchers", async (req, res): Promise<void> => {
+router.get("/marketplace/vouchers", async (req, res): Promise<void> => {
   const queryParams = GetVouchersQueryParams.safeParse(req.query);
   const category = queryParams.success ? queryParams.data.category : undefined;
 
@@ -39,7 +39,7 @@ router.get("/vouchers", async (req, res): Promise<void> => {
   }))));
 });
 
-router.post("/vouchers/:id/redeem", async (req, res): Promise<void> => {
+router.post("/marketplace/vouchers/:id/redeem", async (req, res): Promise<void> => {
   const params = RedeemVoucherParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -101,7 +101,7 @@ router.post("/vouchers/:id/redeem", async (req, res): Promise<void> => {
   }));
 });
 
-router.get("/redemptions", async (req, res): Promise<void> => {
+router.get("/marketplace/redemptions", async (req, res): Promise<void> => {
   const user = await requireUser(req, res);
   if (!user) return;
 

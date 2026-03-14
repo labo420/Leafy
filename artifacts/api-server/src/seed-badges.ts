@@ -13,11 +13,11 @@ const seedBadges = [
   { name: "Livello Platino", emoji: "💎", category: "Livello", description: "Hai raggiunto il livello Platino!", unlockHint: "Accumula abbastanza punti per il livello Platino", badgeType: "lifetime" as const, targetCount: 1 },
   { name: "Ambasciatore", emoji: "👥", category: "Sociale", description: "Hai invitato 5 amici su Leafy", unlockHint: "Invita 5 amici con il tuo codice referral", badgeType: "lifetime" as const, targetCount: 5 },
 
-  { name: "Streak 7 giorni", emoji: "🔥", category: "Streak", description: "Scansiona almeno un prodotto per 7 giorni consecutivi", unlockHint: "Usa Leafy per 7 giorni di fila", badgeType: "weekly" as const, targetCount: 7 },
+  { name: "Eroe Settimanale", emoji: "🔥", category: "Streak", description: "Scansiona almeno un prodotto per 7 giorni consecutivi", unlockHint: "Usa Leafy per 7 giorni di fila", badgeType: "weekly" as const, targetCount: 7 },
   { name: "Settimana Plastic-Free", emoji: "🌊", category: "Sfida", description: "Compra solo prodotti senza plastica per una settimana", unlockHint: "Acquista 5 prodotti plastic-free in una settimana", badgeType: "weekly" as const, targetCount: 5 },
   { name: "Campione del Mese", emoji: "🏆", category: "Volume", description: "Scansiona 20 prodotti green in un mese", unlockHint: "Scansiona 20 prodotti green questo mese", badgeType: "monthly" as const, targetCount: 20 },
   { name: "Vegano Curioso", emoji: "🌿", category: "Sfida", description: "Prova 5 prodotti vegani nuovi questo mese", unlockHint: "Acquista 5 prodotti vegani diversi", badgeType: "monthly" as const, targetCount: 5 },
-  { name: "Eco-Warrior Stagionale", emoji: "🌍", category: "Sfida", description: "Completa 10 sfide in un trimestre", unlockHint: "Completa 10 sfide questo trimestre", badgeType: "seasonal" as const, targetCount: 10 },
+  { name: "Guerriero Invernale", emoji: "🌍", category: "Sfida", description: "Completa 10 sfide in un trimestre", unlockHint: "Completa 10 sfide questo trimestre", badgeType: "seasonal" as const, targetCount: 10 },
 ];
 
 export async function seedAllBadges() {

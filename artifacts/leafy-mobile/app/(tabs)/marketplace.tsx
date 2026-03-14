@@ -134,19 +134,19 @@ export default function MarketplaceScreen() {
 
   const { data: vouchers, isLoading } = useQuery<Voucher[]>({
     queryKey: ["vouchers"],
-    queryFn: () => apiFetch("/vouchers"),
+    queryFn: () => apiFetch("/marketplace/vouchers"),
     enabled: !!user,
   });
 
   const { data: redemptions } = useQuery<Redemption[]>({
     queryKey: ["redemptions"],
-    queryFn: () => apiFetch("/vouchers/redemptions"),
+    queryFn: () => apiFetch("/marketplace/redemptions"),
     enabled: !!user,
   });
 
   const redeemMutation = useMutation({
     mutationFn: (id: number) =>
-      apiFetch<RedemptionResult>(`/vouchers/${id}/redeem`, { method: "POST" }),
+      apiFetch<RedemptionResult>(`/marketplace/vouchers/${id}/redeem`, { method: "POST" }),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       queryClient.invalidateQueries({ queryKey: ["redemptions"] });

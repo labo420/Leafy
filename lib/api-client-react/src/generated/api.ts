@@ -352,7 +352,7 @@ export function useGetReferral<
  * @summary Apply a referral code
  */
 export const getApplyReferralUrl = () => {
-  return `/api/profile/referral`;
+  return `/api/profile/referral/apply`;
 };
 
 export const applyReferral = async (
@@ -1192,8 +1192,8 @@ export const getGetVouchersUrl = (params?: GetVouchersParams) => {
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/vouchers?${stringifiedParams}`
-    : `/api/vouchers`;
+    ? `/api/marketplace/vouchers?${stringifiedParams}`
+    : `/api/marketplace/vouchers`;
 };
 
 export const getVouchers = async (
@@ -1207,7 +1207,7 @@ export const getVouchers = async (
 };
 
 export const getGetVouchersQueryKey = (params?: GetVouchersParams) => {
-  return [`/api/vouchers`, ...(params ? [params] : [])] as const;
+  return [`/api/marketplace/vouchers`, ...(params ? [params] : [])] as const;
 };
 
 export const getGetVouchersQueryOptions = <
@@ -1275,7 +1275,7 @@ export function useGetVouchers<
  * @summary Redeem a voucher with points
  */
 export const getRedeemVoucherUrl = (id: number) => {
-  return `/api/vouchers/${id}/redeem`;
+  return `/api/marketplace/vouchers/${id}/redeem`;
 };
 
 export const redeemVoucher = async (
@@ -1359,7 +1359,7 @@ export const useRedeemVoucher = <
  * @summary Get user redemption history
  */
 export const getGetRedemptionsUrl = () => {
-  return `/api/redemptions`;
+  return `/api/marketplace/redemptions`;
 };
 
 export const getRedemptions = async (
@@ -1372,7 +1372,7 @@ export const getRedemptions = async (
 };
 
 export const getGetRedemptionsQueryKey = () => {
-  return [`/api/redemptions`] as const;
+  return [`/api/marketplace/redemptions`] as const;
 };
 
 export const getGetRedemptionsQueryOptions = <
