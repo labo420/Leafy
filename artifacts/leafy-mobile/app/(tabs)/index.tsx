@@ -352,14 +352,7 @@ function GuestAuthScreen() {
               ]}
               onPress={() => toggleSection("login")}
             >
-              <View style={authStyles.btnRow}>
-                <Text style={[authStyles.primaryBtnText, expanded === "login" && authStyles.btnActiveText]}>Accedi</Text>
-                <Feather
-                  name={expanded === "login" ? "chevron-up" : "chevron-down"}
-                  size={18}
-                  color={expanded === "login" ? "#FFFFFF" : "#2E6B50"}
-                />
-              </View>
+              <Text style={[authStyles.primaryBtnText, expanded === "login" && authStyles.btnActiveText]}>Accedi</Text>
             </Pressable>
 
             {expanded === "login" && renderFormFields("login")}
@@ -372,14 +365,7 @@ function GuestAuthScreen() {
               ]}
               onPress={() => toggleSection("register")}
             >
-              <View style={authStyles.btnRow}>
-                <Text style={authStyles.outlineBtnText}>Crea account</Text>
-                <Feather
-                  name={expanded === "register" ? "chevron-up" : "chevron-down"}
-                  size={18}
-                  color="#FFFFFF"
-                />
-              </View>
+              <Text style={authStyles.outlineBtnText}>Crea account</Text>
             </Pressable>
 
             {expanded === "register" && renderFormFields("register")}
@@ -791,6 +777,7 @@ const authStyles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 16,
     paddingHorizontal: 20,
+    alignItems: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
@@ -805,12 +792,6 @@ const authStyles = StyleSheet.create({
   btnActiveText: {
     color: "#FFFFFF",
   },
-  btnRow: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-    gap: 8,
-  },
   primaryBtnText: {
     fontSize: 17,
     fontFamily: "DMSans_700Bold",
@@ -823,6 +804,7 @@ const authStyles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 15,
     paddingHorizontal: 20,
+    alignItems: "center",
     borderWidth: 1.5,
     borderColor: "rgba(255,255,255,0.35)",
   },
