@@ -42,7 +42,7 @@ Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti 
 | `api-server` | Express 5 (porta 8080, workflow: `artifacts/api-server: API Server`) | Backend REST API |
 | `leafy` | React/Vite (porta 24389, preview path `/`) | Frontend web con sistema badge a due livelli |
 | `leafy-register` | React/Vite (porta 5000, preview path `/leafy-register/`) | Pannello admin web |
-| `mockup-sandbox` | Vite (preview path `/__mockup/`) | Sandbox per mockup componenti su canvas |
+| `mockup-sandbox` | Vite (preview path `/__mockup/`, workflow: `artifacts/mockup-sandbox: Component Preview Server`) | Sandbox per mockup componenti su canvas. ⚠️ Conflitto porta 8081 con leafy-mobile — non avviato automaticamente. |
 
 > **Nota migrazione Replit**: tutti gli artifact sono ora registrati nel selettore app. L'API server gira tramite il workflow dedicato `artifacts/api-server: API Server` (non più via "Start application").
 
@@ -166,7 +166,7 @@ EXPO_PUBLIC_DOMAIN=<tuo-dominio> pnpm --filter @workspace/leafy-mobile run dev
 I workflow Replit gestiscono tutto automaticamente. Clicca **Run** o usa i workflow nel pannello:
 
 ```bash
-# Backend API (workflow "Start application")
+# Backend API (workflow "artifacts/api-server: API Server")
 PORT=8080 pnpm --filter @workspace/api-server run dev
 
 # Frontend web (workflow "artifacts/leafy: web")
