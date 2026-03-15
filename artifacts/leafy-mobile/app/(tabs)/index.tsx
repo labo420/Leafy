@@ -376,18 +376,18 @@ function GuestAuthScreen() {
               <View style={authStyles.dividerLine} />
             </View>
 
-            <Pressable onPress={() => {}} style={({ pressed }) => [authStyles.oauthBtn, pressed && { opacity: 0.85 }]}>
+            <Pressable onPress={() => {}} style={({ pressed }) => [authStyles.googleBtn, pressed && { opacity: 0.9 }]}>
               <View style={authStyles.googleIcon}>
                 <Text style={authStyles.googleG}>G</Text>
               </View>
-              <Text style={authStyles.oauthBtnText}>Continua con Google</Text>
+              <Text style={authStyles.googleBtnText}>Continua con Google</Text>
             </Pressable>
 
-            <Pressable onPress={() => {}} style={({ pressed }) => [authStyles.oauthBtn, pressed && { opacity: 0.85 }]}>
+            <Pressable onPress={() => {}} style={({ pressed }) => [authStyles.fbBtn, pressed && { opacity: 0.9 }]}>
               <View style={authStyles.fbIcon}>
                 <Text style={authStyles.fbF}>f</Text>
               </View>
-              <Text style={authStyles.oauthBtnText}>Continua con Facebook</Text>
+              <Text style={authStyles.fbBtnText}>Continua con Facebook</Text>
             </Pressable>
 
             <Text style={authStyles.footer}>Ogni scelta sostenibile ti premia</Text>
@@ -842,23 +842,26 @@ const authStyles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     color: "rgba(255,255,255,0.5)",
   },
-  oauthBtn: {
+  googleBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 10,
+    gap: 12,
     width: "100%",
     maxWidth: 280,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.25)",
     borderRadius: 14,
     paddingVertical: 13,
-    backgroundColor: "rgba(255,255,255,0.08)",
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  oauthBtnText: {
+  googleBtnText: {
     fontSize: 14,
-    fontFamily: "Inter_500Medium",
-    color: "#FFFFFF",
+    fontFamily: "Inter_600SemiBold",
+    color: "#3C4043",
   },
   googleIcon: {
     width: 22,
@@ -867,6 +870,8 @@ const authStyles = StyleSheet.create({
     backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
   },
   googleG: {
     fontSize: 13,
@@ -874,11 +879,32 @@ const authStyles = StyleSheet.create({
     color: "#4285F4",
     lineHeight: 16,
   },
+  fbBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    width: "100%",
+    maxWidth: 280,
+    borderRadius: 14,
+    paddingVertical: 13,
+    backgroundColor: "#1877F2",
+    shadowColor: "#1877F2",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  fbBtnText: {
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+    color: "#FFFFFF",
+  },
   fbIcon: {
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: "#1877F2",
+    backgroundColor: "rgba(255,255,255,0.25)",
     alignItems: "center",
     justifyContent: "center",
   },
