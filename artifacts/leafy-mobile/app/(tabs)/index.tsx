@@ -5,6 +5,8 @@ import { router } from "expo-router";
 import React, { useEffect } from "react";
 import {
   ActivityIndicator,
+  Dimensions,
+  Image,
   Platform,
   Pressable,
   RefreshControl,
@@ -203,15 +205,57 @@ export default function HomeScreen() {
 
   if (!user) {
     return (
-      <View style={[styles.centered, { paddingTop: topPadding }]}>
-        <MaterialCommunityIcons name="leaf" size={48} color={Colors.primaryMuted} />
-        <Text style={styles.guestTitle}>Benvenuto su Leafy</Text>
-        <Text style={styles.guestSub}>
-          Accedi per iniziare a guadagnare punti green
-        </Text>
-        <Pressable style={styles.loginBtn} onPress={() => router.push("/login")}>
-          <Text style={styles.loginBtnText}>Accedi</Text>
-        </Pressable>
+      <View style={styles.guestScreen}>
+        <View style={styles.guestDecoCircle1} />
+        <View style={styles.guestDecoCircle2} />
+
+        <Animated.View
+          entering={FadeInDown.delay(100).duration(600)}
+          style={styles.guestContent}
+        >
+          <Text style={styles.guestWelcome}>Benvenuto su</Text>
+
+          <Image
+            source={require("@/assets/images/leafy-logo-dark.png")}
+            style={styles.guestLogo}
+            resizeMode="contain"
+          />
+
+          <Animated.View entering={FadeInDown.delay(300).duration(500)}>
+            <Text style={styles.guestTagline}>
+              Fai la spesa, guadagna punti,{"\n"}proteggi il pianeta.
+            </Text>
+          </Animated.View>
+        </Animated.View>
+
+        <Animated.View
+          entering={FadeInDown.delay(500).duration(500)}
+          style={styles.guestActions}
+        >
+          <Pressable
+            style={({ pressed }) => [
+              styles.guestLoginBtn,
+              pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
+            ]}
+            onPress={() => router.push("/login")}
+          >
+            <Text style={styles.guestLoginBtnText}>Accedi</Text>
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.guestRegisterBtn,
+              pressed && { opacity: 0.8 },
+            ]}
+            onPress={() => router.push("/login")}
+          >
+            <Text style={styles.guestRegisterBtnText}>Crea account</Text>
+          </Pressable>
+
+          <Text style={styles.guestFooter}>
+            Ogni scelta sostenibile ti premia
+          </Text>
+        </Animated.View>
       </View>
     );
   }
@@ -339,32 +383,98 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
     padding: 32,
   },
-  guestTitle: {
-    fontSize: 24,
-    fontFamily: "DMSans_700Bold",
-    color: Colors.text,
-    marginTop: 16,
-    textAlign: "center",
+  guestScreen: {
+    flex: 1,
+    backgroundColor: "#2E6B50",
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
   },
-  guestSub: {
+  guestDecoCircle1: {
+    position: "absolute",
+    top: -80,
+    right: -60,
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor: "rgba(255,255,255,0.06)",
+  },
+  guestDecoCircle2: {
+    position: "absolute",
+    bottom: -40,
+    left: -50,
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: "rgba(255,255,255,0.04)",
+  },
+  guestContent: {
+    alignItems: "center",
+    paddingHorizontal: 32,
+  },
+  guestWelcome: {
+    fontSize: 16,
+    fontFamily: "Inter_400Regular",
+    color: "rgba(255,255,255,0.7)",
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  guestLogo: {
+    width: Dimensions.get("window").width * 0.55,
+    height: 100,
+    marginBottom: 16,
+  },
+  guestTagline: {
     fontSize: 15,
     fontFamily: "Inter_400Regular",
-    color: Colors.textSecondary,
+    color: "rgba(255,255,255,0.6)",
     textAlign: "center",
-    marginTop: 8,
-    lineHeight: 22,
+    lineHeight: 24,
   },
-  loginBtn: {
-    marginTop: 24,
-    backgroundColor: Colors.leaf,
-    borderRadius: 14,
-    paddingVertical: 14,
-    paddingHorizontal: 40,
+  guestActions: {
+    width: "100%",
+    paddingHorizontal: 32,
+    marginTop: 48,
+    alignItems: "center",
+    gap: 12,
   },
-  loginBtnText: {
+  guestLoginBtn: {
+    width: "100%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    paddingVertical: 16,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  guestLoginBtnText: {
+    fontSize: 17,
+    fontFamily: "DMSans_700Bold",
+    color: "#2E6B50",
+    letterSpacing: 0.3,
+  },
+  guestRegisterBtn: {
+    width: "100%",
+    borderRadius: 16,
+    paddingVertical: 15,
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.35)",
+  },
+  guestRegisterBtnText: {
     fontSize: 16,
-    fontFamily: "Inter_700Bold",
-    color: "#fff",
+    fontFamily: "DMSans_600SemiBold",
+    color: "#FFFFFF",
+  },
+  guestFooter: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    color: "rgba(255,255,255,0.4)",
+    marginTop: 16,
+    textAlign: "center",
   },
   header: {
     paddingHorizontal: 20,
