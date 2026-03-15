@@ -74,7 +74,7 @@ const LEVEL_BADGE_IMAGES: Record<string, ImageSourcePropType> = {
 };
 
 const LARGEST_NODE = Math.max(...LEVEL_CONFIG.map(l => l.nodeSize));
-const NODE_Y_OFFSETS = [48, 36, 24, 12, 0];
+const NODE_Y_OFFSETS = [72, 54, 36, 18, 0];
 const LABEL_HEIGHT = 16;
 const BAR_PADDING_H = 16;
 const LINE_STROKE = 8;
@@ -96,8 +96,8 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
 
   return (
     <View style={milestoneStyles.container}>
-      <View style={{ width: barWidth, height: totalHeight }}>
-        <Svg width={barWidth} height={totalHeight}>
+      <View style={{ width: barWidth, height: totalHeight, position: "relative" }}>
+        <Svg width={barWidth} height={totalHeight} style={{ position: "absolute", top: 0, left: 0 }}>
           {LEVEL_CONFIG.map((_, i) => {
             if (i === 0) return null;
             const from = nodePositions[i - 1];
@@ -109,7 +109,7 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
                 y1={from.y}
                 x2={to.x}
                 y2={to.y}
-                stroke="rgba(255,255,255,0.12)"
+                stroke="rgba(255,255,255,0.22)"
                 strokeWidth={LINE_STROKE}
                 strokeLinecap="round"
               />
