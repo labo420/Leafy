@@ -109,22 +109,28 @@ if (fs.existsSync(TUNNEL_FILE)) fs.unlinkSync(TUNNEL_FILE);
 
 function pollNgrokAPI() {
   http.get(NGROK_API, (res) => {
+    if (res.statusCode !== 200) return;
     let data = "";
     res.on("data", (chunk) => (data += chunk));
     res.on("end", () => {
       try {
+        if (!data) return;
         const json = JSON.parse(data);
         const httpTunnel = (json.tunnels || []).find(
-          (t) => t.public_url && t.public_url.startsWith("http://") && t.public_url.includes(".exp.direct")
+          (t) => t && t.public_url && t.public_url.startsWith("http://") && t.public_url.includes(".exp.direct")
         );
         if (httpTunnel) {
           const expUrl = httpTunnel.public_url.replace("http://", "exp://");
           fs.writeFileSync(TUNNEL_FILE, expUrl, "utf8");
           console.log(`\n› Metro waiting on ${expUrl}`);
         }
-      } catch {}
+      } catch (e) {
+        console.warn("Failed to parse ngrok API response:", e.message);
+      }
     });
-  }).on("error", () => {});
+  }).on("error", (err) => {
+    console.warn("ngrok API request failed:", err.message);
+  });
 }
 
 if (workflowPort && workflowPort !== expoPort) {
