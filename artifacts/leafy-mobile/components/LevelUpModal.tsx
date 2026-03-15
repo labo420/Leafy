@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import {
   Dimensions,
   Modal,
@@ -21,7 +21,7 @@ import Animated, {
 import ConfettiCannon from "react-native-confetti-cannon";
 import Colors from "@/constants/colors";
 
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
+const { width: SCREEN_W } = Dimensions.get("window");
 
 const LEVEL_BADGE_IMAGES: Record<string, ImageSourcePropType> = {
   Germoglio: require("@/assets/badges/level-germoglio.png"),
@@ -46,10 +46,56 @@ interface LevelUpModalProps {
   onClose: () => void;
 }
 
-const PULSE_DURATION = 1800;
+const PULSE_DURATION = 1200;
 const FLASH_DELAY = PULSE_DURATION;
-const REVEAL_DELAY = FLASH_DELAY + 400;
-const AUTO_CLOSE_DELAY = REVEAL_DELAY + 3000;
+const REVEAL_DELAY = FLASH_DELAY + 300;
+const AUTO_CLOSE_DELAY = REVEAL_DELAY + 2200;
+
+const PARTICLE_COUNT = 12;
+
+function RadialParticle({ index, total, delay }: { index: number; total: number; delay: number }) {
+  const angle = (index / total) * 2 * Math.PI;
+  const tx = Math.cos(angle) * 120;
+  const ty = Math.sin(angle) * 120;
+
+  const progress = useSharedValue(0);
+  const opacity = useSharedValue(0);
+
+  useEffect(() => {
+    opacity.value = withDelay(delay, withSequence(
+      withTiming(1, { duration: 80 }),
+      withDelay(200, withTiming(0, { duration: 300 })),
+    ));
+    progress.value = withDelay(delay, withTiming(1, { duration: 500, easing: Easing.out(Easing.cubic) }));
+  }, [delay]);
+
+  const style = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: tx * progress.value },
+      { translateY: ty * progress.value },
+      { scale: 1 - progress.value * 0.6 },
+    ],
+    opacity: opacity.value,
+  }));
+
+  const size = 8 + (index % 3) * 4;
+  const colors = ["#4CAF50", "#81C784", "#FFD700", "#A5D6A7", "#66BB6A", "#C8E6C9"];
+
+  return (
+    <Animated.View
+      style={[
+        {
+          position: "absolute",
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: colors[index % colors.length],
+        },
+        style,
+      ]}
+    />
+  );
+}
 
 export default function LevelUpModal({
   visible,
@@ -96,56 +142,53 @@ export default function LevelUpModal({
     textOpacity.value = 0;
     backdropOpacity.value = 0;
 
-    backdropOpacity.value = withTiming(1, { duration: 300 });
+    backdropOpacity.value = withTiming(1, { duration: 250 });
 
     oldScale.value = withSequence(
-      withTiming(1.05, { duration: 300, easing: Easing.inOut(Easing.ease) }),
-      withTiming(0.95, { duration: 250 }),
-      withTiming(1.1, { duration: 200 }),
-      withTiming(0.9, { duration: 180 }),
-      withTiming(1.15, { duration: 160 }),
-      withTiming(0.85, { duration: 140 }),
-      withTiming(1.25, { duration: 120 }),
-      withTiming(0.8, { duration: 100 }),
+      withTiming(1.05, { duration: 200, easing: Easing.inOut(Easing.ease) }),
+      withTiming(0.95, { duration: 180 }),
+      withTiming(1.12, { duration: 160 }),
+      withTiming(0.88, { duration: 140 }),
+      withTiming(1.2, { duration: 120 }),
+      withTiming(0.82, { duration: 100 }),
       withTiming(1.35, { duration: 80 }),
-      withTiming(0.75, { duration: 60 }),
-      withTiming(1.5, { duration: 50 }),
+      withTiming(1.5, { duration: 60 }),
     );
 
     oldOpacity.value = withDelay(
-      PULSE_DURATION - 100,
-      withTiming(0, { duration: 150 }),
+      PULSE_DURATION - 80,
+      withTiming(0, { duration: 120 }),
     );
 
     flashOpacity.value = withDelay(
       FLASH_DELAY,
       withSequence(
-        withTiming(1, { duration: 100 }),
-        withTiming(0, { duration: 500 }),
+        withTiming(1, { duration: 80 }),
+        withTiming(0, { duration: 350 }),
       ),
     );
     flashScale.value = withDelay(
       FLASH_DELAY,
-      withTiming(3, { duration: 400, easing: Easing.out(Easing.ease) }),
+      withTiming(3, { duration: 350, easing: Easing.out(Easing.ease) }),
     );
 
     newScale.value = withDelay(
       REVEAL_DELAY,
-      withSpring(1, { damping: 8, stiffness: 120, mass: 0.8 }),
+      withSpring(1, { damping: 8, stiffness: 150, mass: 0.7 }),
     );
     newOpacity.value = withDelay(
       REVEAL_DELAY,
-      withTiming(1, { duration: 200 }),
+      withTiming(1, { duration: 150 }),
     );
 
     textOpacity.value = withDelay(
-      REVEAL_DELAY + 400,
-      withTiming(1, { duration: 400 }),
+      REVEAL_DELAY + 300,
+      withTiming(1, { duration: 300 }),
     );
 
     confettiTimer.current = setTimeout(() => {
       if (mountedRef.current) confettiRef.current?.start();
-    }, REVEAL_DELAY + 200);
+    }, REVEAL_DELAY + 150);
 
     autoCloseTimer.current = setTimeout(() => {
       if (mountedRef.current) onClose();
@@ -177,6 +220,11 @@ export default function LevelUpModal({
     opacity: textOpacity.value,
   }));
 
+  const particles = useMemo(
+    () => Array.from({ length: PARTICLE_COUNT }, (_, i) => i),
+    [],
+  );
+
   if (!visible) return null;
 
   const fromImage = LEVEL_BADGE_IMAGES[fromLevel] ?? LEVEL_BADGE_IMAGES.Germoglio;
@@ -192,6 +240,10 @@ export default function LevelUpModal({
           <Animated.View style={[s.badgeWrap, oldBadgeStyle]}>
             <Image source={fromImage} style={s.badgeImage} resizeMode="contain" />
           </Animated.View>
+
+          {particles.map((i) => (
+            <RadialParticle key={i} index={i} total={PARTICLE_COUNT} delay={FLASH_DELAY} />
+          ))}
 
           <Animated.View style={[s.flash, flashStyle]} />
 

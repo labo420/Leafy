@@ -528,11 +528,15 @@ export default function ProfiloScreen() {
           </Pressable>
         </View>
         <Text style={styles.username}>{username}</Text>
-        <View style={styles.levelPill}>
+        <View style={[styles.levelPill, {
+          backgroundColor: level === "Germoglio" ? "#E8F5E9" : level === "Ramoscello" ? "#C8E6C9" : level === "Arbusto" ? "#A5D6A7" : level === "Albero" ? "#81C784" : "#66BB6A",
+        }]}>
           <Text style={{ fontSize: 16 }}>
             {level === "Germoglio" ? "🌱" : level === "Ramoscello" ? "🌿" : level === "Arbusto" ? "🍃" : level === "Albero" ? "🌳" : "🌲"}
           </Text>
-          <Text style={styles.levelPillText}>{level}</Text>
+          <Text style={[styles.levelPillText, {
+            color: level === "Germoglio" || level === "Ramoscello" ? "#1B5E20" : "#fff",
+          }]}>{level}</Text>
         </View>
       </Animated.View>
 
