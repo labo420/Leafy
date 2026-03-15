@@ -25,11 +25,13 @@ Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti 
 
 | Artifact | Path | Descrizione |
 |----------|------|-------------|
-| `leafy-mobile` | Expo app | App principale React Native (iOS/Android/web) |
-| `api-server` | Express 5 | Backend REST API su porta 8080 |
-| `leafy` | React/Vite | Frontend web con sistema badge a due livelli (porta 24389, preview path `/`) |
-| `leafy-register` | React/Vite | Pannello admin web (porta 5000, preview path `/leafy-register/`) |
-| `mockup-sandbox` | Vite | Sandbox per mockup componenti su canvas |
+| `leafy-mobile` | Expo app (preview path `/leafy-mobile/`) | App principale React Native (iOS/Android/web) |
+| `api-server` | Express 5 (porta 8080, workflow: `artifacts/api-server: API Server`) | Backend REST API |
+| `leafy` | React/Vite (porta 24389, preview path `/`) | Frontend web con sistema badge a due livelli |
+| `leafy-register` | React/Vite (porta 5000, preview path `/leafy-register/`) | Pannello admin web |
+| `mockup-sandbox` | Vite (preview path `/__mockup/`) | Sandbox per mockup componenti su canvas |
+
+> **Nota migrazione Replit**: tutti gli artifact sono ora registrati nel selettore app. L'API server gira tramite il workflow dedicato `artifacts/api-server: API Server` (non più via "Start application").
 
 ---
 
