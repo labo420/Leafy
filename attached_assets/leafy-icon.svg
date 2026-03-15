@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="1024" height="1024">
+    <!-- Sfondo bianco con angoli arrotondati -->
+    <rect width="512" height="512" rx="115" ry="115" fill="white"/>
+
+    <!-- Foglia sinistra (mint #51B888) -->
+    <path d="M 256 420
+             C 225 395 130 310 120 200
+             C 110 110 175 65 250 82
+             C 218 195 243 345 256 420 Z"
+          fill="#51B888"/>
+    <!-- Evidenziazione foglia sinistra -->
+    <path d="M 254 410 C 225 338 162 250 138 168"
+          fill="none" stroke="white" stroke-width="16"
+          stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Foglia destra (forest #2E6B50) -->
+    <path d="M 256 420
+             C 285 395 378 310 388 200
+             C 398 110 335 65 260 82
+             C 292 195 270 345 256 420 Z"
+          fill="#2E6B50"/>
+    <!-- Evidenziazione foglia destra -->
+    <path d="M 258 410 C 287 338 350 250 374 168"
+          fill="none" stroke="white" stroke-width="16"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>

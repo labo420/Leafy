@@ -1,0 +1,26 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "2H3E3_YhcG1hzaVwJHMZD"
+uri = "file://attached_assets/leafy-icon.svg"
+type = "image"
+title = "Icona App — Vettoriale SVG"
+
+[[outputs]]
+id = "dU9R-Jzbl6zzE5mek5_Hg"
+uri = "file://attached_assets/leafy-logo.svg"
+type = "image"
+title = "Logo completo — Vettoriale SVG"
+
+[[outputs]]
+id = "QLoQt48Pq8v9VJN_Thcep"
+uri = "file://attached_assets/leafy-icon-hq.png"
+type = "image"
+title = "Icona App — PNG alta qualità"
+
+[[outputs]]
+id = "fD5GBZJanikWCHPOtmUbW"
+uri = "file://attached_assets/leafy-logo-hq.png"
+type = "image"
+title = "Logo completo — PNG alta qualità"
