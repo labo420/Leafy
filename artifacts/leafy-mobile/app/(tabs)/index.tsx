@@ -8,6 +8,7 @@ import {
   Dimensions,
   Image,
   KeyboardAvoidingView,
+  LayoutAnimation,
   Platform,
   Pressable,
   RefreshControl,
@@ -15,6 +16,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  UIManager,
   View,
 } from "react-native";
 import Animated, {
@@ -23,7 +25,6 @@ import Animated, {
   useSharedValue,
   withSpring,
   withTiming,
-  FadeIn,
   FadeInDown,
 } from "react-native-reanimated";
 import Svg, { Circle } from "react-native-svg";
@@ -172,13 +173,20 @@ const BASE_URL = process.env.EXPO_PUBLIC_DOMAIN
   ? `https://${process.env.EXPO_PUBLIC_DOMAIN}`
   : "";
 
-type AuthMode = "landing" | "login" | "register";
+if (
+  Platform.OS === "android" &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
+type AccordionSection = "login" | "register" | null;
 
 function GuestAuthScreen() {
   const insets = useSafeAreaInsets();
   const { setUser } = useAuth();
 
-  const [mode, setMode] = useState<AuthMode>("landing");
+  const [expanded, setExpanded] = useState<AccordionSection>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
@@ -186,22 +194,24 @@ function GuestAuthScreen() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const switchMode = (next: AuthMode) => {
-    setMode(next);
+  const toggleSection = (section: "login" | "register") => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setError(null);
     setEmail("");
     setPassword("");
     setUsername("");
     setShowPassword(false);
+    setExpanded((prev) => (prev === section ? null : section));
   };
 
   const handleSubmit = async () => {
+    if (!expanded) return;
     setError(null);
     if (!email.trim() || !password) {
       setError("Inserisci email e password.");
       return;
     }
-    if (mode === "register" && !username.trim()) {
+    if (expanded === "register" && !username.trim()) {
       setError("Inserisci un nome utente.");
       return;
     }
@@ -211,8 +221,8 @@ function GuestAuthScreen() {
     }
     setLoading(true);
     try {
-      const endpoint = mode === "login" ? "/api/auth/login" : "/api/auth/register";
-      const body = mode === "login"
+      const endpoint = expanded === "login" ? "/api/auth/login" : "/api/auth/register";
+      const body = expanded === "login"
         ? { email, password }
         : { email, password, username };
       const res = await fetch(`${BASE_URL}${endpoint}`, {
@@ -236,38 +246,145 @@ function GuestAuthScreen() {
     }
   };
 
+  const renderFormFields = (section: "login" | "register") => (
+    <View style={authStyles.accordionBody}>
+      {section === "register" && (
+        <View style={authStyles.inputWrap}>
+          <Feather name="user" size={16} color="rgba(255,255,255,0.5)" style={authStyles.inputIcon} />
+          <TextInput
+            style={authStyles.input}
+            placeholder="Nome utente"
+            placeholderTextColor="rgba(255,255,255,0.4)"
+            value={username}
+            onChangeText={setUsername}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+        </View>
+      )}
+
+      <View style={authStyles.inputWrap}>
+        <Feather name="mail" size={16} color="rgba(255,255,255,0.5)" style={authStyles.inputIcon} />
+        <TextInput
+          style={authStyles.input}
+          placeholder="Email"
+          placeholderTextColor="rgba(255,255,255,0.4)"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+          textContentType="emailAddress"
+        />
+      </View>
+
+      <View style={authStyles.inputWrap}>
+        <Feather name="lock" size={16} color="rgba(255,255,255,0.5)" style={authStyles.inputIcon} />
+        <TextInput
+          style={[authStyles.input, { flex: 1 }]}
+          placeholder="Password (min. 8 caratteri)"
+          placeholderTextColor="rgba(255,255,255,0.4)"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry={!showPassword}
+          textContentType={section === "login" ? "password" : "newPassword"}
+          autoCapitalize="none"
+        />
+        <Pressable onPress={() => setShowPassword((v) => !v)} hitSlop={8}>
+          <Feather name={showPassword ? "eye-off" : "eye"} size={16} color="rgba(255,255,255,0.5)" />
+        </Pressable>
+      </View>
+
+      {error && (
+        <View style={authStyles.errorBox}>
+          <Feather name="alert-circle" size={14} color="#FCA5A5" />
+          <Text style={authStyles.errorText}>{error}</Text>
+        </View>
+      )}
+
+      <Pressable
+        style={({ pressed }) => [authStyles.submitBtn, pressed && { opacity: 0.9 }, loading && { opacity: 0.7 }]}
+        onPress={handleSubmit}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="#2E6B50" />
+        ) : (
+          <Text style={authStyles.submitBtnText}>
+            {section === "login" ? "Accedi" : "Crea account"}
+          </Text>
+        )}
+      </Pressable>
+    </View>
+  );
+
   return (
     <View style={[authStyles.screen, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <View style={authStyles.decoCircle1} />
       <View style={authStyles.decoCircle2} />
 
-      {mode === "landing" ? (
-        <>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={authStyles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           <View style={authStyles.logoSection}>
             <Image
               source={require("@/assets/images/leafy-logo-dark.png")}
-              style={authStyles.logo}
+              style={expanded ? authStyles.logoSmall : authStyles.logo}
               resizeMode="contain"
             />
-            <Text style={authStyles.tagline}>
-              Fai la spesa, guadagna punti,{"\n"}proteggi il pianeta.
-            </Text>
+            {!expanded && (
+              <Text style={authStyles.tagline}>
+                Fai la spesa, guadagna punti,{"\n"}proteggi il pianeta.
+              </Text>
+            )}
           </View>
 
           <View style={authStyles.actions}>
             <Pressable
-              style={({ pressed }) => [authStyles.primaryBtn, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
-              onPress={() => switchMode("login")}
+              style={({ pressed }) => [
+                authStyles.primaryBtn,
+                expanded === "login" && authStyles.btnActive,
+                pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
+              ]}
+              onPress={() => toggleSection("login")}
             >
-              <Text style={authStyles.primaryBtnText}>Accedi</Text>
+              <View style={authStyles.btnRow}>
+                <Text style={[authStyles.primaryBtnText, expanded === "login" && authStyles.btnActiveText]}>Accedi</Text>
+                <Feather
+                  name={expanded === "login" ? "chevron-up" : "chevron-down"}
+                  size={18}
+                  color={expanded === "login" ? "#FFFFFF" : "#2E6B50"}
+                />
+              </View>
             </Pressable>
 
+            {expanded === "login" && renderFormFields("login")}
+
             <Pressable
-              style={({ pressed }) => [authStyles.outlineBtn, pressed && { opacity: 0.8 }]}
-              onPress={() => switchMode("register")}
+              style={({ pressed }) => [
+                authStyles.outlineBtn,
+                expanded === "register" && authStyles.outlineBtnActive,
+                pressed && { opacity: 0.8 },
+              ]}
+              onPress={() => toggleSection("register")}
             >
-              <Text style={authStyles.outlineBtnText}>Crea account</Text>
+              <View style={authStyles.btnRow}>
+                <Text style={authStyles.outlineBtnText}>Crea account</Text>
+                <Feather
+                  name={expanded === "register" ? "chevron-up" : "chevron-down"}
+                  size={18}
+                  color="#FFFFFF"
+                />
+              </View>
             </Pressable>
+
+            {expanded === "register" && renderFormFields("register")}
 
             <View style={authStyles.divider}>
               <View style={authStyles.dividerLine} />
@@ -291,131 +408,8 @@ function GuestAuthScreen() {
 
             <Text style={authStyles.footer}>Ogni scelta sostenibile ti premia</Text>
           </View>
-        </>
-      ) : (
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-        >
-          <ScrollView
-            contentContainerStyle={authStyles.formScroll}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            <View style={authStyles.formHeader}>
-              <Pressable onPress={() => switchMode("landing")} hitSlop={12} style={authStyles.backBtn}>
-                <Feather name="arrow-left" size={22} color="#fff" />
-              </Pressable>
-              <Text style={authStyles.formTitle}>
-                {mode === "login" ? "Accedi" : "Crea account"}
-              </Text>
-              <View style={{ width: 32 }} />
-            </View>
-
-            <Image
-              source={require("@/assets/images/leafy-logo-dark.png")}
-              style={authStyles.formLogo}
-              resizeMode="contain"
-            />
-
-            <View style={authStyles.formCard}>
-              {mode === "register" && (
-                <View style={authStyles.inputWrap}>
-                  <Feather name="user" size={16} color="rgba(255,255,255,0.5)" style={authStyles.inputIcon} />
-                  <TextInput
-                    style={authStyles.input}
-                    placeholder="Nome utente"
-                    placeholderTextColor="rgba(255,255,255,0.4)"
-                    value={username}
-                    onChangeText={setUsername}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
-                </View>
-              )}
-
-              <View style={authStyles.inputWrap}>
-                <Feather name="mail" size={16} color="rgba(255,255,255,0.5)" style={authStyles.inputIcon} />
-                <TextInput
-                  style={authStyles.input}
-                  placeholder="Email"
-                  placeholderTextColor="rgba(255,255,255,0.4)"
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  textContentType="emailAddress"
-                />
-              </View>
-
-              <View style={authStyles.inputWrap}>
-                <Feather name="lock" size={16} color="rgba(255,255,255,0.5)" style={authStyles.inputIcon} />
-                <TextInput
-                  style={[authStyles.input, { flex: 1 }]}
-                  placeholder="Password (min. 8 caratteri)"
-                  placeholderTextColor="rgba(255,255,255,0.4)"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                  textContentType={mode === "login" ? "password" : "newPassword"}
-                  autoCapitalize="none"
-                />
-                <Pressable onPress={() => setShowPassword((v) => !v)} hitSlop={8}>
-                  <Feather name={showPassword ? "eye-off" : "eye"} size={16} color="rgba(255,255,255,0.5)" />
-                </Pressable>
-              </View>
-
-              {error && (
-                <View style={authStyles.errorBox}>
-                  <Feather name="alert-circle" size={14} color="#FCA5A5" />
-                  <Text style={authStyles.errorText}>{error}</Text>
-                </View>
-              )}
-
-              <Pressable
-                style={({ pressed }) => [authStyles.submitBtn, pressed && { opacity: 0.9 }, loading && { opacity: 0.7 }]}
-                onPress={handleSubmit}
-                disabled={loading}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#2E6B50" />
-                ) : (
-                  <Text style={authStyles.submitBtnText}>
-                    {mode === "login" ? "Accedi" : "Crea account"}
-                  </Text>
-                )}
-              </Pressable>
-
-              <View style={authStyles.divider}>
-                <View style={authStyles.dividerLine} />
-                <Text style={authStyles.dividerText}>oppure</Text>
-                <View style={authStyles.dividerLine} />
-              </View>
-
-              <Pressable onPress={() => {}} style={({ pressed }) => [authStyles.oauthBtn, pressed && { opacity: 0.85 }]}>
-                <View style={authStyles.googleIcon}>
-                  <Text style={authStyles.googleG}>G</Text>
-                </View>
-                <Text style={authStyles.oauthBtnText}>Continua con Google</Text>
-              </Pressable>
-
-              <Pressable onPress={() => {}} style={({ pressed }) => [authStyles.oauthBtn, pressed && { opacity: 0.85 }]}>
-                <View style={authStyles.fbIcon}>
-                  <Text style={authStyles.fbF}>f</Text>
-                </View>
-                <Text style={authStyles.oauthBtnText}>Continua con Facebook</Text>
-              </Pressable>
-            </View>
-
-            <Pressable onPress={() => switchMode(mode === "login" ? "register" : "login")}>
-              <Text style={authStyles.switchText}>
-                {mode === "login" ? "Non hai un account? Registrati" : "Hai già un account? Accedi"}
-              </Text>
-            </Pressable>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      )}
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -757,16 +751,26 @@ const authStyles = StyleSheet.create({
     borderRadius: 90,
     backgroundColor: "rgba(255,255,255,0.04)",
   },
-  logoSection: {
-    flex: 0.8,
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: "center",
+    paddingBottom: 20,
+  },
+  logoSection: {
     alignItems: "center",
     paddingHorizontal: 32,
+    paddingTop: 16,
+    paddingBottom: 8,
   },
   logo: {
-    width: SCREEN_WIDTH * 1.1,
-    height: 200,
-    marginBottom: 16,
+    width: SCREEN_WIDTH * 0.7,
+    height: 140,
+    marginBottom: 12,
+  },
+  logoSmall: {
+    width: SCREEN_WIDTH * 0.45,
+    height: 80,
+    marginBottom: 8,
   },
   tagline: {
     fontSize: 18,
@@ -778,10 +782,8 @@ const authStyles = StyleSheet.create({
   actions: {
     width: "100%",
     paddingHorizontal: 32,
-    paddingBottom: 40,
-    marginTop: -40,
+    paddingBottom: 20,
     alignItems: "center",
-    justifyContent: "center",
     gap: 10,
   },
   primaryBtn: {
@@ -790,12 +792,26 @@ const authStyles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 16,
     paddingVertical: 16,
-    alignItems: "center",
+    paddingHorizontal: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 12,
     elevation: 6,
+  },
+  btnActive: {
+    backgroundColor: "rgba(255,255,255,0.15)",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.4)",
+  },
+  btnActiveText: {
+    color: "#FFFFFF",
+  },
+  btnRow: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    gap: 8,
   },
   primaryBtnText: {
     fontSize: 17,
@@ -808,14 +824,26 @@ const authStyles = StyleSheet.create({
     maxWidth: 280,
     borderRadius: 16,
     paddingVertical: 15,
-    alignItems: "center",
+    paddingHorizontal: 20,
     borderWidth: 1.5,
     borderColor: "rgba(255,255,255,0.35)",
+  },
+  outlineBtnActive: {
+    backgroundColor: "rgba(255,255,255,0.15)",
+    borderColor: "rgba(255,255,255,0.5)",
   },
   outlineBtnText: {
     fontSize: 16,
     fontFamily: "DMSans_600SemiBold",
     color: "#FFFFFF",
+  },
+  accordionBody: {
+    width: "100%",
+    maxWidth: 280,
+    gap: 10,
+    paddingTop: 4,
+    paddingBottom: 6,
+    overflow: "hidden" as const,
   },
   divider: {
     flexDirection: "row",
@@ -887,41 +915,6 @@ const authStyles = StyleSheet.create({
     marginTop: 8,
     textAlign: "center",
   },
-  formScroll: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingBottom: 32,
-  },
-  formHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingTop: 12,
-    marginBottom: 8,
-  },
-  backBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.12)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  formTitle: {
-    fontSize: 20,
-    fontFamily: "DMSans_700Bold",
-    color: "#FFFFFF",
-  },
-  formLogo: {
-    width: SCREEN_WIDTH * 0.5,
-    height: 80,
-    alignSelf: "center",
-    marginBottom: 20,
-  },
-  formCard: {
-    width: "100%",
-    gap: 12,
-  },
   inputWrap: {
     flexDirection: "row",
     alignItems: "center",
@@ -970,12 +963,5 @@ const authStyles = StyleSheet.create({
     fontFamily: "DMSans_700Bold",
     color: "#2E6B50",
     letterSpacing: 0.2,
-  },
-  switchText: {
-    fontSize: 14,
-    fontFamily: "Inter_500Medium",
-    color: "rgba(255,255,255,0.7)",
-    textAlign: "center",
-    marginTop: 20,
   },
 });
