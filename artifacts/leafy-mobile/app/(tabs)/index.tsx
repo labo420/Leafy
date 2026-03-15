@@ -178,7 +178,7 @@ const milestoneStyles = StyleSheet.create({
   nodesRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-end",
   },
   node: {
     alignItems: "center",
