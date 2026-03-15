@@ -13,6 +13,7 @@ import * as Haptics from "expo-haptics";
 
 import Colors from "@/constants/colors";
 import { Fonts } from "@/constants/typography";
+import { useAuth } from "@/context/auth";
 
 function TabIcon({ focused, children }: { focused: boolean; children: React.ReactNode }) {
   const pillStyle = useAnimatedStyle(() => ({
@@ -51,6 +52,7 @@ export default function TabLayout() {
   const isIOS = Platform.OS === "ios";
   const isWeb = Platform.OS === "web";
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
 
   return (
     <Tabs
@@ -71,6 +73,7 @@ export default function TabLayout() {
           shadowOpacity: 0.05,
           shadowRadius: 20,
           overflow: "visible",
+          display: !user ? "none" : "flex",
         },
         tabBarBackground: () =>
           isIOS ? (
