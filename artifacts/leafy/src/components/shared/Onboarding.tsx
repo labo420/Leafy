@@ -41,8 +41,8 @@ const steps = [
   {
     emoji: "⬆️",
     title: "Sali di livello",
-    description: "Accumula punti per sbloccare i livelli Bronzo, Argento, Oro e Platino. Più alto è il livello, migliori i premi!",
-    highlight: "🥉 Bronzo → 🥈 Argento → 🥇 Oro → 💎 Platino",
+    description: "Accumula punti per sbloccare i livelli Germoglio, Ramoscello, Arbusto, Albero e Foresta. Più alto è il livello, migliori i premi!",
+    highlight: "🌱 Germoglio → 🌿 Ramoscello → 🍃 Arbusto → 🌳 Albero → 🌲 Foresta",
   },
   {
     emoji: "🎁",

@@ -57,6 +57,7 @@
     "zod-validation-error": "^3.4.0"
   },
   "dependencies": {
-    "expo-camera": "^55.0.9"
+    "expo-camera": "^55.0.9",
+    "react-native-confetti-cannon": "^1.5.2"
   }
 }

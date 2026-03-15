@@ -9,8 +9,9 @@
 export type ProfileLevel = (typeof ProfileLevel)[keyof typeof ProfileLevel];
 
 export const ProfileLevel = {
-  Bronzo: "Bronzo",
-  Argento: "Argento",
-  Oro: "Oro",
-  Platino: "Platino",
+  Germoglio: "Germoglio",
+  Ramoscello: "Ramoscello",
+  Arbusto: "Arbusto",
+  Albero: "Albero",
+  Foresta: "Foresta",
 } as const;

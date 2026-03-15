@@ -37,7 +37,7 @@ router.get("/leaderboard", async (req, res): Promise<void> => {
     rank: i + 1,
     userId: u.id,
     username: u.username,
-    level: u.totalPoints >= 5000 ? "Platino" : u.totalPoints >= 2000 ? "Oro" : u.totalPoints >= 500 ? "Argento" : "Bronzo",
+    level: u.totalPoints >= 10000 ? "Foresta" : u.totalPoints >= 5000 ? "Albero" : u.totalPoints >= 2000 ? "Arbusto" : u.totalPoints >= 500 ? "Ramoscello" : "Germoglio",
     score: u.totalPoints,
     co2SavedKg: Math.round(u.totalPoints * 0.008 * 100) / 100,
     isCurrentUser: u.id === user.id,

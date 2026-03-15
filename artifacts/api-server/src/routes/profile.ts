@@ -20,8 +20,10 @@ const ALL_BADGES = [
   { id: "fair_hero", name: "Eroe Equo", emoji: "❤️", category: "Equo Solidale" },
   { id: "vegan_champ", name: "Campione Vegano", emoji: "🌿", category: "Vegano" },
   { id: "streak_7", name: "7 Giorni di Fila", emoji: "🔥", category: "Bio" },
-  { id: "green_500", name: "500 Punti Verdi", emoji: "🥈", category: "Bio" },
-  { id: "green_2000", name: "2000 Punti Verdi", emoji: "🥇", category: "Bio" },
+  { id: "level_ramoscello", name: "Livello Ramoscello", emoji: "🌿", category: "Livello" },
+  { id: "level_arbusto", name: "Livello Arbusto", emoji: "🍃", category: "Livello" },
+  { id: "level_albero", name: "Livello Albero", emoji: "🌳", category: "Livello" },
+  { id: "level_foresta", name: "Livello Foresta", emoji: "🌲", category: "Livello" },
   { id: "artisan_fan", name: "Fan Artigianale", emoji: "🏺", category: "Artigianale" },
 ];
 
@@ -107,8 +109,10 @@ router.get("/profile", async (req, res): Promise<void> => {
   if (categories.includes("Equo Solidale")) earnedBadges.push("fair_hero");
   if (categories.includes("Vegano")) earnedBadges.push("vegan_champ");
   if (user.streak >= 7) earnedBadges.push("streak_7");
-  if (user.totalPoints >= 500) earnedBadges.push("green_500");
-  if (user.totalPoints >= 2000) earnedBadges.push("green_2000");
+  if (user.totalPoints >= 500) earnedBadges.push("level_ramoscello");
+  if (user.totalPoints >= 2000) earnedBadges.push("level_arbusto");
+  if (user.totalPoints >= 5000) earnedBadges.push("level_albero");
+  if (user.totalPoints >= 10000) earnedBadges.push("level_foresta");
 
   const badges = ALL_BADGES.map(b => ({
     ...b,

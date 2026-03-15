@@ -2,7 +2,7 @@
 
 ## Panoramica del Progetto
 
-Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti scansionano scontrini come prova d'acquisto, poi inquadrano i codici a barre dei prodotti per guadagnare punti basati sull'**Eco-Score** di Open Food Facts. Salgono di livello (Bronzo → Argento → Oro → Platino), completano sfide mensili e riscattano voucher nel marketplace.
+Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti scansionano scontrini come prova d'acquisto, poi inquadrano i codici a barre dei prodotti per guadagnare punti basati sull'**Eco-Score** di Open Food Facts. Salgono di livello (🌱 Germoglio → 🌿 Ramoscello → 🍃 Arbusto → 🌳 Albero → 🌲 Foresta), completano sfide mensili e riscattano voucher nel marketplace.
 
 **Stato attuale**: App Expo React Native funzionante (SDK 54) + backend Express/PostgreSQL + admin panel web + frontend web con sistema badge a due livelli (lifetime + temporali) + whitelist 51 supermercati italiani con validazione AI di catena e provincia. Economia calibrata con cap punti, bonus scontrino, Scontrino Virtuoso, Eco-Hero multiplier. Catena barcode multiAPI (OFF + Nutritionix + USDA + GS1 brand hints). Inserimento manuale prodotti con apprendimento AI.
 

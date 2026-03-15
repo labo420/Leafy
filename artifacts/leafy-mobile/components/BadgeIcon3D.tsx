@@ -27,6 +27,11 @@ const BADGE_IMAGES: Record<string, ImageSourcePropType> = {
   "💧": require("@/assets/badges/badge-wave.png"),
   "🏪": require("@/assets/badges/badge-map-pin.png"),
   "🥉": require("@/assets/badges/badge-silver-medal.png"),
+  "level-germoglio": require("@/assets/badges/level-germoglio.png"),
+  "level-ramoscello": require("@/assets/badges/level-ramoscello.png"),
+  "level-arbusto": require("@/assets/badges/level-arbusto.png"),
+  "level-albero": require("@/assets/badges/level-albero.png"),
+  "level-foresta": require("@/assets/badges/level-foresta.png"),
 };
 
 const FALLBACK_IMAGE = require("@/assets/badges/badge-sprout.png");

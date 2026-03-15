@@ -42,15 +42,169 @@ import type { Profile } from "@workspace/api-client-react";
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 const LEVEL_LABELS: Record<string, string> = {
-  Bronzo: "Bronzo",
-  Argento: "Argento",
-  Oro: "Oro",
-  Platino: "Platino",
-  bronze: "Bronzo",
-  silver: "Argento",
-  gold: "Oro",
-  platinum: "Platino",
+  Germoglio: "Germoglio",
+  Ramoscello: "Ramoscello",
+  Arbusto: "Arbusto",
+  Albero: "Albero",
+  Foresta: "Foresta",
 };
+
+const LEVEL_CONFIG = [
+  { name: "Germoglio", emoji: "🌱", minPts: 0, color: "#8BC34A" },
+  { name: "Ramoscello", emoji: "🌿", minPts: 500, color: "#66BB6A" },
+  { name: "Arbusto", emoji: "🍃", minPts: 2000, color: "#43A047" },
+  { name: "Albero", emoji: "🌳", minPts: 5000, color: "#2E7D32" },
+  { name: "Foresta", emoji: "🌲", minPts: 10000, color: "#1B5E20" },
+];
+
+const LEVEL_BADGE_IMAGES: Record<string, any> = {
+  Germoglio: require("@/assets/badges/level-germoglio.png"),
+  Ramoscello: require("@/assets/badges/level-ramoscello.png"),
+  Arbusto: require("@/assets/badges/level-arbusto.png"),
+  Albero: require("@/assets/badges/level-albero.png"),
+  Foresta: require("@/assets/badges/level-foresta.png"),
+};
+
+function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; points: number }) {
+  const currentIdx = LEVEL_CONFIG.findIndex((l) => l.name === currentLevel);
+  const safeIdx = currentIdx >= 0 ? currentIdx : 0;
+
+  return (
+    <View style={milestoneStyles.container}>
+      <View style={milestoneStyles.lineTrack}>
+        {LEVEL_CONFIG.map((lvl, i) => {
+          if (i === 0) return null;
+          const prevReached = safeIdx >= i;
+          const isTransition = safeIdx === i - 1;
+          let fillPct = 0;
+          if (prevReached) {
+            fillPct = 100;
+          } else if (isTransition) {
+            const prev = LEVEL_CONFIG[i - 1];
+            const range = lvl.minPts - prev.minPts;
+            fillPct = Math.min(100, Math.max(0, ((points - prev.minPts) / range) * 100));
+          }
+          return (
+            <View key={i} style={milestoneStyles.segmentTrack}>
+              <View
+                style={[
+                  milestoneStyles.segmentFill,
+                  { width: `${fillPct}%` },
+                ]}
+              />
+            </View>
+          );
+        })}
+      </View>
+      <View style={milestoneStyles.nodesRow}>
+        {LEVEL_CONFIG.map((lvl, i) => {
+          const reached = safeIdx >= i;
+          return (
+            <View key={i} style={milestoneStyles.node}>
+              <View
+                style={[
+                  milestoneStyles.nodeCircle,
+                  reached ? milestoneStyles.nodeReached : milestoneStyles.nodeLocked,
+                ]}
+              >
+                <Image
+                  source={LEVEL_BADGE_IMAGES[lvl.name]}
+                  style={[
+                    milestoneStyles.nodeImage,
+                    !reached && milestoneStyles.nodeImageLocked,
+                  ]}
+                  resizeMode="contain"
+                />
+              </View>
+              <Text
+                style={[
+                  milestoneStyles.nodeLabel,
+                  reached && milestoneStyles.nodeLabelReached,
+                ]}
+                numberOfLines={1}
+              >
+                {lvl.name}
+              </Text>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+const milestoneStyles = StyleSheet.create({
+  container: {
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  lineTrack: {
+    flexDirection: "row",
+    position: "absolute",
+    top: 28,
+    left: 44,
+    right: 44,
+    height: 4,
+    gap: 0,
+  },
+  segmentTrack: {
+    flex: 1,
+    height: 4,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderRadius: 2,
+    overflow: "hidden",
+  },
+  segmentFill: {
+    height: 4,
+    backgroundColor: "#fff",
+    borderRadius: 2,
+  },
+  nodesRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  node: {
+    alignItems: "center",
+    width: 56,
+  },
+  nodeCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+  nodeReached: {
+    backgroundColor: "rgba(255,255,255,0.25)",
+    borderWidth: 2,
+    borderColor: "#fff",
+  },
+  nodeLocked: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.15)",
+  },
+  nodeImage: {
+    width: 28,
+    height: 28,
+  },
+  nodeImageLocked: {
+    opacity: 0.35,
+  },
+  nodeLabel: {
+    fontSize: 9,
+    fontFamily: "Inter_500Medium",
+    color: "rgba(255,255,255,0.4)",
+    textAlign: "center",
+  },
+  nodeLabelReached: {
+    color: "#fff",
+    fontFamily: "Inter_600SemiBold",
+  },
+});
 
 const MOTIVATIONAL_MESSAGES = [
   (name: string) => `Oggi sei già un passo avanti, ${name}!`,
@@ -475,7 +629,7 @@ export default function HomeScreen() {
   const username = profile?.username || user?.firstName || "Utente";
   const streak = profile?.streak ?? 0;
   const points = profile?.totalPoints ?? 0;
-  const level = profile?.level ?? "Bronzo";
+  const level = profile?.level ?? "Germoglio";
   const levelProgress = Math.max(0, Math.min(100, profile?.levelProgress ?? 0));
   const nextLevelPoints = profile?.nextLevelPoints ?? 0;
   const safeInitial = (username.trim().charAt(0) || "U").toUpperCase();
@@ -535,21 +689,7 @@ export default function HomeScreen() {
             heroMode
           />
 
-          <View style={styles.progressBarSection}>
-            <View style={styles.progressBarLabels}>
-              <Text style={styles.progressBarLabelHero}>
-                {LEVEL_LABELS[level] ?? level}
-              </Text>
-              <Text style={styles.progressBarLabelHero}>
-                {nextLevelPoints.toLocaleString("it-IT")} pts al prossimo
-              </Text>
-            </View>
-            <View style={styles.progressBarTrackHero}>
-              <View
-                style={[styles.progressBarFillHero, { width: `${levelProgress}%` }]}
-              />
-            </View>
-          </View>
+          <LevelMilestoneBar currentLevel={level} points={points} />
         </Animated.View>
       </LinearGradient>
 

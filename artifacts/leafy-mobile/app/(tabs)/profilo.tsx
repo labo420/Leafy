@@ -483,7 +483,7 @@ export default function ProfiloScreen() {
 
   const username = profile?.username || user?.firstName || "Utente";
   const safeInitial = (username.trim().charAt(0) || "U").toUpperCase();
-  const level = profile?.level ?? "Bronzo";
+  const level = profile?.level ?? "Germoglio";
   const profileImageUrl = user?.profileImageUrl;
 
   return (
@@ -529,12 +529,10 @@ export default function ProfiloScreen() {
         </View>
         <Text style={styles.username}>{username}</Text>
         <View style={styles.levelPill}>
-          <MaterialCommunityIcons
-            name={level === "Bronzo" || level === "bronze" ? "medal" : level === "Argento" || level === "silver" ? "medal" : level === "Oro" || level === "gold" ? "medal" : "diamond-stone"}
-            size={16}
-            color={level === "Bronzo" || level === "bronze" ? "#CD7F32" : level === "Argento" || level === "silver" ? "#C0C0C0" : level === "Oro" || level === "gold" ? "#FFD700" : "#B9F2FF"}
-          />
-          <Text style={styles.levelPillText}>Livello {level}</Text>
+          <Text style={{ fontSize: 16 }}>
+            {level === "Germoglio" ? "🌱" : level === "Ramoscello" ? "🌿" : level === "Arbusto" ? "🍃" : level === "Albero" ? "🌳" : "🌲"}
+          </Text>
+          <Text style={styles.levelPillText}>{level}</Text>
         </View>
       </Animated.View>
 

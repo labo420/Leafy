@@ -106,20 +106,46 @@ export function calculateImpact(greenItemsCount: number, categories: string[]): 
   };
 }
 
+export type LevelName = "Germoglio" | "Ramoscello" | "Arbusto" | "Albero" | "Foresta";
+
+export const LEVEL_THRESHOLDS: { name: LevelName; minPoints: number }[] = [
+  { name: "Germoglio", minPoints: 0 },
+  { name: "Ramoscello", minPoints: 500 },
+  { name: "Arbusto", minPoints: 2000 },
+  { name: "Albero", minPoints: 5000 },
+  { name: "Foresta", minPoints: 10000 },
+];
+
 export function calculateLevel(points: number): {
-  level: "Bronzo" | "Argento" | "Oro" | "Platino";
+  level: LevelName;
   nextLevelPoints: number;
   progressPercent: number;
+  levelIndex: number;
 } {
-  if (points < 500) {
-    return { level: "Bronzo", nextLevelPoints: 500, progressPercent: Math.round((points / 500) * 100) };
-  } else if (points < 2000) {
-    return { level: "Argento", nextLevelPoints: 2000, progressPercent: Math.round(((points - 500) / 1500) * 100) };
-  } else if (points < 5000) {
-    return { level: "Oro", nextLevelPoints: 5000, progressPercent: Math.round(((points - 2000) / 3000) * 100) };
-  } else {
-    return { level: "Platino", nextLevelPoints: 5000, progressPercent: 100 };
+  let currentIdx = 0;
+  for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
+    if (points >= LEVEL_THRESHOLDS[i].minPoints) {
+      currentIdx = i;
+      break;
+    }
   }
+
+  const current = LEVEL_THRESHOLDS[currentIdx];
+  const isMax = currentIdx === LEVEL_THRESHOLDS.length - 1;
+
+  if (isMax) {
+    return { level: current.name, nextLevelPoints: current.minPoints, progressPercent: 100, levelIndex: currentIdx };
+  }
+
+  const next = LEVEL_THRESHOLDS[currentIdx + 1];
+  const range = next.minPoints - current.minPoints;
+  const progress = points - current.minPoints;
+  return {
+    level: current.name,
+    nextLevelPoints: next.minPoints,
+    progressPercent: Math.round((progress / range) * 100),
+    levelIndex: currentIdx,
+  };
 }
 
 export function generateReferralCode(): string {

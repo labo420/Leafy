@@ -2,10 +2,11 @@ import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  AppState,
   Image,
   Platform,
   Pressable,
@@ -25,6 +26,7 @@ import Colors from "@/constants/colors";
 import { useAuth } from "@/context/auth";
 import { router } from "expo-router";
 import type { Profile } from "@workspace/api-client-react";
+import LevelUpModal from "@/components/LevelUpModal";
 
 interface AcceptedStoresData {
   standard: string[];
@@ -166,13 +168,17 @@ export default function ScanScreen() {
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [scanResult, setScanResult] = useState<ScanResponse | null>(null);
 
+  const [levelUpVisible, setLevelUpVisible] = useState(false);
+  const [levelUpFrom, setLevelUpFrom] = useState("");
+  const [levelUpTo, setLevelUpTo] = useState("");
+  const prevLevelRef = useRef<string | null>(null);
+
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 + 84 : 100 + insets.bottom;
   const cameraScale = useSharedValue(1);
   const cameraAnimStyle = useAnimatedStyle(() => ({
     transform: [{ scale: cameraScale.value }],
   }));
-
 
   const { data: activeSession, isLoading: sessionLoading } = useQuery<ActiveSession>({
     queryKey: ["active-session"],
@@ -181,11 +187,32 @@ export default function ScanScreen() {
     refetchInterval: 60000,
   });
 
-  useQuery<Profile>({
+  const { data: profileData, refetch: refetchProfile } = useQuery<Profile>({
     queryKey: ["profile"],
     queryFn: () => apiFetch("/profile"),
     enabled: !!user,
   });
+
+  useEffect(() => {
+    if (!profileData?.level) return;
+    if (prevLevelRef.current && prevLevelRef.current !== profileData.level && !levelUpVisible) {
+      setLevelUpFrom(prevLevelRef.current);
+      setLevelUpTo(profileData.level);
+      const tid = setTimeout(() => setLevelUpVisible(true), 600);
+      prevLevelRef.current = profileData.level;
+      return () => clearTimeout(tid);
+    }
+    prevLevelRef.current = profileData.level;
+  }, [profileData?.level, levelUpVisible]);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active" && user) {
+        refetchProfile();
+      }
+    });
+    return () => sub.remove();
+  }, [user, refetchProfile]);
 
   const scanMutation = useMutation({
     mutationFn: (imageBase64: string) =>
@@ -579,6 +606,13 @@ export default function ScanScreen() {
           </Animated.View>
         </>
       )}
+
+      <LevelUpModal
+        visible={levelUpVisible}
+        fromLevel={levelUpFrom}
+        toLevel={levelUpTo}
+        onClose={() => setLevelUpVisible(false)}
+      />
     </ScrollView>
   );
 }
