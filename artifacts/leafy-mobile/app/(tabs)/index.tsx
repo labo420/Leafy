@@ -767,6 +767,7 @@ const authStyles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 32,
+    paddingTop: 40,
   },
   logo: {
     width: SCREEN_WIDTH * 1.1,
@@ -783,7 +784,7 @@ const authStyles = StyleSheet.create({
   actions: {
     width: "100%",
     paddingHorizontal: 32,
-    paddingBottom: 24,
+    paddingBottom: 80,
     marginTop: -80,
     alignItems: "center",
     justifyContent: "center",
