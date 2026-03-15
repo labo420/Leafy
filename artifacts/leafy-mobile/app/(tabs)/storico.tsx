@@ -541,9 +541,9 @@ export default function StoricoScreen() {
   const { openReceiptId } = useLocalSearchParams<{ openReceiptId?: string }>();
 
   React.useEffect(() => {
-    if (openReceiptId) {
+    if (openReceiptId && openReceiptId.length > 0) {
       setSelectedId(Number(openReceiptId));
-      router.setParams({ openReceiptId: undefined as any });
+      router.setParams({ openReceiptId: "" });
     }
   }, [openReceiptId]);
 
