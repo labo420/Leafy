@@ -93,10 +93,14 @@ router.post("/scan", async (req, res): Promise<void> => {
 
   const resolvedChain = matchChain(validation.storeChain) ?? matchChain(validation.store);
   if (!isAcceptedStore(resolvedChain)) {
+    console.log(`[scan] Store matching failed: storeChain="${validation.storeChain}", store="${validation.store}", resolvedChain="${resolvedChain}"`);
     res.status(400).json({
       error: "Scontrino non accettato — Leafy funziona con i principali supermercati italiani. Controlla la lista dei negozi accettati nella schermata Scansiona.",
     });
     return;
+  }
+  if (resolvedChain) {
+    console.log(`[scan] Store matched: ${resolvedChain}`);
   }
 
   if (validation.date && validation.totalCents !== null) {

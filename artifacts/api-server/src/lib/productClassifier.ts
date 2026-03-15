@@ -1470,6 +1470,8 @@ Se non riesci a determinare la provincia, usa null.
     const extractedStoreChain = typeof parsed.storeChain === "string" && parsed.storeChain.trim().length > 0 ? parsed.storeChain.trim() : null;
     const extractedProvince = typeof parsed.province === "string" && parsed.province.trim().length > 0 ? parsed.province.trim() : null;
 
+    console.log(`[validateReceiptWithAI] Extracted: store="${extractedStore}", storeChain="${extractedStoreChain}"`);
+
     const missingInfo: string[] = [];
     if (!extractedDate) missingInfo.push("data");
     if (extractedTotal === null) missingInfo.push("totale");
