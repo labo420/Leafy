@@ -338,11 +338,9 @@ function GuestAuthScreen() {
               style={expanded ? authStyles.logoSmall : authStyles.logo}
               resizeMode="contain"
             />
-            {!expanded && (
-              <Text style={authStyles.tagline}>
-                Fai la spesa, guadagna punti,{"\n"}proteggi il pianeta.
-              </Text>
-            )}
+            <Text style={authStyles.tagline}>
+              Fai la spesa, guadagna punti,{"\n"}proteggi il pianeta.
+            </Text>
           </View>
 
           <View style={authStyles.actions}>
