@@ -1,4 +1,4 @@
-import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useState } from "react";
@@ -226,7 +226,7 @@ export default function MarketplaceScreen() {
   if (!user) {
     return (
       <View style={[styles.centered, { paddingTop: topPadding }]}>
-        <Ionicons name="gift-outline" size={48} color={Colors.primaryMuted} />
+        <Text style={{ fontSize: 52 }}>🎁</Text>
         <Text style={styles.emptyTitle}>Accedi per vedere i premi</Text>
         <Pressable style={styles.loginBtn} onPress={() => router.push("/(tabs)")}>
           <Text style={styles.loginBtnText}>Accedi</Text>
@@ -286,7 +286,7 @@ export default function MarketplaceScreen() {
             scrollEnabled={!!(vouchers?.length)}
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <Text style={{ fontSize: 48 }}>🎁</Text>
+                <Text style={{ fontSize: 52 }}>🎁</Text>
                 <Text style={styles.emptyTitle}>I premi arriveranno presto!</Text>
                 <Text style={styles.emptySub}>Inizia a scansionare per sbloccarli</Text>
               </View>
@@ -303,7 +303,7 @@ export default function MarketplaceScreen() {
           scrollEnabled={!!(redemptions?.length)}
           ListEmptyComponent={
             <View style={styles.emptyState}>
-              <Text style={{ fontSize: 48 }}>📦</Text>
+              <Text style={{ fontSize: 52 }}>📦</Text>
               <Text style={styles.emptyTitle}>Nessun codice ancora</Text>
               <Text style={styles.emptySub}>Riscatta i tuoi punti per ottenere voucher</Text>
             </View>
