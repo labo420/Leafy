@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { AuthUser } from "@workspace/api-client-react";
 
 type AuthContextType = {
@@ -21,6 +22,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const saveUserLocally = async (userData: AuthUser | null) => {
+    try {
+      if (userData) {
+        await AsyncStorage.setItem("auth_user", JSON.stringify(userData));
+      } else {
+        await AsyncStorage.removeItem("auth_user");
+      }
+    } catch (e) {
+      console.error("Failed to save auth user:", e);
+    }
+  };
+
   const fetchUser = async () => {
     try {
       const domain = process.env.EXPO_PUBLIC_DOMAIN;
@@ -28,12 +41,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch(`${base}/api/auth/me`, { credentials: "include" });
       if (res.ok) {
         const data = await res.json();
-        setUser(data.user ?? null);
+        const userData = data.user ?? null;
+        setUser(userData);
+        await saveUserLocally(userData);
       } else {
         setUser(null);
+        await saveUserLocally(null);
       }
     } catch {
       setUser(null);
+      await saveUserLocally(null);
     } finally {
       setIsLoading(false);
     }
@@ -48,11 +65,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Ignore errors
     } finally {
       setUser(null);
+      await saveUserLocally(null);
     }
   };
 
   useEffect(() => {
-    fetchUser();
+    const initAuth = async () => {
+      try {
+        const savedUser = await AsyncStorage.getItem("auth_user");
+        if (savedUser) {
+          setUser(JSON.parse(savedUser));
+        }
+      } catch (e) {
+        console.error("Failed to load saved auth:", e);
+      }
+      fetchUser();
+    };
+    initAuth();
   }, []);
 
   return (
