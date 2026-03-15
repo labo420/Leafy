@@ -402,7 +402,7 @@ export default function ProfiloScreen() {
           } finally {
             queryClient.clear();
             await refetch();
-            router.replace("/login");
+            router.replace("/(tabs)");
             setLoggingOut(false);
           }
         },
