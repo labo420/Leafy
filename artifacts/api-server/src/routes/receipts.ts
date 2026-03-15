@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { eq, desc } from "drizzle-orm";
-import { db, receiptsTable, barcodeScansTable } from "@workspace/db";
+import { eq, desc, ne, and } from "drizzle-orm";
+import { db, receiptsTable, barcodeScansTable, usersTable } from "@workspace/db";
 import { GetReceiptParams } from "@workspace/api-zod";
 import { requireUser } from "./profile";
 import { getReceiptImageStream } from "../lib/receiptImages";
@@ -13,7 +13,7 @@ router.get("/receipts", async (req, res): Promise<void> => {
   if (!user) return;
 
   const receipts = await db.select().from(receiptsTable)
-    .where(eq(receiptsTable.userId, user.id))
+    .where(and(eq(receiptsTable.userId, user.id), ne(receiptsTable.status, "cancelled")))
     .orderBy(desc(receiptsTable.scannedAt));
 
   const now = new Date();
@@ -158,6 +158,42 @@ router.get("/receipts/:id/image", async (req, res): Promise<void> => {
     }
   });
   result.stream.pipe(res);
+});
+
+router.delete("/receipts/:id", async (req, res): Promise<void> => {
+  const params = GetReceiptParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  const user = await requireUser(req, res);
+  if (!user) return;
+
+  const [receipt] = await db.select().from(receiptsTable)
+    .where(eq(receiptsTable.id, params.data.id));
+
+  if (!receipt || receipt.userId !== user.id) {
+    res.status(404).json({ error: "Scontrino non trovato." });
+    return;
+  }
+
+  if (receipt.status !== "pending_barcode") {
+    res.status(400).json({ error: "Puoi cancellare solo scontrini in sospeso." });
+    return;
+  }
+
+  await db.transaction(async (tx) => {
+    await tx.update(receiptsTable)
+      .set({ status: "cancelled" })
+      .where(eq(receiptsTable.id, receipt.id));
+
+    await tx.update(usersTable)
+      .set({ totalPoints: Math.max(0, user.totalPoints - receipt.pointsEarned) })
+      .where(eq(usersTable.id, user.id));
+  });
+
+  res.json({ success: true, message: "Scontrino cancellato." });
 });
 
 router.get("/accepted-stores", (_req, res): void => {

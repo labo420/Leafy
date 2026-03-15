@@ -64,6 +64,7 @@ router.post("/scan", async (req, res): Promise<void> => {
       and(
         eq(receiptsTable.userId, user.id),
         eq(receiptsTable.imageHash, imageHash),
+        ne(receiptsTable.status, "cancelled"),
       ),
     )
     .limit(1);
@@ -109,6 +110,7 @@ router.post("/scan", async (req, res): Promise<void> => {
       eq(receiptsTable.receiptDate, validation.date!),
       eq(receiptsTable.receiptTotal, validation.totalCents!),
       sql`(${receiptsTable.pointsEarned} > 0 OR ${receiptsTable.status} = 'pending_barcode')`,
+      ne(receiptsTable.status, "cancelled"),
     ];
     if (validation.store) {
       dupConditions.push(

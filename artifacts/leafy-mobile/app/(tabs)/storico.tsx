@@ -172,6 +172,35 @@ function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: () =>
+      apiFetch(`/receipts/${id}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["receipts"] });
+      onClose();
+    },
+    onError: () => {
+      Alert.alert("Errore", "Impossibile cancellare lo scontrino. Riprova.");
+    },
+  });
+
+  const handleDeleteReceipt = () => {
+    Alert.alert(
+      "Cancella scontrino",
+      "Sei sicuro? Perderai i punti guadagnati finora.",
+      [
+        { text: "Annulla", onPress: () => {}, style: "cancel" },
+        {
+          text: "Cancella",
+          onPress: () => deleteMutation.mutate(),
+          style: "destructive",
+        },
+      ]
+    );
+  };
+
   const openEdit = (item: GreenItem) => {
     setEditingItem(item);
     setCorrectionText(item.name);
@@ -211,6 +240,16 @@ function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }
                 <Text style={styles.pendingBannerSub}>
                   Hai ancora {data.remainingHours} ore per scansionare i barcode dei prodotti green
                 </Text>
+                <Pressable
+                  style={({ pressed }) => [styles.deletePendingBtn, pressed && { opacity: 0.7 }]}
+                  onPress={handleDeleteReceipt}
+                  disabled={deleteMutation.isPending}
+                >
+                  <Feather name="trash-2" size={14} color="#fff" />
+                  <Text style={styles.deletePendingBtnText}>
+                    {deleteMutation.isPending ? "Annullamento..." : "Cancella scontrino"}
+                  </Text>
+                </Pressable>
               </View>
             )}
 
@@ -740,6 +779,12 @@ const styles = StyleSheet.create({
   pendingBannerTop: { flexDirection: "row", alignItems: "center", gap: 8 },
   pendingBannerTitle: { fontSize: 15, fontFamily: "Inter_700Bold", color: Colors.amber },
   pendingBannerSub: { fontSize: 13, fontFamily: "Inter_400Regular", color: "#92400E", lineHeight: 18 },
+  deletePendingBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
+    backgroundColor: "rgba(220, 53, 69, 0.8)", borderRadius: 8, paddingVertical: 8, paddingHorizontal: 12,
+    marginTop: 4,
+  },
+  deletePendingBtnText: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: "#fff" },
   itemRowMatched: {
     opacity: 0.65,
   },
