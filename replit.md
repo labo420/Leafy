@@ -265,7 +265,7 @@ workspace/
 │   │       │   └── marketplace.ts
 │   │       ├── seed-badges.ts      # 15 badge seed idempotenti (per nome)
 │   │       └── lib/
-│   │           ├── productClassifier.ts  # Catena: OFF → Nutritionix → USDA → vision → AI+GS1 brand hints
+│   │           ├── productClassifier.ts  # Catena: OFF → Nutritionix → USDA → vision → AI+GS1 brand hints. validateReceiptWithAI usa claude-sonnet-4-5 per OCR scontrini italiani
 │   │           ├── supermarketWhitelist.ts # 51 catene italiane (standard/bio/discount) + matchChain()
 │   │           ├── antiFraud.ts          # 8-layer anti-frode system
 │   │           ├── scanner.ts            # Google Vision OCR + keyword matching
@@ -356,6 +356,44 @@ workspace/
 
 ### Goldilocks Zone
 - Target: ~4 settimane di uso regolare per riscattare un voucher da 5€
+
+---
+
+## Validazione Scontrino (validateReceiptWithAI)
+
+File: `artifacts/api-server/src/lib/productClassifier.ts` — funzione `validateReceiptWithAI`
+
+### Modello AI usato
+- **claude-sonnet-4-5** (non Haiku) — necessario per OCR affidabile su foto di scontrini
+
+### Documenti accettati (tutti equivalenti in Italia)
+- Scontrino fiscale / ricevuta fiscale
+- **Documento Commerciale** (ha sostituito la ricevuta fiscale dal 2020 per legge italiana)
+- Ricevuta generica / ticket di cassa
+
+### Formati data gestiti
+Il parser normalizza automaticamente tutti i formati italiani in `YYYY-MM-DD`:
+| Formato sullo scontrino | Esempio | Risultato |
+|------------------------|---------|-----------|
+| GG/MM/AA | 15/03/26 | 2026-03-15 |
+| GG/MM/AAAA | 15/03/2026 | 2026-03-15 |
+| GG.MM.AAAA | 15.03.2026 | 2026-03-15 |
+| GG-MM-AAAA | 15-03-2026 | 2026-03-15 |
+| GG MM AAAA | 15 03 2026 | 2026-03-15 |
+| GG/MM (anno assente) | 15/03 | 2026-03-15 |
+
+Se l'anno ha 2 cifre, viene anteposto `20` (es. `26` → `2026`). Se l'anno manca del tutto, viene usato l'anno corrente.
+
+### Etichette totale riconosciute
+`TOTALE COMPLESSIVO`, `TOTALE`, `TOT. COMPLESSIVO`, `TOT`, `IMPORTO`, `DA PAGARE`, `PAGATO`, `AMOUNT`, `TOTALE EURO`
+Il separatore decimale può essere virgola o punto (es. `€4,19` = `€4.19` = 419 centesimi).
+
+### Deduzione provincia dal CAP
+La provincia viene dedotta dal CAP stampato nell'indirizzo del punto vendita. Sono mappati i range CAP di tutte le province italiane. Fallback: deduzione dal nome del comune capoluogo nell'indirizzo.
+
+### Logica di completezza
+- `complete: true` → data E totale entrambi leggibili → lo scontrino viene accettato
+- `complete: false` → almeno uno dei due manca → errore con richiesta di rifotografare
 
 ---
 

@@ -1265,9 +1265,10 @@ export interface ReceiptValidation {
 
 export async function validateReceiptWithAI(imageBase64: string): Promise<ReceiptValidation> {
   try {
+    const currentYear = new Date().getFullYear();
     const message = await anthropic.messages.create({
-      model: "claude-haiku-4-5",
-      max_tokens: 1500,
+      model: "claude-sonnet-4-5",
+      max_tokens: 1800,
       temperature: 0,
       messages: [
         {
@@ -1283,42 +1284,88 @@ export async function validateReceiptWithAI(imageBase64: string): Promise<Receip
             },
             {
               type: "text",
-              text: `Sei un lettore OCR preciso. Analizza questa immagine e determina se è uno scontrino (ricevuta/ticket di acquisto).
+              text: `Sei un esperto OCR specializzato in scontrini italiani. Analizza questa immagine e determina se è uno scontrino o ricevuta di acquisto.
 
-Rispondi SOLO con un JSON valido:
+TIPI DI DOCUMENTO VALIDI (tutti equivalenti in Italia):
+- Scontrino fiscale / ricevuta fiscale
+- Documento Commerciale (ha sostituito la ricevuta fiscale dal 2020 per legge italiana)
+- Ricevuta generica di acquisto
+- Ticket di cassa
+
+Rispondi SOLO con un JSON valido, senza altro testo:
 {
   "isReceipt": true/false,
   "complete": true/false,
-  "missingInfo": ["data", "totale"],
-  "store": "Nome Negozio" o null,
-  "storeChain": "Nome Catena Normalizzato" o null,
+  "missingInfo": [],
+  "store": "Nome Negozio esatto" o null,
+  "storeChain": "Nome Catena" o null,
   "province": "Nome Provincia" o null,
   "date": "YYYY-MM-DD" o null,
   "totalCents": 1250 o null,
-  "products": [{"raw": "TESTO ORIGINALE SCONTRINO", "name": "Nome Normalizzato"}]
+  "products": [{"raw": "TESTO ORIGINALE", "name": "Nome Normalizzato"}]
 }
 
-Regole:
-- "isReceipt": true se l'immagine mostra uno scontrino/ricevuta fiscale
-- "complete": true solo se riesci a leggere sia la data che il totale
-- "missingInfo": lista degli elementi non leggibili tra ["data", "totale", "negozio"]. Array vuoto se tutto è leggibile
-- "store": nome del negozio/supermercato ESATTO come appare sullo scontrino
-- "storeChain": nome normalizzato della catena di appartenenza. Usa uno di questi nomi esatti se il negozio corrisponde:
+=== REGOLE DATA ===
+Gli scontrini italiani usano questi formati (convertili SEMPRE in YYYY-MM-DD):
+- GG/MM/AA → es. "15/03/26" = "${currentYear}-03-15"
+- GG/MM/AAAA → es. "15/03/2026" = "2026-03-15"
+- GG.MM.AAAA → es. "15.03.2026" = "2026-03-15"
+- GG-MM-AAAA → es. "15-03-2026" = "2026-03-15"
+- GG MM AAAA → es. "15 03 2026" = "2026-03-15"
+Se l'anno ha 2 cifre, anteponi "20" (es. 26 → 2026).
+Se l'anno non appare sullo scontrino, usa ${currentYear}.
+La data può comparire vicino a: ORA, CASSA, OP., DATA, emissione.
+
+=== REGOLE TOTALE ===
+Cerca queste etichette (nell'ordine, prendi la prima trovata):
+TOTALE COMPLESSIVO, TOTALE, TOT. COMPLESSIVO, TOT, IMPORTO, DA PAGARE, PAGATO, AMOUNT, TOTALE EURO
+Il totale è l'importo finale pagato. Convertilo in centesimi interi (€4,19 = 419, €12.50 = 1250).
+Nota: il separatore decimale italiano è la virgola (,) o il punto (.).
+Ignora subtotali, IVA separata, sconti parziali.
+
+=== REGOLE CATENA / NEGOZIO ===
+- "store": nome ESATTO come appare sullo scontrino
+- "storeChain": usa uno di questi nomi normalizzati se il negozio corrisponde:
   Standard: Esselunga, Coop, Ipercoop, UniCoop, NovaCoop, Conad, Conad City, Conad Superstore, Carrefour, Carrefour Express, Carrefour Market, Carrefour Iper, Pam, Panorama, Pam Local, Despar, Eurospar, Interspar, Spar, Bennet, Il Gigante, Tigros, Sigma, Crai, E.Leclerc, Famila, Tuodì, Cadoro, Dì per Dì, Prix Quality, Coal, A&O, Selex, Iper, Billa, Simply Market
   Bio/Naturale: NaturaSì, Bioessepiù, Ecor, Life, BioBottega
   Discount: Lidl, Aldi, Eurospin, Penny, Penny Market, MD Discount, In's Mercato, Ard Discount, Todis, Dok Discount
-  Se il negozio non corrisponde a nessuna di queste catene, usa comunque il nome del negozio
-- "province": provincia italiana del punto vendita, dedotta dall'indirizzo sullo scontrino (es. "Milano", "Roma", "Torino", "Novara"). Usa il nome della provincia, NON del comune. null se non determinabile
-- "date": data dello scontrino in formato YYYY-MM-DD. Se l'anno non è visibile, usa l'anno corrente (2026)
-- "totalCents": importo totale in centesimi (es. €12.50 = 1250). null se non leggibile
-- "products": array di oggetti con "raw" (testo ESATTO come appare sullo scontrino) e "name" (forma normalizzata leggibile). Massimo 15 prodotti.
-  REGOLE FERREE per i prodotti:
-  * Includi SOLO prodotti il cui nome è CHIARAMENTE e COMPLETAMENTE leggibile sulla foto
-  * "raw" deve essere il testo letterale dallo scontrino, NON interpretato
-  * "name" può normalizzare abbreviazioni INEQUIVOCABILI (es. "PAST PENNE 500G" → "Pasta Penne")
-  * Se il testo è ambiguo, troncato, illeggibile o potrebbe essere più prodotti diversi: ESCLUDILO
-  * NON dedurre, NON interpretare, NON inventare prodotti non esplicitamente scritti
-  * Escludi: totali, subtotali, IVA, sconti, date, codici cassa, informazioni del negozio`,
+
+=== REGOLE PROVINCIA ===
+Deduci la provincia dal CAP o dall'indirizzo stampato sullo scontrino:
+- 10100-10199 = Torino, 20100-20199 = Milano, 00100-00199 = Roma, 40100-40199 = Bologna
+- 50100-50199 = Firenze, 80100-80199 = Napoli, 70100-70199 = Bari, 90100-90199 = Palermo
+- 16100-16199 = Genova, 35100-35199 = Padova, 37100-37199 = Verona, 34100-34199 = Trieste
+- 25100-25199 = Brescia, 24100-24199 = Bergamo, 21100-21199 = Varese, 20900-20999 = Monza
+- 22100-22199 = Como, 27100-27199 = Pavia, 23100-23199 = Sondrio, 26100-26199 = Cremona
+- 46100-46199 = Mantova, 43100-43199 = Parma, 41100-41199 = Modena, 44100-44199 = Ferrara
+- 47100-47199 = Forlì, 48100-48199 = Ravenna, 47900 = Rimini, 61100-61199 = Pesaro
+- 60100-60199 = Ancona, 62100-62199 = Macerata, 63100-63199 = Ascoli Piceno
+- 06100-06199 = Perugia, 05100-05199 = Terni, 55100-55199 = Lucca, 56100-56199 = Pisa
+- 57100-57199 = Livorno, 53100-53199 = Siena, 52100-52199 = Arezzo, 58100-58199 = Grosseto
+- 01100-01199 = Viterbo, 02100-02199 = Rieti, 04100-04199 = Latina, 03100-03199 = Frosinone
+- 81100-81199 = Caserta, 82100-82199 = Benevento, 83100-83199 = Avellino, 84100-84199 = Salerno
+- 71100-71199 = Foggia, 72100-72199 = Brindisi, 74100-74199 = Taranto, 75100-75199 = Matera
+- 85100-85199 = Potenza, 88100-88199 = Catanzaro, 89100-89199 = Reggio Calabria
+- 91100-91199 = Trapani, 92100-92199 = Agrigento, 93100-93199 = Caltanissetta, 94100-94199 = Enna
+- 95100-95199 = Catania, 96100-96199 = Siracusa, 97100-97199 = Ragusa, 98100-98199 = Messina
+- 07100-07199 = Sassari, 09100-09199 = Cagliari, 08100-08199 = Nuoro, 09170 = Oristano
+- 11100-11199 = Aosta, 38100-38199 = Trento, 39100-39199 = Bolzano, 33100-33199 = Udine
+- 34170 = Gorizia, 32100-32199 = Belluno, 31100-31199 = Treviso, 36100-36199 = Vicenza
+- 45100-45199 = Rovigo, 30100-30199 = Venezia, 15100-15199 = Alessandria, 14100-14199 = Asti
+- 12100-12199 = Cuneo, 13100-13199 = Vercelli, 28100-28199 = Novara, 28900 = Verbano-Cusio-Ossola
+- 13900 = Biella, 15060 = Ovada (AL), 17100-17199 = Savona, 18100-18199 = Imperia, 19100-19199 = La Spezia
+In alternativa, usa la città capoluogo che appare nell'indirizzo per dedurre la provincia.
+Se non riesci a determinare la provincia, usa null.
+
+=== REGOLE PRODOTTI ===
+- Includi SOLO prodotti il cui nome è chiaramente leggibile
+- "raw": testo LETTERALE dallo scontrino, "name": forma normalizzata leggibile
+- Normalizza SOLO abbreviazioni inequivocabili (es. "PAST PENNE 500G" → "Pasta Penne")
+- Escludi: totali, IVA, sconti, date, codici, info negozio. Max 15 prodotti.
+
+=== CAMPO "complete" ===
+- true: hai letto con certezza sia la data che il totale
+- false: almeno uno dei due manca o è illeggibile`,
             },
           ],
         },
@@ -1365,7 +1412,35 @@ Regole:
       .slice(0, 15);
 
     const isValid = parsed.isReceipt === true;
-    let extractedDate = typeof parsed.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(parsed.date) ? parsed.date : null;
+
+    function normalizeItalianDate(raw: string | null | undefined): string | null {
+      if (!raw || typeof raw !== "string") return null;
+      const s = raw.trim();
+      const now = new Date();
+      const currentYear = now.getFullYear();
+
+      const sep = "[\\s/\\.\\-]";
+      const patterns: Array<[RegExp, (m: RegExpMatchArray) => string]> = [
+        [/^(\d{4})-(\d{2})-(\d{2})$/, (m) => `${m[1]}-${m[2]}-${m[3]}`],
+        [new RegExp(`^(\\d{1,2})${sep}(\\d{1,2})${sep}(\\d{4})$`), (m) => `${m[3]}-${m[2].padStart(2,"0")}-${m[1].padStart(2,"0")}`],
+        [new RegExp(`^(\\d{1,2})${sep}(\\d{1,2})${sep}(\\d{2})$`), (m) => `20${m[3]}-${m[2].padStart(2,"0")}-${m[1].padStart(2,"0")}`],
+        [new RegExp(`^(\\d{1,2})${sep}(\\d{1,2})$`), (m) => `${currentYear}-${m[2].padStart(2,"0")}-${m[1].padStart(2,"0")}`],
+      ];
+
+      for (const [re, build] of patterns) {
+        const m = s.match(re);
+        if (m) {
+          const candidate = build(m);
+          if (/^\d{4}-\d{2}-\d{2}$/.test(candidate)) {
+            const d = new Date(candidate);
+            if (!isNaN(d.getTime())) return candidate;
+          }
+        }
+      }
+      return null;
+    }
+
+    let extractedDate = normalizeItalianDate(parsed.date);
     if (extractedDate) {
       const parsed_d = new Date(extractedDate);
       const now = new Date();
