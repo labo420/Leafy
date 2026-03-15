@@ -2,17 +2,19 @@ import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
   Image,
+  KeyboardAvoidingView,
   Platform,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import Animated, {
@@ -21,6 +23,7 @@ import Animated, {
   useSharedValue,
   withSpring,
   withTiming,
+  FadeIn,
   FadeInDown,
 } from "react-native-reanimated";
 import Svg, { Circle } from "react-native-svg";
@@ -165,6 +168,263 @@ const ringStyles = StyleSheet.create({
   },
 });
 
+const BASE_URL = process.env.EXPO_PUBLIC_DOMAIN
+  ? `https://${process.env.EXPO_PUBLIC_DOMAIN}`
+  : "";
+
+type AuthMode = "landing" | "login" | "register";
+
+function GuestAuthScreen() {
+  const insets = useSafeAreaInsets();
+  const { setUser } = useAuth();
+
+  const [mode, setMode] = useState<AuthMode>("landing");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const switchMode = (next: AuthMode) => {
+    setMode(next);
+    setError(null);
+    setEmail("");
+    setPassword("");
+    setUsername("");
+    setShowPassword(false);
+  };
+
+  const handleSubmit = async () => {
+    setError(null);
+    if (!email.trim() || !password) {
+      setError("Inserisci email e password.");
+      return;
+    }
+    if (mode === "register" && !username.trim()) {
+      setError("Inserisci un nome utente.");
+      return;
+    }
+    if (password.length < 8) {
+      setError("La password deve essere di almeno 8 caratteri.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const endpoint = mode === "login" ? "/api/auth/login" : "/api/auth/register";
+      const body = mode === "login"
+        ? { email, password }
+        : { email, password, username };
+      const res = await fetch(`${BASE_URL}${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Si è verificato un errore.");
+        return;
+      }
+      if (data.user) {
+        setUser(data.user);
+      }
+    } catch {
+      setError("Errore di connessione. Riprova.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (mode === "landing") {
+    return (
+      <View style={[authStyles.screen, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+        <View style={authStyles.decoCircle1} />
+        <View style={authStyles.decoCircle2} />
+
+        <Animated.View entering={FadeInDown.delay(100).duration(600)} style={authStyles.logoSection}>
+          <Image
+            source={require("@/assets/images/leafy-logo-dark.png")}
+            style={authStyles.logo}
+            resizeMode="contain"
+          />
+          <Text style={authStyles.tagline}>
+            Fai la spesa, guadagna punti,{"\n"}proteggi il pianeta.
+          </Text>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.delay(400).duration(500)} style={authStyles.actions}>
+          <Pressable
+            style={({ pressed }) => [authStyles.primaryBtn, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
+            onPress={() => switchMode("login")}
+          >
+            <Text style={authStyles.primaryBtnText}>Accedi</Text>
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [authStyles.outlineBtn, pressed && { opacity: 0.8 }]}
+            onPress={() => switchMode("register")}
+          >
+            <Text style={authStyles.outlineBtnText}>Crea account</Text>
+          </Pressable>
+
+          <View style={authStyles.divider}>
+            <View style={authStyles.dividerLine} />
+            <Text style={authStyles.dividerText}>oppure</Text>
+            <View style={authStyles.dividerLine} />
+          </View>
+
+          <Pressable style={({ pressed }) => [authStyles.oauthBtn, pressed && { opacity: 0.85 }]}>
+            <View style={authStyles.googleIcon}>
+              <Text style={authStyles.googleG}>G</Text>
+            </View>
+            <Text style={authStyles.oauthBtnText}>Continua con Google</Text>
+          </Pressable>
+
+          <Pressable style={({ pressed }) => [authStyles.oauthBtn, pressed && { opacity: 0.85 }]}>
+            <View style={authStyles.fbIcon}>
+              <Text style={authStyles.fbF}>f</Text>
+            </View>
+            <Text style={authStyles.oauthBtnText}>Continua con Facebook</Text>
+          </Pressable>
+
+          <Text style={authStyles.footer}>Ogni scelta sostenibile ti premia</Text>
+        </Animated.View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={[authStyles.screen, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      <View style={authStyles.decoCircle1} />
+      <View style={authStyles.decoCircle2} />
+
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={authStyles.formScroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <Animated.View entering={FadeIn.duration(300)} style={authStyles.formHeader}>
+            <Pressable onPress={() => switchMode("landing")} hitSlop={12} style={authStyles.backBtn}>
+              <Feather name="arrow-left" size={22} color="#fff" />
+            </Pressable>
+            <Text style={authStyles.formTitle}>
+              {mode === "login" ? "Accedi" : "Crea account"}
+            </Text>
+            <View style={{ width: 32 }} />
+          </Animated.View>
+
+          <Image
+            source={require("@/assets/images/leafy-logo-dark.png")}
+            style={authStyles.formLogo}
+            resizeMode="contain"
+          />
+
+          <Animated.View entering={FadeInDown.delay(100).duration(400)} style={authStyles.formCard}>
+            {mode === "register" && (
+              <View style={authStyles.inputWrap}>
+                <Feather name="user" size={16} color="rgba(255,255,255,0.5)" style={authStyles.inputIcon} />
+                <TextInput
+                  style={authStyles.input}
+                  placeholder="Nome utente"
+                  placeholderTextColor="rgba(255,255,255,0.4)"
+                  value={username}
+                  onChangeText={setUsername}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+            )}
+
+            <View style={authStyles.inputWrap}>
+              <Feather name="mail" size={16} color="rgba(255,255,255,0.5)" style={authStyles.inputIcon} />
+              <TextInput
+                style={authStyles.input}
+                placeholder="Email"
+                placeholderTextColor="rgba(255,255,255,0.4)"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                textContentType="emailAddress"
+              />
+            </View>
+
+            <View style={authStyles.inputWrap}>
+              <Feather name="lock" size={16} color="rgba(255,255,255,0.5)" style={authStyles.inputIcon} />
+              <TextInput
+                style={[authStyles.input, { flex: 1 }]}
+                placeholder="Password (min. 8 caratteri)"
+                placeholderTextColor="rgba(255,255,255,0.4)"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                textContentType={mode === "login" ? "password" : "newPassword"}
+                autoCapitalize="none"
+              />
+              <Pressable onPress={() => setShowPassword((v) => !v)} hitSlop={8}>
+                <Feather name={showPassword ? "eye-off" : "eye"} size={16} color="rgba(255,255,255,0.5)" />
+              </Pressable>
+            </View>
+
+            {error && (
+              <View style={authStyles.errorBox}>
+                <Feather name="alert-circle" size={14} color="#FCA5A5" />
+                <Text style={authStyles.errorText}>{error}</Text>
+              </View>
+            )}
+
+            <Pressable
+              style={({ pressed }) => [authStyles.submitBtn, pressed && { opacity: 0.9 }, loading && { opacity: 0.7 }]}
+              onPress={handleSubmit}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#2E6B50" />
+              ) : (
+                <Text style={authStyles.submitBtnText}>
+                  {mode === "login" ? "Accedi" : "Crea account"}
+                </Text>
+              )}
+            </Pressable>
+
+            <View style={authStyles.divider}>
+              <View style={authStyles.dividerLine} />
+              <Text style={authStyles.dividerText}>oppure</Text>
+              <View style={authStyles.dividerLine} />
+            </View>
+
+            <Pressable style={({ pressed }) => [authStyles.oauthBtn, pressed && { opacity: 0.85 }]}>
+              <View style={authStyles.googleIcon}>
+                <Text style={authStyles.googleG}>G</Text>
+              </View>
+              <Text style={authStyles.oauthBtnText}>Continua con Google</Text>
+            </Pressable>
+
+            <Pressable style={({ pressed }) => [authStyles.oauthBtn, pressed && { opacity: 0.85 }]}>
+              <View style={authStyles.fbIcon}>
+                <Text style={authStyles.fbF}>f</Text>
+              </View>
+              <Text style={authStyles.oauthBtnText}>Continua con Facebook</Text>
+            </Pressable>
+          </Animated.View>
+
+          <Pressable onPress={() => switchMode(mode === "login" ? "register" : "login")}>
+            <Text style={authStyles.switchText}>
+              {mode === "login" ? "Non hai un account? Registrati" : "Hai già un account? Accedi"}
+            </Text>
+          </Pressable>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
+  );
+}
+
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
@@ -205,56 +465,7 @@ export default function HomeScreen() {
 
   if (!user) {
     return (
-      <View style={styles.guestScreen}>
-        <View style={styles.guestDecoCircle1} />
-        <View style={styles.guestDecoCircle2} />
-
-        <Animated.View
-          entering={FadeInDown.delay(100).duration(600)}
-          style={styles.guestContent}
-        >
-          <Image
-            source={require("@/assets/images/leafy-logo-dark.png")}
-            style={styles.guestLogo}
-            resizeMode="contain"
-          />
-
-          <Animated.View entering={FadeInDown.delay(300).duration(500)}>
-            <Text style={styles.guestTagline}>
-              Fai la spesa, guadagna punti,{"\n"}proteggi il pianeta.
-            </Text>
-          </Animated.View>
-        </Animated.View>
-
-        <Animated.View
-          entering={FadeInDown.delay(500).duration(500)}
-          style={styles.guestActions}
-        >
-          <Pressable
-            style={({ pressed }) => [
-              styles.guestLoginBtn,
-              pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
-            ]}
-            onPress={() => router.push("/login")}
-          >
-            <Text style={styles.guestLoginBtnText}>Accedi</Text>
-          </Pressable>
-
-          <Pressable
-            style={({ pressed }) => [
-              styles.guestRegisterBtn,
-              pressed && { opacity: 0.8 },
-            ]}
-            onPress={() => router.push("/login")}
-          >
-            <Text style={styles.guestRegisterBtnText}>Crea account</Text>
-          </Pressable>
-
-          <Text style={styles.guestFooter}>
-            Ogni scelta sostenibile ti premia
-          </Text>
-        </Animated.View>
-      </View>
+      <GuestAuthScreen />
     );
   }
 
@@ -381,106 +592,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
     padding: 32,
   },
-  guestScreen: {
-    flex: 1,
-    backgroundColor: "#2E6B50",
-    justifyContent: "center",
-    alignItems: "center",
-    overflow: "hidden",
-  },
-  guestDecoCircle1: {
-    position: "absolute",
-    top: -80,
-    right: -60,
-    width: 240,
-    height: 240,
-    borderRadius: 120,
-    backgroundColor: "rgba(255,255,255,0.06)",
-  },
-  guestDecoCircle2: {
-    position: "absolute",
-    bottom: -40,
-    left: -50,
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: "rgba(255,255,255,0.04)",
-  },
-  guestContent: {
-    alignItems: "center",
-    paddingHorizontal: 32,
-  },
-  guestWelcome: {
-    fontSize: 16,
-    fontFamily: "Inter_400Regular",
-    color: "rgba(255,255,255,0.7)",
-    letterSpacing: 1,
-    marginBottom: 4,
-  },
-  guestLogo: {
-    width: Dimensions.get("window").width * 1.1,
-    height: 200,
-    marginBottom: 16,
-  },
-  guestWelcome: {
-    fontSize: 22,
-    fontFamily: "Inter_500Medium",
-    color: "rgba(255,255,255,0.8)",
-    letterSpacing: 1.2,
-    marginBottom: -20,
-  },
-  guestTagline: {
-    fontSize: 18,
-    fontFamily: "Inter_500Medium",
-    color: "rgba(255,255,255,0.7)",
-    textAlign: "center",
-    lineHeight: 28,
-  },
-  guestActions: {
-    width: "100%",
-    paddingHorizontal: 32,
-    marginTop: 48,
-    alignItems: "center",
-    gap: 12,
-  },
-  guestLoginBtn: {
-    width: "100%",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    paddingVertical: 16,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  guestLoginBtnText: {
-    fontSize: 17,
-    fontFamily: "DMSans_700Bold",
-    color: "#2E6B50",
-    letterSpacing: 0.3,
-  },
-  guestRegisterBtn: {
-    width: "100%",
-    borderRadius: 16,
-    paddingVertical: 15,
-    alignItems: "center",
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.35)",
-  },
-  guestRegisterBtnText: {
-    fontSize: 16,
-    fontFamily: "DMSans_600SemiBold",
-    color: "#FFFFFF",
-  },
-  guestFooter: {
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
-    color: "rgba(255,255,255,0.4)",
-    marginTop: 16,
-    textAlign: "center",
-  },
+  
   header: {
     paddingHorizontal: 20,
     paddingBottom: 16,
@@ -621,5 +733,249 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: "DMSans_700Bold",
     color: "#fff",
+  },
+});
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+
+const authStyles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: "#2E6B50",
+    overflow: "hidden",
+  },
+  decoCircle1: {
+    position: "absolute",
+    top: -80,
+    right: -60,
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor: "rgba(255,255,255,0.06)",
+  },
+  decoCircle2: {
+    position: "absolute",
+    bottom: -40,
+    left: -50,
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: "rgba(255,255,255,0.04)",
+  },
+  logoSection: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 32,
+  },
+  logo: {
+    width: SCREEN_WIDTH * 1.1,
+    height: 200,
+    marginBottom: 16,
+  },
+  tagline: {
+    fontSize: 18,
+    fontFamily: "Inter_500Medium",
+    color: "rgba(255,255,255,0.7)",
+    textAlign: "center",
+    lineHeight: 28,
+  },
+  actions: {
+    width: "100%",
+    paddingHorizontal: 32,
+    paddingBottom: 24,
+    alignItems: "center",
+    gap: 10,
+  },
+  primaryBtn: {
+    width: "100%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    paddingVertical: 16,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  primaryBtnText: {
+    fontSize: 17,
+    fontFamily: "DMSans_700Bold",
+    color: "#2E6B50",
+    letterSpacing: 0.3,
+  },
+  outlineBtn: {
+    width: "100%",
+    borderRadius: 16,
+    paddingVertical: 15,
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.35)",
+  },
+  outlineBtnText: {
+    fontSize: 16,
+    fontFamily: "DMSans_600SemiBold",
+    color: "#FFFFFF",
+  },
+  divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    width: "100%",
+    marginVertical: 2,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.2)",
+  },
+  dividerText: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    color: "rgba(255,255,255,0.5)",
+  },
+  oauthBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.25)",
+    borderRadius: 14,
+    paddingVertical: 13,
+    backgroundColor: "rgba(255,255,255,0.08)",
+  },
+  oauthBtnText: {
+    fontSize: 14,
+    fontFamily: "Inter_500Medium",
+    color: "#FFFFFF",
+  },
+  googleIcon: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  googleG: {
+    fontSize: 13,
+    fontFamily: "Inter_700Bold",
+    color: "#4285F4",
+    lineHeight: 16,
+  },
+  fbIcon: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#1877F2",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  fbF: {
+    fontSize: 14,
+    fontFamily: "Inter_700Bold",
+    color: "#fff",
+    lineHeight: 18,
+  },
+  footer: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    color: "rgba(255,255,255,0.4)",
+    marginTop: 8,
+    textAlign: "center",
+  },
+  formScroll: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingBottom: 32,
+  },
+  formHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingTop: 12,
+    marginBottom: 8,
+  },
+  backBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  formTitle: {
+    fontSize: 20,
+    fontFamily: "DMSans_700Bold",
+    color: "#FFFFFF",
+  },
+  formLogo: {
+    width: SCREEN_WIDTH * 0.5,
+    height: 80,
+    alignSelf: "center",
+    marginBottom: 20,
+  },
+  formCard: {
+    width: "100%",
+    gap: 12,
+  },
+  inputWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.25)",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    gap: 8,
+  },
+  inputIcon: {
+    width: 18,
+  },
+  input: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: "Inter_400Regular",
+    color: "#FFFFFF",
+  },
+  errorBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "rgba(220,38,38,0.2)",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  errorText: {
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+    color: "#FCA5A5",
+    flex: 1,
+  },
+  submitBtn: {
+    width: "100%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    paddingVertical: 15,
+    alignItems: "center",
+    marginTop: 4,
+  },
+  submitBtnText: {
+    fontSize: 16,
+    fontFamily: "DMSans_700Bold",
+    color: "#2E6B50",
+    letterSpacing: 0.2,
+  },
+  switchText: {
+    fontSize: 14,
+    fontFamily: "Inter_500Medium",
+    color: "rgba(255,255,255,0.7)",
+    textAlign: "center",
+    marginTop: 20,
   },
 });

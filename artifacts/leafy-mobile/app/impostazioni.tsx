@@ -102,7 +102,7 @@ export default function ImpostazioniScreen() {
               await apiFetch("/profile/account", { method: "DELETE" });
               queryClient.clear();
               logout();
-              router.replace("/login");
+              router.replace("/(tabs)");
             } catch {
               Alert.alert("Errore", "Non è stato possibile cancellare l'account.");
             }
