@@ -170,38 +170,65 @@ if (workflowPort && workflowPort !== expoPort) {
   });
 }
 
-console.log(`Starting Expo on port ${expoPort}...`);
-
-const child = spawn("pnpm", ["exec", "expo", "start", ...args], {
-  stdio: ["inherit", "pipe", "pipe"],
-  env: process.env,
-});
-
 let tunnelFound = false;
+let intentionalExit = false;
+let restartAttempts = 0;
+const MAX_RESTARTS = 5;
 
-function handleOutput(data) {
-  const text = data.toString();
-  process.stdout.write(text);
+process.on("SIGTERM", () => { intentionalExit = true; process.exit(0); });
+process.on("SIGINT", () => { intentionalExit = true; process.exit(0); });
 
-  const match = text.match(/exp:\/\/[^\s]+\.exp\.direct/);
-  if (match && !tunnelFound) {
-    tunnelFound = true;
-    fs.writeFileSync(TUNNEL_FILE, match[0], "utf8");
+function startExpo() {
+  console.log(`Starting Expo on port ${expoPort}... (attempt ${restartAttempts + 1})`);
+
+  const child = spawn("pnpm", ["exec", "expo", "start", ...args], {
+    stdio: ["inherit", "pipe", "pipe"],
+    env: process.env,
+  });
+
+  function handleOutput(data) {
+    const text = data.toString();
+    process.stdout.write(text);
+
+    const match = text.match(/exp:\/\/[^\s]+\.exp\.direct/);
+    if (match && !tunnelFound) {
+      tunnelFound = true;
+      restartAttempts = 0;
+      fs.writeFileSync(TUNNEL_FILE, match[0], "utf8");
+    }
+
+    if ((text.includes("Tunnel connected") || text.includes("Tunnel ready")) && !tunnelFound) {
+      setTimeout(() => {
+        if (!tunnelFound) {
+          pollNgrokAPI();
+          setTimeout(() => { if (!tunnelFound) pollNgrokAPI(); }, 3000);
+        }
+      }, 2000);
+    }
   }
 
-  if ((text.includes("Tunnel connected") || text.includes("Tunnel ready")) && !tunnelFound) {
-    setTimeout(() => {
-      if (!tunnelFound) {
-        pollNgrokAPI();
-        setTimeout(() => { if (!tunnelFound) pollNgrokAPI(); }, 3000);
-      }
-    }, 2000);
-  }
+  child.stdout.on("data", handleOutput);
+  child.stderr.on("data", (data) => {
+    process.stderr.write(data);
+    handleOutput(data);
+  });
+
+  child.on("close", (code) => {
+    if (intentionalExit || code === 0) {
+      process.exit(code ?? 0);
+      return;
+    }
+    restartAttempts++;
+    if (restartAttempts <= MAX_RESTARTS) {
+      const delay = Math.min(3000 * restartAttempts, 15000);
+      console.warn(`\nExpo exited with code ${code}. Restarting in ${delay / 1000}s... (${restartAttempts}/${MAX_RESTARTS})`);
+      tunnelFound = false;
+      setTimeout(startExpo, delay);
+    } else {
+      console.error(`Expo failed after ${MAX_RESTARTS} restart attempts. Giving up.`);
+      process.exit(code ?? 1);
+    }
+  });
 }
 
-child.stdout.on("data", handleOutput);
-child.stderr.on("data", (data) => {
-  process.stderr.write(data);
-  handleOutput(data);
-});
-child.on("close", (code) => process.exit(code ?? 0));
+startExpo();

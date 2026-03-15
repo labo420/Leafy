@@ -72,27 +72,38 @@ function LevelProgressRing({
   level,
   points,
   percentage,
+  heroMode = false,
 }: {
   progress: number;
   level: string;
   points: number;
   percentage: number;
+  heroMode?: boolean;
 }) {
   const animatedProgress = useSharedValue(0);
+  const scale = useSharedValue(0.82);
 
   useEffect(() => {
-    animatedProgress.value = withTiming(progress, { duration: 1500 });
+    animatedProgress.value = withTiming(progress, { duration: 1600 });
+    scale.value = withSpring(1, { damping: 14, stiffness: 90 });
   }, [progress]);
 
   const animatedProps = useAnimatedProps(() => {
     const offset = RING_CIRCUMFERENCE - (animatedProgress.value / 100) * RING_CIRCUMFERENCE;
-    return {
-      strokeDashoffset: offset,
-    };
+    return { strokeDashoffset: offset };
   });
 
+  const containerAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const trackColor = heroMode ? "rgba(255,255,255,0.22)" : Colors.border;
+  const fillColor = heroMode ? "#ffffff" : Colors.leaf;
+  const labelColor = heroMode ? "rgba(255,255,255,0.7)" : Colors.textSecondary;
+  const valueColor = heroMode ? "#ffffff" : Colors.leaf;
+
   return (
-    <View style={ringStyles.container}>
+    <Animated.View style={[ringStyles.container, containerAnimStyle]}>
       <Svg
         width={RING_SIZE}
         height={RING_SIZE}
@@ -102,7 +113,7 @@ function LevelProgressRing({
           cx={RING_SIZE / 2}
           cy={RING_SIZE / 2}
           r={RING_RADIUS}
-          stroke={Colors.border}
+          stroke={trackColor}
           strokeWidth={RING_STROKE}
           fill="transparent"
         />
@@ -110,7 +121,7 @@ function LevelProgressRing({
           cx={RING_SIZE / 2}
           cy={RING_SIZE / 2}
           r={RING_RADIUS}
-          stroke={Colors.leaf}
+          stroke={fillColor}
           strokeWidth={RING_STROKE}
           fill="transparent"
           strokeDasharray={RING_CIRCUMFERENCE}
@@ -119,16 +130,18 @@ function LevelProgressRing({
         />
       </Svg>
       <View style={ringStyles.innerContent}>
-        <Text style={ringStyles.levelLabel}>
+        <Text style={[ringStyles.levelLabel, { color: labelColor }]}>
           {(LEVEL_LABELS[level] ?? level).toUpperCase()}
         </Text>
-        <Text style={ringStyles.percentageText}>{points === 0 ? "Inizia!" : `${Math.round(percentage)}%`}</Text>
-        <Text style={ringStyles.pointsValue}>
+        <Text style={[ringStyles.percentageText, { color: labelColor }]}>
+          {points === 0 ? "Inizia!" : `${Math.round(percentage)}%`}
+        </Text>
+        <Text style={[ringStyles.pointsValue, { color: valueColor }]}>
           {new Intl.NumberFormat("it-IT").format(points)}
         </Text>
-        <Text style={ringStyles.pointsLabel}>PUNTI</Text>
+        <Text style={[ringStyles.pointsLabel, { color: labelColor }]}>PUNTI</Text>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -410,11 +423,21 @@ export default function HomeScreen() {
     enabled: !!user,
   });
 
+  const { data: impact, refetch: refetchImpact } = useQuery<{
+    receiptsScanned: number;
+    greenProductsCount: number;
+    co2SavedKg: number;
+  }>({
+    queryKey: ["profile/impact"],
+    queryFn: () => apiFetch("/profile/impact"),
+    enabled: !!user,
+  });
+
   const [refreshing, setRefreshing] = React.useState(false);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await refetchProfile();
+    await Promise.all([refetchProfile(), refetchImpact()]);
     setRefreshing(false);
   };
 
@@ -469,63 +492,90 @@ export default function HomeScreen() {
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          tintColor={Colors.leaf}
+          tintColor="#fff"
         />
       }
     >
-      <View style={[styles.header, { paddingTop: topPadding + 12 }]}>
-        <View style={styles.headerLeft}>
-          <View style={styles.logoBox}>
-            <MaterialCommunityIcons name="leaf" size={22} color={Colors.leaf} />
-          </View>
-          <View>
-            <Text style={styles.logoText}>Leafy</Text>
-            <Text style={styles.greeting}>Ciao, {username}!</Text>
-            <View style={styles.streakRow}>
-              <MaterialCommunityIcons name="fire" size={15} color="#F97316" />
-              <Text style={styles.streakLabel}>{streak} giorni di fila</Text>
+      {/* ── HERO SECTION ── */}
+      <LinearGradient
+        colors={["#2E6B50", "#1a4a35"]}
+        start={{ x: 0.2, y: 0 }}
+        end={{ x: 0.8, y: 1 }}
+        style={styles.heroSection}
+      >
+        <View style={styles.decoCircle1} />
+        <View style={styles.decoCircle2} />
+
+        <View style={[styles.header, { paddingTop: topPadding + 12 }]}>
+          <View style={styles.headerLeft}>
+            <View style={styles.logoBoxHero}>
+              <MaterialCommunityIcons name="leaf" size={22} color="#fff" />
+            </View>
+            <View>
+              <Text style={styles.logoTextHero}>Leafy</Text>
+              <Text style={styles.greetingHero}>Ciao, {username}!</Text>
             </View>
           </View>
+          <Pressable onPress={() => router.push("/(tabs)/profilo")}>
+            <View style={styles.avatarCircleHero}>
+              <Text style={styles.avatarInitial}>{safeInitial}</Text>
+            </View>
+          </Pressable>
         </View>
-        <Pressable onPress={() => router.push("/(tabs)/profilo")}>
-          <View style={styles.avatarCircle}>
-            <Text style={styles.avatarInitial}>
-              {safeInitial}
-            </Text>
-          </View>
-        </Pressable>
-      </View>
 
-      <Animated.View
-        entering={FadeInDown.delay(100).springify()}
-        style={styles.progressSection}
-      >
-        <LevelProgressRing
-          progress={levelProgress}
-          level={level}
-          points={points}
-          percentage={levelProgress}
-        />
+        <Animated.View
+          entering={FadeInDown.delay(100).springify()}
+          style={styles.progressSection}
+        >
+          <LevelProgressRing
+            progress={levelProgress}
+            level={level}
+            points={points}
+            percentage={levelProgress}
+            heroMode
+          />
 
-        <View style={styles.progressBarSection}>
-          <View style={styles.progressBarLabels}>
-            <Text style={styles.progressBarLabelText}>
-              {LEVEL_LABELS[level] ?? level}
-            </Text>
-            <Text style={styles.progressBarLabelText}>
-              {nextLevelPoints.toLocaleString("it-IT")} pts al prossimo
-            </Text>
+          <View style={styles.progressBarSection}>
+            <View style={styles.progressBarLabels}>
+              <Text style={styles.progressBarLabelHero}>
+                {LEVEL_LABELS[level] ?? level}
+              </Text>
+              <Text style={styles.progressBarLabelHero}>
+                {nextLevelPoints.toLocaleString("it-IT")} pts al prossimo
+              </Text>
+            </View>
+            <View style={styles.progressBarTrackHero}>
+              <View
+                style={[styles.progressBarFillHero, { width: `${levelProgress}%` }]}
+              />
+            </View>
           </View>
-          <View style={styles.progressBarTrack}>
-            <View
-              style={[styles.progressBarFill, { width: `${levelProgress}%` }]}
-            />
+        </Animated.View>
+      </LinearGradient>
+
+      {/* ── STREAK CARD ── */}
+      <Animated.View entering={FadeInDown.delay(180).springify()} style={styles.streakCard}>
+        <View style={styles.streakCardLeft}>
+          <View style={styles.streakIconWrap}>
+            <MaterialCommunityIcons name="fire" size={30} color="#F97316" />
+          </View>
+          <View>
+            <Text style={styles.streakCardValue}>{streak}</Text>
+            <Text style={styles.streakCardSubLabel}>giorni di fila</Text>
           </View>
         </View>
+        <Text style={styles.streakCardMsg}>
+          {streak === 0
+            ? "Inizia il tuo streak!"
+            : streak === 1
+            ? "Ottimo inizio!"
+            : `Super combo x${streak}!`}
+        </Text>
       </Animated.View>
 
+      {/* ── MOTIVATIONAL ── */}
       <Animated.View
-        entering={FadeInDown.delay(200).springify()}
+        entering={FadeInDown.delay(260).springify()}
         style={styles.motivationalBox}
       >
         <View style={styles.motivationalRow}>
@@ -534,6 +584,7 @@ export default function HomeScreen() {
         </View>
       </Animated.View>
 
+      {/* ── CTA ── */}
       <View style={styles.ctaSection}>
         <Animated.View style={scanAnimStyle}>
           <Pressable onPress={handleScanPress}>
@@ -550,6 +601,28 @@ export default function HomeScreen() {
         </Animated.View>
       </View>
 
+      {/* ── IMPACT CARDS ── */}
+      <Animated.View entering={FadeInDown.delay(340).springify()} style={styles.impactSection}>
+        <Text style={styles.impactTitle}>Il tuo impatto</Text>
+        <View style={styles.impactRow}>
+          <View style={styles.impactCard}>
+            <MaterialCommunityIcons name="receipt" size={24} color={Colors.leaf} />
+            <Text style={styles.impactCardValue}>{impact?.receiptsScanned ?? 0}</Text>
+            <Text style={styles.impactCardLabel}>Scontrini</Text>
+          </View>
+          <View style={styles.impactCard}>
+            <MaterialCommunityIcons name="leaf-circle" size={24} color={Colors.leaf} />
+            <Text style={styles.impactCardValue}>{impact?.greenProductsCount ?? 0}</Text>
+            <Text style={styles.impactCardLabel}>Prodotti green</Text>
+          </View>
+          <View style={styles.impactCard}>
+            <MaterialCommunityIcons name="molecule-co2" size={24} color={Colors.leaf} />
+            <Text style={styles.impactCardValue}>{(impact?.co2SavedKg ?? 0).toFixed(1)}</Text>
+            <Text style={styles.impactCardLabel}>kg CO₂</Text>
+          </View>
+        </View>
+      </Animated.View>
+
     </ScrollView>
   );
 }
@@ -563,64 +636,70 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
     padding: 32,
   },
-  
+
+  heroSection: {
+    overflow: "hidden",
+    paddingBottom: 32,
+  },
+  decoCircle1: {
+    position: "absolute",
+    top: -70,
+    right: -50,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: "rgba(255,255,255,0.06)",
+  },
+  decoCircle2: {
+    position: "absolute",
+    bottom: 20,
+    left: -60,
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: "rgba(255,255,255,0.04)",
+  },
+
   header: {
     paddingHorizontal: 20,
-    paddingBottom: 16,
+    paddingBottom: 12,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: Colors.background,
   },
   headerLeft: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
   },
-  logoBox: {
+  logoBoxHero: {
     width: 40,
     height: 40,
     borderRadius: 14,
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: "rgba(255,255,255,0.18)",
     alignItems: "center",
     justifyContent: "center",
   },
-  logoText: {
+  logoTextHero: {
     fontSize: 18,
     fontFamily: "DMSans_700Bold",
-    color: Colors.leaf,
+    color: "#ffffff",
     marginBottom: 2,
   },
-  greeting: {
+  greetingHero: {
     fontSize: 16,
     fontFamily: "DMSans_600SemiBold",
-    color: Colors.text,
+    color: "rgba(255,255,255,0.85)",
   },
-  streakRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    marginTop: 2,
-  },
-  streakLabel: {
-    fontSize: 13,
-    fontFamily: "Inter_400Regular",
-    color: Colors.textSecondary,
-  },
-  avatarCircle: {
+  avatarCircleHero: {
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: Colors.leaf,
+    backgroundColor: "rgba(255,255,255,0.22)",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
-    borderColor: Colors.background,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
+    borderColor: "rgba(255,255,255,0.35)",
   },
   avatarInitial: {
     fontSize: 20,
@@ -629,7 +708,7 @@ const styles = StyleSheet.create({
   },
   progressSection: {
     alignItems: "center",
-    paddingVertical: 16,
+    paddingVertical: 8,
   },
   progressBarSection: {
     width: "100%",
@@ -641,10 +720,111 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 8,
   },
-  progressBarLabelText: {
+  progressBarLabelHero: {
     fontSize: 12,
     fontFamily: "Inter_500Medium",
+    color: "rgba(255,255,255,0.7)",
+  },
+  progressBarTrackHero: {
+    height: 8,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderRadius: 4,
+    overflow: "hidden",
+  },
+  progressBarFillHero: {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#ffffff",
+  },
+
+  streakCard: {
+    marginHorizontal: 20,
+    marginTop: -16,
+    marginBottom: 4,
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  streakCardLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+  },
+  streakIconWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: "#FFF7ED",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  streakCardValue: {
+    fontSize: 26,
+    fontFamily: "DMSans_700Bold",
+    color: Colors.text,
+    lineHeight: 30,
+  },
+  streakCardSubLabel: {
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
     color: Colors.textSecondary,
+  },
+  streakCardMsg: {
+    fontSize: 13,
+    fontFamily: "Inter_500Medium",
+    color: "#F97316",
+    maxWidth: 110,
+    textAlign: "right",
+  },
+
+  impactSection: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 8,
+  },
+  impactTitle: {
+    fontSize: 16,
+    fontFamily: "DMSans_700Bold",
+    color: Colors.text,
+    marginBottom: 12,
+  },
+  impactRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  impactCard: {
+    flex: 1,
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+    alignItems: "center",
+    gap: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  impactCardValue: {
+    fontSize: 22,
+    fontFamily: "DMSans_700Bold",
+    color: Colors.text,
+  },
+  impactCardLabel: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    color: Colors.textSecondary,
+    textAlign: "center",
   },
   progressBarTrack: {
     height: 8,
