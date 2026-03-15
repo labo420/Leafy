@@ -22,6 +22,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { DevConnect } from "@/components/DevConnect";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/context/auth";
+import { LevelUpProvider } from "@/context/level-up";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -69,8 +70,10 @@ export default function RootLayout() {
           <GestureHandlerRootView style={{ flex: 1 }}>
             <KeyboardProvider>
               <AuthProvider>
-                <RootLayoutNav />
-                <DevConnect />
+                <LevelUpProvider>
+                  <RootLayoutNav />
+                  <DevConnect />
+                </LevelUpProvider>
               </AuthProvider>
             </KeyboardProvider>
           </GestureHandlerRootView>

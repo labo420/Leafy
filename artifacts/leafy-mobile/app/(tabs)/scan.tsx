@@ -2,11 +2,10 @@ import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  AppState,
   Image,
   Platform,
   Pressable,
@@ -24,9 +23,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import Colors from "@/constants/colors";
 import { useAuth } from "@/context/auth";
+import { useLevelUp } from "@/context/level-up";
 import { router } from "expo-router";
 import type { Profile } from "@workspace/api-client-react";
-import LevelUpModal from "@/components/LevelUpModal";
 
 interface AcceptedStoresData {
   standard: string[];
@@ -167,11 +166,7 @@ export default function ScanScreen() {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [scanResult, setScanResult] = useState<ScanResponse | null>(null);
-
-  const [levelUpVisible, setLevelUpVisible] = useState(false);
-  const [levelUpFrom, setLevelUpFrom] = useState("");
-  const [levelUpTo, setLevelUpTo] = useState("");
-  const prevLevelRef = useRef<string | null>(null);
+  const { checkForLevelUp } = useLevelUp();
 
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 + 84 : 100 + insets.bottom;
@@ -187,32 +182,11 @@ export default function ScanScreen() {
     refetchInterval: 60000,
   });
 
-  const { data: profileData, refetch: refetchProfile } = useQuery<Profile>({
+  useQuery<Profile>({
     queryKey: ["profile"],
     queryFn: () => apiFetch("/profile"),
     enabled: !!user,
   });
-
-  useEffect(() => {
-    if (!profileData?.level) return;
-    if (prevLevelRef.current && prevLevelRef.current !== profileData.level && !levelUpVisible) {
-      setLevelUpFrom(prevLevelRef.current);
-      setLevelUpTo(profileData.level);
-      const tid = setTimeout(() => setLevelUpVisible(true), 600);
-      prevLevelRef.current = profileData.level;
-      return () => clearTimeout(tid);
-    }
-    prevLevelRef.current = profileData.level;
-  }, [profileData?.level, levelUpVisible]);
-
-  useEffect(() => {
-    const sub = AppState.addEventListener("change", (nextState) => {
-      if (nextState === "active" && user) {
-        refetchProfile();
-      }
-    });
-    return () => sub.remove();
-  }, [user, refetchProfile]);
 
   const scanMutation = useMutation({
     mutationFn: (imageBase64: string) =>
@@ -220,13 +194,14 @@ export default function ScanScreen() {
         method: "POST",
         body: JSON.stringify({ imageBase64 }),
       }),
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       setScanResult(data);
       setState("confirmed");
-      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      await queryClient.invalidateQueries({ queryKey: ["profile"] });
       queryClient.invalidateQueries({ queryKey: ["receipts"] });
       queryClient.invalidateQueries({ queryKey: ["active-session"] });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      checkForLevelUp();
     },
     onError: (err: Error) => {
       Alert.alert("Errore", err.message ?? "Impossibile validare lo scontrino");
@@ -289,7 +264,6 @@ export default function ScanScreen() {
     const hasPendingItems = pendingItems.length > 0;
 
     return (
-      <>
         <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: bottomPad }}>
           <LinearGradient
             colors={[Colors.forest, Colors.leaf]}
@@ -379,58 +353,45 @@ export default function ScanScreen() {
             </Pressable>
           </View>
         </ScrollView>
-        <LevelUpModal
-          visible={levelUpVisible}
-          fromLevel={levelUpFrom}
-          toLevel={levelUpTo}
-          onClose={() => setLevelUpVisible(false)}
-        />
-      </>
     );
   }
 
   if (state === "scanning") {
     return (
-      <>
-        <View style={[styles.centered, { paddingTop: topPadding }]}>
-          <LinearGradient colors={[Colors.primaryLight, Colors.background]} style={StyleSheet.absoluteFill} />
-          {imageUri && <Image source={{ uri: imageUri }} style={styles.scanningImage} />}
-          <View style={styles.scanningOverlay}>
-            <ActivityIndicator size="large" color={Colors.leaf} />
-            <Text style={styles.scanningText}>Verifica in corso...</Text>
-            <Text style={styles.scanningSubText}>Controllo anti-frode sullo scontrino</Text>
-          </View>
+      <View style={[styles.centered, { paddingTop: topPadding }]}>
+        <LinearGradient colors={[Colors.primaryLight, Colors.background]} style={StyleSheet.absoluteFill} />
+        {imageUri && <Image source={{ uri: imageUri }} style={styles.scanningImage} />}
+        <View style={styles.scanningOverlay}>
+          <ActivityIndicator size="large" color={Colors.leaf} />
+          <Text style={styles.scanningText}>Verifica in corso...</Text>
+          <Text style={styles.scanningSubText}>Controllo anti-frode sullo scontrino</Text>
         </View>
-        <LevelUpModal visible={levelUpVisible} fromLevel={levelUpFrom} toLevel={levelUpTo} onClose={() => setLevelUpVisible(false)} />
-      </>
+      </View>
     );
   }
 
   if (state === "preview" && imageUri) {
     return (
-      <>
-        <View style={[styles.container, { paddingTop: topPadding }]}>
-          <View style={styles.previewHeader}>
-            <Pressable onPress={reset}>
-              <Feather name="x" size={24} color={Colors.text} />
-            </Pressable>
-            <Text style={styles.previewTitle}>Scontrino</Text>
-            <View style={{ width: 24 }} />
-          </View>
-          <Image source={{ uri: imageUri }} style={styles.previewImage} resizeMode="contain" />
-          <Animated.View entering={SlideInDown.springify()} style={[styles.previewActions, { paddingBottom: bottomPad / 2 }]}>
-            <Pressable style={styles.secondaryBtn} onPress={() => pickImage("gallery")}>
-              <Feather name="refresh-ccw" size={18} color={Colors.leaf} />
-              <Text style={styles.secondaryBtnText}>Cambia</Text>
-            </Pressable>
-            <Pressable style={styles.primaryBtn} onPress={startScan}>
-              <Feather name="zap" size={18} color="#fff" />
-              <Text style={styles.primaryBtnText}>Conferma</Text>
-            </Pressable>
-          </Animated.View>
+      <View style={[styles.container, { paddingTop: topPadding }]}>
+        <View style={styles.previewHeader}>
+          <Pressable onPress={reset}>
+            <Feather name="x" size={24} color={Colors.text} />
+          </Pressable>
+          <Text style={styles.previewTitle}>Scontrino</Text>
+          <View style={{ width: 24 }} />
         </View>
-        <LevelUpModal visible={levelUpVisible} fromLevel={levelUpFrom} toLevel={levelUpTo} onClose={() => setLevelUpVisible(false)} />
-      </>
+        <Image source={{ uri: imageUri }} style={styles.previewImage} resizeMode="contain" />
+        <Animated.View entering={SlideInDown.springify()} style={[styles.previewActions, { paddingBottom: bottomPad / 2 }]}>
+          <Pressable style={styles.secondaryBtn} onPress={() => pickImage("gallery")}>
+            <Feather name="refresh-ccw" size={18} color={Colors.leaf} />
+            <Text style={styles.secondaryBtnText}>Cambia</Text>
+          </Pressable>
+          <Pressable style={styles.primaryBtn} onPress={startScan}>
+            <Feather name="zap" size={18} color="#fff" />
+            <Text style={styles.primaryBtnText}>Conferma</Text>
+          </Pressable>
+        </Animated.View>
+      </View>
     );
   }
 
@@ -440,7 +401,6 @@ export default function ScanScreen() {
     const confirmedItems = activeSession.barcodeScans;
 
     return (
-      <>
         <ScrollView style={[styles.container, { paddingTop: topPadding }]} contentContainerStyle={{ paddingBottom: bottomPad }}>
           <View style={styles.idleHeader}>
             <Text style={styles.idleTitle}>In sospeso</Text>
@@ -533,8 +493,6 @@ export default function ScanScreen() {
             </Pressable>
           </View>
         </ScrollView>
-        <LevelUpModal visible={levelUpVisible} fromLevel={levelUpFrom} toLevel={levelUpTo} onClose={() => setLevelUpVisible(false)} />
-      </>
     );
   }
 
@@ -624,12 +582,6 @@ export default function ScanScreen() {
         </>
       )}
 
-      <LevelUpModal
-        visible={levelUpVisible}
-        fromLevel={levelUpFrom}
-        toLevel={levelUpTo}
-        onClose={() => setLevelUpVisible(false)}
-      />
     </ScrollView>
   );
 }

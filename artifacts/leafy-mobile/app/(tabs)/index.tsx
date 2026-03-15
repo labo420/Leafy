@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Dimensions,
   Image,
+  ImageSourcePropType,
   KeyboardAvoidingView,
   LayoutAnimation,
   Platform,
@@ -57,7 +58,7 @@ const LEVEL_CONFIG = [
   { name: "Foresta", emoji: "🌲", minPts: 10000, color: "#1B5E20" },
 ];
 
-const LEVEL_BADGE_IMAGES: Record<string, any> = {
+const LEVEL_BADGE_IMAGES: Record<string, ImageSourcePropType> = {
   Germoglio: require("@/assets/badges/level-germoglio.png"),
   Ramoscello: require("@/assets/badges/level-ramoscello.png"),
   Arbusto: require("@/assets/badges/level-arbusto.png"),
