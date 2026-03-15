@@ -2,6 +2,7 @@ import { db, productCacheTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { anthropic } from "@workspace/integrations-anthropic-ai";
 import type { FoundItem, GreenCategory } from "./scanner.js";
+import { extractTextViaGoogleVision } from "./scanner.js";
 
 const ECO_SCORE_POINTS: Record<string, number> = {
   a: 20,
@@ -1266,25 +1267,12 @@ export interface ReceiptValidation {
 export async function validateReceiptWithAI(imageBase64: string): Promise<ReceiptValidation> {
   try {
     const currentYear = new Date().getFullYear();
-    const message = await anthropic.messages.create({
-      model: "claude-sonnet-4-5",
-      max_tokens: 1800,
-      temperature: 0,
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "image",
-              source: {
-                type: "base64",
-                media_type: "image/jpeg",
-                data: imageBase64,
-              },
-            },
-            {
-              type: "text",
-              text: `Sei un esperto OCR specializzato in scontrini italiani. Analizza questa immagine e determina se è uno scontrino o ricevuta di acquisto.
+
+    const ocrText = await extractTextViaGoogleVision(imageBase64);
+    const usingVision = !!ocrText;
+    console.log(`[validateReceiptWithAI] Vision OCR: ${usingVision ? `OK (${ocrText!.length} chars)` : "not available, falling back to Haiku vision"}`);
+
+    const receiptPromptRules = `Sei un esperto specializzato in scontrini italiani. Analizza ${usingVision ? "il seguente testo OCR estratto da uno scontrino" : "questa immagine"} e determina se è uno scontrino o ricevuta di acquisto.
 
 TIPI DI DOCUMENTO VALIDI (tutti equivalenti in Italia):
 - Scontrino fiscale / ricevuta fiscale
@@ -1313,7 +1301,7 @@ Gli scontrini italiani usano questi formati (convertili SEMPRE in YYYY-MM-DD):
 - GG-MM-AAAA → es. "15-03-2026" = "2026-03-15"
 - GG MM AAAA → es. "15 03 2026" = "2026-03-15"
 Se l'anno ha 2 cifre, anteponi "20" (es. 26 → 2026).
-Se l'anno non appare sullo scontrino, usa ${currentYear}.
+Se l'anno non appare nello scontrino, usa ${currentYear}.
 La data può comparire vicino a: ORA, CASSA, OP., DATA, emissione.
 
 === REGOLE TOTALE ===
@@ -1353,7 +1341,7 @@ Deduci la provincia dal CAP o dall'indirizzo stampato sullo scontrino:
 - 34170 = Gorizia, 32100-32199 = Belluno, 31100-31199 = Treviso, 36100-36199 = Vicenza
 - 45100-45199 = Rovigo, 30100-30199 = Venezia, 15100-15199 = Alessandria, 14100-14199 = Asti
 - 12100-12199 = Cuneo, 13100-13199 = Vercelli, 28100-28199 = Novara, 28900 = Verbano-Cusio-Ossola
-- 13900 = Biella, 15060 = Ovada (AL), 17100-17199 = Savona, 18100-18199 = Imperia, 19100-19199 = La Spezia
+- 13900 = Biella, 17100-17199 = Savona, 18100-18199 = Imperia, 19100-19199 = La Spezia
 In alternativa, usa la città capoluogo che appare nell'indirizzo per dedurre la provincia.
 Se non riesci a determinare la provincia, usa null.
 
@@ -1365,11 +1353,20 @@ Se non riesci a determinare la provincia, usa null.
 
 === CAMPO "complete" ===
 - true: hai letto con certezza sia la data che il totale
-- false: almeno uno dei due manca o è illeggibile`,
-            },
-          ],
-        },
-      ],
+- false: almeno uno dei due manca o è illeggibile`;
+
+    const messageContent = usingVision
+      ? [{ type: "text" as const, text: `${receiptPromptRules}\n\n=== TESTO OCR ESTRATTO ===\n${ocrText}` }]
+      : [
+          { type: "image" as const, source: { type: "base64" as const, media_type: "image/jpeg" as const, data: imageBase64 } },
+          { type: "text" as const, text: receiptPromptRules },
+        ];
+
+    const message = await anthropic.messages.create({
+      model: "claude-haiku-4-5",
+      max_tokens: 1500,
+      temperature: 0,
+      messages: [{ role: "user", content: messageContent }],
     });
 
     const text = message.content[0].type === "text" ? message.content[0].text : "{}";

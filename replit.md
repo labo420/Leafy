@@ -265,7 +265,7 @@ workspace/
 │   │       │   └── marketplace.ts
 │   │       ├── seed-badges.ts      # 15 badge seed idempotenti (per nome)
 │   │       └── lib/
-│   │           ├── productClassifier.ts  # Catena: OFF → Nutritionix → USDA → vision → AI+GS1 brand hints. validateReceiptWithAI usa claude-sonnet-4-5 per OCR scontrini italiani
+│   │           ├── productClassifier.ts  # Catena: OFF → Nutritionix → USDA → vision → AI+GS1 brand hints. validateReceiptWithAI: Vision OCR (gratis) → Haiku testo (quasi gratis), fallback Haiku vision
 │   │           ├── supermarketWhitelist.ts # 51 catene italiane (standard/bio/discount) + matchChain()
 │   │           ├── antiFraud.ts          # 8-layer anti-frode system
 │   │           ├── scanner.ts            # Google Vision OCR + keyword matching
@@ -363,8 +363,19 @@ workspace/
 
 File: `artifacts/api-server/src/lib/productClassifier.ts` — funzione `validateReceiptWithAI`
 
-### Modello AI usato
-- **claude-sonnet-4-5** (non Haiku) — necessario per OCR affidabile su foto di scontrini
+### Architettura a costo quasi zero
+Pipeline in due step per minimizzare i costi:
+
+1. **Google Vision API** (`GOOGLE_CLOUD_VISION_API_KEY`) — estrae il testo OCR grezzo dalla foto (gratis fino a 1000 richieste/mese). Se configurata, restituisce il testo strutturato dello scontrino.
+2. **Claude Haiku** — analizza il testo OCR (non l'immagine!) per estrarre data, totale, prodotti ecc. Testo puro = token minimi = costo vicino a zero.
+
+Se Vision non è configurata o fallisce → fallback automatico su **Haiku con immagine** (costa leggermente di più ma funziona uguale).
+
+| Scenario | Costo per scontrino |
+|----------|---------------------|
+| Vision (testo) + Haiku | ~$0.000001 |
+| Solo Haiku con immagine (fallback) | ~$0.000030 |
+| ~~Sonnet con immagine (rimosso)~~ | ~~$0.00015-$0.0003~~ |
 
 ### Documenti accettati (tutti equivalenti in Italia)
 - Scontrino fiscale / ricevuta fiscale
