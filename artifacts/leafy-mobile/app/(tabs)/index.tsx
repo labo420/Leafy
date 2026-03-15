@@ -763,7 +763,7 @@ const authStyles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.04)",
   },
   logoSection: {
-    flex: 1,
+    flex: 0.8,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 32,
@@ -783,8 +783,8 @@ const authStyles = StyleSheet.create({
   actions: {
     width: "100%",
     paddingHorizontal: 32,
-    paddingBottom: 24,
-    marginTop: -80,
+    paddingBottom: 40,
+    marginTop: -40,
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
