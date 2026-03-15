@@ -88,13 +88,13 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
             const range = lvl.minPts - prev.minPts;
             fillPct = Math.min(100, Math.max(0, ((points - prev.minPts) / range) * 100));
           }
-          const segColor = prevReached || isTransition ? lvl.fruitColor : "rgba(255,255,255,0.2)";
+          const segColor = prevReached || isTransition ? lvl.fruitColor : "rgba(255,255,255,0.15)";
           return (
-            <View key={i} style={[milestoneStyles.segmentTrack, { height: 5, borderRadius: 2.5 }]}>
+            <View key={i} style={[milestoneStyles.segmentTrack, { height: 6, borderRadius: 3 }]}>
               <View
                 style={[
                   milestoneStyles.segmentFill,
-                  { width: `${fillPct}%`, backgroundColor: segColor, height: 5, borderRadius: 2.5 },
+                  { width: `${fillPct}%`, backgroundColor: segColor, height: 6, borderRadius: 3 },
                 ]}
               />
             </View>
@@ -160,20 +160,20 @@ const milestoneStyles = StyleSheet.create({
     position: "absolute",
     left: 34,
     right: 34,
-    height: 5,
+    height: 6,
     gap: 0,
   },
   segmentTrack: {
     flex: 1,
-    height: 5,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    borderRadius: 2.5,
+    height: 6,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    borderRadius: 3,
     overflow: "hidden",
   },
   segmentFill: {
-    height: 5,
+    height: 6,
     backgroundColor: "#fff",
-    borderRadius: 2.5,
+    borderRadius: 3,
   },
   nodesRow: {
     flexDirection: "row",
@@ -220,13 +220,11 @@ function LevelProgressRing({
   progress,
   level,
   points,
-  percentage,
   heroMode = false,
 }: {
   progress: number;
   level: string;
   points: number;
-  percentage: number;
   heroMode?: boolean;
 }) {
   const animatedProgress = useSharedValue(0);
@@ -282,9 +280,11 @@ function LevelProgressRing({
         <Text style={[ringStyles.levelLabel, { color: labelColor }]}>
           {(LEVEL_LABELS[level] ?? level).toUpperCase()}
         </Text>
-        <Text style={[ringStyles.percentageText, { color: labelColor }]}>
-          {points === 0 ? "Inizia!" : `${Math.round(percentage)}%`}
-        </Text>
+        <Image
+          source={LEVEL_BADGE_IMAGES[level] ?? LEVEL_BADGE_IMAGES.Germoglio}
+          style={{ width: 64, height: 64, marginVertical: 4 }}
+          resizeMode="contain"
+        />
         <Text style={[ringStyles.pointsValue, { color: valueColor }]}>
           {new Intl.NumberFormat("it-IT").format(points)}
         </Text>
@@ -313,14 +313,8 @@ const ringStyles = StyleSheet.create({
     letterSpacing: 1.5,
     marginBottom: 4,
   },
-  percentageText: {
-    fontSize: 14,
-    fontFamily: "Inter_600SemiBold",
-    color: Colors.textSecondary,
-    marginBottom: 2,
-  },
   pointsValue: {
-    fontSize: 32,
+    fontSize: 34,
     fontFamily: "DMSans_700Bold",
     color: Colors.leaf,
     letterSpacing: -1,
@@ -658,11 +652,15 @@ export default function HomeScreen() {
         <View style={[styles.header, { paddingTop: topPadding + 12 }]}>
           <View style={styles.headerLeft}>
             <View style={styles.logoBoxHero}>
-              <MaterialCommunityIcons name="leaf" size={22} color="#fff" />
+              <Image
+                source={require("@/assets/leafy-icon-dark.png")}
+                style={{ width: 28, height: 28 }}
+                resizeMode="contain"
+              />
             </View>
             <View>
               <Text style={styles.logoTextHero}>Leafy</Text>
-              <Text style={styles.greetingHero}>Ciao, {username}!</Text>
+              <Text style={styles.greetingHero}>Ciao, {username}! 👋</Text>
             </View>
           </View>
           <Pressable onPress={() => router.push("/(tabs)/profilo")}>
@@ -680,7 +678,6 @@ export default function HomeScreen() {
             progress={levelProgress}
             level={level}
             points={points}
-            percentage={levelProgress}
             heroMode
           />
 
@@ -811,7 +808,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.18)",
+    backgroundColor: "rgba(255,255,255,0.92)",
     alignItems: "center",
     justifyContent: "center",
   },
