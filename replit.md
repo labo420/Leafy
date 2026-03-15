@@ -732,6 +732,17 @@ Implementati 5 miglioramenti UX per rendere meno noiosa e più coinvolgente la s
 
 **Result**: Schermata meno noiosa, più visivamente interessante, user engagement migliorato con componenti interattive e separazione logica tra prodotti premiati e altri prodotti.
 
+---
+
+## API Endpoints - Scan Routes
+
+### POST `/scan/cancel-session`
+- **Auth**: Richiede utente autenticato
+- **Behavior**: Finalizza la sessione attiva di scansione barcode (status = "approved")
+- **Use case**: Reset della memoria app — permette all'utente di ricominciare da zero senza riavviare l'app
+- **Response**: `{ success: true, message: "Sessione cancellata" }`
+- **Mobile UI**: Bottone "Cancella e ricomincia" nella schermata di successo post-scansione scontrino
+
 ### Sessione Cookie
 - `express-session`-like custom store in-memory
 - Cookie `session_id` con `httpOnly`, `secure` (in produzione), `sameSite: none`

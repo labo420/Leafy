@@ -913,4 +913,28 @@ router.post("/scan/products/correct", async (req, res): Promise<void> => {
   res.json({ success: true, item: newItem });
 });
 
+router.post("/scan/cancel-session", async (req, res): Promise<void> => {
+  const user = await requireUser(req, res);
+  if (!user) return;
+
+  const activeReceipt = await db
+    .select()
+    .from(receiptsTable)
+    .where(and(eq(receiptsTable.userId, user.id), eq(receiptsTable.status, "pending_barcode")))
+    .orderBy(desc(receiptsTable.createdAt))
+    .limit(1);
+
+  if (activeReceipt.length === 0) {
+    res.json({ success: true, message: "Nessuna sessione attiva" });
+    return;
+  }
+
+  await db
+    .update(receiptsTable)
+    .set({ status: "approved" })
+    .where(eq(receiptsTable.id, activeReceipt[0].id));
+
+  res.json({ success: true, message: "Sessione cancellata" });
+});
+
 export default router;

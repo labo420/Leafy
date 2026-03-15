@@ -286,6 +286,17 @@ export default function ScanScreen() {
     router.push({ pathname: "/barcode-scanner", params });
   };
 
+  const cancelSession = async () => {
+    try {
+      await apiFetch("/scan/cancel-session", { method: "POST" });
+      queryClient.invalidateQueries({ queryKey: ["active-session"] });
+      setScanResult(null);
+      setState("idle");
+    } catch (err) {
+      Alert.alert("Errore", "Impossibile cancellare la sessione");
+    }
+  };
+
   if (state === "confirmed" && scanResult) {
     const allItems = (scanResult.greenItemsFound ?? []);
     const greenProducts = allItems.filter(p => !p.matched && p.points > 0);
@@ -397,6 +408,9 @@ export default function ScanScreen() {
             <View style={styles.section}>
               <Pressable style={styles.laterBtn} onPress={reset}>
                 <Text style={styles.laterBtnText}>Lo faccio dopo — riprendo dallo storico</Text>
+              </Pressable>
+              <Pressable style={styles.resetBtn} onPress={cancelSession}>
+                <Text style={styles.resetBtnText}>Cancella e ricomincia</Text>
               </Pressable>
             </View>
           </ScrollView>
@@ -826,6 +840,8 @@ const styles = StyleSheet.create({
   scanProductsBtnSub: { fontSize: 13, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.8)" },
   laterBtn: { alignItems: "center", paddingVertical: 16 },
   laterBtnText: { fontSize: 15, fontFamily: "Inter_500Medium", color: Colors.textSecondary },
+  resetBtn: { alignItems: "center", paddingVertical: 12, marginTop: 8 },
+  resetBtnText: { fontSize: 13, fontFamily: "Inter_400Regular", color: Colors.textSecondary, textDecorationLine: "underline" },
 
   pendingTitle: {
     fontSize: 15, fontFamily: "Inter_600SemiBold", color: Colors.text,
