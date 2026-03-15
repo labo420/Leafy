@@ -402,9 +402,19 @@ Il separatore decimale può essere virgola o punto (es. `€4,19` = `€4.19` = 
 ### Deduzione provincia dal CAP
 La provincia viene dedotta dal CAP stampato nell'indirizzo del punto vendita. Sono mappati i range CAP di tutte le province italiane. Fallback: deduzione dal nome del comune capoluogo nell'indirizzo.
 
-### Logica di completezza
-- `complete: true` → data E totale entrambi leggibili → lo scontrino viene accettato
-- `complete: false` → almeno uno dei due manca → errore con richiesta di rifotografare
+### Logica di completezza (permissiva)
+Lo scontrino viene **sempre accettato** se `isReceipt: true`, anche se mancano data o totale:
+- Data mancante → fallback alla data odierna (`effectiveDate = today`)
+- Totale mancante → `effectiveTotal = null` (i punti vengono calcolati sui prodotti, non sul totale)
+- `isReceipt: false` → unico caso in cui lo scontrino viene rifiutato
+
+Il check anti-duplicato si attiva solo quando entrambi `validation.date` e `validation.totalCents` sono presenti (valori reali letti dallo scontrino, non fallback).
+
+### Pattern data per catena
+Il prompt istruisce l'AI a cercare la data **ovunque** nel documento, incluso il codice transazione finale:
+- **Aldi**: data nel codice transazione → `"0767-422/04i-060-000 15/03/26 13.46"` → `2026-03-15`
+- **Lidl, Eurospin, Penny**: data in fondo allo scontrino dopo l'orario di cassa
+- **Esselunga, Coop**: data nella riga `"Data:"` o nell'intestazione
 
 ---
 

@@ -83,14 +83,12 @@ router.post("/scan", async (req, res): Promise<void> => {
     return;
   }
 
+  const fallbackDate = new Date().toISOString().slice(0, 10);
+  const effectiveDate = validation.date ?? fallbackDate;
+  const effectiveTotal: number | null = validation.totalCents ?? null;
+
   if (!validation.complete) {
-    const missing = validation.missingInfo.length > 0
-      ? validation.missingInfo.join(", ")
-      : "data, totale";
-    res.status(400).json({
-      error: `Scontrino incompleto — non riesco a leggere: ${missing}. Rifotografa mostrando l'intero scontrino.`,
-    });
-    return;
+    console.log(`[scan] Receipt accepted with fallbacks — date: ${validation.date ?? `null→${fallbackDate}`}, total: ${validation.totalCents ?? "null"}`);
   }
 
   const resolvedChain = matchChain(validation.storeChain) ?? matchChain(validation.store);
@@ -104,8 +102,8 @@ router.post("/scan", async (req, res): Promise<void> => {
   if (validation.date && validation.totalCents !== null) {
     const dupConditions = [
       eq(receiptsTable.userId, user.id),
-      eq(receiptsTable.receiptDate, validation.date),
-      eq(receiptsTable.receiptTotal, validation.totalCents),
+      eq(receiptsTable.receiptDate, validation.date!),
+      eq(receiptsTable.receiptTotal, validation.totalCents!),
       sql`(${receiptsTable.pointsEarned} > 0 OR ${receiptsTable.status} = 'pending_barcode')`,
     ];
     if (validation.store) {
@@ -177,8 +175,8 @@ router.post("/scan", async (req, res): Promise<void> => {
         flagReason: null,
         barcodeExpiry,
         barcodeMode: 1,
-        receiptDate: validation.date,
-        receiptTotal: validation.totalCents,
+        receiptDate: effectiveDate,
+        receiptTotal: effectiveTotal,
         storeChain: resolvedChain,
         province: validation.province ?? null,
       })

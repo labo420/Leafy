@@ -1294,15 +1294,24 @@ Rispondi SOLO con un JSON valido, senza altro testo:
 }
 
 === REGOLE DATA ===
-Gli scontrini italiani usano questi formati (convertili SEMPRE in YYYY-MM-DD):
+Cerca la data in QUALSIASI parte dello scontrino, anche nelle righe di codice transazione, numero di ricevuta, footer. Non limitarti alle etichette "DATA" o "ORA".
+
+Formati da riconoscere (convertili SEMPRE in YYYY-MM-DD):
 - GG/MM/AA → es. "15/03/26" = "${currentYear}-03-15"
 - GG/MM/AAAA → es. "15/03/2026" = "2026-03-15"
 - GG.MM.AAAA → es. "15.03.2026" = "2026-03-15"
 - GG-MM-AAAA → es. "15-03-2026" = "2026-03-15"
 - GG MM AAAA → es. "15 03 2026" = "2026-03-15"
+- La data può apparire seguita dall'ora: "15/03/26 13.46" o "15/03/26 13:46" → prendi solo la data
+
+ATTENZIONE — pattern specifici per catena:
+- Aldi: la data è spesso nel codice transazione in fondo, es. "0767-422/04i-060-000 15/03/26 13.46" → data = "15/03/26"
+- Lidl, Eurospin, Penny: la data è di solito in fondo allo scontrino dopo l'orario di cassa
+- Esselunga, Coop: la data è nella riga "Data:" o nell'intestazione
+
 Se l'anno ha 2 cifre, anteponi "20" (es. 26 → 2026).
 Se l'anno non appare nello scontrino, usa ${currentYear}.
-La data può comparire vicino a: ORA, CASSA, OP., DATA, emissione.
+Se NON trovi alcuna data in nessuna parte del documento, restituisci null.
 
 === REGOLE TOTALE ===
 Cerca queste etichette (nell'ordine, prendi la prima trovata):
