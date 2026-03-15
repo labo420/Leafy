@@ -1,4 +1,6 @@
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import { GoogleIcon } from "../../components/GoogleIcon";
+import { FacebookIcon } from "../../components/FacebookIcon";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
@@ -377,16 +379,12 @@ function GuestAuthScreen() {
             </View>
 
             <Pressable onPress={() => {}} style={({ pressed }) => [authStyles.googleBtn, pressed && { opacity: 0.9 }]}>
-              <View style={authStyles.googleIcon}>
-                <Text style={authStyles.googleG}>G</Text>
-              </View>
+              <GoogleIcon size={22} />
               <Text style={authStyles.googleBtnText}>Continua con Google</Text>
             </Pressable>
 
             <Pressable onPress={() => {}} style={({ pressed }) => [authStyles.fbBtn, pressed && { opacity: 0.9 }]}>
-              <View style={authStyles.fbIcon}>
-                <Text style={authStyles.fbF}>f</Text>
-              </View>
+              <FacebookIcon size={22} />
               <Text style={authStyles.fbBtnText}>Continua con Facebook</Text>
             </Pressable>
 
@@ -863,22 +861,6 @@ const authStyles = StyleSheet.create({
     fontFamily: "Inter_600SemiBold",
     color: "#3C4043",
   },
-  googleIcon: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-  },
-  googleG: {
-    fontSize: 13,
-    fontFamily: "Inter_700Bold",
-    color: "#4285F4",
-    lineHeight: 16,
-  },
   fbBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -899,20 +881,6 @@ const authStyles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "Inter_600SemiBold",
     color: "#FFFFFF",
-  },
-  fbIcon: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: "rgba(255,255,255,0.25)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  fbF: {
-    fontSize: 14,
-    fontFamily: "Inter_700Bold",
-    color: "#fff",
-    lineHeight: 18,
   },
   footer: {
     fontSize: 12,
