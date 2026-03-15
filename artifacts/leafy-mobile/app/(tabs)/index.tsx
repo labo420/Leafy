@@ -339,7 +339,7 @@ function GuestAuthScreen() {
               resizeMode="contain"
             />
             <Text style={authStyles.tagline}>
-              La tua spesa di ogni giorno,{"\n"}premiata.
+              🎁 La tua spesa di ogni giorno,{"\n"}premiata.
             </Text>
           </View>
 
