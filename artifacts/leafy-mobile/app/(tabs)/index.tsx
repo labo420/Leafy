@@ -30,7 +30,7 @@ import Animated, {
   withTiming,
   FadeInDown,
 } from "react-native-reanimated";
-import Svg, { Circle, Line } from "react-native-svg";
+import Svg, { Circle, Path } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 
@@ -73,116 +73,94 @@ const LEVEL_BADGE_IMAGES: Record<string, ImageSourcePropType> = {
   Foresta: require("@/assets/badges/level-foresta.png"),
 };
 
-const LARGEST_NODE = Math.max(...LEVEL_CONFIG.map(l => l.nodeSize));
-const NODE_Y_OFFSETS = [72, 54, 36, 18, 0];
-const LABEL_HEIGHT = 16;
 const BAR_PADDING_H = 16;
-const LINE_STROKE = 8;
+const LABEL_HEIGHT = 16;
+const MAX_RADIUS = Math.max(...LEVEL_CONFIG.map(l => l.nodeSize / 2));
+const BASELINE_Y = MAX_RADIUS * 2;
+const BAR_TOTAL_H = BASELINE_Y + LABEL_HEIGHT + 10;
 
 function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; points: number }) {
   const currentIdx = LEVEL_CONFIG.findIndex((l) => l.name === currentLevel);
   const safeIdx = currentIdx >= 0 ? currentIdx : 0;
   const screenW = Dimensions.get("window").width;
   const barWidth = screenW - BAR_PADDING_H * 2;
-  const totalHeight = LARGEST_NODE + NODE_Y_OFFSETS[0] + LABEL_HEIGHT + 8;
 
-  const nodePositions = LEVEL_CONFIG.map((lvl, i) => {
-    const count = LEVEL_CONFIG.length;
-    const usableWidth = barWidth - LARGEST_NODE;
-    const x = (LARGEST_NODE / 2) + (i / (count - 1)) * usableWidth;
-    const y = NODE_Y_OFFSETS[i] + lvl.nodeSize / 2;
-    return { x, y };
+  const r0 = LEVEL_CONFIG[0].nodeSize / 2;
+  const rLast = LEVEL_CONFIG[LEVEL_CONFIG.length - 1].nodeSize / 2;
+
+  const nodes = LEVEL_CONFIG.map((lvl, i) => {
+    const r = lvl.nodeSize / 2;
+    const cx = r0 + (barWidth - r0 - rLast) * i / (LEVEL_CONFIG.length - 1);
+    const cy = BASELINE_Y - r;
+    return { cx, cy, r, lvl };
   });
+
+  function trapPath(i: number, fillPct: number = 1): string {
+    const { cx: x0, r: r0n } = nodes[i];
+    const { cx: x1, r: r1 } = nodes[i + 1];
+    const startX = x0 + r0n;
+    const endX = x1 - r1;
+    const topStartY = BASELINE_Y - r0n * 2;
+    const topEndY = BASELINE_Y - r1 * 2;
+    const partX = startX + (endX - startX) * fillPct;
+    const partTopY = topStartY + (topEndY - topStartY) * fillPct;
+    return `M ${startX},${topStartY} L ${partX},${partTopY} L ${partX},${BASELINE_Y} L ${startX},${BASELINE_Y} Z`;
+  }
 
   return (
     <View style={milestoneStyles.container}>
-      <View style={{ width: barWidth, height: totalHeight, position: "relative" }}>
-        <Svg width={barWidth} height={totalHeight} style={{ position: "absolute", top: 0, left: 0 }}>
+      <View style={{ width: barWidth, height: BAR_TOTAL_H, position: "relative" }}>
+        <Svg width={barWidth} height={BAR_TOTAL_H} style={{ position: "absolute", top: 0, left: 0 }}>
           {LEVEL_CONFIG.map((_, i) => {
-            if (i === 0) return null;
-            const from = nodePositions[i - 1];
-            const to = nodePositions[i];
+            if (i >= LEVEL_CONFIG.length - 1) return null;
             return (
-              <Line
+              <Path
                 key={`bg-${i}`}
-                x1={from.x}
-                y1={from.y}
-                x2={to.x}
-                y2={to.y}
-                stroke="rgba(255,255,255,0.22)"
-                strokeWidth={LINE_STROKE}
-                strokeLinecap="round"
+                d={trapPath(i, 1)}
+                fill="rgba(255,255,255,0.18)"
               />
             );
           })}
 
           {LEVEL_CONFIG.map((_, i) => {
-            if (i === 0) return null;
-            const from = nodePositions[i - 1];
-            const to = nodePositions[i];
-            const segmentColor = SEGMENT_COLORS[i - 1];
-
-            const isFullyReached = safeIdx >= i;
-            const isTransition = safeIdx === i - 1;
-
+            if (i >= LEVEL_CONFIG.length - 1) return null;
+            const segColor = SEGMENT_COLORS[i];
+            const isFullyReached = safeIdx > i;
+            const isTransition = safeIdx === i;
             if (!isFullyReached && !isTransition) return null;
 
             let fillPct = 1;
             if (isTransition) {
-              const prev = LEVEL_CONFIG[i - 1];
               const curr = LEVEL_CONFIG[i];
-              const range = curr.minPts - prev.minPts;
-              fillPct = Math.min(1, Math.max(0, (points - prev.minPts) / range));
+              const next = LEVEL_CONFIG[i + 1];
+              const range = next.minPts - curr.minPts;
+              fillPct = Math.min(1, Math.max(0, (points - curr.minPts) / range));
             }
 
-            const endX = from.x + (to.x - from.x) * fillPct;
-            const endY = from.y + (to.y - from.y) * fillPct;
-
             return (
-              <Line
+              <Path
                 key={`fill-${i}`}
-                x1={from.x}
-                y1={from.y}
-                x2={endX}
-                y2={endY}
-                stroke={segmentColor}
-                strokeWidth={LINE_STROKE}
-                strokeLinecap="round"
+                d={trapPath(i, fillPct)}
+                fill={segColor}
               />
             );
           })}
         </Svg>
 
-        {LEVEL_CONFIG.map((lvl, i) => {
+        {nodes.map(({ cx, cy, r, lvl }, i) => {
           const reached = safeIdx >= i;
           const sz = lvl.nodeSize;
           const imgSz = lvl.imgSize;
-          const pos = nodePositions[i];
           const segColor = i === 0 ? SEGMENT_COLORS[0] : SEGMENT_COLORS[Math.min(i - 1, SEGMENT_COLORS.length - 1)];
           const labelW = 70;
-          const rawLeft = pos.x - labelW / 2;
+          const rawLeft = cx - labelW / 2;
           const clampedLeft = Math.max(0, Math.min(rawLeft, barWidth - labelW));
 
           return (
-            <View
-              key={i}
-              style={{
-                position: "absolute",
-                left: clampedLeft,
-                top: pos.y - sz / 2,
-                alignItems: "center",
-                width: labelW,
-              }}
-            >
+            <View key={i} style={{ position: "absolute", left: clampedLeft, top: cy - r, width: labelW, alignItems: "center" }}>
               <View
                 style={[
-                  {
-                    width: sz,
-                    height: sz,
-                    borderRadius: sz / 2,
-                    alignItems: "center" as const,
-                    justifyContent: "center" as const,
-                  },
+                  { width: sz, height: sz, borderRadius: sz / 2, alignItems: "center" as const, justifyContent: "center" as const },
                   reached
                     ? { backgroundColor: `${segColor}33`, borderWidth: 2.5, borderColor: segColor }
                     : milestoneStyles.nodeLocked,
@@ -190,18 +168,12 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
               >
                 <Image
                   source={LEVEL_BADGE_IMAGES[lvl.name]}
-                  style={[
-                    { width: imgSz, height: imgSz },
-                    !reached && milestoneStyles.nodeImageLocked,
-                  ]}
+                  style={{ width: imgSz, height: imgSz, opacity: reached ? 1 : 0.35 }}
                   resizeMode="contain"
                 />
               </View>
               <Text
-                style={[
-                  milestoneStyles.nodeLabel,
-                  reached && { color: "#fff" },
-                ]}
+                style={[milestoneStyles.nodeLabel, reached && { color: "#fff" }]}
                 numberOfLines={1}
               >
                 {lvl.name}
@@ -224,9 +196,6 @@ const milestoneStyles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.08)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.15)",
-  },
-  nodeImageLocked: {
-    opacity: 0.35,
   },
   nodeLabel: {
     fontSize: 9,
