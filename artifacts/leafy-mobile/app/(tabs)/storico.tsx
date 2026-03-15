@@ -105,6 +105,18 @@ function formatProductName(name: string): string {
   return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
 }
 
+function getCategoryIcon(category: string | null): string {
+  const cat = (category ?? "").toLowerCase();
+  if (cat.includes("bio") || cat.includes("organic")) return "sprout";
+  if (cat.includes("vegano") || cat.includes("vegan")) return "carrot";
+  if (cat.includes("km 0") || cat.includes("locale") || cat.includes("local")) return "map-marker-radius-outline";
+  if (cat.includes("equo") || cat.includes("fair")) return "handshake-outline";
+  if (cat.includes("dop") || cat.includes("igp") || cat.includes("artigian")) return "certificate-outline";
+  if (cat.includes("plastica") || cat.includes("ricicl") || cat.includes("recycle")) return "recycle";
+  if (cat.includes("carne") || cat.includes("pesce") || cat.includes("fish") || cat.includes("meat")) return "food-drumstick-outline";
+  return "leaf";
+}
+
 function EcoScoreBadge({ score }: { score: string | null }) {
   if (!score) return null;
   const letter = score.toLowerCase();
@@ -245,7 +257,9 @@ function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }
                 {data.barcodeScans.map((scan) => (
                   <View key={scan.id} style={styles.barcodeRow}>
                     <View style={styles.barcodeLeft}>
-                      <Text style={styles.barcodeEmoji}>{scan.emoji}</Text>
+                      <View style={styles.categoryIconWrap}>
+                        <MaterialCommunityIcons name={getCategoryIcon(scan.category) as any} size={18} color={Colors.leaf} />
+                      </View>
                       <View style={{ flex: 1 }}>
                         <Text style={styles.barcodeName} numberOfLines={1}>
                           {scan.productName}
@@ -275,14 +289,21 @@ function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }
                   <Text style={[styles.itemsTitle, { marginTop: 16 }]}>
                     Prodotti green ({data.greenItems.length})
                   </Text>
-                  {!data.isPending && <Text style={styles.itemsHint}>Tocca ✏️ per correggere</Text>}
+                  {!data.isPending && (
+                    <View style={styles.itemsHintRow}>
+                      <Feather name="edit-2" size={11} color={Colors.textSecondary} />
+                      <Text style={styles.itemsHint}>Tocca per correggere</Text>
+                    </View>
+                  )}
                 </View>
                 {data.greenItems.map((item, i) => {
                   const isUnmatched = data.isPending && item.matched === false;
                   const isMatched = data.isPending && item.matched === true;
                   return (
                     <View key={i} style={[styles.itemRow, isMatched && styles.itemRowMatched]}>
-                      <Text style={styles.itemEmoji}>{item.emoji ?? "🌿"}</Text>
+                      <View style={styles.categoryIconWrap}>
+                        <MaterialCommunityIcons name={getCategoryIcon(item.category) as any} size={16} color={Colors.leaf} />
+                      </View>
                       <View style={{ flex: 1 }}>
                         <Text style={styles.itemName}>{formatProductName(item.name)}</Text>
                         <Text style={styles.itemCat}>{item.category ?? ""}</Text>
@@ -596,7 +617,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.card, borderRadius: 14, padding: 14, marginBottom: 8,
   },
   barcodeLeft: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
-  barcodeEmoji: { fontSize: 24 },
+  categoryIconWrap: {
+    width: 32, height: 32, borderRadius: 10,
+    backgroundColor: Colors.primaryLight,
+    alignItems: "center", justifyContent: "center",
+  },
   barcodeName: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: Colors.text },
   barcodeMeta: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 },
   barcodeCat: { fontSize: 11, fontFamily: "Inter_500Medium", color: Colors.textSecondary },
@@ -611,12 +636,12 @@ const styles = StyleSheet.create({
   },
   noProductsText: { fontSize: 14, fontFamily: "Inter_400Regular", color: Colors.textSecondary, flex: 1 },
   itemsTitleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  itemsHint: { fontSize: 11, fontFamily: "Inter_400Regular", color: Colors.textMuted, marginTop: 16 },
+  itemsHintRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  itemsHint: { fontSize: 11, fontFamily: "Inter_400Regular", color: Colors.textMuted },
   itemRow: {
     flexDirection: "row", alignItems: "center", gap: 10,
     backgroundColor: Colors.card, borderRadius: 12, padding: 14, marginBottom: 8,
   },
-  itemEmoji: { fontSize: 20 },
   itemName: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: Colors.text },
   itemCat: { fontSize: 11, fontFamily: "Inter_400Regular", color: Colors.textSecondary, marginTop: 1 },
   itemPts: { fontSize: 14, fontFamily: "Inter_700Bold", color: Colors.leaf },

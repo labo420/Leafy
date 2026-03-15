@@ -606,17 +606,17 @@ export default function HomeScreen() {
         <Text style={styles.impactTitle}>Il tuo impatto</Text>
         <View style={styles.impactRow}>
           <View style={styles.impactCard}>
-            <MaterialCommunityIcons name="receipt" size={24} color={Colors.leaf} />
+            <MaterialCommunityIcons name="receipt-text-outline" size={24} color={Colors.leaf} />
             <Text style={styles.impactCardValue}>{impact?.receiptsScanned ?? 0}</Text>
             <Text style={styles.impactCardLabel}>Scontrini</Text>
           </View>
           <View style={styles.impactCard}>
-            <MaterialCommunityIcons name="leaf-circle" size={24} color={Colors.leaf} />
+            <MaterialCommunityIcons name="leaf" size={24} color={Colors.leaf} />
             <Text style={styles.impactCardValue}>{impact?.greenProductsCount ?? 0}</Text>
             <Text style={styles.impactCardLabel}>Prodotti green</Text>
           </View>
           <View style={styles.impactCard}>
-            <MaterialCommunityIcons name="molecule-co2" size={24} color={Colors.leaf} />
+            <MaterialCommunityIcons name="earth" size={24} color={Colors.leaf} />
             <Text style={styles.impactCardValue}>{(impact?.co2SavedKg ?? 0).toFixed(1)}</Text>
             <Text style={styles.impactCardLabel}>kg CO₂</Text>
           </View>
