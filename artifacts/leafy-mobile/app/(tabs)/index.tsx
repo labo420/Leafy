@@ -429,7 +429,7 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_500Medium",
     color: "rgba(255,255,255,0.8)",
     letterSpacing: 1.2,
-    marginBottom: 8,
+    marginBottom: -4,
   },
   guestTagline: {
     fontSize: 18,
