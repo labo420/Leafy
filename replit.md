@@ -6,7 +6,10 @@ Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti 
 
 **Stato attuale**: App Expo React Native funzionante (SDK 54) + backend Express/PostgreSQL + admin panel web + frontend web con sistema badge a due livelli (lifetime + temporali) + whitelist 51 supermercati italiani con validazione AI di catena e provincia. Economia calibrata con cap punti, bonus scontrino, Scontrino Virtuoso, Eco-Hero multiplier. Catena barcode multiAPI (OFF + Nutritionix + USDA + GS1 brand hints). Inserimento manuale prodotti con apprendimento AI.
 
-**UX/Design v2**: Badge con icone vettoriali SVG esagonali (componente `BadgeIcon` con gradienti per categoria, stati locked/unlocked). Home e Profilo ripuliti da emoji generiche, sostituiti con icone vettoriali (`@expo/vector-icons`). Sezione Scan ristrutturata: sostituito il grande cerchio 300px con layout a card (card scontrino fullwidth + due card laterali galleria/spesa). Badge 3D clay/glossy (`BadgeIcon3D`): 15 immagini PNG AI-generate in stile 3D plastica lucida con sfondo trasparente, una per badge. Usate sia per Traguardi che Sfide in `profilo.tsx`. Stato locked = opacity ridotta + icona lucchetto. Asset in `assets/badges/`.
+**UX/Design v2 — stato attuale**:
+- **Badge 3D clay/glossy** (`BadgeIcon3D`): 15 immagini PNG AI-generate in stile 3D plastica lucida con sfondo trasparente, una per ciascun badge. Usate sia per Traguardi (lifetime) che Sfide (temporali) nella schermata profilo. Stato bloccato = opacity ridotta + icona lucchetto centrata. Asset in `artifacts/leafy-mobile/assets/badges/`. Il vecchio componente SVG esagonale (`BadgeIcon`) è mantenuto come fallback ma non più usato nel profilo.
+- **Home e Profilo**: Rimossi tutti gli emoji dalle intestazioni, streak, messaggi motivazionali e label di sezione; sostituiti con icone vettoriali `MaterialCommunityIcons` / `Feather` di `@expo/vector-icons`.
+- **Scan screen**: Sostituito il cerchio pulsante da 300px (duplicato del floating button) con layout a card — card fullwidth verde per lo scontrino + due card affiancate per galleria e modalità spesa.
 
 ---
 
@@ -260,17 +263,21 @@ workspace/
 │   │           ├── receiptImageCleanup.ts # Pulizia automatica foto scadute (30gg)
 │   │           └── objectStorage.ts      # GCS client wrapper (Replit sidecar auth)
 │   ├── leafy-mobile/        # App Expo React Native
-│   │   └── app/
-│   │       ├── (tabs)/
-│   │       │   ├── index.tsx       # Home: punti, livello, impatto
-│   │       │   ├── scan.tsx        # Flusso scontrino: camera → conferma → sessione barcode (+ bonus chips welcome/receipt)
-│   │       │   ├── storico.tsx     # Lista scontrini + dettaglio con badge pending/verificato
-│   │       │   ├── marketplace.tsx
-│   │       │   └── profilo.tsx
-│   │       ├── barcode-scanner.tsx # Scanner barcode: scan → preview → conferma/No,aggiungi → manual form → confirm
-│   │       ├── shopping-scanner.tsx # Modalità Spesa: stima punti senza scontrino
-│   │       ├── login.tsx
-│   │       └── _layout.tsx
+│   │   ├── app/
+│   │   │   ├── (tabs)/
+│   │   │   │   ├── index.tsx         # Home: punti, livello, impatto
+│   │   │   │   ├── scan.tsx          # Flusso scontrino: camera → conferma → sessione barcode (+ bonus chips welcome/receipt)
+│   │   │   │   ├── storico.tsx       # Lista scontrini + dettaglio con badge pending/verificato
+│   │   │   │   ├── marketplace.tsx
+│   │   │   │   └── profilo.tsx       # Traguardi (lifetime) + Sfide (temporali) con BadgeIcon3D
+│   │   │   ├── barcode-scanner.tsx   # Scanner barcode: scan → preview → conferma/No,aggiungi → manual form → confirm
+│   │   │   ├── shopping-scanner.tsx  # Modalità Spesa: stima punti senza scontrino
+│   │   │   ├── login.tsx
+│   │   │   └── _layout.tsx
+│   │   ├── assets/badges/            # 15 PNG badge 3D clay/glossy con sfondo trasparente
+│   │   └── components/
+│   │       ├── BadgeIcon3D.tsx       # Badge 3D: Image-based, emoji→PNG map, locked state con opacity + lucchetto
+│   │       └── BadgeIcon.tsx         # Badge SVG esagonale (legacy, non più usato in profilo)
 │   ├── leafy/               # Frontend React/Vite (web principale)
 │   │   └── src/
 │   │       ├── pages/
@@ -386,10 +393,34 @@ File: `artifacts/api-server/src/seed-badges.ts`
 - 5 temporali: weekly "Eroe Settimanale", monthly "Campione del Mese", seasonal "Guerriero Invernale" ecc.
 - Idempotente: upsert per nome (non duplica a ogni restart)
 
-### Pagina Profilo (leafy — `src/pages/Profile.tsx`)
+### Pagina Profilo Web (`leafy` — `src/pages/Profile.tsx`)
 - **Tab Traguardi**: badge lifetime — sblocati con data, locked con barra di progresso
 - **Tab Sfide**: badge temporali — attivi del periodo corrente + archivio periodi passati
 - Autenticazione richiesta (protetta da `AuthGate` in `App.tsx`)
+
+### Schermata Profilo Mobile (`leafy-mobile` — `app/(tabs)/profilo.tsx`)
+- **Tab Traguardi**: `LifetimeBadgeCard` con `BadgeIcon3D` — badge PNG 3D clay, progress bar se non sbloccati
+- **Tab Sfide**: `TemporalBadgeCard` con `BadgeIcon3D` — badge attivi del periodo + archivio compatto
+- **`BadgeIcon3D`** (`components/BadgeIcon3D.tsx`): mappa ogni emoji del badge alla rispettiva PNG 3D in `assets/badges/`. Stato bloccato = opacity 35% + overlay con icona lucchetto. Prop `size` per dimensionamento dinamico.
+- Badge disponibili (emoji → file PNG):
+
+| Emoji | Badge | File |
+|-------|-------|------|
+| 🌱 | Pioniere Bio | `badge-sprout.png` |
+| 🧾 | Primo Scontrino | `badge-receipt.png` |
+| 📍 | Eroe Locale | `badge-map-pin.png` |
+| 🐬 | Amico degli Oceani | `badge-dolphin.png` |
+| ♻️ | Re del Riciclo | `badge-recycle.png` |
+| 🏃 | Maratoneta Verde | `badge-running.png` |
+| 🥈 | Livello Argento | `badge-silver-medal.png` |
+| 🥇 | Livello Oro | `badge-gold-medal.png` |
+| 💎 | Livello Platino | `badge-diamond.png` |
+| 👥 | Ambasciatore | `badge-friends.png` |
+| 🔥 | Eroe Settimanale | `badge-fire.png` |
+| 🌊 | Settimana Plastic-Free | `badge-wave.png` |
+| 🏆 | Campione del Mese | `badge-trophy.png` |
+| 🌿 | Vegano Curioso | `badge-leaf.png` |
+| 🌍 | Guerriero Invernale | `badge-earth.png` |
 
 ---
 
