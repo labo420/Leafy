@@ -127,7 +127,7 @@ export default function ImpostazioniScreen() {
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <Text style={styles.sectionLabel}>Account</Text>
           <View style={styles.card}>
-            <SettingsRow icon="user" label="Nome utente" value={user?.username ?? ""} />
+            <SettingsRow icon="user" label="Nome utente" value={user?.firstName ?? ""} />
             <View style={styles.divider} />
             <SettingsRow icon="mail" label="Email" value={user?.email ?? ""} />
           </View>

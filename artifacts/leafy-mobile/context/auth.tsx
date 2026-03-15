@@ -6,6 +6,7 @@ type AuthContextType = {
   isLoading: boolean;
   refetch: () => void;
   setUser: (user: AuthUser | null) => void;
+  logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -13,6 +14,7 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   refetch: () => {},
   setUser: () => {},
+  logout: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -37,12 +39,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const logout = async () => {
+    try {
+      const domain = process.env.EXPO_PUBLIC_DOMAIN;
+      const base = domain ? `https://${domain}` : "";
+      await fetch(`${base}/api/auth/logout`, { method: "POST", credentials: "include" });
+    } catch {
+      // Ignore errors
+    } finally {
+      setUser(null);
+    }
+  };
+
   useEffect(() => {
     fetchUser();
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, refetch: fetchUser, setUser }}>
+    <AuthContext.Provider value={{ user, isLoading, refetch: fetchUser, setUser, logout }}>
       {children}
     </AuthContext.Provider>
   );
