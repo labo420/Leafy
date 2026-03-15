@@ -20,9 +20,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import Colors from "@/constants/colors";
 import { Fonts } from "@/constants/typography";
+import { getProductEmoji } from "@/constants/emojis";
 import { apiFetch, apiBase } from "@/lib/api";
 import { useAuth } from "@/context/auth";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 
 interface Receipt {
   id: number;
@@ -105,17 +106,6 @@ function formatProductName(name: string): string {
   return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
 }
 
-function getCategoryEmoji(category: string | null): string {
-  const cat = (category ?? "").toLowerCase();
-  if (cat.includes("bio") || cat.includes("organic")) return "🌿";
-  if (cat.includes("vegano") || cat.includes("vegan")) return "🥦";
-  if (cat.includes("km 0") || cat.includes("locale") || cat.includes("local")) return "📍";
-  if (cat.includes("equo") || cat.includes("fair")) return "🤝";
-  if (cat.includes("dop") || cat.includes("igp") || cat.includes("artigian")) return "🏷️";
-  if (cat.includes("plastica") || cat.includes("ricicl") || cat.includes("recycle")) return "♻️";
-  if (cat.includes("carne") || cat.includes("pesce") || cat.includes("fish") || cat.includes("meat")) return "🍖";
-  return "🌱";
-}
 
 function EcoScoreBadge({ score }: { score: string | null }) {
   if (!score) return null;
@@ -296,7 +286,7 @@ function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }
                 {data.barcodeScans.map((scan) => (
                   <View key={scan.id} style={styles.barcodeRow}>
                     <View style={styles.barcodeLeft}>
-                      <Text style={styles.categoryEmoji}>{getCategoryEmoji(scan.category)}</Text>
+                      <Text style={styles.categoryEmoji}>{getProductEmoji(scan.productName, scan.category, scan.emoji)}</Text>
                       <View style={{ flex: 1 }}>
                         <Text style={styles.barcodeName} numberOfLines={1}>
                           {scan.productName}
@@ -323,13 +313,14 @@ function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }
             {data.greenItems && data.greenItems.length > 0 && (() => {
               const acceptedItems = data.greenItems.filter(item => item.points > 0);
               const nonAcceptedItems = data.greenItems.filter(item => item.points === 0);
+              const unmatchedCount = acceptedItems.filter(i => !i.matched).length;
               return (
                 <>
                   {acceptedItems.length > 0 && (
                     <>
                       <View style={styles.itemsTitleRow}>
                         <Text style={[styles.itemsTitle, { marginTop: 16 }]}>
-                          Prodotti accettati ({acceptedItems.length})
+                          Prodotti idonei ({acceptedItems.length})
                         </Text>
                         {!data.isPending && (
                           <View style={styles.itemsHintRow}>
@@ -338,12 +329,24 @@ function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }
                           </View>
                         )}
                       </View>
+                      {data.isPending && unmatchedCount > 0 && (
+                        <Pressable
+                          style={styles.scanAllCta}
+                          onPress={() => {
+                            onClose();
+                            router.push({ pathname: "/barcode-scanner", params: { receiptId: String(data.id) } });
+                          }}
+                        >
+                          <MaterialCommunityIcons name="barcode-scan" size={16} color="#fff" />
+                          <Text style={styles.scanAllCtaText}>Scansiona prodotti mancanti ({unmatchedCount})</Text>
+                        </Pressable>
+                      )}
                       {acceptedItems.map((item, i) => {
                         const isUnmatched = data.isPending && item.matched === false;
                         const isMatched = data.isPending && item.matched === true;
                         return (
                           <View key={i} style={[styles.itemRow, isMatched && styles.itemRowMatched]}>
-                            <Text style={styles.categoryEmoji}>{getCategoryEmoji(item.category)}</Text>
+                            <Text style={styles.categoryEmoji}>{getProductEmoji(item.name, item.category, item.emoji)}</Text>
                             <View style={{ flex: 1 }}>
                               <Text style={styles.itemName}>{formatProductName(item.name)}</Text>
                               <Text style={styles.itemCat}>{item.category ?? ""}</Text>
@@ -386,11 +389,11 @@ function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }
                   {nonAcceptedItems.length > 0 && (
                     <>
                       <Text style={[styles.itemsTitle, { marginTop: 16, color: Colors.textSecondary }]}>
-                        Altri prodotti ({nonAcceptedItems.length})
+                        Prodotti non idonei ({nonAcceptedItems.length})
                       </Text>
                       {nonAcceptedItems.map((item, i) => (
                         <View key={`na-${i}`} style={[styles.itemRow, styles.nonAcceptedRow]}>
-                          <Text style={styles.categoryEmoji}>{getCategoryEmoji(item.category)}</Text>
+                          <Text style={styles.categoryEmoji}>{getProductEmoji(item.name, item.category, item.emoji)}</Text>
                           <View style={{ flex: 1 }}>
                             <Text style={[styles.itemName, { color: Colors.textSecondary }]}>{formatProductName(item.name)}</Text>
                           </View>
@@ -535,6 +538,14 @@ export default function StoricoScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const { openReceiptId } = useLocalSearchParams<{ openReceiptId?: string }>();
+
+  React.useEffect(() => {
+    if (openReceiptId) {
+      setSelectedId(Number(openReceiptId));
+      router.setParams({ openReceiptId: undefined as any });
+    }
+  }, [openReceiptId]);
 
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 + 84 : 100 + insets.bottom;
@@ -796,6 +807,12 @@ const styles = StyleSheet.create({
   verifiedBadgeText: {
     fontSize: 12, fontFamily: "Inter_700Bold", color: Colors.leaf,
   },
+  scanAllCta: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    backgroundColor: Colors.leaf, borderRadius: 14,
+    paddingVertical: 12, paddingHorizontal: 16, marginBottom: 12,
+  },
+  scanAllCtaText: { fontSize: 14, fontFamily: "Inter_700Bold", color: "#fff" },
   scanItemBtn: {
     flexDirection: "row", alignItems: "center", gap: 5,
     backgroundColor: Colors.leaf, borderRadius: 10,

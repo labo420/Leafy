@@ -14,6 +14,7 @@ import * as Haptics from "expo-haptics";
 import Colors from "@/constants/colors";
 import { Fonts } from "@/constants/typography";
 import { useAuth } from "@/context/auth";
+import { useScanReset } from "@/context/scan-reset";
 
 function TabIcon({ focused, children }: { focused: boolean; children: React.ReactNode }) {
   const pillStyle = useAnimatedStyle(() => ({
@@ -53,6 +54,7 @@ export default function TabLayout() {
   const isWeb = Platform.OS === "web";
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const { triggerReset } = useScanReset();
 
   return (
     <Tabs
@@ -132,6 +134,7 @@ export default function TabLayout() {
         listeners={{
           tabPress: () => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            triggerReset();
           },
         }}
       />

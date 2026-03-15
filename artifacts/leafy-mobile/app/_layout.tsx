@@ -23,6 +23,7 @@ import { DevConnect } from "@/components/DevConnect";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/context/auth";
 import { LevelUpProvider } from "@/context/level-up";
+import { ScanResetProvider } from "@/context/scan-reset";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -71,8 +72,10 @@ export default function RootLayout() {
             <KeyboardProvider>
               <AuthProvider>
                 <LevelUpProvider>
-                  <RootLayoutNav />
-                  <DevConnect />
+                  <ScanResetProvider>
+                    <RootLayoutNav />
+                    <DevConnect />
+                  </ScanResetProvider>
                 </LevelUpProvider>
               </AuthProvider>
             </KeyboardProvider>
