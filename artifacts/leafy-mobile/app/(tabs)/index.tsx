@@ -98,8 +98,8 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
   function trapPath(i: number, fillPct: number = 1): string {
     const { cx: x0, r: r0n } = nodes[i];
     const { cx: x1, r: r1 } = nodes[i + 1];
-    const startX = x0 + r0n;
-    const endX = x1 - r1;
+    const startX = x0;
+    const endX = x1;
     const topStartY = BASELINE_Y - r0n * 2;
     const topEndY = BASELINE_Y - r1 * 2;
     const partX = startX + (endX - startX) * fillPct;
