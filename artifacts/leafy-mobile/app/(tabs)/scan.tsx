@@ -2,7 +2,7 @@ import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -17,7 +17,6 @@ import {
 import Animated, {
   FadeIn, FadeInDown, SlideInDown,
   useSharedValue, useAnimatedStyle, withSpring,
-  withRepeat, withTiming, withDelay, Easing,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -103,7 +102,7 @@ function AcceptedStoresSection() {
       <Pressable style={styles.storesToggle} onPress={() => setOpen(!open)} accessibilityRole="button" accessibilityLabel="Negozi accettati" accessibilityState={{ expanded: open }}>
         <View style={styles.storesToggleLeft}>
           <Feather name="shopping-bag" size={16} color={Colors.textSecondary} />
-          <Text style={styles.storesToggleText}>🏪 Negozi accettati</Text>
+          <Text style={styles.storesToggleText}>Negozi accettati</Text>
         </View>
         <Feather name={open ? "chevron-up" : "chevron-down"} size={16} color={Colors.textSecondary} />
       </Pressable>
@@ -134,7 +133,7 @@ function HowItWorksSection() {
       <Pressable style={styles.howToggle} onPress={() => setOpen(!open)} accessibilityRole="button" accessibilityLabel="Come funziona" accessibilityState={{ expanded: open }}>
         <View style={styles.howToggleLeft}>
           <Feather name="help-circle" size={16} color={Colors.textSecondary} />
-          <Text style={styles.howToggleText}>❓ Come funziona</Text>
+          <Text style={styles.howToggleText}>Come funziona</Text>
         </View>
         <Feather name={open ? "chevron-up" : "chevron-down"} size={16} color={Colors.textSecondary} />
       </Pressable>
@@ -174,30 +173,6 @@ export default function ScanScreen() {
     transform: [{ scale: cameraScale.value }],
   }));
 
-  const pulse1Scale = useSharedValue(1);
-  const pulse1Opacity = useSharedValue(0.5);
-  const pulse2Scale = useSharedValue(1);
-  const pulse2Opacity = useSharedValue(0.5);
-
-  useEffect(() => {
-    const dur = 2200;
-    const expand = { duration: dur, easing: Easing.out(Easing.ease) };
-    pulse1Scale.value = withRepeat(withTiming(1.35, expand), -1, false);
-    pulse1Opacity.value = withRepeat(withTiming(0, expand), -1, false);
-    pulse2Scale.value = withDelay(700,
-      withRepeat(withTiming(1.35, expand), -1, false));
-    pulse2Opacity.value = withDelay(700,
-      withRepeat(withTiming(0, expand), -1, false));
-  }, []);
-
-  const pulse1Style = useAnimatedStyle(() => ({
-    transform: [{ scale: pulse1Scale.value }],
-    opacity: pulse1Opacity.value,
-  }));
-  const pulse2Style = useAnimatedStyle(() => ({
-    transform: [{ scale: pulse2Scale.value }],
-    opacity: pulse2Opacity.value,
-  }));
 
   const { data: activeSession, isLoading: sessionLoading } = useQuery<ActiveSession>({
     queryKey: ["active-session"],
@@ -527,46 +502,71 @@ export default function ScanScreen() {
     >
       <View style={styles.idleHeader}>
         <Text style={styles.idleTitle}>Scansiona</Text>
-        <Text style={styles.idleSub}>🌱 Guadagna punti per ogni acquisto sostenibile</Text>
+        <View style={styles.idleSubRow}>
+          <MaterialCommunityIcons name="leaf" size={16} color={Colors.leaf} />
+          <Text style={styles.idleSub}>Guadagna punti per ogni acquisto sostenibile</Text>
+        </View>
       </View>
 
       {sessionLoading ? (
         <ActivityIndicator size="large" color={Colors.leaf} style={{ marginTop: 40 }} />
       ) : (
         <>
-          <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.bigBtnCenter}>
+          <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.actionCardsSection}>
             <Pressable
-              onPressIn={() => { cameraScale.value = withSpring(0.92, { damping: 15, stiffness: 250 }); }}
+              onPressIn={() => { cameraScale.value = withSpring(0.97, { damping: 15, stiffness: 250 }); }}
               onPressOut={() => { cameraScale.value = withSpring(1, { damping: 10, stiffness: 180 }); }}
               onPress={() => pickImage("camera")}
               accessibilityRole="button"
               accessibilityLabel="Fotografa lo scontrino"
-              accessibilityHint="Apre la fotocamera per scansionare uno scontrino"
             >
-              <View style={styles.bigBtnPulseContainer}>
-                <Animated.View style={[styles.bigBtnPulseRing, pulse1Style]} />
-                <Animated.View style={[styles.bigBtnPulseRing, pulse2Style]} />
-                <Animated.View style={[styles.bigBtnOuter, cameraAnimStyle]}>
-                  <LinearGradient
-                    colors={["#3a8f65", Colors.leaf, "#245a42"]}
-                    locations={[0, 0.45, 1]}
-                    start={{ x: 0.2, y: 0 }}
-                    end={{ x: 0.8, y: 1 }}
-                    style={styles.bigBtnGrad}
-                  >
-                    <Feather name="camera" size={72} color="#fff" />
-                    <Text style={styles.bigBtnLabel}>Fotografa lo scontrino</Text>
-                  </LinearGradient>
-                </Animated.View>
-              </View>
+              <Animated.View style={cameraAnimStyle}>
+                <LinearGradient
+                  colors={["#3a8f65", Colors.leaf, "#245a42"]}
+                  locations={[0, 0.45, 1]}
+                  start={{ x: 0.2, y: 0 }}
+                  end={{ x: 0.8, y: 1 }}
+                  style={styles.receiptCard}
+                >
+                  <View style={styles.receiptCardIcon}>
+                    <Feather name="camera" size={32} color="#fff" />
+                  </View>
+                  <View style={styles.receiptCardText}>
+                    <Text style={styles.receiptCardTitle}>Fotografa Scontrino</Text>
+                    <Text style={styles.receiptCardSub}>Scatta una foto per verificare la spesa</Text>
+                  </View>
+                  <Feather name="chevron-right" size={20} color="rgba(255,255,255,0.6)" />
+                </LinearGradient>
+              </Animated.View>
             </Pressable>
-            <Pressable
-              style={({ pressed }) => [styles.galleryLink, pressed && { opacity: 0.65 }]}
-              onPress={() => pickImage("gallery")}
-            >
-              <Feather name="image" size={15} color={Colors.leaf} />
-              <Text style={styles.galleryLinkText}>Scegli dalla galleria</Text>
-            </Pressable>
+
+            <View style={styles.actionRow}>
+              <Pressable
+                style={({ pressed }) => [styles.actionCardSmall, pressed && { opacity: 0.85 }]}
+                onPress={() => pickImage("gallery")}
+              >
+                <View style={[styles.actionCardSmallIcon, { backgroundColor: "#DBEAFE" }]}>
+                  <Feather name="image" size={22} color="#3B82F6" />
+                </View>
+                <Text style={styles.actionCardSmallTitle}>Dalla galleria</Text>
+                <Text style={styles.actionCardSmallSub}>Carica un'immagine</Text>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [styles.actionCardSmall, pressed && { opacity: 0.85 }]}
+                onPress={() => {
+                  if (!user) { router.push("/login"); return; }
+                  router.push("/shopping-scanner");
+                }}
+              >
+                <View style={[styles.actionCardSmallIcon, { backgroundColor: Colors.primaryLight }]}>
+                  <MaterialCommunityIcons name="cart-outline" size={22} color={Colors.leaf} />
+                </View>
+                <Text style={styles.actionCardSmallTitle}>Modalità Spesa</Text>
+                <Text style={styles.actionCardSmallSub}>Scansiona prodotti</Text>
+              </Pressable>
+            </View>
+
             <View style={styles.scanHint}>
               <Feather name="info" size={13} color={Colors.textSecondary} />
               <Text style={styles.scanHintText}>Assicurati che totale e data siano leggibili</Text>
@@ -574,36 +574,6 @@ export default function ScanScreen() {
           </Animated.View>
 
           <Animated.View entering={FadeInDown.delay(200).springify()}>
-            <Pressable
-              style={({ pressed }) => [styles.shoppingModeBtn, pressed && { opacity: 0.85 }]}
-              onPress={() => {
-                if (!user) { router.push("/login"); return; }
-                router.push("/shopping-scanner");
-              }}
-            >
-              <LinearGradient
-                colors={["#f5fbf7", "#edf7f1"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.shoppingModeInner}
-              >
-                <View style={styles.shoppingModeLeft}>
-                  <View style={styles.shoppingModeIcon}>
-                    <MaterialCommunityIcons name="cart-outline" size={20} color={Colors.leaf} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.shoppingModeTitle}>Modalità Spesa</Text>
-                    <Text style={styles.shoppingModeSub}>Scopri i punti prima di pagare</Text>
-                  </View>
-                </View>
-                <View style={styles.shoppingModeArrow}>
-                  <Feather name="chevron-right" size={16} color={Colors.leaf} />
-                </View>
-              </LinearGradient>
-            </Pressable>
-          </Animated.View>
-
-          <Animated.View entering={FadeInDown.delay(300).springify()}>
             <HowItWorksSection />
             <AcceptedStoresSection />
           </Animated.View>
@@ -622,84 +592,98 @@ const styles = StyleSheet.create({
   },
 
   idleHeader: { paddingHorizontal: 24, paddingTop: 12, paddingBottom: 4 },
-  idleTitle: { fontSize: 26, fontFamily: "DMSans_700Bold", color: Colors.text, marginBottom: 2 },
+  idleTitle: { fontSize: 26, fontFamily: "DMSans_700Bold", color: Colors.text, marginBottom: 4 },
+  idleSubRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   idleSub: { fontSize: 14, fontFamily: "Inter_400Regular", color: Colors.textSecondary },
 
-  bigBtnCenter: {
-    alignItems: "center", justifyContent: "center",
-    paddingTop: 30, paddingBottom: 20,
+  actionCardsSection: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 12,
+    gap: 12,
   },
-  bigBtnPulseContainer: {
-    width: 320, height: 320,
-    alignItems: "center", justifyContent: "center",
-  },
-  bigBtnPulseRing: {
-    position: "absolute",
-    width: 300, height: 300, borderRadius: 150,
-    borderWidth: 2,
-    borderColor: "rgba(46,107,80,0.35)",
-  },
-  bigBtnOuter: {
-    width: 300, height: 300, borderRadius: 150,
-    overflow: "hidden",
+  receiptCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 20,
+    padding: 20,
+    gap: 14,
     shadowColor: Colors.forest,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.35,
-    shadowRadius: 24,
-    elevation: 12,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  bigBtnGrad: {
-    flex: 1, alignItems: "center", justifyContent: "center",
-    gap: 10,
+  receiptCardIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  bigBtnLabel: {
-    fontSize: 20, fontFamily: "DMSans_700Bold", color: "#fff",
-    textAlign: "center", marginTop: 4,
+  receiptCardText: {
+    flex: 1,
   },
-  bigBtnHint: {
-    fontSize: 13, fontFamily: "Inter_400Regular",
-    color: "rgba(255,255,255,0.75)", textAlign: "center",
+  receiptCardTitle: {
+    fontSize: 18,
+    fontFamily: "DMSans_700Bold",
+    color: "#fff",
+    marginBottom: 2,
   },
-
-  galleryLink: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7,
-    paddingVertical: 11, paddingHorizontal: 24,
-    marginTop: 16,
-    borderRadius: 50,
-    borderWidth: 1.5,
-    borderColor: "rgba(46,107,80,0.3)",
-    backgroundColor: "rgba(46,107,80,0.06)",
+  receiptCardSub: {
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+    color: "rgba(255,255,255,0.75)",
+    lineHeight: 18,
   },
-  galleryLinkText: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: Colors.leaf },
+  actionRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  actionCardSmall: {
+    flex: 1,
+    backgroundColor: Colors.card,
+    borderRadius: 18,
+    padding: 16,
+    alignItems: "center",
+    gap: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  actionCardSmallIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 2,
+  },
+  actionCardSmallTitle: {
+    fontSize: 14,
+    fontFamily: "Inter_700Bold",
+    color: Colors.text,
+    textAlign: "center",
+  },
+  actionCardSmallSub: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    color: Colors.textSecondary,
+    textAlign: "center",
+  },
 
   scanHint: {
     flexDirection: "row", alignItems: "center", gap: 5,
-    marginTop: 12, paddingHorizontal: 20,
+    paddingHorizontal: 4,
   },
   scanHintText: {
     fontSize: 12, fontFamily: "Inter_400Regular",
     color: Colors.textSecondary, textAlign: "center", flexShrink: 1,
-  },
-
-  shoppingModeBtn: {
-    marginHorizontal: 20, marginBottom: 4, marginTop: 4,
-    borderRadius: 18, overflow: "hidden",
-    borderWidth: 1.5, borderColor: "rgba(46,107,80,0.15)",
-  },
-  shoppingModeInner: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 14, paddingVertical: 14,
-  },
-  shoppingModeLeft: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
-  shoppingModeIcon: {
-    width: 38, height: 38, borderRadius: 12,
-    backgroundColor: Colors.primaryLight, alignItems: "center", justifyContent: "center",
-  },
-  shoppingModeTitle: { fontSize: 14, fontFamily: "Inter_700Bold", color: Colors.text },
-  shoppingModeSub: { fontSize: 12, fontFamily: "Inter_400Regular", color: Colors.textSecondary, marginTop: 1 },
-  shoppingModeArrow: {
-    width: 28, height: 28, borderRadius: 8,
-    backgroundColor: Colors.primaryLight, alignItems: "center", justifyContent: "center",
   },
 
   howSection: { paddingHorizontal: 20, marginTop: 8 },

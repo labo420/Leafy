@@ -1,4 +1,4 @@
-import { Feather } from "@expo/vector-icons";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
@@ -23,6 +23,7 @@ import Colors from "@/constants/colors";
 import { Fonts } from "@/constants/typography";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/context/auth";
+import BadgeIcon from "@/components/BadgeIcon";
 import type {
   Profile,
   ImpactStats,
@@ -80,14 +81,12 @@ function LifetimeBadgeCard({ badge }: { badge: BadgeItem }) {
         !badge.isUnlocked && badgeStyles.cardLocked,
       ]}
     >
-      <View
-        style={[
-          badgeStyles.emojiCircle,
-          !badge.isUnlocked && badgeStyles.emojiCircleLocked,
-        ]}
-      >
-        <Text style={badgeStyles.emoji}>{badge.emoji}</Text>
-      </View>
+      <BadgeIcon
+        emoji={badge.emoji}
+        category={badge.category}
+        isUnlocked={badge.isUnlocked}
+        size={56}
+      />
       <Text style={badgeStyles.name} numberOfLines={2}>
         {badge.name}
       </Text>
@@ -140,9 +139,12 @@ function TemporalBadgeCard({
   if (compact) {
     return (
       <View style={badgeStyles.archivedCard}>
-        <View style={[badgeStyles.archivedEmoji, badge.isUnlocked ? {} : { opacity: 0.3 }]}>
-          <Text style={{ fontSize: 18 }}>{badge.emoji}</Text>
-        </View>
+        <BadgeIcon
+          emoji={badge.emoji}
+          category={badge.badgeType === "weekly" ? "WEEKLY" : badge.badgeType === "monthly" ? "MONTHLY" : "SEASONAL"}
+          isUnlocked={badge.isUnlocked}
+          size={36}
+        />
         <Text style={badgeStyles.archivedName} numberOfLines={1}>
           {badge.name}
         </Text>
@@ -165,16 +167,12 @@ function TemporalBadgeCard({
         badge.isUnlocked && badgeStyles.cardActive,
       ]}
     >
-      <View
-        style={[
-          badgeStyles.emojiCircle,
-          badge.isUnlocked
-            ? { backgroundColor: "rgba(46,107,80,0.1)" }
-            : { backgroundColor: "rgba(245,158,11,0.1)" },
-        ]}
-      >
-        <Text style={badgeStyles.emoji}>{badge.emoji}</Text>
-      </View>
+      <BadgeIcon
+        emoji={badge.emoji}
+        category={badge.badgeType === "weekly" ? "WEEKLY" : badge.badgeType === "monthly" ? "MONTHLY" : "SEASONAL"}
+        isUnlocked={badge.isUnlocked}
+        size={56}
+      />
       <Text style={badgeStyles.name} numberOfLines={2}>
         {badge.name}
       </Text>
@@ -227,21 +225,6 @@ const badgeStyles = StyleSheet.create({
   },
   cardActive: {
     borderColor: "rgba(46,107,80,0.2)",
-  },
-  emojiCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "rgba(46,107,80,0.1)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 8,
-  },
-  emojiCircleLocked: {
-    backgroundColor: Colors.cardAlt,
-  },
-  emoji: {
-    fontSize: 24,
   },
   name: {
     fontSize: 12,
@@ -546,7 +529,11 @@ export default function ProfiloScreen() {
         </View>
         <Text style={styles.username}>{username}</Text>
         <View style={styles.levelPill}>
-          <Text style={{ fontSize: 14 }}>{level === "Bronzo" || level === "bronze" ? "🥉" : level === "Argento" || level === "silver" ? "🥈" : level === "Oro" || level === "gold" ? "🥇" : "💎"}</Text>
+          <MaterialCommunityIcons
+            name={level === "Bronzo" || level === "bronze" ? "medal" : level === "Argento" || level === "silver" ? "medal" : level === "Oro" || level === "gold" ? "medal" : "diamond-stone"}
+            size={16}
+            color={level === "Bronzo" || level === "bronze" ? "#CD7F32" : level === "Argento" || level === "silver" ? "#C0C0C0" : level === "Oro" || level === "gold" ? "#FFD700" : "#B9F2FF"}
+          />
           <Text style={styles.levelPillText}>Livello {level}</Text>
         </View>
       </Animated.View>
@@ -554,7 +541,7 @@ export default function ProfiloScreen() {
       <Animated.View entering={FadeInDown.delay(150).springify()} style={styles.section}>
         <View style={styles.sectionHeader}>
           <Feather name="activity" size={18} color={Colors.leaf} />
-          <Text style={styles.sectionTitle}>Il tuo impatto verde 🌍</Text>
+          <Text style={styles.sectionTitle}>Il tuo impatto verde</Text>
         </View>
         <View style={styles.impactGrid}>
           <View style={[styles.impactCard, { backgroundColor: "#EFF6FF" }]}>
@@ -565,7 +552,7 @@ export default function ProfiloScreen() {
               {(impact?.co2SavedKg ?? 0).toFixed(1)}{" "}
               <Text style={styles.impactUnit}>kg</Text>
             </Text>
-            <Text style={styles.impactLabel}>🌿 CO₂ risparmiata</Text>
+            <Text style={styles.impactLabel}>CO₂ risparmiata</Text>
           </View>
           <View style={[styles.impactCard, { backgroundColor: "#F0FDFA" }]}>
             <View style={[styles.impactIconCircle, { backgroundColor: "#CCFBF1" }]}>
@@ -575,7 +562,7 @@ export default function ProfiloScreen() {
               {(impact?.waterSavedLiters ?? 0).toFixed(0)}{" "}
               <Text style={styles.impactUnit}>L</Text>
             </Text>
-            <Text style={styles.impactLabel}>💧 Acqua salvata</Text>
+            <Text style={styles.impactLabel}>Acqua salvata</Text>
           </View>
         </View>
         <Text style={styles.impactDisclaimer}>
@@ -589,7 +576,7 @@ export default function ProfiloScreen() {
             <View style={styles.referralLeft}>
               <Feather name="users" size={22} color={Colors.leaf} />
               <View style={{ flex: 1 }}>
-                <Text style={styles.referralTitle}>🤝 Invita un amico</Text>
+                <Text style={styles.referralTitle}>Invita un amico</Text>
                 <Text style={styles.referralSub}>
                   +500 punti per entrambi!
                 </Text>
@@ -661,7 +648,7 @@ export default function ProfiloScreen() {
                 badgeTab === "traguardi" && styles.tabTextActive,
               ]}
             >
-              🏅 Traguardi
+              Traguardi
             </Text>
           </Pressable>
           <Pressable
@@ -674,7 +661,7 @@ export default function ProfiloScreen() {
                 badgeTab === "sfide" && styles.tabTextActive,
               ]}
             >
-              🗓️ Sfide
+              Sfide
             </Text>
           </Pressable>
         </View>
