@@ -339,7 +339,7 @@ function GuestAuthScreen() {
               resizeMode="contain"
             />
             <Text style={authStyles.tagline}>
-              Fai la spesa, guadagna punti,{"\n"}proteggi il pianeta.
+              La tua spesa di ogni giorno,{"\n"}premiata.
             </Text>
           </View>
 
