@@ -25,8 +25,7 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
   const [fromLevel, setFromLevel] = useState("");
   const [toLevel, setToLevel] = useState("");
   const prevLevelRef = useRef<string | null>(null);
-  const initializedRef = useRef(false);
-  const currentUserIdRef = useRef<string | null>(null);
+  const [storageReady, setStorageReady] = useState(false);
 
   const storageKey = user?.id ? `${PREV_LEVEL_KEY_PREFIX}${user.id}` : null;
 
@@ -37,23 +36,19 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    initializedRef.current = false;
+    setStorageReady(false);
     prevLevelRef.current = null;
 
     if (!storageKey) return;
 
-    if (currentUserIdRef.current !== user?.id) {
-      currentUserIdRef.current = user?.id ?? null;
-    }
-
     AsyncStorage.getItem(storageKey).then((stored) => {
       if (stored) prevLevelRef.current = stored;
-      initializedRef.current = true;
+      setStorageReady(true);
     });
-  }, [storageKey, user?.id]);
+  }, [storageKey]);
 
   useEffect(() => {
-    if (!profile?.level || !initializedRef.current || !storageKey) return;
+    if (!profile?.level || !storageReady || !storageKey) return;
 
     const currentLevel = profile.level;
 
@@ -65,7 +60,7 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
 
     prevLevelRef.current = currentLevel;
     AsyncStorage.setItem(storageKey, currentLevel);
-  }, [profile?.level, visible, storageKey]);
+  }, [profile?.level, visible, storageKey, storageReady]);
 
   useEffect(() => {
     if (!user) return;
