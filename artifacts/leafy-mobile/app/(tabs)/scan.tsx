@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -89,6 +90,28 @@ function formatTimeRemaining(minutes: number): string {
   return `${minutes} min`;
 }
 
+function getProductEmoji(name: string): string {
+  const n = name.toLowerCase();
+  if (n.includes("fragol")) return "🍓";
+  if (n.includes("pasta") || n.includes("penne") || n.includes("riso")) return "🍝";
+  if (n.includes("latte") || n.includes("yogurt")) return "🥛";
+  if (n.includes("formaggio")) return "🧀";
+  if (n.includes("pane") || n.includes("biscotti")) return "🍞";
+  if (n.includes("birra") || n.includes("vino")) return "🍷";
+  if (n.includes("cafe") || n.includes("caffè") || n.includes("caffe")) return "☕";
+  if (n.includes("bio") || n.includes("biologico") || n.includes("biologica")) return "🌿";
+  if (n.includes("mela") || n.includes("banana") || n.includes("arancia")) return "🍎";
+  if (n.includes("carne") || n.includes("manzo") || n.includes("pollo")) return "🥩";
+  if (n.includes("pesce") || n.includes("salmone")) return "🐟";
+  if (n.includes("olio") || n.includes("oliva")) return "🫒";
+  if (n.includes("pomodoro") || n.includes("verdura") || n.includes("insalata")) return "🥗";
+  if (n.includes("shopper") || n.includes("busta") || n.includes("sacchetto")) return "🛍️";
+  if (n.includes("detersivo") || n.includes("detergente")) return "🧼";
+  if (n.includes("carta") || n.includes("igienica")) return "📦";
+  if (n.includes("dolce") || n.includes("cioccolato") || n.includes("snack")) return "🍫";
+  return "🛒";
+}
+
 function AcceptedStoresSection() {
   const [open, setOpen] = useState(false);
   const { data } = useQuery<AcceptedStoresData>({
@@ -166,6 +189,7 @@ export default function ScanScreen() {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [scanResult, setScanResult] = useState<ScanResponse | null>(null);
+  const [showWelcomeOverlay, setShowWelcomeOverlay] = useState(false);
   const { checkForLevelUp } = useLevelUp();
 
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
@@ -197,6 +221,10 @@ export default function ScanScreen() {
     onSuccess: async (data) => {
       setScanResult(data);
       setState("confirmed");
+      if (data.welcomeBonus) {
+        setShowWelcomeOverlay(true);
+        setTimeout(() => setShowWelcomeOverlay(false), 3500);
+      }
       await queryClient.invalidateQueries({ queryKey: ["profile"] });
       queryClient.invalidateQueries({ queryKey: ["receipts"] });
       queryClient.invalidateQueries({ queryKey: ["active-session"] });
@@ -259,100 +287,120 @@ export default function ScanScreen() {
   };
 
   if (state === "confirmed" && scanResult) {
-    const pendingItems = (scanResult.greenItemsFound ?? []).filter(p => !p.matched);
-    const matchedItems = (scanResult.greenItemsFound ?? []).filter(p => p.matched);
-    const hasPendingItems = pendingItems.length > 0;
+    const allItems = (scanResult.greenItemsFound ?? []);
+    const greenProducts = allItems.filter(p => !p.matched && p.points > 0);
+    const nonGreenProducts = allItems.filter(p => !p.matched && p.points === 0);
+    const matchedItems = allItems.filter(p => p.matched);
+    const hasPendingGreen = greenProducts.length > 0;
 
     return (
-        <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: bottomPad }}>
-          <LinearGradient
-            colors={[Colors.forest, Colors.leaf]}
-            style={[styles.resultHeader, { paddingTop: topPadding + 16 }]}
-          >
-            <Animated.View entering={FadeIn.delay(100)}>
-              <View style={styles.resultIconWrap}>
-                <Feather name="check-circle" size={56} color="#fff" />
-              </View>
-              <Text style={styles.resultTitle}>Scontrino verificato!</Text>
-              <Text style={styles.resultSub}>{scanResult.message}</Text>
-            </Animated.View>
+        <>
+          <Modal visible={showWelcomeOverlay} transparent animationType="fade">
+            <View style={styles.welcomeOverlayBg}>
+              <Animated.View entering={FadeIn} style={styles.welcomeOverlayCard}>
+                <Text style={styles.welcomeOverlayEmoji}>🎉</Text>
+                <Text style={styles.welcomeOverlayTitle}>Benvenuto su Leafy!</Text>
+                <Text style={styles.welcomeOverlayText}>Hai ricevuto +{scanResult.welcomeBonusPts} punti per il tuo primo scontrino eco-friendly</Text>
+              </Animated.View>
+            </View>
+          </Modal>
+          <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: bottomPad }}>
+            <LinearGradient
+              colors={[Colors.forest, Colors.leaf]}
+              style={[styles.resultHeader, { paddingTop: topPadding + 16 }]}
+            >
+              <Animated.View entering={FadeIn.delay(100)}>
+                <View style={styles.resultIconWrap}>
+                  <Feather name="check-circle" size={56} color="#fff" />
+                </View>
+                <Text style={styles.resultTitle}>Scontrino verificato!</Text>
+                <Text style={styles.resultSub}>{scanResult.message}</Text>
+                {scanResult.storeName && (
+                  <Text style={styles.storeNameBadge}>🏪 {scanResult.storeName}</Text>
+                )}
+              </Animated.View>
 
-            {(scanResult.receiptBonusPts || scanResult.welcomeBonus) && (
-              <Animated.View entering={FadeInDown.delay(150)} style={styles.bonusRow}>
-                {scanResult.welcomeBonus && (
-                  <View style={styles.bonusChip}>
-                    <Text style={styles.bonusChipEmoji}>🎉</Text>
-                    <Text style={styles.bonusChipText}>Benvenuto! +{scanResult.welcomeBonusPts} pt</Text>
+              {(scanResult.receiptBonusPts || scanResult.welcomeBonus) && (
+                <Animated.View entering={FadeInDown.delay(150)} style={styles.bonusRow}>
+                  {!scanResult.welcomeBonus && (scanResult.receiptBonusPts ?? 0) > 0 && (
+                    <View style={styles.bonusChip}>
+                      <Text style={styles.bonusChipEmoji}>📷</Text>
+                      <Text style={styles.bonusChipText}>Scontrino +{scanResult.receiptBonusPts} pt</Text>
+                    </View>
+                  )}
+                </Animated.View>
+              )}
+
+              <Animated.View entering={FadeInDown.delay(200)} style={styles.timerBox}>
+                <Feather name="clock" size={20} color="rgba(255,255,255,0.8)" />
+                <Text style={styles.timerText}>
+                  Hai {scanResult.sessionHours} ore per scansionare i barcode
+                </Text>
+              </Animated.View>
+            </LinearGradient>
+
+            {hasPendingGreen ? (
+              <Animated.View entering={FadeInDown.delay(300)} style={styles.section}>
+                <Text style={styles.pendingTitle}>⭐ Scansiona per guadagnare punti</Text>
+                {greenProducts.map((product, i) => (
+                  <View key={i} style={styles.pendingProductRow}>
+                    <Text style={styles.productEmoji}>{getProductEmoji(product.name)}</Text>
+                    <Text style={styles.pendingProductName} numberOfLines={1}>{product.name}</Text>
+                    <Pressable
+                      style={({ pressed }) => [styles.scanProductMiniBtn, pressed && { opacity: 0.75 }]}
+                      onPress={() => openBarcodeScanner(scanResult.receiptId, product.name)}
+                    >
+                      <Text style={styles.scanProductMiniBtnText}>Scansiona</Text>
+                    </Pressable>
                   </View>
+                ))}
+                {matchedItems.length > 0 && (
+                  <Text style={styles.matchedHint}>
+                    {matchedItems.length} già verificat{matchedItems.length === 1 ? "o" : "i"} ✓
+                  </Text>
                 )}
-                {(scanResult.receiptBonusPts ?? 0) > 0 && (
-                  <View style={styles.bonusChip}>
-                    <Text style={styles.bonusChipEmoji}>📷</Text>
-                    <Text style={styles.bonusChipText}>Scontrino +{scanResult.receiptBonusPts} pt</Text>
-                  </View>
-                )}
+              </Animated.View>
+            ) : (
+              <Animated.View entering={FadeInDown.delay(300)} style={styles.section}>
+                <Pressable
+                  style={styles.scanProductsBtn}
+                  onPress={() => openBarcodeScanner(scanResult.receiptId)}
+                >
+                  <LinearGradient
+                    colors={[Colors.leaf, Colors.forest]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.scanProductsBtnGrad}
+                  >
+                    <MaterialCommunityIcons name="barcode-scan" size={32} color="#fff" />
+                    <Text style={styles.scanProductsBtnTitle}>Scansiona Prodotti</Text>
+                    <Text style={styles.scanProductsBtnSub}>
+                      Inquadra i codici a barre per guadagnare punti
+                    </Text>
+                  </LinearGradient>
+                </Pressable>
               </Animated.View>
             )}
 
-            <Animated.View entering={FadeInDown.delay(200)} style={styles.timerBox}>
-              <Feather name="clock" size={20} color="rgba(255,255,255,0.8)" />
-              <Text style={styles.timerText}>
-                Hai {scanResult.sessionHours} ore per scansionare i barcode
-              </Text>
-            </Animated.View>
-          </LinearGradient>
-
-          {hasPendingItems ? (
-            <Animated.View entering={FadeInDown.delay(300)} style={styles.section}>
-              <Text style={styles.pendingTitle}>Scansiona i prodotti per guadagnare punti</Text>
-              {pendingItems.map((product, i) => (
-                <View key={i} style={styles.pendingProductRow}>
-                  <View style={styles.pendingProductIcon}>
-                    <MaterialCommunityIcons name="barcode-scan" size={18} color={Colors.textSecondary} />
+            {nonGreenProducts.length > 0 && (
+              <Animated.View entering={FadeInDown.delay(350)} style={[styles.section, styles.nonGreenSection]}>
+                <Text style={styles.nonGreenTitle}>Altri prodotti trovati</Text>
+                {nonGreenProducts.map((product, i) => (
+                  <View key={i} style={styles.nonGreenRow}>
+                    <Text style={styles.productEmoji}>{getProductEmoji(product.name)}</Text>
+                    <Text style={styles.nonGreenName} numberOfLines={1}>{product.name}</Text>
                   </View>
-                  <Text style={styles.pendingProductName} numberOfLines={1}>{product.name}</Text>
-                  <Pressable
-                    style={({ pressed }) => [styles.scanProductMiniBtn, pressed && { opacity: 0.75 }]}
-                    onPress={() => openBarcodeScanner(scanResult.receiptId, product.name)}
-                  >
-                    <Text style={styles.scanProductMiniBtnText}>Scansiona</Text>
-                  </Pressable>
-                </View>
-              ))}
-              {matchedItems.length > 0 && (
-                <Text style={styles.matchedHint}>
-                  {matchedItems.length} già verificat{matchedItems.length === 1 ? "o" : "i"} ✓
-                </Text>
-              )}
-            </Animated.View>
-          ) : (
-            <Animated.View entering={FadeInDown.delay(300)} style={styles.section}>
-              <Pressable
-                style={styles.scanProductsBtn}
-                onPress={() => openBarcodeScanner(scanResult.receiptId)}
-              >
-                <LinearGradient
-                  colors={[Colors.leaf, Colors.forest]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.scanProductsBtnGrad}
-                >
-                  <MaterialCommunityIcons name="barcode-scan" size={32} color="#fff" />
-                  <Text style={styles.scanProductsBtnTitle}>Scansiona Prodotti</Text>
-                  <Text style={styles.scanProductsBtnSub}>
-                    Inquadra i codici a barre per guadagnare punti
-                  </Text>
-                </LinearGradient>
-              </Pressable>
-            </Animated.View>
-          )}
+                ))}
+              </Animated.View>
+            )}
 
-          <View style={styles.section}>
-            <Pressable style={styles.laterBtn} onPress={reset}>
-              <Text style={styles.laterBtnText}>Lo faccio dopo — riprendo dallo storico</Text>
-            </Pressable>
-          </View>
-        </ScrollView>
+            <View style={styles.section}>
+              <Pressable style={styles.laterBtn} onPress={reset}>
+                <Text style={styles.laterBtnText}>Lo faccio dopo — riprendo dallo storico</Text>
+              </Pressable>
+            </View>
+          </ScrollView>
+        </>
     );
   }
 
@@ -746,10 +794,30 @@ const styles = StyleSheet.create({
   },
   bonusChipEmoji: { fontSize: 16 },
   bonusChipText: { fontSize: 14, fontFamily: "Inter_700Bold", color: "#fff" },
+  storeNameBadge: {
+    fontSize: 13, fontFamily: "Inter_600SemiBold", color: "rgba(255,255,255,0.9)",
+    marginTop: 8, paddingHorizontal: 12, paddingVertical: 6,
+    backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 16,
+    alignSelf: "center",
+  },
   timerBox: {
     flexDirection: "row", alignItems: "center", gap: 8,
     backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10,
   },
+  welcomeOverlayBg: {
+    flex: 1, backgroundColor: "rgba(0,0,0,0.7)", justifyContent: "center", alignItems: "center",
+  },
+  welcomeOverlayCard: {
+    backgroundColor: "#fff", borderRadius: 28, padding: 32, alignItems: "center", width: "80%",
+  },
+  welcomeOverlayEmoji: { fontSize: 64, marginBottom: 16 },
+  welcomeOverlayTitle: { fontSize: 28, fontFamily: "DMSans_700Bold", color: Colors.forest, marginBottom: 12, textAlign: "center" },
+  welcomeOverlayText: { fontSize: 15, fontFamily: "Inter_400Regular", color: Colors.text, textAlign: "center", lineHeight: 22 },
+  productEmoji: { fontSize: 18, marginRight: 4, width: 24 },
+  nonGreenSection: { backgroundColor: Colors.background, borderRadius: 12, paddingVertical: 12 },
+  nonGreenTitle: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: Colors.textSecondary, marginBottom: 8, paddingHorizontal: 4 },
+  nonGreenRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingVertical: 8 },
+  nonGreenName: { fontSize: 13, fontFamily: "Inter_400Regular", color: Colors.textSecondary, flex: 1 },
   timerText: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: "#fff" },
   section: { paddingHorizontal: 20, paddingTop: 20 },
   scanProductsBtn: { borderRadius: 24, overflow: "hidden" },

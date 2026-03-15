@@ -277,7 +277,7 @@ workspace/
 │   │   ├── app/
 │   │   │   ├── (tabs)/
 │   │   │   │   ├── index.tsx         # Home: punti, livello, impatto
-│   │   │   │   ├── scan.tsx          # Flusso scontrino: camera → conferma → sessione barcode (+ bonus chips welcome/receipt)
+│   │   │   │   ├── scan.tsx          # Flusso scontrino: camera → conferma → sessione barcode. Schermata successo con overlay benvenuto, nome negozio, emoji prodotti, separazione green/non-green
 │   │   │   │   ├── storico.tsx       # Lista scontrini + dettaglio con badge pending/verificato
 │   │   │   │   ├── marketplace.tsx
 │   │   │   │   └── profilo.tsx       # Traguardi (lifetime) + Sfide (temporali) con BadgeIcon3D
@@ -707,6 +707,30 @@ Mappa di 40+ prefissi GS1 italiani (7 cifre) → brand produttore. Usata come hi
 - Condivisa tra tutti gli utenti
 - Una volta cachato, il lookup è istantaneo (skip di tutte le API esterne)
 - Il manual-classify cancella la cache esistente prima di ri-classificare
+
+---
+
+## UI/UX Mobile Improvements - Receipt Success Screen (v2)
+
+**Schermata di Successo Post-Scansione** (`leafy-mobile/app/(tabs)/scan.tsx` - Post-Receipt Flow)
+
+Implementati 5 miglioramenti UX per rendere meno noiosa e più coinvolgente la schermata di conferma scontrino:
+
+1. **Overlay Benvenuto Full-Screen** — Modal animato appare quando `welcomeBonus === true`. Mostra emoji 🎉, titolo "Benvenuto su Leafy!", testo spiegazione bonus. Auto-dismiss 3.5s o tap per chiudere.
+
+2. **Nome Negozio Badge** — Aggiunto sotto il titolo principale: "🏪 {storeName}". Font Inter_600SemiBold 13px, background semi-trasparente bianco 15%.
+
+3. **Emoji Prodotto Coerenti** — Funzione `getProductEmoji(name)` mappa ogni prodotto a emoji rilevante (fragole 🍓, pasta 🍝, latte 🥛, carne 🥩, shopper 🛍️, bio 🌿, etc.). 20+ categorie con keyword matching case-insensitive.
+
+4. **Separazione Green/Non-Green** — Prodotti con `points > 0` nella lista principale con titolo "⭐ Scansiona per guadagnare punti". Prodotti con `points === 0` in sezione separata sotto ("Altri prodotti trovati") senza pulsanti, testo grigio, background leggero.
+
+5. **Visual Refinement** — Bonus chip nascosto quando `welcomeBonus === true` (focus sull'overlay). Star emoji nel titolo della lista principale. Migliorato overall visual hierarchy.
+
+**CSS Classes Added**: `storeNameBadge`, `welcomeOverlayBg`, `welcomeOverlayCard`, `welcomeOverlayEmoji`, `welcomeOverlayTitle`, `welcomeOverlayText`, `productEmoji`, `nonGreenSection`, `nonGreenTitle`, `nonGreenRow`, `nonGreenName`
+
+**State Added**: `showWelcomeOverlay` — boolean flag, settato a `true` su scan success se `welcomeBonus === true`, auto-reset dopo 3.5s.
+
+**Result**: Schermata meno noiosa, più visivamente interessante, user engagement migliorato con componenti interattive e separazione logica tra prodotti premiati e altri prodotti.
 
 ### Sessione Cookie
 - `express-session`-like custom store in-memory
