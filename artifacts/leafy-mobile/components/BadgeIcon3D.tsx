@@ -36,20 +36,36 @@ const BADGE_IMAGES: Record<string, ImageSourcePropType> = {
 
 const FALLBACK_IMAGE = require("@/assets/badges/badge-sprout.png");
 
+const LEVEL_NAME_TO_KEY: Record<string, string> = {
+  Germoglio: "level-germoglio",
+  Ramoscello: "level-ramoscello",
+  Arbusto: "level-arbusto",
+  Albero: "level-albero",
+  Foresta: "level-foresta",
+};
+
 interface BadgeIcon3DProps {
   emoji: string;
   badgeType?: string;
   category?: string;
+  name?: string;
   isUnlocked: boolean;
   size?: number;
 }
 
 export default function BadgeIcon3D({
   emoji,
+  category,
+  name,
   isUnlocked,
   size = 64,
 }: BadgeIcon3DProps) {
-  const imageSource = BADGE_IMAGES[emoji] ?? FALLBACK_IMAGE;
+  let imageSource: ImageSourcePropType = FALLBACK_IMAGE;
+  if (category === "Livello" && name && name in LEVEL_NAME_TO_KEY) {
+    imageSource = BADGE_IMAGES[LEVEL_NAME_TO_KEY[name]] ?? FALLBACK_IMAGE;
+  } else {
+    imageSource = BADGE_IMAGES[emoji] ?? FALLBACK_IMAGE;
+  }
   const lockSize = Math.max(16, size * 0.28);
 
   return (

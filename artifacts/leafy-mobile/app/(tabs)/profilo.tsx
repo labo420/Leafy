@@ -84,6 +84,7 @@ function LifetimeBadgeCard({ badge }: { badge: BadgeItem }) {
       <BadgeIcon3D
         emoji={badge.emoji}
         category={badge.category}
+        name={badge.name}
         isUnlocked={badge.isUnlocked}
         size={64}
       />
@@ -142,6 +143,7 @@ function TemporalBadgeCard({
         <BadgeIcon3D
           emoji={badge.emoji}
           badgeType={badge.badgeType}
+          name={badge.name}
           isUnlocked={badge.isUnlocked}
           size={40}
         />
@@ -170,6 +172,7 @@ function TemporalBadgeCard({
       <BadgeIcon3D
         emoji={badge.emoji}
         badgeType={badge.badgeType}
+        name={badge.name}
         isUnlocked={badge.isUnlocked}
         size={64}
       />
