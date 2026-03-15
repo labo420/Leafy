@@ -473,7 +473,7 @@ export default function HomeScreen() {
     return (
       <View style={[styles.centered, { paddingTop: topPadding }]}>
         <ActivityIndicator size="large" color={Colors.leaf} />
-        <Text style={[styles.guestSub, { marginTop: 12 }]}>Caricamento...</Text>
+        <Text style={{ marginTop: 12, fontSize: 15, fontFamily: "Inter_400Regular", color: Colors.textSecondary, textAlign: "center" }}>Caricamento...</Text>
       </View>
     );
   }
