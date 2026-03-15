@@ -805,17 +805,15 @@ const authStyles = StyleSheet.create({
     paddingVertical: 15,
     paddingHorizontal: 20,
     alignItems: "center",
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.35)",
+    backgroundColor: "#DADADA",
   },
   outlineBtnActive: {
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderColor: "rgba(255,255,255,0.5)",
+    backgroundColor: "#DADADA",
   },
   outlineBtnText: {
     fontSize: 16,
     fontFamily: "DMSans_600SemiBold",
-    color: "#FFFFFF",
+    color: "#2E6B50",
   },
   accordionBody: {
     width: "100%",
