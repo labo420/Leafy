@@ -2,12 +2,6 @@ uploads = []
 generated = []
 
 [[outputs]]
-id = "2H3E3_YhcG1hzaVwJHMZD"
-uri = "file://attached_assets/leafy-icon.svg"
-type = "image"
-title = "Icona App — Vettoriale SVG"
-
-[[outputs]]
 id = "dU9R-Jzbl6zzE5mek5_Hg"
 uri = "file://attached_assets/leafy-logo.svg"
 type = "image"
