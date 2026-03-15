@@ -6,7 +6,7 @@ Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti 
 
 **Stato attuale**: App Expo React Native funzionante (SDK 54) + backend Express/PostgreSQL + admin panel web + frontend web con sistema badge a due livelli (lifetime + temporali) + whitelist 51 supermercati italiani con validazione AI di catena e provincia. Economia calibrata con cap punti, bonus scontrino, Scontrino Virtuoso, Eco-Hero multiplier. Catena barcode multiAPI (OFF + Nutritionix + USDA + GS1 brand hints). Inserimento manuale prodotti con apprendimento AI.
 
-**UX/Design v2**: Badge con icone vettoriali SVG esagonali (componente `BadgeIcon` con gradienti per categoria, stati locked/unlocked). Home e Profilo ripuliti da emoji generiche, sostituiti con icone vettoriali (`@expo/vector-icons`). Sezione Scan ristrutturata: sostituito il grande cerchio 300px con layout a card (card scontrino fullwidth + due card laterali galleria/spesa).
+**UX/Design v2**: Badge con icone vettoriali SVG esagonali (componente `BadgeIcon` con gradienti per categoria, stati locked/unlocked). Home e Profilo ripuliti da emoji generiche, sostituiti con icone vettoriali (`@expo/vector-icons`). Sezione Scan ristrutturata: sostituito il grande cerchio 300px con layout a card (card scontrino fullwidth + due card laterali galleria/spesa). Badge sfide temporali con effetto 3D (`BadgeIcon3D`): medaglie circolari con RadialGradient, ombra drop-shadow, highlight speculare, rim bevel — palette distinte per Weekly (rosa), Monthly (arancio), Seasonal (turchese).
 
 ---
 

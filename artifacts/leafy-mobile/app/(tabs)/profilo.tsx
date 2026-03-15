@@ -24,6 +24,7 @@ import { Fonts } from "@/constants/typography";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/context/auth";
 import BadgeIcon from "@/components/BadgeIcon";
+import BadgeIcon3D from "@/components/BadgeIcon3D";
 import type {
   Profile,
   ImpactStats,
@@ -139,11 +140,11 @@ function TemporalBadgeCard({
   if (compact) {
     return (
       <View style={badgeStyles.archivedCard}>
-        <BadgeIcon
+        <BadgeIcon3D
           emoji={badge.emoji}
-          category={badge.badgeType === "weekly" ? "WEEKLY" : badge.badgeType === "monthly" ? "MONTHLY" : "SEASONAL"}
+          badgeType={badge.badgeType}
           isUnlocked={badge.isUnlocked}
-          size={36}
+          size={40}
         />
         <Text style={badgeStyles.archivedName} numberOfLines={1}>
           {badge.name}
@@ -167,11 +168,11 @@ function TemporalBadgeCard({
         badge.isUnlocked && badgeStyles.cardActive,
       ]}
     >
-      <BadgeIcon
+      <BadgeIcon3D
         emoji={badge.emoji}
-        category={badge.badgeType === "weekly" ? "WEEKLY" : badge.badgeType === "monthly" ? "MONTHLY" : "SEASONAL"}
+        badgeType={badge.badgeType}
         isUnlocked={badge.isUnlocked}
-        size={56}
+        size={64}
       />
       <Text style={badgeStyles.name} numberOfLines={2}>
         {badge.name}
