@@ -236,161 +236,37 @@ function GuestAuthScreen() {
     }
   };
 
-  if (mode === "landing") {
-    return (
-      <View style={[authStyles.screen, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-        <View style={authStyles.decoCircle1} />
-        <View style={authStyles.decoCircle2} />
-
-        <Animated.View entering={FadeInDown.delay(100).duration(600)} style={authStyles.logoSection}>
-          <Image
-            source={require("@/assets/images/leafy-logo-dark.png")}
-            style={authStyles.logo}
-            resizeMode="contain"
-          />
-          <Text style={authStyles.tagline}>
-            Fai la spesa, guadagna punti,{"\n"}proteggi il pianeta.
-          </Text>
-        </Animated.View>
-
-        <Animated.View entering={FadeInDown.delay(400).duration(500)} style={authStyles.actions}>
-          <Pressable
-            style={({ pressed }) => [authStyles.primaryBtn, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
-            onPress={() => switchMode("login")}
-          >
-            <Text style={authStyles.primaryBtnText}>Accedi</Text>
-          </Pressable>
-
-          <Pressable
-            style={({ pressed }) => [authStyles.outlineBtn, pressed && { opacity: 0.8 }]}
-            onPress={() => switchMode("register")}
-          >
-            <Text style={authStyles.outlineBtnText}>Crea account</Text>
-          </Pressable>
-
-          <View style={authStyles.divider}>
-            <View style={authStyles.dividerLine} />
-            <Text style={authStyles.dividerText}>oppure</Text>
-            <View style={authStyles.dividerLine} />
-          </View>
-
-          <Pressable onPress={() => {}} style={({ pressed }) => [authStyles.oauthBtn, pressed && { opacity: 0.85 }]}>
-            <View style={authStyles.googleIcon}>
-              <Text style={authStyles.googleG}>G</Text>
-            </View>
-            <Text style={authStyles.oauthBtnText}>Continua con Google</Text>
-          </Pressable>
-
-          <Pressable onPress={() => {}} style={({ pressed }) => [authStyles.oauthBtn, pressed && { opacity: 0.85 }]}>
-            <View style={authStyles.fbIcon}>
-              <Text style={authStyles.fbF}>f</Text>
-            </View>
-            <Text style={authStyles.oauthBtnText}>Continua con Facebook</Text>
-          </Pressable>
-
-          <Text style={authStyles.footer}>Ogni scelta sostenibile ti premia</Text>
-        </Animated.View>
-      </View>
-    );
-  }
-
   return (
     <View style={[authStyles.screen, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <View style={authStyles.decoCircle1} />
       <View style={authStyles.decoCircle2} />
 
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <ScrollView
-          contentContainerStyle={authStyles.formScroll}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <Animated.View entering={FadeIn.duration(300)} style={authStyles.formHeader}>
-            <Pressable onPress={() => switchMode("landing")} hitSlop={12} style={authStyles.backBtn}>
-              <Feather name="arrow-left" size={22} color="#fff" />
-            </Pressable>
-            <Text style={authStyles.formTitle}>
-              {mode === "login" ? "Accedi" : "Crea account"}
+      {mode === "landing" ? (
+        <>
+          <View style={authStyles.logoSection}>
+            <Image
+              source={require("@/assets/images/leafy-logo-dark.png")}
+              style={authStyles.logo}
+              resizeMode="contain"
+            />
+            <Text style={authStyles.tagline}>
+              Fai la spesa, guadagna punti,{"\n"}proteggi il pianeta.
             </Text>
-            <View style={{ width: 32 }} />
-          </Animated.View>
+          </View>
 
-          <Image
-            source={require("@/assets/images/leafy-logo-dark.png")}
-            style={authStyles.formLogo}
-            resizeMode="contain"
-          />
-
-          <Animated.View entering={FadeInDown.delay(100).duration(400)} style={authStyles.formCard}>
-            {mode === "register" && (
-              <View style={authStyles.inputWrap}>
-                <Feather name="user" size={16} color="rgba(255,255,255,0.5)" style={authStyles.inputIcon} />
-                <TextInput
-                  style={authStyles.input}
-                  placeholder="Nome utente"
-                  placeholderTextColor="rgba(255,255,255,0.4)"
-                  value={username}
-                  onChangeText={setUsername}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
-            )}
-
-            <View style={authStyles.inputWrap}>
-              <Feather name="mail" size={16} color="rgba(255,255,255,0.5)" style={authStyles.inputIcon} />
-              <TextInput
-                style={authStyles.input}
-                placeholder="Email"
-                placeholderTextColor="rgba(255,255,255,0.4)"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                textContentType="emailAddress"
-              />
-            </View>
-
-            <View style={authStyles.inputWrap}>
-              <Feather name="lock" size={16} color="rgba(255,255,255,0.5)" style={authStyles.inputIcon} />
-              <TextInput
-                style={[authStyles.input, { flex: 1 }]}
-                placeholder="Password (min. 8 caratteri)"
-                placeholderTextColor="rgba(255,255,255,0.4)"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                textContentType={mode === "login" ? "password" : "newPassword"}
-                autoCapitalize="none"
-              />
-              <Pressable onPress={() => setShowPassword((v) => !v)} hitSlop={8}>
-                <Feather name={showPassword ? "eye-off" : "eye"} size={16} color="rgba(255,255,255,0.5)" />
-              </Pressable>
-            </View>
-
-            {error && (
-              <View style={authStyles.errorBox}>
-                <Feather name="alert-circle" size={14} color="#FCA5A5" />
-                <Text style={authStyles.errorText}>{error}</Text>
-              </View>
-            )}
+          <View style={authStyles.actions}>
+            <Pressable
+              style={({ pressed }) => [authStyles.primaryBtn, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
+              onPress={() => switchMode("login")}
+            >
+              <Text style={authStyles.primaryBtnText}>Accedi</Text>
+            </Pressable>
 
             <Pressable
-              style={({ pressed }) => [authStyles.submitBtn, pressed && { opacity: 0.9 }, loading && { opacity: 0.7 }]}
-              onPress={handleSubmit}
-              disabled={loading}
+              style={({ pressed }) => [authStyles.outlineBtn, pressed && { opacity: 0.8 }]}
+              onPress={() => switchMode("register")}
             >
-              {loading ? (
-                <ActivityIndicator color="#2E6B50" />
-              ) : (
-                <Text style={authStyles.submitBtnText}>
-                  {mode === "login" ? "Accedi" : "Crea account"}
-                </Text>
-              )}
+              <Text style={authStyles.outlineBtnText}>Crea account</Text>
             </Pressable>
 
             <View style={authStyles.divider}>
@@ -412,15 +288,134 @@ function GuestAuthScreen() {
               </View>
               <Text style={authStyles.oauthBtnText}>Continua con Facebook</Text>
             </Pressable>
-          </Animated.View>
 
-          <Pressable onPress={() => switchMode(mode === "login" ? "register" : "login")}>
-            <Text style={authStyles.switchText}>
-              {mode === "login" ? "Non hai un account? Registrati" : "Hai già un account? Accedi"}
-            </Text>
-          </Pressable>
-        </ScrollView>
-      </KeyboardAvoidingView>
+            <Text style={authStyles.footer}>Ogni scelta sostenibile ti premia</Text>
+          </View>
+        </>
+      ) : (
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
+          <ScrollView
+            contentContainerStyle={authStyles.formScroll}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={authStyles.formHeader}>
+              <Pressable onPress={() => switchMode("landing")} hitSlop={12} style={authStyles.backBtn}>
+                <Feather name="arrow-left" size={22} color="#fff" />
+              </Pressable>
+              <Text style={authStyles.formTitle}>
+                {mode === "login" ? "Accedi" : "Crea account"}
+              </Text>
+              <View style={{ width: 32 }} />
+            </View>
+
+            <Image
+              source={require("@/assets/images/leafy-logo-dark.png")}
+              style={authStyles.formLogo}
+              resizeMode="contain"
+            />
+
+            <View style={authStyles.formCard}>
+              {mode === "register" && (
+                <View style={authStyles.inputWrap}>
+                  <Feather name="user" size={16} color="rgba(255,255,255,0.5)" style={authStyles.inputIcon} />
+                  <TextInput
+                    style={authStyles.input}
+                    placeholder="Nome utente"
+                    placeholderTextColor="rgba(255,255,255,0.4)"
+                    value={username}
+                    onChangeText={setUsername}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                </View>
+              )}
+
+              <View style={authStyles.inputWrap}>
+                <Feather name="mail" size={16} color="rgba(255,255,255,0.5)" style={authStyles.inputIcon} />
+                <TextInput
+                  style={authStyles.input}
+                  placeholder="Email"
+                  placeholderTextColor="rgba(255,255,255,0.4)"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  textContentType="emailAddress"
+                />
+              </View>
+
+              <View style={authStyles.inputWrap}>
+                <Feather name="lock" size={16} color="rgba(255,255,255,0.5)" style={authStyles.inputIcon} />
+                <TextInput
+                  style={[authStyles.input, { flex: 1 }]}
+                  placeholder="Password (min. 8 caratteri)"
+                  placeholderTextColor="rgba(255,255,255,0.4)"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  textContentType={mode === "login" ? "password" : "newPassword"}
+                  autoCapitalize="none"
+                />
+                <Pressable onPress={() => setShowPassword((v) => !v)} hitSlop={8}>
+                  <Feather name={showPassword ? "eye-off" : "eye"} size={16} color="rgba(255,255,255,0.5)" />
+                </Pressable>
+              </View>
+
+              {error && (
+                <View style={authStyles.errorBox}>
+                  <Feather name="alert-circle" size={14} color="#FCA5A5" />
+                  <Text style={authStyles.errorText}>{error}</Text>
+                </View>
+              )}
+
+              <Pressable
+                style={({ pressed }) => [authStyles.submitBtn, pressed && { opacity: 0.9 }, loading && { opacity: 0.7 }]}
+                onPress={handleSubmit}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#2E6B50" />
+                ) : (
+                  <Text style={authStyles.submitBtnText}>
+                    {mode === "login" ? "Accedi" : "Crea account"}
+                  </Text>
+                )}
+              </Pressable>
+
+              <View style={authStyles.divider}>
+                <View style={authStyles.dividerLine} />
+                <Text style={authStyles.dividerText}>oppure</Text>
+                <View style={authStyles.dividerLine} />
+              </View>
+
+              <Pressable onPress={() => {}} style={({ pressed }) => [authStyles.oauthBtn, pressed && { opacity: 0.85 }]}>
+                <View style={authStyles.googleIcon}>
+                  <Text style={authStyles.googleG}>G</Text>
+                </View>
+                <Text style={authStyles.oauthBtnText}>Continua con Google</Text>
+              </Pressable>
+
+              <Pressable onPress={() => {}} style={({ pressed }) => [authStyles.oauthBtn, pressed && { opacity: 0.85 }]}>
+                <View style={authStyles.fbIcon}>
+                  <Text style={authStyles.fbF}>f</Text>
+                </View>
+                <Text style={authStyles.oauthBtnText}>Continua con Facebook</Text>
+              </Pressable>
+            </View>
+
+            <Pressable onPress={() => switchMode(mode === "login" ? "register" : "login")}>
+              <Text style={authStyles.switchText}>
+                {mode === "login" ? "Non hai un account? Registrati" : "Hai già un account? Accedi"}
+              </Text>
+            </Pressable>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      )}
     </View>
   );
 }
