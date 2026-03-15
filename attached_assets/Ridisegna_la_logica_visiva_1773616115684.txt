@@ -1,0 +1,17 @@
+Ridisegna la logica visiva della Milestone Bar nella Home, mantenendo i badge attuali ma rivoluzionando la linea di connessione. Segui queste direttive tecniche:
+
+Percorso Ascendente (Non lineare): La linea di connessione non deve essere una retta orizzontale grigia. Sfalsa i badge in altezza (usando translateY o posizionamento assoluto differenziato) per creare un effetto 'salita' che va da sinistra (Germoglio) verso destra (Foresta).
+
+Linea 'Frutta' Dinamica: Usa react-native-svg per creare una linea di connessione spessa (almeno strokeWidth: 8). La linea deve essere divisa in segmenti tra i 5 livelli. Ogni segmento completato deve assumere un colore 'frutta' saturo e vibrante invece del verde pastello:
+
+Segmento Germoglio-Ramoscello: Verde Kiwi (#8BC34A)
+
+Segmento Ramoscello-Arbusto: Giallo Limone (#F4D03F)
+
+Segmento Arbusto-Albero: Arancione Mango (#FF8C42)
+
+Segmento Albero-Foresta: Rosso Mela (#E74C3C)
+
+Stato della Barra: La parte di linea non ancora raggiunta dall'utente deve rimanere di un colore neutro (es. grigio chiaro), mentre la parte percorsa deve illuminarsi con i colori sopra indicati.
+
+Badge Intatti: Non modificare le dimensioni o lo stile dei badge esistenti, limitati a posizionarli correttamente sopra i nodi della nuova linea ascendente.

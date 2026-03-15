@@ -30,7 +30,7 @@ import Animated, {
   withTiming,
   FadeInDown,
 } from "react-native-reanimated";
-import Svg, { Circle } from "react-native-svg";
+import Svg, { Circle, Line } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 
@@ -51,11 +51,18 @@ const LEVEL_LABELS: Record<string, string> = {
 };
 
 const LEVEL_CONFIG = [
-  { name: "Germoglio", emoji: "🌱", minPts: 0, color: "#8BC34A", fruitColor: "#A8E063", nodeSize: 32, imgSize: 20, nodeWidth: 48 },
-  { name: "Ramoscello", emoji: "🌿", minPts: 500, color: "#66BB6A", fruitColor: "#F9D423", nodeSize: 36, imgSize: 24, nodeWidth: 52 },
-  { name: "Arbusto", emoji: "🍃", minPts: 2000, color: "#43A047", fruitColor: "#FFA726", nodeSize: 40, imgSize: 28, nodeWidth: 56 },
-  { name: "Albero", emoji: "🌳", minPts: 5000, color: "#2E7D32", fruitColor: "#F96332", nodeSize: 46, imgSize: 32, nodeWidth: 60 },
-  { name: "Foresta", emoji: "🌲", minPts: 10000, color: "#1B5E20", fruitColor: "#E8401C", nodeSize: 54, imgSize: 38, nodeWidth: 68 },
+  { name: "Germoglio", emoji: "🌱", minPts: 0, color: "#8BC34A", fruitColor: "#8BC34A", nodeSize: 32, imgSize: 20 },
+  { name: "Ramoscello", emoji: "🌿", minPts: 500, color: "#66BB6A", fruitColor: "#8BC34A", nodeSize: 36, imgSize: 24 },
+  { name: "Arbusto", emoji: "🍃", minPts: 2000, color: "#43A047", fruitColor: "#F4D03F", nodeSize: 40, imgSize: 28 },
+  { name: "Albero", emoji: "🌳", minPts: 5000, color: "#2E7D32", fruitColor: "#FF8C42", nodeSize: 46, imgSize: 32 },
+  { name: "Foresta", emoji: "🌲", minPts: 10000, color: "#1B5E20", fruitColor: "#E74C3C", nodeSize: 54, imgSize: 38 },
+];
+
+const SEGMENT_COLORS = [
+  "#8BC34A",
+  "#F4D03F",
+  "#FF8C42",
+  "#E74C3C",
 ];
 
 const LEVEL_BADGE_IMAGES: Record<string, ImageSourcePropType> = {
@@ -67,47 +74,106 @@ const LEVEL_BADGE_IMAGES: Record<string, ImageSourcePropType> = {
 };
 
 const LARGEST_NODE = Math.max(...LEVEL_CONFIG.map(l => l.nodeSize));
+const NODE_Y_OFFSETS = [48, 36, 24, 12, 0];
+const LABEL_HEIGHT = 16;
+const BAR_PADDING_H = 16;
+const LINE_STROKE = 8;
 
 function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; points: number }) {
   const currentIdx = LEVEL_CONFIG.findIndex((l) => l.name === currentLevel);
   const safeIdx = currentIdx >= 0 ? currentIdx : 0;
-  const lineTop = LARGEST_NODE / 2;
+  const screenW = Dimensions.get("window").width;
+  const barWidth = screenW - BAR_PADDING_H * 2;
+  const totalHeight = LARGEST_NODE + NODE_Y_OFFSETS[0] + LABEL_HEIGHT + 8;
+
+  const nodePositions = LEVEL_CONFIG.map((lvl, i) => {
+    const count = LEVEL_CONFIG.length;
+    const usableWidth = barWidth - LARGEST_NODE;
+    const x = (LARGEST_NODE / 2) + (i / (count - 1)) * usableWidth;
+    const y = NODE_Y_OFFSETS[i] + lvl.nodeSize / 2;
+    return { x, y };
+  });
 
   return (
     <View style={milestoneStyles.container}>
-      <View style={[milestoneStyles.lineTrack, { top: lineTop }]}>
-        {LEVEL_CONFIG.map((lvl, i) => {
-          if (i === 0) return null;
-          const prevReached = safeIdx >= i;
-          const isTransition = safeIdx === i - 1;
-          let fillPct = 0;
-          if (prevReached) {
-            fillPct = 100;
-          } else if (isTransition) {
-            const prev = LEVEL_CONFIG[i - 1];
-            const range = lvl.minPts - prev.minPts;
-            fillPct = Math.min(100, Math.max(0, ((points - prev.minPts) / range) * 100));
-          }
-          const segColor = prevReached || isTransition ? lvl.fruitColor : "rgba(255,255,255,0.15)";
-          return (
-            <View key={i} style={[milestoneStyles.segmentTrack, { height: 6, borderRadius: 3 }]}>
-              <View
-                style={[
-                  milestoneStyles.segmentFill,
-                  { width: `${fillPct}%`, backgroundColor: segColor, height: 6, borderRadius: 3 },
-                ]}
+      <View style={{ width: barWidth, height: totalHeight }}>
+        <Svg width={barWidth} height={totalHeight}>
+          {LEVEL_CONFIG.map((_, i) => {
+            if (i === 0) return null;
+            const from = nodePositions[i - 1];
+            const to = nodePositions[i];
+            return (
+              <Line
+                key={`bg-${i}`}
+                x1={from.x}
+                y1={from.y}
+                x2={to.x}
+                y2={to.y}
+                stroke="rgba(255,255,255,0.12)"
+                strokeWidth={LINE_STROKE}
+                strokeLinecap="round"
               />
-            </View>
-          );
-        })}
-      </View>
-      <View style={milestoneStyles.nodesRow}>
+            );
+          })}
+
+          {LEVEL_CONFIG.map((_, i) => {
+            if (i === 0) return null;
+            const from = nodePositions[i - 1];
+            const to = nodePositions[i];
+            const segmentColor = SEGMENT_COLORS[i - 1];
+
+            const isFullyReached = safeIdx >= i;
+            const isTransition = safeIdx === i - 1;
+
+            if (!isFullyReached && !isTransition) return null;
+
+            let fillPct = 1;
+            if (isTransition) {
+              const prev = LEVEL_CONFIG[i - 1];
+              const curr = LEVEL_CONFIG[i];
+              const range = curr.minPts - prev.minPts;
+              fillPct = Math.min(1, Math.max(0, (points - prev.minPts) / range));
+            }
+
+            const endX = from.x + (to.x - from.x) * fillPct;
+            const endY = from.y + (to.y - from.y) * fillPct;
+
+            return (
+              <Line
+                key={`fill-${i}`}
+                x1={from.x}
+                y1={from.y}
+                x2={endX}
+                y2={endY}
+                stroke={segmentColor}
+                strokeWidth={LINE_STROKE}
+                strokeLinecap="round"
+              />
+            );
+          })}
+        </Svg>
+
         {LEVEL_CONFIG.map((lvl, i) => {
           const reached = safeIdx >= i;
           const sz = lvl.nodeSize;
           const imgSz = lvl.imgSize;
+          const pos = nodePositions[i];
+          const segColor = i === 0 ? SEGMENT_COLORS[0] : SEGMENT_COLORS[Math.min(i - 1, SEGMENT_COLORS.length - 1)];
+          const labelW = 70;
+          const rawLeft = pos.x - labelW / 2;
+          const clampedLeft = Math.max(0, Math.min(rawLeft, barWidth - labelW));
+
           return (
-            <View key={i} style={[milestoneStyles.node, { width: lvl.nodeWidth }]}>
+            <View
+              key={i}
+              style={{
+                position: "absolute",
+                left: clampedLeft,
+                top: pos.y - sz / 2,
+                alignItems: "center",
+                width: labelW,
+              }}
+            >
               <View
                 style={[
                   {
@@ -116,10 +182,9 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
                     borderRadius: sz / 2,
                     alignItems: "center" as const,
                     justifyContent: "center" as const,
-                    marginBottom: 4,
                   },
                   reached
-                    ? { backgroundColor: `${lvl.fruitColor}33`, borderWidth: 2.5, borderColor: lvl.fruitColor }
+                    ? { backgroundColor: `${segColor}33`, borderWidth: 2.5, borderColor: segColor }
                     : milestoneStyles.nodeLocked,
                 ]}
               >
@@ -151,38 +216,9 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
 
 const milestoneStyles = StyleSheet.create({
   container: {
-    paddingHorizontal: 12,
-    paddingTop: 8,
+    paddingHorizontal: BAR_PADDING_H,
+    paddingTop: 4,
     paddingBottom: 4,
-  },
-  lineTrack: {
-    flexDirection: "row",
-    position: "absolute",
-    left: 34,
-    right: 34,
-    height: 6,
-    gap: 0,
-  },
-  segmentTrack: {
-    flex: 1,
-    height: 6,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: 3,
-    overflow: "hidden",
-  },
-  segmentFill: {
-    height: 6,
-    backgroundColor: "#fff",
-    borderRadius: 3,
-  },
-  nodesRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-  },
-  node: {
-    alignItems: "center",
-    width: 56,
   },
   nodeLocked: {
     backgroundColor: "rgba(255,255,255,0.08)",
