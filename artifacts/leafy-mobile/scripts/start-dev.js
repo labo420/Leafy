@@ -108,29 +108,50 @@ if (ngrokBin) {
 if (fs.existsSync(TUNNEL_FILE)) fs.unlinkSync(TUNNEL_FILE);
 
 function pollNgrokAPI() {
-  http.get(NGROK_API, (res) => {
-    if (res.statusCode !== 200) return;
-    let data = "";
-    res.on("data", (chunk) => (data += chunk));
-    res.on("end", () => {
-      try {
-        if (!data) return;
-        const json = JSON.parse(data);
-        const httpTunnel = (json.tunnels || []).find(
-          (t) => t && t.public_url && t.public_url.startsWith("http://") && t.public_url.includes(".exp.direct")
-        );
-        if (httpTunnel) {
-          const expUrl = httpTunnel.public_url.replace("http://", "exp://");
-          fs.writeFileSync(TUNNEL_FILE, expUrl, "utf8");
-          console.log(`\n› Metro waiting on ${expUrl}`);
-        }
-      } catch (e) {
-        console.warn("Failed to parse ngrok API response:", e.message);
+  try {
+    const req = http.get(NGROK_API, { timeout: 5000 }, (res) => {
+      if (!res || res.statusCode !== 200) {
+        console.warn(`ngrok API returned status ${res?.statusCode || 'unknown'}`);
+        return;
       }
+      let data = "";
+      res.on("data", (chunk) => {
+        if (chunk) data += chunk;
+      });
+      res.on("end", () => {
+        try {
+          if (!data || data.length === 0) {
+            console.warn("ngrok API returned empty response");
+            return;
+          }
+          const json = JSON.parse(data);
+          if (!json.tunnels || !Array.isArray(json.tunnels)) {
+            console.warn("ngrok API response missing tunnels array");
+            return;
+          }
+          const httpTunnel = json.tunnels.find(
+            (t) => t && typeof t === "object" && t.public_url && t.public_url.startsWith("http://") && t.public_url.includes(".exp.direct")
+          );
+          if (httpTunnel) {
+            const expUrl = httpTunnel.public_url.replace("http://", "exp://");
+            fs.writeFileSync(TUNNEL_FILE, expUrl, "utf8");
+            console.log(`\n› Metro waiting on ${expUrl}`);
+          }
+        } catch (e) {
+          console.warn("Failed to parse ngrok API response:", e.message);
+        }
+      });
     });
-  }).on("error", (err) => {
-    console.warn("ngrok API request failed:", err.message);
-  });
+    req.on("error", (err) => {
+      console.warn("ngrok API request error:", err.message);
+    });
+    req.on("timeout", () => {
+      console.warn("ngrok API request timeout");
+      req.destroy();
+    });
+  } catch (e) {
+    console.warn("Error setting up ngrok API request:", e.message);
+  }
 }
 
 if (workflowPort && workflowPort !== expoPort) {
