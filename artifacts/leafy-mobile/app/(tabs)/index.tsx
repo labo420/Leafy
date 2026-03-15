@@ -310,9 +310,7 @@ function GuestAuthScreen() {
         {loading ? (
           <ActivityIndicator color="#2E6B50" />
         ) : (
-          <Text style={authStyles.submitBtnText}>
-            {section === "login" ? "Accedi" : "Crea account"}
-          </Text>
+          <Text style={authStyles.submitBtnText}>Conferma</Text>
         )}
       </Pressable>
     </View>
@@ -344,29 +342,31 @@ function GuestAuthScreen() {
           </View>
 
           <View style={authStyles.actions}>
-            <Pressable
-              style={({ pressed }) => [
-                authStyles.primaryBtn,
-                expanded === "login" && authStyles.btnActive,
-                pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
-              ]}
-              onPress={() => toggleSection("login")}
-            >
-              <Text style={[authStyles.primaryBtnText, expanded === "login" && authStyles.btnActiveText]}>Accedi</Text>
-            </Pressable>
+            {expanded !== "register" && (
+              <Pressable
+                style={({ pressed }) => [
+                  authStyles.primaryBtn,
+                  pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
+                ]}
+                onPress={() => toggleSection("login")}
+              >
+                <Text style={authStyles.primaryBtnText}>Accedi</Text>
+              </Pressable>
+            )}
 
             {expanded === "login" && renderFormFields("login")}
 
-            <Pressable
-              style={({ pressed }) => [
-                authStyles.outlineBtn,
-                expanded === "register" && authStyles.outlineBtnActive,
-                pressed && { opacity: 0.8 },
-              ]}
-              onPress={() => toggleSection("register")}
-            >
-              <Text style={authStyles.outlineBtnText}>Crea account</Text>
-            </Pressable>
+            {expanded !== "login" && (
+              <Pressable
+                style={({ pressed }) => [
+                  authStyles.outlineBtn,
+                  pressed && { opacity: 0.8 },
+                ]}
+                onPress={() => toggleSection("register")}
+              >
+                <Text style={authStyles.outlineBtnText}>Crea account</Text>
+              </Pressable>
+            )}
 
             {expanded === "register" && renderFormFields("register")}
 
