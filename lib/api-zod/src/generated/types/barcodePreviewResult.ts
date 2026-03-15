@@ -15,4 +15,5 @@ export interface BarcodePreviewResult {
   emoji: string;
   reasoning: string;
   source: string;
+  found: boolean;
 }

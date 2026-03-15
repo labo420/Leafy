@@ -16,4 +16,7 @@ export interface BarcodeLookupResult {
   reasoning: string;
   source: string;
   remainingDailyPoints: number;
+  remainingReceiptPoints: number;
+  receiptCapPts: number;
+  dailyCapPts: number;
 }

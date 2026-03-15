@@ -182,7 +182,7 @@ export async function extractTextViaGoogleVision(base64: string): Promise<string
       return null;
     }
 
-    const data = await response.json();
+    const data = await response.json() as { responses?: Array<{ fullTextAnnotation?: { text?: string } }> };
     const text = data.responses?.[0]?.fullTextAnnotation?.text;
     return text || null;
   } catch (err) {

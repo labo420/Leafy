@@ -21,4 +21,5 @@ export interface Profile {
   streak: number;
   badgesCount: number;
   badges: Badge[];
+  profileImageUrl?: string | null;
 }

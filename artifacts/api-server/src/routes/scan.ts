@@ -166,7 +166,7 @@ router.post("/scan", async (req, res): Promise<void> => {
       .values({
         userId: user.id,
         storeName: validation.store ?? storeName ?? null,
-        purchaseDate: purchaseDate ?? null,
+        purchaseDate: purchaseDate instanceof Date ? purchaseDate.toISOString() : null,
         imageHash,
         rawText: rawText || null,
         pointsEarned: 0,
@@ -481,6 +481,7 @@ router.post("/scan/barcode/preview", async (req, res): Promise<void> => {
     emoji: product.emoji,
     reasoning: product.reasoning,
     source: product.source,
+    found: true,
   });
 });
 

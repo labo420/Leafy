@@ -38,6 +38,7 @@ export const GetProfileResponse = zod.object({
       earnedAt: zod.date().nullish(),
     }),
   ),
+  profileImageUrl: zod.string().nullish(),
 });
 
 /**
@@ -93,6 +94,27 @@ export const ScanReceiptResponse = zod.object({
   storeName: zod.string().nullish(),
   message: zod.string(),
   sessionHours: zod.number(),
+  pointsEarned: zod.number(),
+  receiptBonusPts: zod.number(),
+  welcomeBonus: zod.boolean(),
+  welcomeBonusPts: zod.number(),
+  greenItemsFound: zod.array(
+    zod.object({
+      name: zod.string(),
+      category: zod.string(),
+      points: zod.number(),
+      emoji: zod.string(),
+    }),
+  ),
+  leveledUp: zod.boolean(),
+  newLevel: zod.string().nullish(),
+  badges: zod.array(
+    zod.object({
+      name: zod.string(),
+      emoji: zod.string(),
+    }),
+  ),
+  challengesUpdated: zod.array(zod.string()),
 });
 
 /**
@@ -113,6 +135,9 @@ export const BarcodeLookupResponse = zod.object({
   reasoning: zod.string(),
   source: zod.string(),
   remainingDailyPoints: zod.number(),
+  remainingReceiptPoints: zod.number(),
+  receiptCapPts: zod.number(),
+  dailyCapPts: zod.number(),
 });
 
 /**
@@ -131,6 +156,7 @@ export const BarcodePreviewResponse = zod.object({
   emoji: zod.string(),
   reasoning: zod.string(),
   source: zod.string(),
+  found: zod.boolean(),
 });
 
 /**

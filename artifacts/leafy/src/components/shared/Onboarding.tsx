@@ -63,6 +63,7 @@ export function Onboarding() {
       const timer = setTimeout(() => setShowConfetti(false), 2000);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [showConfetti]);
 
   useEffect(() => {
@@ -74,6 +75,7 @@ export function Onboarding() {
       }, 600);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, []);
 
   const finish = () => {

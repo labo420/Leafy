@@ -513,7 +513,7 @@ components:
           type: integer
         level:
           type: string
-          enum: [Bronzo, Argento, Oro, Platino]
+          enum: [Germoglio, Ramoscello, Arbusto, Albero, Foresta]
         levelProgress:
           type: integer
           description: Progress percentage to next level (0-100)
@@ -528,6 +528,9 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Badge"
+        profileImageUrl:
+          type: string
+          nullable: true
       required:
         - id
         - username
@@ -651,11 +654,52 @@ components:
           type: string
         sessionHours:
           type: integer
+        pointsEarned:
+          type: integer
+        receiptBonusPts:
+          type: integer
+        welcomeBonus:
+          type: boolean
+        welcomeBonusPts:
+          type: integer
+        greenItemsFound:
+          type: array
+          items:
+            $ref: "#/components/schemas/FoundGreenItem"
+        leveledUp:
+          type: boolean
+        newLevel:
+          type: string
+          nullable: true
+        badges:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              emoji:
+                type: string
+            required:
+              - name
+              - emoji
+        challengesUpdated:
+          type: array
+          items:
+            type: string
       required:
         - receiptId
         - barcodeExpiry
         - message
         - sessionHours
+        - pointsEarned
+        - receiptBonusPts
+        - welcomeBonus
+        - welcomeBonusPts
+        - greenItemsFound
+        - leveledUp
+        - badges
+        - challengesUpdated
 
     BarcodeScanBody:
       type: object
@@ -696,6 +740,8 @@ components:
           type: string
         source:
           type: string
+        found:
+          type: boolean
       required:
         - barcode
         - productName
@@ -704,6 +750,7 @@ components:
         - emoji
         - reasoning
         - source
+        - found
 
     BarcodeLookupResult:
       type: object
@@ -727,6 +774,12 @@ components:
           type: string
         remainingDailyPoints:
           type: integer
+        remainingReceiptPoints:
+          type: integer
+        receiptCapPts:
+          type: integer
+        dailyCapPts:
+          type: integer
       required:
         - barcode
         - productName
@@ -736,6 +789,9 @@ components:
         - reasoning
         - source
         - remainingDailyPoints
+        - remainingReceiptPoints
+        - receiptCapPts
+        - dailyCapPts
 
     BarcodeConfirmResult:
       type: object

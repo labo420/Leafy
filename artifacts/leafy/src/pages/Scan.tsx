@@ -50,7 +50,7 @@ export default function Scan() {
         const newItem: ShoppingItem = {
           barcode: variables.data.barcode,
           productName: result.productName,
-          ecoScore: result.ecoScore,
+          ecoScore: result.ecoScore ?? null,
           pointsEstimate: result.pointsEstimate,
           found: result.found,
         };

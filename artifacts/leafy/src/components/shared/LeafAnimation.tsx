@@ -21,7 +21,7 @@ export function LeafAnimation({ isActive, onComplete }: { isActive: boolean, onC
     if (isActive) {
       const newLeaves = Array.from({ length: 25 }).map((_, i) => ({
         id: i,
-        x: Math.random() * 100, // vw
+        x: Math.random() * 100,
         delay: Math.random() * 0.5,
         duration: 2 + Math.random() * 2,
         rotation: Math.random() * 360,
@@ -36,6 +36,7 @@ export function LeafAnimation({ isActive, onComplete }: { isActive: boolean, onC
       }, 4000);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [isActive, onComplete]);
 
   return (

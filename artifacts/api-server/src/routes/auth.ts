@@ -195,7 +195,7 @@ function configureGoogleStrategy(callbackURL: string) {
           email,
           displayName: profile.displayName,
         })
-          .then((user) => done(null, user))
+          .then((user) => done(null, user as unknown as Express.User))
           .catch((err) => done(err));
       },
     ),
@@ -223,7 +223,7 @@ function configureFacebookStrategy(callbackURL: string) {
           email,
           displayName: profile.displayName,
         })
-          .then((user) => done(null, user))
+          .then((user) => done(null, user as unknown as Express.User))
           .catch((err) => done(err));
       },
     ),

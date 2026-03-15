@@ -43,6 +43,7 @@ export * from "./redemptionResult";
 export * from "./referralInfo";
 export * from "./scanReceiptBody";
 export * from "./scanResult";
+export * from "./scanResultBadgesItem";
 export * from "./temporalBadgeItem";
 export * from "./temporalBadgeItemBadgeType";
 export * from "./voucher";

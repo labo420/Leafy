@@ -5,6 +5,8 @@
  * Leafy - Piattaforma Loyalty & Sostenibilità API
  * OpenAPI spec version: 0.1.0
  */
+import type { FoundGreenItem } from "./foundGreenItem";
+import type { ScanResultBadgesItem } from "./scanResultBadgesItem";
 
 export interface ScanResult {
   receiptId: number;
@@ -12,4 +14,13 @@ export interface ScanResult {
   storeName?: string | null;
   message: string;
   sessionHours: number;
+  pointsEarned: number;
+  receiptBonusPts: number;
+  welcomeBonus: boolean;
+  welcomeBonusPts: number;
+  greenItemsFound: FoundGreenItem[];
+  leveledUp: boolean;
+  newLevel?: string | null;
+  badges: ScanResultBadgesItem[];
+  challengesUpdated: string[];
 }

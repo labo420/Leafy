@@ -45,6 +45,7 @@ export interface Profile {
   streak: number;
   badgesCount: number;
   badges: Badge[];
+  profileImageUrl?: string | null;
 }
 
 export interface ImpactStats {
@@ -86,12 +87,33 @@ export interface ScanReceiptBody {
   rawText?: string | null;
 }
 
+export type ScanResultBadgesItem = {
+  name: string;
+  emoji: string;
+};
+
+export interface FoundGreenItem {
+  name: string;
+  category: string;
+  points: number;
+  emoji: string;
+}
+
 export interface ScanResult {
   receiptId: number;
   barcodeExpiry: string;
   storeName?: string | null;
   message: string;
   sessionHours: number;
+  pointsEarned: number;
+  receiptBonusPts: number;
+  welcomeBonus: boolean;
+  welcomeBonusPts: number;
+  greenItemsFound: FoundGreenItem[];
+  leveledUp: boolean;
+  newLevel?: string | null;
+  badges: ScanResultBadgesItem[];
+  challengesUpdated: string[];
 }
 
 export interface BarcodeScanBody {
@@ -112,6 +134,7 @@ export interface BarcodePreviewResult {
   emoji: string;
   reasoning: string;
   source: string;
+  found: boolean;
 }
 
 export interface BarcodeLookupResult {
@@ -124,6 +147,9 @@ export interface BarcodeLookupResult {
   reasoning: string;
   source: string;
   remainingDailyPoints: number;
+  remainingReceiptPoints: number;
+  receiptCapPts: number;
+  dailyCapPts: number;
 }
 
 export interface BarcodeConfirmResult {
@@ -166,13 +192,6 @@ export interface ActiveSession {
   receipt?: ActiveSessionReceipt;
   remainingMinutes?: number;
   barcodeScans: BarcodeScannedItem[];
-}
-
-export interface FoundGreenItem {
-  name: string;
-  category: string;
-  points: number;
-  emoji: string;
 }
 
 export interface Receipt {

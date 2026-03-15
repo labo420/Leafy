@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useGetReceipts, useGetReceipt } from "@workspace/api-client-react";
+import { useGetReceipts, useGetReceipt, getGetReceiptQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format, parseISO } from "date-fns";
@@ -12,13 +12,13 @@ export default function History() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
   const { data: detail, isLoading: loadingDetail } = useGetReceipt(selectedId!, {
-    query: { enabled: selectedId !== null },
+    query: { enabled: selectedId !== null, queryKey: getGetReceiptQueryKey(selectedId!) },
   });
 
   const list = receipts && receipts.length > 0 ? receipts : [
-    { id: 1, storeName: "NaturaSì", purchaseDate: "2025-01-15T10:30:00Z", pointsEarned: 150, greenItemsCount: 3, categories: ["Bio", "Km 0"], scannedAt: "2025-01-15T14:20:00Z" },
-    { id: 2, storeName: "Supermercato Locale", purchaseDate: "2025-01-12T09:15:00Z", pointsEarned: 45, greenItemsCount: 1, categories: ["Senza Plastica"], scannedAt: "2025-01-12T10:00:00Z" },
-    { id: 3, storeName: "Mercato Contadino", purchaseDate: "2025-01-08T08:00:00Z", pointsEarned: 220, greenItemsCount: 5, categories: ["Km 0", "Bio", "Vegano"], scannedAt: "2025-01-08T11:45:00Z" },
+    { id: 1, storeName: "NaturaSì", purchaseDate: "2025-01-15T10:30:00Z", pointsEarned: 150, greenItemsCount: 3, categories: ["Bio", "Km 0"], scannedAt: "2025-01-15T14:20:00Z", hasImage: false, province: null, storeChain: null, imageExpiresAt: null },
+    { id: 2, storeName: "Supermercato Locale", purchaseDate: "2025-01-12T09:15:00Z", pointsEarned: 45, greenItemsCount: 1, categories: ["Senza Plastica"], scannedAt: "2025-01-12T10:00:00Z", hasImage: false, province: null, storeChain: null, imageExpiresAt: null },
+    { id: 3, storeName: "Mercato Contadino", purchaseDate: "2025-01-08T08:00:00Z", pointsEarned: 220, greenItemsCount: 5, categories: ["Km 0", "Bio", "Vegano"], scannedAt: "2025-01-08T11:45:00Z", hasImage: false, province: null, storeChain: null, imageExpiresAt: null },
   ];
 
   const formatProductName = (name: string) => {

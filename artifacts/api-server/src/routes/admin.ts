@@ -75,7 +75,7 @@ router.post("/admin/vouchers", requireAdmin, async (req, res): Promise<void> => 
 });
 
 router.put("/admin/vouchers/:id", requireAdmin, async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string);
   if (isNaN(id)) { res.status(400).json({ error: "ID non valido." }); return; }
 
   const { isActive, stock, pointsCost } = req.body as { isActive?: boolean; stock?: number; pointsCost?: number };
@@ -89,7 +89,7 @@ router.put("/admin/vouchers/:id", requireAdmin, async (req, res): Promise<void> 
 });
 
 router.delete("/admin/vouchers/:id", requireAdmin, async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string);
   if (isNaN(id)) { res.status(400).json({ error: "ID non valido." }); return; }
   await db.delete(vouchersTable).where(eq(vouchersTable.id, id));
   res.json({ ok: true });
@@ -122,7 +122,7 @@ router.post("/admin/challenges", requireAdmin, async (req, res): Promise<void> =
 });
 
 router.put("/admin/challenges/:id", requireAdmin, async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string);
   if (isNaN(id)) { res.status(400).json({ error: "ID non valido." }); return; }
 
   const { isActive } = req.body as { isActive?: boolean };
@@ -134,7 +134,7 @@ router.put("/admin/challenges/:id", requireAdmin, async (req, res): Promise<void
 });
 
 router.delete("/admin/challenges/:id", requireAdmin, async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string);
   if (isNaN(id)) { res.status(400).json({ error: "ID non valido." }); return; }
   await db.delete(challengesTable).where(eq(challengesTable.id, id));
   res.json({ ok: true });
@@ -180,7 +180,7 @@ router.post("/admin/fraud/approve-pending", requireAdmin, async (_req, res): Pro
 });
 
 router.put("/admin/fraud/receipts/:id", requireAdmin, async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string);
   if (isNaN(id)) { res.status(400).json({ error: "ID non valido." }); return; }
 
   const { status } = req.body as { status?: string };
