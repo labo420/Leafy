@@ -209,7 +209,7 @@ export default function ScanScreen() {
 
   const pickImage = async (source: "camera" | "gallery") => {
     if (!user) {
-      router.push("/login");
+      router.push("/(tabs)");
       return;
     }
     let result;
@@ -555,7 +555,7 @@ export default function ScanScreen() {
               <Pressable
                 style={({ pressed }) => [styles.actionCardSmall, pressed && { opacity: 0.85 }]}
                 onPress={() => {
-                  if (!user) { router.push("/login"); return; }
+                  if (!user) { router.push("/(tabs)"); return; }
                   router.push("/shopping-scanner");
                 }}
               >

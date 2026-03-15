@@ -208,7 +208,7 @@ export default function ShoppingScannerScreen() {
         <Feather name="log-in" size={56} color={Colors.textSecondary} />
         <Text style={styles.permTitle}>Accesso richiesto</Text>
         <Text style={styles.permSub}>Effettua il login per usare la Modalità Spesa</Text>
-        <Pressable style={styles.permBtn} onPress={() => router.replace("/login")}>
+        <Pressable style={styles.permBtn} onPress={() => router.replace("/(tabs)")}>
           <Text style={styles.permBtnText}>Vai al login</Text>
         </Pressable>
       </View>

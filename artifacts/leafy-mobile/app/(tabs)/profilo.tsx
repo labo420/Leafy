@@ -473,7 +473,7 @@ export default function ProfiloScreen() {
         </Text>
         <Pressable
           style={styles.loginBtn}
-          onPress={() => router.push("/login")}
+          onPress={() => router.push("/(tabs)")}
         >
           <Text style={styles.loginBtnText}>Accedi</Text>
         </Pressable>

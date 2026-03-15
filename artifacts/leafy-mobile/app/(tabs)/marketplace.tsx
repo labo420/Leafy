@@ -228,7 +228,7 @@ export default function MarketplaceScreen() {
       <View style={[styles.centered, { paddingTop: topPadding }]}>
         <Ionicons name="gift-outline" size={48} color={Colors.primaryMuted} />
         <Text style={styles.emptyTitle}>Accedi per vedere i premi</Text>
-        <Pressable style={styles.loginBtn} onPress={() => router.push("/login")}>
+        <Pressable style={styles.loginBtn} onPress={() => router.push("/(tabs)")}>
           <Text style={styles.loginBtnText}>Accedi</Text>
         </Pressable>
       </View>

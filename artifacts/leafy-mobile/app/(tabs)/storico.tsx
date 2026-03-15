@@ -471,7 +471,7 @@ export default function StoricoScreen() {
       <View style={[styles.centered, { paddingTop: topPadding }]}>
         <Feather name="list" size={48} color={Colors.primaryMuted} />
         <Text style={styles.emptyTitle}>Accedi per vedere lo storico</Text>
-        <Pressable style={styles.loginBtn} onPress={() => router.push("/login")}>
+        <Pressable style={styles.loginBtn} onPress={() => router.push("/(tabs)")}>
           <Text style={styles.loginBtnText}>Accedi</Text>
         </Pressable>
       </View>
