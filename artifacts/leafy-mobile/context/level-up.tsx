@@ -7,7 +7,7 @@ import { useAuth } from "@/context/auth";
 import type { Profile } from "@workspace/api-client-react";
 import LevelUpModal from "@/components/LevelUpModal";
 
-const PREV_LEVEL_KEY = "leafy_prev_level";
+const PREV_LEVEL_KEY_PREFIX = "leafy_prev_level:";
 
 interface LevelUpContextValue {
   checkForLevelUp: () => void;
@@ -26,6 +26,9 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
   const [toLevel, setToLevel] = useState("");
   const prevLevelRef = useRef<string | null>(null);
   const initializedRef = useRef(false);
+  const currentUserIdRef = useRef<string | null>(null);
+
+  const storageKey = user?.id ? `${PREV_LEVEL_KEY_PREFIX}${user.id}` : null;
 
   const { data: profile, refetch } = useQuery<Profile>({
     queryKey: ["profile"],
@@ -34,14 +37,23 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    AsyncStorage.getItem(PREV_LEVEL_KEY).then((stored) => {
+    initializedRef.current = false;
+    prevLevelRef.current = null;
+
+    if (!storageKey) return;
+
+    if (currentUserIdRef.current !== user?.id) {
+      currentUserIdRef.current = user?.id ?? null;
+    }
+
+    AsyncStorage.getItem(storageKey).then((stored) => {
       if (stored) prevLevelRef.current = stored;
       initializedRef.current = true;
     });
-  }, []);
+  }, [storageKey, user?.id]);
 
   useEffect(() => {
-    if (!profile?.level || !initializedRef.current) return;
+    if (!profile?.level || !initializedRef.current || !storageKey) return;
 
     const currentLevel = profile.level;
 
@@ -52,8 +64,8 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
     }
 
     prevLevelRef.current = currentLevel;
-    AsyncStorage.setItem(PREV_LEVEL_KEY, currentLevel);
-  }, [profile?.level, visible]);
+    AsyncStorage.setItem(storageKey, currentLevel);
+  }, [profile?.level, visible, storageKey]);
 
   useEffect(() => {
     if (!user) return;
