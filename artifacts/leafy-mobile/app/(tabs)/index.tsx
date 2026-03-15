@@ -784,6 +784,7 @@ const authStyles = StyleSheet.create({
     width: "100%",
     paddingHorizontal: 32,
     paddingBottom: 24,
+    marginTop: -80,
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
