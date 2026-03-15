@@ -1322,10 +1322,15 @@ Ignora subtotali, IVA separata, sconti parziali.
 
 === REGOLE CATENA / NEGOZIO ===
 - "store": nome ESATTO come appare sullo scontrino
-- "storeChain": usa uno di questi nomi normalizzati se il negozio corrisponde:
+- "storeChain": usa ESATTAMENTE uno di questi nomi normalizzati se il negozio corrisponde:
   Standard: Esselunga, Coop, Ipercoop, UniCoop, NovaCoop, Conad, Conad City, Conad Superstore, Carrefour, Carrefour Express, Carrefour Market, Carrefour Iper, Pam, Panorama, Pam Local, Despar, Eurospar, Interspar, Spar, Bennet, Il Gigante, Tigros, Sigma, Crai, E.Leclerc, Famila, Tuodì, Cadoro, Dì per Dì, Prix Quality, Coal, A&O, Selex, Iper, Billa, Simply Market
   Bio/Naturale: NaturaSì, Bioessepiù, Ecor, Life, BioBottega
   Discount: Lidl, Aldi, Eurospin, Penny, Penny Market, MD Discount, In's Mercato, Ard Discount, Todis, Dok Discount
+
+PATTERN RICONOSCIMENTO CATENA:
+- Se lo scontrino ha il logo ALDI o scrive "ALDI" → storeChain = "Aldi" (esattamente così)
+- Se scrive "ALDI SÜD" o "ALDI Nord" → storeChain = "Aldi" (standardizza sempre a "Aldi")
+- Stessa logica per tutte le catene: se riconosci Lidl, scrivi "Lidl" non "LIDL"; se riconosci Penny, scrivi "Penny"
 
 === REGOLE PROVINCIA ===
 Deduci la provincia dal CAP o dall'indirizzo stampato sullo scontrino:
