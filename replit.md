@@ -4,7 +4,7 @@
 
 Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti scansionano scontrini come prova d'acquisto, poi inquadrano i codici a barre dei prodotti per guadagnare punti basati sull'**Eco-Score** di Open Food Facts. Salgono di livello (🌱 Germoglio → 🌿 Ramoscello → 🍃 Arbusto → 🌳 Albero → 🌲 Foresta), completano sfide mensili e riscattano voucher nel marketplace.
 
-**Stato attuale**: App Expo React Native funzionante (SDK 54) + backend Express/PostgreSQL + admin panel web + frontend web con sistema badge a due livelli (lifetime + temporali) + whitelist 51 supermercati italiani con validazione AI di catena e provincia. Economia calibrata con cap punti, bonus scontrino, Scontrino Virtuoso, Eco-Hero multiplier. Catena barcode multiAPI (OFF + Nutritionix + USDA + GS1 brand hints). Inserimento manuale prodotti con apprendimento AI. Sistema livelli a 5 stadi naturali (Germoglio→Foresta) con badge 3D, milestone bar e celebrazione level-up animata.
+**Stato attuale**: App Expo React Native funzionante (SDK 54) + backend Express/PostgreSQL + admin panel web + frontend web con sistema badge a due livelli (lifetime + temporali) + whitelist 51 supermercati italiani con validazione AI di catena e provincia. Economia calibrata con cap punti, bonus scontrino, Scontrino Virtuoso, Eco-Hero multiplier. Catena barcode multiAPI (OFF + Nutritionix + USDA + GS1 brand hints). Inserimento manuale prodotti con apprendimento AI. Sistema livelli a 5 stadi naturali (Germoglio→Foresta) con badge 3D, milestone bar e celebrazione level-up animata. Sessione utente persistente via AsyncStorage (l'utente rimane loggato anche dopo chiusura/aggiornamento app).
 
 **UX/Design v2 — stato attuale**:
 - **Sistema 5 livelli** (`calculateLevel` in `lib/db`): Germoglio 🌱 (0–499 pt), Ramoscello 🌿 (500–1999), Arbusto 🍃 (2000–4999), Albero 🌳 (5000–9999), Foresta 🌲 (10000+). Ogni livello ha colore tematico, emoji e badge 3D dedicato. La leaderboard è allineata agli stessi soglie.
@@ -14,7 +14,11 @@ Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti 
 - **LevelUpProvider** (`context/level-up.tsx`): context globale in `_layout.tsx`. Persiste il livello precedente su AsyncStorage con chiave user-scoped (`leafy_prev_level:<userId>`). Rileva level-up sia dopo scan (via `checkForLevelUp()`) sia al ritorno in foreground (AppState). Si resetta al cambio utente.
 - **Badge 3D clay/glossy** (`BadgeIcon3D`): 20 immagini PNG AI-generate in stile 3D plastica lucida con sfondo trasparente — 15 badge originali + 5 badge di livello naturale (`level-sprout.png`, `level-twig.png`, `level-shrub.png`, `level-tree.png`, `level-forest.png`). `BadgeIcon3D` risolve i badge di livello tramite `category === "Livello"` + mappa nome→chiave. Stato bloccato = opacity ridotta + icona lucchetto centrata. Asset in `artifacts/leafy-mobile/assets/badges/`.
 - **Home e Profilo**: Rimossi tutti gli emoji dalle intestazioni, streak, messaggi motivazionali e label di sezione; sostituiti con icone vettoriali `MaterialCommunityIcons` / `Feather` di `@expo/vector-icons`.
-- **Scan screen**: Sostituito il cerchio pulsante da 300px (duplicato del floating button) con layout a card — card fullwidth verde per lo scontrino + due card affiancate per galleria e modalità spesa.
+- **Scan screen**: Sostituito il cerchio pulsante da 300px (duplicato del floating button) con layout a card — card fullwidth verde per lo scontrino + due card affiancate per galleria e modalità spesa. Schermata di successo post-scan: grande ✅ emoji (font 64px), prodotti sempre separati in "Prodotti idonei" (punti > 0) / "Prodotti non idonei" (punti = 0), CTA "Continua nello storico" che naviga a storico e apre automaticamente il dettaglio scontrino.
+- **ScanResetProvider** (`context/scan-reset.tsx`): context globale che permette di resettare il tab Scansiona a idle. Registrazione via `registerReset` in scan.tsx; trigger via `triggerReset` nel tabPress della camera tab in `(tabs)/_layout.tsx`. Premere il pulsante fotocamera dalla nav bar porta sempre alla pagina iniziale (stato idle), anche se si è in un modale o su un altro tab.
+- **Emoji prodotti unificata** (`constants/emojis.ts`): funzione `getProductEmoji(name, category?, aiEmoji?)` con priorità aiEmoji → keyword sul nome → keyword sulla categoria → 🛒 default. Usata coerentemente in scan.tsx e storico.tsx.
+- **Storico**: sezioni rinominate da "Prodotti accettati"/"Altri prodotti" a "Prodotti idonei"/"Prodotti non idonei". Aggiunto CTA "Scansiona prodotti mancanti (N)" quando lo scontrino è in pending e ci sono prodotti non ancora verificati. Apertura automatica del dettaglio scontrino tramite param di navigazione `openReceiptId`.
+- **Cancellazione scontrino** (`DELETE /api/receipts/:id`): lo scontrino viene marcato `cancelled` (non cancellato fisicamente), filtrato da GET /receipts, escluso dai controlli duplicati. Pulsante "Cancella scontrino" rosso con dialog di conferma nello storico.
 - **Auth flow mobile (GuestAuthScreen)**: La schermata di accesso è **inline** in `(tabs)/index.tsx` — nessuna navigazione verso `/login`. Il componente `GuestAuthScreen` gestisce tre stati: `landing` (logo + bottoni), `login` (accordion aperto su login), `register` (accordion aperto su register). Logout → `router.replace("/(tabs)")`. Il file `app/login.tsx` rimane ma non è più raggiungibile dall'app.
 - **Accordion auth**: stato `expanded: "login" | "register" | null`. Quando un accordion è aperto, l'altro bottone scompare (visibilità condizionale). Il bottone attivo mantiene il suo colore originale (nessun highlight extra). Submit button testo: **"Conferma"**. Animazione fluida con `LayoutAnimation.configureNext` (Android: `UIManager.setLayoutAnimationEnabledExperimental`).
 - **Bottoni auth**: `maxWidth: 280`, centrati con `alignItems: "center"`. "Accedi" → bianco pieno (#FFFFFF), testo verde. "Crea account" → bianco semi-trasparente (`rgba(255,255,255,0.20)`) con bordo bianco sottile — stile frosted glass coerente con lo sfondo verde.
@@ -559,8 +563,9 @@ Base URL: `/api`
 | `POST /api/scan/barcode/confirm` | Conferma e accredita punti (+ Scontrino Virtuoso se 3+ green) con cap remaining |
 | `POST /api/scan/barcode/manual-classify` | Classificazione manuale con foto → cache + user_product_submissions |
 | `GET /api/scan/active-session` | Sessione barcode attiva + prodotti scansionati |
-| `GET /api/receipts` | Lista scontrini (incl. `storeChain`, `province`, `hasImage`, `isPending`, `remainingHours`) |
+| `GET /api/receipts` | Lista scontrini (incl. `storeChain`, `province`, `hasImage`, `isPending`, `remainingHours`) — esclusi quelli con status `cancelled` |
 | `GET /api/receipts/:id` | Dettaglio: greenItems + barcodeScans + Eco-Score + foto + `pendingProductsCount` |
+| `DELETE /api/receipts/:id` | Cancella (soft-delete) uno scontrino: status → `cancelled`, escluso da lista e da check duplicati |
 | `GET /api/receipts/:id/image` | Serve foto scontrino (auth-protected, 30gg retention) |
 | `GET /api/accepted-stores` | Lista supermercati accettati per categoria `{ standard, bio, discount }` |
 
@@ -621,7 +626,7 @@ barcode_mode, receipt_date, receipt_total, image_url, image_expires_at
 ```
 - `barcode_expiry` = scadenza sessione barcode (24h dopo scan)
 - `barcode_mode` = 1 (indica flusso barcode attivo)
-- `status` = `approved` | `pending` | `rejected`
+- `status` = `approved` | `pending` | `rejected` | `cancelled` (soft-delete — escluso da GET /receipts e dai check duplicati)
 - `receipt_date` = data scontrino (YYYY-MM-DD) estratta dall'AI per anti-duplicato semantico
 - `receipt_total` = totale scontrino in centesimi estratto dall'AI per anti-duplicato semantico
 - `image_url` = path GCS della foto scontrino (pattern: `receipts/{userId}/{receiptId}.jpg`)
@@ -710,27 +715,26 @@ Mappa di 40+ prefissi GS1 italiani (7 cifre) → brand produttore. Usata come hi
 
 ---
 
-## UI/UX Mobile Improvements - Receipt Success Screen (v2)
+## UI/UX Mobile — Scan Screen (v3, stato attuale)
 
-**Schermata di Successo Post-Scansione** (`leafy-mobile/app/(tabs)/scan.tsx` - Post-Receipt Flow)
+**Schermata di Successo Post-Scansione** (`leafy-mobile/app/(tabs)/scan.tsx`)
 
-Implementati 5 miglioramenti UX per rendere meno noiosa e più coinvolgente la schermata di conferma scontrino:
+1. **Grande ✅ emoji** — Rimpiazza l'icona Feather, fontsize 64, centro schermata.
+2. **Overlay Benvenuto** — Modal animato quando `welcomeBonus === true`. Emoji 🎉, titolo, testo bonus. Auto-dismiss 3.5s o tap.
+3. **Badge info compatti** — Nome negozio, punti bonus, timer sessione in row con gap 10px.
+4. **Separazione sempre attiva** — Prodotti con `points > 0` → "Prodotti idonei (N)" con pulsanti scan. Prodotti con `points === 0` → "Prodotti non idonei (N)" senza pulsanti, sfondo leggero. La separazione è sempre visibile (non dipende dall'avere prodotti già scansionati).
+5. **CTA unica "Continua nello storico"** — Naviga a storico tab con `openReceiptId` param (auto-apre dettaglio scontrino). Rimosso il pulsante "Lo faccio dopo".
+6. **Emoji unificata** — `getProductEmoji(name, category?, aiEmoji?)` in `constants/emojis.ts`. Priorità: aiEmoji → keyword nome (30+ mappings) → keyword categoria → 🛒.
 
-1. **Overlay Benvenuto Full-Screen** — Modal animato appare quando `welcomeBonus === true`. Mostra emoji 🎉, titolo "Benvenuto su Leafy!", testo spiegazione bonus. Auto-dismiss 3.5s o tap per chiudere.
+**Storico** (`leafy-mobile/app/(tabs)/storico.tsx`):
+- Sezioni: "Prodotti idonei" / "Prodotti non idonei" (rinominate da "Prodotti accettati"/"Altri prodotti")
+- CTA "Scansiona prodotti mancanti (N)" mostrato quando `isPending && unmatchedCount > 0`
+- Apertura automatica dettaglio scontrino via param `openReceiptId` (si resetta dopo apertura)
+- Pulsante "Cancella scontrino" rosso con dialog di conferma (soft-delete → status `cancelled`)
 
-2. **Nome Negozio Badge** — Aggiunto sotto il titolo principale: "🏪 {storeName}". Font Inter_600SemiBold 13px, background semi-trasparente bianco 15%.
-
-3. **Emoji Prodotto Coerenti** — Funzione `getProductEmoji(name)` mappa ogni prodotto a emoji rilevante (fragole 🍓, pasta 🍝, latte 🥛, carne 🥩, shopper 🛍️, bio 🌿, etc.). 20+ categorie con keyword matching case-insensitive.
-
-4. **Separazione Green/Non-Green** — Prodotti con `points > 0` nella lista principale con titolo "⭐ Scansiona per guadagnare punti". Prodotti con `points === 0` in sezione separata sotto ("Altri prodotti trovati") senza pulsanti, testo grigio, background leggero.
-
-5. **Visual Refinement** — Bonus chip nascosto quando `welcomeBonus === true` (focus sull'overlay). Star emoji nel titolo della lista principale. Migliorato overall visual hierarchy.
-
-**CSS Classes Added**: `storeNameBadge`, `welcomeOverlayBg`, `welcomeOverlayCard`, `welcomeOverlayEmoji`, `welcomeOverlayTitle`, `welcomeOverlayText`, `productEmoji`, `nonGreenSection`, `nonGreenTitle`, `nonGreenRow`, `nonGreenName`
-
-**State Added**: `showWelcomeOverlay` — boolean flag, settato a `true` su scan success se `welcomeBonus === true`, auto-reset dopo 3.5s.
-
-**Result**: Schermata meno noiosa, più visivamente interessante, user engagement migliorato con componenti interattive e separazione logica tra prodotti premiati e altri prodotti.
+**Nav Bar Camera Button**:
+- Tab press → chiama `triggerReset()` via `ScanResetProvider` + naviga esplicitamente a `/(tabs)/scan`
+- Garantisce ritorno alla pagina idle (stato iniziale) da qualsiasi punto dell'app inclusi modali fullscreen
 
 ---
 
@@ -748,3 +752,11 @@ Implementati 5 miglioramenti UX per rendere meno noiosa e più coinvolgente la s
 - Cookie `session_id` con `httpOnly`, `secure` (in produzione), `sameSite: none`
 - SHA-256 session token
 - Max-age: 30 giorni
+
+### Persistenza Sessione Mobile (AsyncStorage)
+- `context/auth.tsx` salva i dati utente in AsyncStorage (`auth_user`) ad ogni login/fetch riuscito
+- All'avvio dell'app: carica immediatamente l'utente da AsyncStorage (UX istantanea senza flash)
+- Parallelamente verifica con il server via `/api/auth/me` che la sessione sia ancora valida
+- Al logout: cancella sia la sessione server che i dati in AsyncStorage
+- Se la sessione server è scaduta: i dati locali vengono rimossi automaticamente
+- Risultato: l'utente rimane loggato anche dopo chiusura, aggiornamento o riavvio dell'app
