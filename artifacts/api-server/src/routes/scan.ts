@@ -925,7 +925,7 @@ router.post("/scan/cancel-session", async (req, res): Promise<void> => {
     .select()
     .from(receiptsTable)
     .where(and(eq(receiptsTable.userId, user.id), eq(receiptsTable.status, "pending_barcode")))
-    .orderBy(desc(receiptsTable.createdAt))
+    .orderBy(desc(receiptsTable.scannedAt))
     .limit(1);
 
   if (activeReceipt.length === 0) {

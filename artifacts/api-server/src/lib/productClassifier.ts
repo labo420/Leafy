@@ -154,10 +154,12 @@ function capitalizeProductName(name: string): string {
   return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
 }
 
-function resolveProductEmoji(productName: string, category: string, aiEmoji: string): string {
+function resolveProductEmoji(productName: string, category: string, aiEmoji: string, offCategories?: string): string {
   const name = productName.toLowerCase();
+  const offCats = (offCategories ?? "").toLowerCase();
 
   const keywordMap: Array<[string[], string]> = [
+    [["hamburger", "burger", "burgee", "burgher"], "🍔"],
     [["mozzarella", "ricotta", "mascarpone", "brie", "camembert", "fontina", "asiago", "provolone", "grana", "parmigian", "pecorino", "fetta", "formaggio"], "🧀"],
     [["burro", "margarina"], "🧈"],
     [["yogurt", "yoghurt"], "🥛"],
@@ -166,7 +168,7 @@ function resolveProductEmoji(productName: string, category: string, aiEmoji: str
     [["salame", "prosciutto", "mortadella", "bresaola", "speck", "pancetta", "coppa", "guanciale", "salumi"], "🥩"],
     [["pollo", "tacchino", "petto di pollo"], "🍗"],
     [["salsiccia", "wurstel", "würstel", "cotechino"], "🌭"],
-    [["maiale", "suino", "bistecca", "manzo", "vitello", "agnello", "carne", "hamburger", "burger"], "🥩"],
+    [["maiale", "suino", "bistecca", "manzo", "vitello", "agnello", "carne"], "🥩"],
     [["salmone", "tonno", "baccalà", "merluzzo", "branzino", "orata", "sgombro", "acciuga", "sardina", "pesce"], "🐟"],
     [["gambero", "cozza", "vongola", "polpo", "calamaro", "surimi", "frutti di mare"], "🦐"],
     [["pasta", "spaghetti", "penne", "rigatoni", "fusilli", "lasagne", "maccheroni", "tagliatelle", "linguine", "bucatini", "farfalle", "orecchiette", "gnocchi", "tortellini", "ravioli"], "🍝"],
@@ -230,7 +232,7 @@ function resolveProductEmoji(productName: string, category: string, aiEmoji: str
   ];
 
   for (const [keywords, emoji] of keywordMap) {
-    if (keywords.some(kw => name.includes(kw))) return emoji;
+    if (keywords.some(kw => name.includes(kw) || offCats.includes(kw))) return emoji;
   }
 
   const categoryMap: Record<string, string> = {
@@ -551,7 +553,7 @@ LINEE GUIDA per la stima eco-score:
       ecoScore: parsed.ecoScore || null,
       points: Math.max(0, Math.min(20, parsed.points ?? 5)),
       category,
-      emoji: resolveProductEmoji(productName, category, parsed.emoji || "🌿"),
+      emoji: resolveProductEmoji(productName, category, parsed.emoji || "🌿", categories),
       reasoning: parsed.reasoning || "Classificato con dati Open Food Facts + AI",
       source: "openfoodfacts-ai",
     };
@@ -911,7 +913,7 @@ export async function lookupBarcode(barcode: string, imageBase64?: string): Prom
       const heroCheck = applyEcoHeroMultiplier(points, productName, category, reasoningRaw);
       points = heroCheck.points;
       const reasoning = heroCheck.isEcoHero ? `${reasoningRaw} · Eco-Hero ⭐` : reasoningRaw;
-      const emoji = resolveProductEmoji(productName, category, ecoEmoji);
+      const emoji = resolveProductEmoji(productName, category, ecoEmoji, product.categories);
 
       const result: BarcodeResult = {
         productName,
@@ -1287,7 +1289,7 @@ Rispondi SOLO con un JSON valido, senza altro testo:
   "missingInfo": [],
   "store": "Nome Negozio esatto" o null,
   "storeChain": "Nome Catena" o null,
-  "province": "Nome Provincia" o null,
+  "province": "Nome Comune" o null,
   "date": "YYYY-MM-DD" o null,
   "totalCents": 1250 o null,
   "products": [{"raw": "TESTO ORIGINALE", "name": "Nome Normalizzato"}]
@@ -1332,32 +1334,18 @@ PATTERN RICONOSCIMENTO CATENA:
 - Se scrive "ALDI SÜD" o "ALDI Nord" → storeChain = "Aldi" (standardizza sempre a "Aldi")
 - Stessa logica per tutte le catene: se riconosci Lidl, scrivi "Lidl" non "LIDL"; se riconosci Penny, scrivi "Penny"
 
-=== REGOLE PROVINCIA ===
-Deduci la provincia dal CAP o dall'indirizzo stampato sullo scontrino:
-- 10100-10199 = Torino, 20100-20199 = Milano, 00100-00199 = Roma, 40100-40199 = Bologna
-- 50100-50199 = Firenze, 80100-80199 = Napoli, 70100-70199 = Bari, 90100-90199 = Palermo
-- 16100-16199 = Genova, 35100-35199 = Padova, 37100-37199 = Verona, 34100-34199 = Trieste
-- 25100-25199 = Brescia, 24100-24199 = Bergamo, 21100-21199 = Varese, 20900-20999 = Monza
-- 22100-22199 = Como, 27100-27199 = Pavia, 23100-23199 = Sondrio, 26100-26199 = Cremona
-- 46100-46199 = Mantova, 43100-43199 = Parma, 41100-41199 = Modena, 44100-44199 = Ferrara
-- 47100-47199 = Forlì, 48100-48199 = Ravenna, 47900 = Rimini, 61100-61199 = Pesaro
-- 60100-60199 = Ancona, 62100-62199 = Macerata, 63100-63199 = Ascoli Piceno
-- 06100-06199 = Perugia, 05100-05199 = Terni, 55100-55199 = Lucca, 56100-56199 = Pisa
-- 57100-57199 = Livorno, 53100-53199 = Siena, 52100-52199 = Arezzo, 58100-58199 = Grosseto
-- 01100-01199 = Viterbo, 02100-02199 = Rieti, 04100-04199 = Latina, 03100-03199 = Frosinone
-- 81100-81199 = Caserta, 82100-82199 = Benevento, 83100-83199 = Avellino, 84100-84199 = Salerno
-- 71100-71199 = Foggia, 72100-72199 = Brindisi, 74100-74199 = Taranto, 75100-75199 = Matera
-- 85100-85199 = Potenza, 88100-88199 = Catanzaro, 89100-89199 = Reggio Calabria
-- 91100-91199 = Trapani, 92100-92199 = Agrigento, 93100-93199 = Caltanissetta, 94100-94199 = Enna
-- 95100-95199 = Catania, 96100-96199 = Siracusa, 97100-97199 = Ragusa, 98100-98199 = Messina
-- 07100-07199 = Sassari, 09100-09199 = Cagliari, 08100-08199 = Nuoro, 09170 = Oristano
-- 11100-11199 = Aosta, 38100-38199 = Trento, 39100-39199 = Bolzano, 33100-33199 = Udine
-- 34170 = Gorizia, 32100-32199 = Belluno, 31100-31199 = Treviso, 36100-36199 = Vicenza
-- 45100-45199 = Rovigo, 30100-30199 = Venezia, 15100-15199 = Alessandria, 14100-14199 = Asti
-- 12100-12199 = Cuneo, 13100-13199 = Vercelli, 28100-28199 = Novara, 28900 = Verbano-Cusio-Ossola
-- 13900 = Biella, 17100-17199 = Savona, 18100-18199 = Imperia, 19100-19199 = La Spezia
-In alternativa, usa la città capoluogo che appare nell'indirizzo per dedurre la provincia.
-Se non riesci a determinare la provincia, usa null.
+=== REGOLE COMUNE (campo "province") ===
+Estrai il NOME DEL COMUNE esatto dall'indirizzo stampato sullo scontrino.
+NON usare la provincia: usa il nome del comune/città che appare nell'indirizzo.
+Esempi:
+- Indirizzo "Via Roma 15, 20017 Rho (MI)" → province = "Rho"
+- Indirizzo "Via Garibaldi 3, 20019 Settimo Milanese" → province = "Settimo Milanese"
+- Indirizzo "Via Monza 10, 20126 Milano" → province = "Milano"
+- Indirizzo "Via Torino 5, 10095 Grugliasco (TO)" → province = "Grugliasco"
+- Indirizzo "Corso Italia 20, 00100 Roma" → province = "Roma"
+Se l'indirizzo contiene chiaramente il nome del comune, usalo.
+Se il comune non è leggibile ma trovi il CAP, usa il capoluogo di provincia come fallback.
+Se non riesci a determinare il comune, usa null.
 
 === REGOLE PRODOTTI ===
 - Includi SOLO prodotti il cui nome è chiaramente leggibile

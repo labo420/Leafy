@@ -877,7 +877,7 @@ const styles = StyleSheet.create({
   listItemName: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: Colors.text },
   listItemCat: { fontSize: 11, fontFamily: "Inter_400Regular", color: Colors.textSecondary },
   listItemRight: { flexDirection: "row", alignItems: "center", gap: 8 },
-  listItemPts: { fontSize: 14, fontFamily: "Inter_700Bold", color: Colors.leaf },
+  listItemPts: { fontSize: 16, fontFamily: "DMSans_700Bold", color: Colors.leaf },
   manualLink: {
     fontSize: 13, fontFamily: "Inter_500Medium", color: "rgba(255,255,255,0.6)",
     textDecorationLine: "underline", textAlign: "center",

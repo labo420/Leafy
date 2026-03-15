@@ -281,64 +281,87 @@ function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }
               </>
             )}
 
-            {data.greenItems && data.greenItems.length > 0 && (
-              <>
-                <View style={styles.itemsTitleRow}>
-                  <Text style={[styles.itemsTitle, { marginTop: 16 }]}>
-                    Prodotti green ({data.greenItems.length})
-                  </Text>
-                  {!data.isPending && (
-                    <View style={styles.itemsHintRow}>
-                      <Feather name="edit-2" size={11} color={Colors.textSecondary} />
-                      <Text style={styles.itemsHint}>Tocca per correggere</Text>
-                    </View>
-                  )}
-                </View>
-                {data.greenItems.map((item, i) => {
-                  const isUnmatched = data.isPending && item.matched === false;
-                  const isMatched = data.isPending && item.matched === true;
-                  return (
-                    <View key={i} style={[styles.itemRow, isMatched && styles.itemRowMatched]}>
-                      <Text style={styles.categoryEmoji}>{getCategoryEmoji(item.category)}</Text>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.itemName}>{formatProductName(item.name)}</Text>
-                        <Text style={styles.itemCat}>{item.category ?? ""}</Text>
+            {data.greenItems && data.greenItems.length > 0 && (() => {
+              const acceptedItems = data.greenItems.filter(item => item.points > 0);
+              const nonAcceptedItems = data.greenItems.filter(item => item.points === 0);
+              return (
+                <>
+                  {acceptedItems.length > 0 && (
+                    <>
+                      <View style={styles.itemsTitleRow}>
+                        <Text style={[styles.itemsTitle, { marginTop: 16 }]}>
+                          Prodotti accettati ({acceptedItems.length})
+                        </Text>
+                        {!data.isPending && (
+                          <View style={styles.itemsHintRow}>
+                            <Feather name="edit-2" size={11} color={Colors.textSecondary} />
+                            <Text style={styles.itemsHint}>Tocca per correggere</Text>
+                          </View>
+                        )}
                       </View>
-                      {isMatched && (
-                        <View style={styles.verifiedBadge}>
-                          <Feather name="check" size={12} color={Colors.leaf} />
-                          <Text style={styles.verifiedBadgeText}>+{item.points} pt</Text>
+                      {acceptedItems.map((item, i) => {
+                        const isUnmatched = data.isPending && item.matched === false;
+                        const isMatched = data.isPending && item.matched === true;
+                        return (
+                          <View key={i} style={[styles.itemRow, isMatched && styles.itemRowMatched]}>
+                            <Text style={styles.categoryEmoji}>{getCategoryEmoji(item.category)}</Text>
+                            <View style={{ flex: 1 }}>
+                              <Text style={styles.itemName}>{formatProductName(item.name)}</Text>
+                              <Text style={styles.itemCat}>{item.category ?? ""}</Text>
+                            </View>
+                            {isMatched && (
+                              <View style={styles.verifiedBadge}>
+                                <Feather name="check" size={12} color={Colors.leaf} />
+                                <Text style={styles.verifiedBadgeText}>+{item.points} pt</Text>
+                              </View>
+                            )}
+                            {isUnmatched && (
+                              <Pressable
+                                style={styles.scanItemBtn}
+                                onPress={() => {
+                                  onClose();
+                                  router.push({ pathname: "/barcode-scanner", params: { receiptId: String(data.id), productName: item.name } });
+                                }}
+                              >
+                                <MaterialCommunityIcons name="barcode-scan" size={14} color="#fff" />
+                                <Text style={styles.scanItemBtnText}>Scansiona</Text>
+                              </Pressable>
+                            )}
+                            {!data.isPending && (
+                              <>
+                                <Text style={styles.itemPts}>+{item.points} pt</Text>
+                                <Pressable
+                                  style={styles.editBtn}
+                                  onPress={() => openEdit(item)}
+                                  hitSlop={8}
+                                >
+                                  <Feather name="edit-2" size={14} color={Colors.textSecondary} />
+                                </Pressable>
+                              </>
+                            )}
+                          </View>
+                        );
+                      })}
+                    </>
+                  )}
+                  {nonAcceptedItems.length > 0 && (
+                    <>
+                      <Text style={[styles.itemsTitle, { marginTop: 16, color: Colors.textSecondary }]}>
+                        Altri prodotti ({nonAcceptedItems.length})
+                      </Text>
+                      {nonAcceptedItems.map((item, i) => (
+                        <View key={`na-${i}`} style={[styles.itemRow, styles.nonAcceptedRow]}>
+                          <Text style={styles.categoryEmoji}>{getCategoryEmoji(item.category)}</Text>
+                          <View style={{ flex: 1 }}>
+                            <Text style={[styles.itemName, { color: Colors.textSecondary }]}>{formatProductName(item.name)}</Text>
+                          </View>
                         </View>
-                      )}
-                      {isUnmatched && (
-                        <Pressable
-                          style={styles.scanItemBtn}
-                          onPress={() => {
-                            onClose();
-                            router.push({ pathname: "/barcode-scanner", params: { receiptId: String(data.id), productName: item.name } });
-                          }}
-                        >
-                          <MaterialCommunityIcons name="barcode-scan" size={14} color="#fff" />
-                          <Text style={styles.scanItemBtnText}>Scansiona</Text>
-                        </Pressable>
-                      )}
-                      {!data.isPending && (
-                        <>
-                          <Text style={styles.itemPts}>+{item.points} pt</Text>
-                          <Pressable
-                            style={styles.editBtn}
-                            onPress={() => openEdit(item)}
-                            hitSlop={8}
-                          >
-                            <Feather name="edit-2" size={14} color={Colors.textSecondary} />
-                          </Pressable>
-                        </>
-                      )}
-                    </View>
-                  );
-                })}
-              </>
-            )}
+                      ))}
+                    </>
+                  )}
+                </>
+              );
+            })()}
 
             {(!data.barcodeScans || data.barcodeScans.length === 0) &&
              (!data.greenItems || data.greenItems.length === 0) && (
@@ -563,10 +586,10 @@ const styles = StyleSheet.create({
   provinceBadge: { flexDirection: "row", alignItems: "center", gap: 3 },
   provinceText: { fontSize: 11, fontFamily: "Inter_400Regular", color: Colors.textSecondary },
   receiptPointsBadge: {
-    backgroundColor: Colors.primaryLight, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6,
+    backgroundColor: Colors.primaryLight, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7,
   },
   receiptPointsBadgeText: {
-    fontSize: 13, fontFamily: "Inter_700Bold", color: Colors.leaf,
+    fontSize: 15, fontFamily: "DMSans_700Bold", color: Colors.leaf,
   },
   catRow: {
     flexDirection: "row", gap: 6, flexWrap: "wrap", alignItems: "center",
@@ -600,8 +623,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.card, borderRadius: 24, padding: 20,
     alignItems: "center", marginBottom: 20, gap: 6,
   },
-  detailPoints: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 },
-  detailPointsText: { fontSize: 24, fontFamily: "DMSans_700Bold", color: Colors.leaf },
+  detailPoints: {
+    flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8,
+    backgroundColor: "rgba(76, 175, 80, 0.12)", borderRadius: 20, paddingHorizontal: 18, paddingVertical: 10,
+  },
+  detailPointsText: { fontSize: 32, fontFamily: "DMSans_700Bold", color: Colors.leaf },
   detailStore: { fontSize: 16, fontFamily: "DMSans_600SemiBold", color: Colors.text },
   detailMetaRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   detailDate: { fontSize: 13, fontFamily: "Inter_400Regular", color: Colors.textSecondary },
@@ -623,7 +649,7 @@ const styles = StyleSheet.create({
   barcodeCat: { fontSize: 11, fontFamily: "Inter_500Medium", color: Colors.textSecondary },
   barcodeReason: { fontSize: 10, fontFamily: "Inter_400Regular", color: Colors.textMuted, flex: 1 },
   barcodeRight: { flexDirection: "row", alignItems: "center", gap: 8 },
-  barcodePts: { fontSize: 15, fontFamily: "Inter_700Bold", color: Colors.leaf },
+  barcodePts: { fontSize: 17, fontFamily: "DMSans_700Bold", color: Colors.leaf },
   ecoBadge: { width: 26, height: 26, borderRadius: 6, alignItems: "center", justifyContent: "center" },
   ecoBadgeText: { fontSize: 14, fontFamily: "Inter_700Bold", color: "#fff" },
   noProductsMsg: {
@@ -637,6 +663,9 @@ const styles = StyleSheet.create({
   itemRow: {
     flexDirection: "row", alignItems: "center", gap: 10,
     backgroundColor: Colors.card, borderRadius: 12, padding: 14, marginBottom: 8,
+  },
+  nonAcceptedRow: {
+    opacity: 0.65,
   },
   itemName: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: Colors.text },
   itemCat: { fontSize: 11, fontFamily: "Inter_400Regular", color: Colors.textSecondary, marginTop: 1 },

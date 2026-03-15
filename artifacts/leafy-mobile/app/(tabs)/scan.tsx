@@ -92,23 +92,30 @@ function formatTimeRemaining(minutes: number): string {
 
 function getProductEmoji(name: string): string {
   const n = name.toLowerCase();
+  if (n.includes("hamburger") || n.includes("burger") || n.includes("burgee") || n.includes("burgher")) return "🍔";
   if (n.includes("fragol")) return "🍓";
-  if (n.includes("pasta") || n.includes("penne") || n.includes("riso")) return "🍝";
+  if (n.includes("pasta") || n.includes("penne") || n.includes("riso") || n.includes("spaghetti")) return "🍝";
   if (n.includes("latte") || n.includes("yogurt")) return "🥛";
-  if (n.includes("formaggio")) return "🧀";
-  if (n.includes("pane") || n.includes("biscotti")) return "🍞";
+  if (n.includes("mozzarella") || n.includes("formaggio") || n.includes("parmigian") || n.includes("grana")) return "🧀";
+  if (n.includes("pane") || n.includes("biscotti") || n.includes("focaccia")) return "🍞";
+  if (n.includes("pizza")) return "🍕";
   if (n.includes("birra") || n.includes("vino")) return "🍷";
   if (n.includes("cafe") || n.includes("caffè") || n.includes("caffe")) return "☕";
   if (n.includes("bio") || n.includes("biologico") || n.includes("biologica")) return "🌿";
   if (n.includes("mela") || n.includes("banana") || n.includes("arancia")) return "🍎";
-  if (n.includes("carne") || n.includes("manzo") || n.includes("pollo")) return "🥩";
-  if (n.includes("pesce") || n.includes("salmone")) return "🐟";
+  if (n.includes("pollo") || n.includes("tacchino")) return "🍗";
+  if (n.includes("salsiccia") || n.includes("wurstel")) return "🌭";
+  if (n.includes("carne") || n.includes("manzo") || n.includes("maiale") || n.includes("suino") || n.includes("vitello")) return "🥩";
+  if (n.includes("pesce") || n.includes("salmone") || n.includes("tonno")) return "🐟";
   if (n.includes("olio") || n.includes("oliva")) return "🫒";
   if (n.includes("pomodoro") || n.includes("verdura") || n.includes("insalata")) return "🥗";
+  if (n.includes("uova") || n.includes("uovo")) return "🥚";
   if (n.includes("shopper") || n.includes("busta") || n.includes("sacchetto")) return "🛍️";
   if (n.includes("detersivo") || n.includes("detergente")) return "🧼";
   if (n.includes("carta") || n.includes("igienica")) return "📦";
   if (n.includes("dolce") || n.includes("cioccolato") || n.includes("snack")) return "🍫";
+  if (n.includes("acqua") || n.includes("minerale")) return "💧";
+  if (n.includes("succo") || n.includes("juice")) return "🧃";
   return "🛒";
 }
 
