@@ -760,6 +760,7 @@ const authStyles = StyleSheet.create({
     color: "rgba(255,255,255,0.7)",
     textAlign: "center",
     lineHeight: 28,
+    marginBottom: 48,
   },
   actions: {
     width: "100%",
