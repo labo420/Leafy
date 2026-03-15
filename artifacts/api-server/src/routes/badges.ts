@@ -35,8 +35,18 @@ router.get("/badges/my", async (req, res): Promise<void> => {
   const lifetimeBadges = allBadges.filter(b => b.badgeType === "lifetime");
   const temporalBadges = allBadges.filter(b => b.badgeType !== "lifetime");
 
+  const LEVEL_THRESHOLDS: Record<string, number> = {
+    Germoglio: 0,
+    Ramoscello: 500,
+    Arbusto: 2000,
+    Albero: 5000,
+    Foresta: 10000,
+  };
+
   const lifetime = lifetimeBadges.map(badge => {
     const ub = userBadges.find(u => u.badgeId === badge.id);
+    const isLevelBadge = badge.category === "Livello" && badge.name in LEVEL_THRESHOLDS;
+    const autoUnlocked = isLevelBadge && user.totalPoints >= LEVEL_THRESHOLDS[badge.name];
     return {
       id: badge.id,
       name: badge.name,
@@ -44,9 +54,9 @@ router.get("/badges/my", async (req, res): Promise<void> => {
       category: badge.category,
       description: badge.description,
       unlockHint: badge.unlockHint,
-      isUnlocked: !!ub,
-      unlockedAt: ub?.unlockedAt ?? null,
-      currentProgress: ub?.currentProgress ?? 0,
+      isUnlocked: !!ub || autoUnlocked,
+      unlockedAt: ub?.unlockedAt ?? (autoUnlocked ? new Date() : null),
+      currentProgress: ub?.currentProgress ?? (autoUnlocked ? 1 : 0),
       targetCount: badge.targetCount,
     };
   });

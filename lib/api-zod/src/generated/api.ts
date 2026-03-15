@@ -22,7 +22,7 @@ export const GetProfileResponse = zod.object({
   username: zod.string(),
   email: zod.string(),
   totalPoints: zod.number(),
-  level: zod.enum(["Bronzo", "Argento", "Oro", "Platino"]),
+  level: zod.enum(["Germoglio", "Ramoscello", "Arbusto", "Albero", "Foresta"]),
   levelProgress: zod
     .number()
     .describe("Progress percentage to next level (0-100)"),
