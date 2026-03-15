@@ -4,10 +4,11 @@ import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import {
   ActivityIndicator,
   Alert,
+  AppState,
   FlatList,
   Image,
   KeyboardAvoidingView,
@@ -22,9 +23,11 @@ import {
 } from "react-native";
 import Animated, { FadeIn, FadeInDown, SlideInUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import Colors from "@/constants/colors";
+import LevelUpModal from "@/components/LevelUpModal";
+import type { Profile } from "@workspace/api-client-react";
 
 interface LookupResult {
   barcode: string;
@@ -113,6 +116,35 @@ export default function BarcodeScannerScreen() {
   const [manualFrontPhoto, setManualFrontPhoto] = useState<{ uri: string; base64: string } | null>(null);
   const [manualBackPhoto, setManualBackPhoto] = useState<{ uri: string; base64: string } | null>(null);
   const [cameFromReject, setCameFromReject] = useState(false);
+
+  const [levelUpVisible, setLevelUpVisible] = useState(false);
+  const [levelUpFrom, setLevelUpFrom] = useState("");
+  const [levelUpTo, setLevelUpTo] = useState("");
+  const prevLevelRef = useRef<string | null>(null);
+
+  const { data: profileData, refetch: refetchProfile } = useQuery<Profile>({
+    queryKey: ["profile"],
+    queryFn: () => apiFetch("/profile"),
+  });
+
+  useEffect(() => {
+    if (!profileData?.level) return;
+    if (prevLevelRef.current && prevLevelRef.current !== profileData.level && !levelUpVisible) {
+      setLevelUpFrom(prevLevelRef.current);
+      setLevelUpTo(profileData.level);
+      const tid = setTimeout(() => setLevelUpVisible(true), 600);
+      prevLevelRef.current = profileData.level;
+      return () => clearTimeout(tid);
+    }
+    prevLevelRef.current = profileData.level;
+  }, [profileData?.level, levelUpVisible]);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active") refetchProfile();
+    });
+    return () => sub.remove();
+  }, [refetchProfile]);
 
   const topPadding = Platform.OS === "web" ? 20 : insets.top;
 
@@ -800,6 +832,13 @@ export default function BarcodeScannerScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      <LevelUpModal
+        visible={levelUpVisible}
+        fromLevel={levelUpFrom}
+        toLevel={levelUpTo}
+        onClose={() => setLevelUpVisible(false)}
+      />
     </View>
   );
 }
