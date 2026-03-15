@@ -213,8 +213,6 @@ export default function HomeScreen() {
           entering={FadeInDown.delay(100).duration(600)}
           style={styles.guestContent}
         >
-          <Text style={styles.guestWelcome}>Benvenuto su</Text>
-
           <Image
             source={require("@/assets/images/leafy-logo-dark.png")}
             style={styles.guestLogo}
