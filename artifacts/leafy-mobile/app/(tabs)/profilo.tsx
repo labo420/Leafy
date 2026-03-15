@@ -466,7 +466,7 @@ export default function ProfiloScreen() {
   if (!user) {
     return (
       <View style={[styles.centered, { paddingTop: topPadding }]}>
-        <Feather name="user" size={48} color={Colors.primaryMuted} />
+        <Text style={{ fontSize: 48 }}>👤</Text>
         <Text style={styles.guestTitle}>Il tuo profilo</Text>
         <Text style={styles.guestSub}>
           Accedi per vedere i tuoi progressi
@@ -540,13 +540,13 @@ export default function ProfiloScreen() {
 
       <Animated.View entering={FadeInDown.delay(150).springify()} style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Feather name="activity" size={18} color={Colors.leaf} />
+          <Text style={{ fontSize: 18 }}>📊</Text>
           <Text style={styles.sectionTitle}>Il tuo impatto verde</Text>
         </View>
         <View style={styles.impactGrid}>
           <View style={[styles.impactCard, { backgroundColor: "#EFF6FF" }]}>
             <View style={[styles.impactIconCircle, { backgroundColor: "#DBEAFE" }]}>
-              <Feather name="wind" size={20} color="#3B82F6" />
+              <Text style={{ fontSize: 20 }}>🌍</Text>
             </View>
             <Text style={styles.impactValue}>
               {(impact?.co2SavedKg ?? 0).toFixed(1)}{" "}
@@ -556,7 +556,7 @@ export default function ProfiloScreen() {
           </View>
           <View style={[styles.impactCard, { backgroundColor: "#F0FDFA" }]}>
             <View style={[styles.impactIconCircle, { backgroundColor: "#CCFBF1" }]}>
-              <Feather name="droplet" size={20} color="#14B8A6" />
+              <Text style={{ fontSize: 20 }}>💧</Text>
             </View>
             <Text style={styles.impactValue}>
               {(impact?.waterSavedLiters ?? 0).toFixed(0)}{" "}
@@ -574,7 +574,7 @@ export default function ProfiloScreen() {
         <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.section}>
           <Pressable style={styles.referralCard} onPress={handleShare}>
             <View style={styles.referralLeft}>
-              <Feather name="users" size={22} color={Colors.leaf} />
+              <Text style={{ fontSize: 22 }}>👥</Text>
               <View style={{ flex: 1 }}>
                 <Text style={styles.referralTitle}>Invita un amico</Text>
                 <Text style={styles.referralSub}>

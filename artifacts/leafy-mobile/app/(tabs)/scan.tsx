@@ -1,4 +1,4 @@
-import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
@@ -419,7 +419,7 @@ export default function ScanScreen() {
               </View>
             </View>
             <View style={styles.activePointsBadge}>
-              <MaterialCommunityIcons name="leaf" size={16} color={Colors.leaf} />
+              <Text style={{ fontSize: 14 }}>🌿</Text>
               <Text style={styles.activePointsText}>{r.pointsEarned} pt</Text>
             </View>
           </View>
@@ -503,7 +503,7 @@ export default function ScanScreen() {
       <View style={styles.idleHeader}>
         <Text style={styles.idleTitle}>Scansiona</Text>
         <View style={styles.idleSubRow}>
-          <MaterialCommunityIcons name="leaf" size={16} color={Colors.leaf} />
+          <Text style={{ fontSize: 14 }}>🌿</Text>
           <Text style={styles.idleSub}>Guadagna punti per ogni acquisto sostenibile</Text>
         </View>
       </View>

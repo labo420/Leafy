@@ -105,16 +105,16 @@ function formatProductName(name: string): string {
   return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
 }
 
-function getCategoryIcon(category: string | null): string {
+function getCategoryEmoji(category: string | null): string {
   const cat = (category ?? "").toLowerCase();
-  if (cat.includes("bio") || cat.includes("organic")) return "sprout";
-  if (cat.includes("vegano") || cat.includes("vegan")) return "carrot";
-  if (cat.includes("km 0") || cat.includes("locale") || cat.includes("local")) return "map-marker-radius-outline";
-  if (cat.includes("equo") || cat.includes("fair")) return "handshake-outline";
-  if (cat.includes("dop") || cat.includes("igp") || cat.includes("artigian")) return "certificate-outline";
-  if (cat.includes("plastica") || cat.includes("ricicl") || cat.includes("recycle")) return "recycle";
-  if (cat.includes("carne") || cat.includes("pesce") || cat.includes("fish") || cat.includes("meat")) return "food-drumstick-outline";
-  return "leaf";
+  if (cat.includes("bio") || cat.includes("organic")) return "🌿";
+  if (cat.includes("vegano") || cat.includes("vegan")) return "🥦";
+  if (cat.includes("km 0") || cat.includes("locale") || cat.includes("local")) return "📍";
+  if (cat.includes("equo") || cat.includes("fair")) return "🤝";
+  if (cat.includes("dop") || cat.includes("igp") || cat.includes("artigian")) return "🏷️";
+  if (cat.includes("plastica") || cat.includes("ricicl") || cat.includes("recycle")) return "♻️";
+  if (cat.includes("carne") || cat.includes("pesce") || cat.includes("fish") || cat.includes("meat")) return "🍖";
+  return "🌱";
 }
 
 function EcoScoreBadge({ score }: { score: string | null }) {
@@ -257,9 +257,7 @@ function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }
                 {data.barcodeScans.map((scan) => (
                   <View key={scan.id} style={styles.barcodeRow}>
                     <View style={styles.barcodeLeft}>
-                      <View style={styles.categoryIconWrap}>
-                        <MaterialCommunityIcons name={getCategoryIcon(scan.category) as any} size={18} color={Colors.leaf} />
-                      </View>
+                      <Text style={styles.categoryEmoji}>{getCategoryEmoji(scan.category)}</Text>
                       <View style={{ flex: 1 }}>
                         <Text style={styles.barcodeName} numberOfLines={1}>
                           {scan.productName}
@@ -301,9 +299,7 @@ function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }
                   const isMatched = data.isPending && item.matched === true;
                   return (
                     <View key={i} style={[styles.itemRow, isMatched && styles.itemRowMatched]}>
-                      <View style={styles.categoryIconWrap}>
-                        <MaterialCommunityIcons name={getCategoryIcon(item.category) as any} size={16} color={Colors.leaf} />
-                      </View>
+                      <Text style={styles.categoryEmoji}>{getCategoryEmoji(item.category)}</Text>
                       <View style={{ flex: 1 }}>
                         <Text style={styles.itemName}>{formatProductName(item.name)}</Text>
                         <Text style={styles.itemCat}>{item.category ?? ""}</Text>
@@ -617,10 +613,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.card, borderRadius: 14, padding: 14, marginBottom: 8,
   },
   barcodeLeft: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
-  categoryIconWrap: {
-    width: 32, height: 32, borderRadius: 10,
-    backgroundColor: Colors.primaryLight,
-    alignItems: "center", justifyContent: "center",
+  categoryEmoji: {
+    fontSize: 18,
+    width: 32,
+    textAlign: "center",
   },
   barcodeName: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: Colors.text },
   barcodeMeta: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 },

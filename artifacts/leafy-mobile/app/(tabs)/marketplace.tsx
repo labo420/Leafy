@@ -286,7 +286,7 @@ export default function MarketplaceScreen() {
             scrollEnabled={!!(vouchers?.length)}
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <Ionicons name="gift-outline" size={52} color={Colors.primaryMuted} />
+                <Text style={{ fontSize: 48 }}>🎁</Text>
                 <Text style={styles.emptyTitle}>I premi arriveranno presto!</Text>
                 <Text style={styles.emptySub}>Inizia a scansionare per sbloccarli</Text>
               </View>
@@ -303,7 +303,7 @@ export default function MarketplaceScreen() {
           scrollEnabled={!!(redemptions?.length)}
           ListEmptyComponent={
             <View style={styles.emptyState}>
-              <MaterialCommunityIcons name="package-variant-closed" size={52} color={Colors.primaryMuted} />
+              <Text style={{ fontSize: 48 }}>📦</Text>
               <Text style={styles.emptyTitle}>Nessun codice ancora</Text>
               <Text style={styles.emptySub}>Riscatta i tuoi punti per ottenere voucher</Text>
             </View>
