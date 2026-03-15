@@ -51,11 +51,11 @@ const LEVEL_LABELS: Record<string, string> = {
 };
 
 const LEVEL_CONFIG = [
-  { name: "Germoglio", emoji: "🌱", minPts: 0, color: "#8BC34A" },
-  { name: "Ramoscello", emoji: "🌿", minPts: 500, color: "#66BB6A" },
-  { name: "Arbusto", emoji: "🍃", minPts: 2000, color: "#43A047" },
-  { name: "Albero", emoji: "🌳", minPts: 5000, color: "#2E7D32" },
-  { name: "Foresta", emoji: "🌲", minPts: 10000, color: "#1B5E20" },
+  { name: "Germoglio", emoji: "🌱", minPts: 0, color: "#8BC34A", fruitColor: "#A8E063", nodeSize: 32, imgSize: 20, nodeWidth: 48 },
+  { name: "Ramoscello", emoji: "🌿", minPts: 500, color: "#66BB6A", fruitColor: "#F9D423", nodeSize: 36, imgSize: 24, nodeWidth: 52 },
+  { name: "Arbusto", emoji: "🍃", minPts: 2000, color: "#43A047", fruitColor: "#FFA726", nodeSize: 40, imgSize: 28, nodeWidth: 56 },
+  { name: "Albero", emoji: "🌳", minPts: 5000, color: "#2E7D32", fruitColor: "#F96332", nodeSize: 46, imgSize: 32, nodeWidth: 60 },
+  { name: "Foresta", emoji: "🌲", minPts: 10000, color: "#1B5E20", fruitColor: "#E8401C", nodeSize: 54, imgSize: 38, nodeWidth: 68 },
 ];
 
 const LEVEL_BADGE_IMAGES: Record<string, ImageSourcePropType> = {
@@ -66,13 +66,16 @@ const LEVEL_BADGE_IMAGES: Record<string, ImageSourcePropType> = {
   Foresta: require("@/assets/badges/level-foresta.png"),
 };
 
+const LARGEST_NODE = Math.max(...LEVEL_CONFIG.map(l => l.nodeSize));
+
 function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; points: number }) {
   const currentIdx = LEVEL_CONFIG.findIndex((l) => l.name === currentLevel);
   const safeIdx = currentIdx >= 0 ? currentIdx : 0;
+  const lineTop = LARGEST_NODE / 2;
 
   return (
     <View style={milestoneStyles.container}>
-      <View style={milestoneStyles.lineTrack}>
+      <View style={[milestoneStyles.lineTrack, { top: lineTop }]}>
         {LEVEL_CONFIG.map((lvl, i) => {
           if (i === 0) return null;
           const prevReached = safeIdx >= i;
@@ -85,12 +88,13 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
             const range = lvl.minPts - prev.minPts;
             fillPct = Math.min(100, Math.max(0, ((points - prev.minPts) / range) * 100));
           }
+          const segColor = prevReached || isTransition ? lvl.fruitColor : "rgba(255,255,255,0.2)";
           return (
-            <View key={i} style={milestoneStyles.segmentTrack}>
+            <View key={i} style={[milestoneStyles.segmentTrack, { height: 5, borderRadius: 2.5 }]}>
               <View
                 style={[
                   milestoneStyles.segmentFill,
-                  { width: `${fillPct}%` },
+                  { width: `${fillPct}%`, backgroundColor: segColor, height: 5, borderRadius: 2.5 },
                 ]}
               />
             </View>
@@ -100,18 +104,29 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
       <View style={milestoneStyles.nodesRow}>
         {LEVEL_CONFIG.map((lvl, i) => {
           const reached = safeIdx >= i;
+          const sz = lvl.nodeSize;
+          const imgSz = lvl.imgSize;
           return (
-            <View key={i} style={milestoneStyles.node}>
+            <View key={i} style={[milestoneStyles.node, { width: lvl.nodeWidth }]}>
               <View
                 style={[
-                  milestoneStyles.nodeCircle,
-                  reached ? milestoneStyles.nodeReached : milestoneStyles.nodeLocked,
+                  {
+                    width: sz,
+                    height: sz,
+                    borderRadius: sz / 2,
+                    alignItems: "center" as const,
+                    justifyContent: "center" as const,
+                    marginBottom: 4,
+                  },
+                  reached
+                    ? { backgroundColor: `${lvl.fruitColor}33`, borderWidth: 2.5, borderColor: lvl.fruitColor }
+                    : milestoneStyles.nodeLocked,
                 ]}
               >
                 <Image
                   source={LEVEL_BADGE_IMAGES[lvl.name]}
                   style={[
-                    milestoneStyles.nodeImage,
+                    { width: imgSz, height: imgSz },
                     !reached && milestoneStyles.nodeImageLocked,
                   ]}
                   resizeMode="contain"
@@ -120,7 +135,7 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
               <Text
                 style={[
                   milestoneStyles.nodeLabel,
-                  reached && milestoneStyles.nodeLabelReached,
+                  reached && { color: "#fff" },
                 ]}
                 numberOfLines={1}
               >
@@ -143,54 +158,36 @@ const milestoneStyles = StyleSheet.create({
   lineTrack: {
     flexDirection: "row",
     position: "absolute",
-    top: 28,
-    left: 44,
-    right: 44,
-    height: 4,
+    left: 34,
+    right: 34,
+    height: 5,
     gap: 0,
   },
   segmentTrack: {
     flex: 1,
-    height: 4,
+    height: 5,
     backgroundColor: "rgba(255,255,255,0.2)",
-    borderRadius: 2,
+    borderRadius: 2.5,
     overflow: "hidden",
   },
   segmentFill: {
-    height: 4,
+    height: 5,
     backgroundColor: "#fff",
-    borderRadius: 2,
+    borderRadius: 2.5,
   },
   nodesRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
+    alignItems: "center",
   },
   node: {
     alignItems: "center",
     width: 56,
   },
-  nodeCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 4,
-  },
-  nodeReached: {
-    backgroundColor: "rgba(255,255,255,0.25)",
-    borderWidth: 2,
-    borderColor: "#fff",
-  },
   nodeLocked: {
     backgroundColor: "rgba(255,255,255,0.08)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.15)",
-  },
-  nodeImage: {
-    width: 28,
-    height: 28,
   },
   nodeImageLocked: {
     opacity: 0.35,
@@ -200,10 +197,7 @@ const milestoneStyles = StyleSheet.create({
     fontFamily: "Inter_500Medium",
     color: "rgba(255,255,255,0.4)",
     textAlign: "center",
-  },
-  nodeLabelReached: {
-    color: "#fff",
-    fontFamily: "Inter_600SemiBold",
+    marginTop: 2,
   },
 });
 
