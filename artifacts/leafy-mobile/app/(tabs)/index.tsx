@@ -785,10 +785,12 @@ const authStyles = StyleSheet.create({
     paddingHorizontal: 32,
     paddingBottom: 24,
     alignItems: "center",
+    justifyContent: "center",
     gap: 10,
   },
   primaryBtn: {
     width: "100%",
+    maxWidth: 280,
     backgroundColor: "#FFFFFF",
     borderRadius: 16,
     paddingVertical: 16,
@@ -807,6 +809,7 @@ const authStyles = StyleSheet.create({
   },
   outlineBtn: {
     width: "100%",
+    maxWidth: 280,
     borderRadius: 16,
     paddingVertical: 15,
     alignItems: "center",
@@ -841,6 +844,7 @@ const authStyles = StyleSheet.create({
     justifyContent: "center",
     gap: 10,
     width: "100%",
+    maxWidth: 280,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.25)",
     borderRadius: 14,
