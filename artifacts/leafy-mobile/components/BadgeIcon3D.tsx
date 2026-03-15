@@ -32,6 +32,48 @@ const TYPE_PALETTES: Record<string, { light: string; mid: string; dark: string; 
     rim: "#115E59",
     shadow: "#134E4A",
   },
+  "PRIMA VOLTA": {
+    light: "#6EE7B7",
+    mid: "#10B981",
+    dark: "#047857",
+    rim: "#065F46",
+    shadow: "#064E3B",
+  },
+  "PRIMA-VOLTA": {
+    light: "#6EE7B7",
+    mid: "#10B981",
+    dark: "#047857",
+    rim: "#065F46",
+    shadow: "#064E3B",
+  },
+  PRODOTTO: {
+    light: "#93C5FD",
+    mid: "#3B82F6",
+    dark: "#1D4ED8",
+    rim: "#1E40AF",
+    shadow: "#1E3A8A",
+  },
+  VOLUME: {
+    light: "#C4B5FD",
+    mid: "#8B5CF6",
+    dark: "#6D28D9",
+    rim: "#5B21B6",
+    shadow: "#4C1D95",
+  },
+  LIVELLO: {
+    light: "#FDE68A",
+    mid: "#F59E0B",
+    dark: "#B45309",
+    rim: "#92400E",
+    shadow: "#78350F",
+  },
+  STREAK: {
+    light: "#FDBA74",
+    mid: "#F97316",
+    dark: "#C2410C",
+    rim: "#9A3412",
+    shadow: "#7C2D12",
+  },
 };
 
 const DEFAULT_PALETTE = {
@@ -72,7 +114,8 @@ const EMOJI_ICON_MAP: Record<string, IconDef> = {
 
 interface BadgeIcon3DProps {
   emoji: string;
-  badgeType: string;
+  badgeType?: string;
+  category?: string;
   isUnlocked: boolean;
   size?: number;
 }
@@ -80,11 +123,12 @@ interface BadgeIcon3DProps {
 export default function BadgeIcon3D({
   emoji,
   badgeType,
+  category,
   isUnlocked,
   size = 64,
 }: BadgeIcon3DProps) {
   const uid = useId().replace(/:/g, "");
-  const typeKey = badgeType.toUpperCase();
+  const typeKey = (badgeType ?? category ?? "").toUpperCase();
   const pal = isUnlocked
     ? (TYPE_PALETTES[typeKey] ?? DEFAULT_PALETTE)
     : { light: "#D4D4D4", mid: "#A3A3A3", dark: "#737373", rim: "#525252", shadow: "#404040" };

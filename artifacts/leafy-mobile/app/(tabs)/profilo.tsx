@@ -23,7 +23,6 @@ import Colors from "@/constants/colors";
 import { Fonts } from "@/constants/typography";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/context/auth";
-import BadgeIcon from "@/components/BadgeIcon";
 import BadgeIcon3D from "@/components/BadgeIcon3D";
 import type {
   Profile,
@@ -82,11 +81,11 @@ function LifetimeBadgeCard({ badge }: { badge: BadgeItem }) {
         !badge.isUnlocked && badgeStyles.cardLocked,
       ]}
     >
-      <BadgeIcon
+      <BadgeIcon3D
         emoji={badge.emoji}
         category={badge.category}
         isUnlocked={badge.isUnlocked}
-        size={56}
+        size={64}
       />
       <Text style={badgeStyles.name} numberOfLines={2}>
         {badge.name}
