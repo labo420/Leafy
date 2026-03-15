@@ -747,12 +747,12 @@ const authStyles = StyleSheet.create({
   logo: {
     width: SCREEN_WIDTH * 0.7,
     height: 140,
-    marginBottom: 12,
+    marginBottom: 4,
   },
   logoSmall: {
     width: SCREEN_WIDTH * 0.45,
     height: 80,
-    marginBottom: 8,
+    marginBottom: 2,
   },
   tagline: {
     fontSize: 18,
