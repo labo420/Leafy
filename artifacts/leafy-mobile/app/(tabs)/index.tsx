@@ -274,14 +274,14 @@ function GuestAuthScreen() {
             <View style={authStyles.dividerLine} />
           </View>
 
-          <Pressable style={({ pressed }) => [authStyles.oauthBtn, pressed && { opacity: 0.85 }]}>
+          <Pressable onPress={() => {}} style={({ pressed }) => [authStyles.oauthBtn, pressed && { opacity: 0.85 }]}>
             <View style={authStyles.googleIcon}>
               <Text style={authStyles.googleG}>G</Text>
             </View>
             <Text style={authStyles.oauthBtnText}>Continua con Google</Text>
           </Pressable>
 
-          <Pressable style={({ pressed }) => [authStyles.oauthBtn, pressed && { opacity: 0.85 }]}>
+          <Pressable onPress={() => {}} style={({ pressed }) => [authStyles.oauthBtn, pressed && { opacity: 0.85 }]}>
             <View style={authStyles.fbIcon}>
               <Text style={authStyles.fbF}>f</Text>
             </View>
@@ -399,14 +399,14 @@ function GuestAuthScreen() {
               <View style={authStyles.dividerLine} />
             </View>
 
-            <Pressable style={({ pressed }) => [authStyles.oauthBtn, pressed && { opacity: 0.85 }]}>
+            <Pressable onPress={() => {}} style={({ pressed }) => [authStyles.oauthBtn, pressed && { opacity: 0.85 }]}>
               <View style={authStyles.googleIcon}>
                 <Text style={authStyles.googleG}>G</Text>
               </View>
               <Text style={authStyles.oauthBtnText}>Continua con Google</Text>
             </Pressable>
 
-            <Pressable style={({ pressed }) => [authStyles.oauthBtn, pressed && { opacity: 0.85 }]}>
+            <Pressable onPress={() => {}} style={({ pressed }) => [authStyles.oauthBtn, pressed && { opacity: 0.85 }]}>
               <View style={authStyles.fbIcon}>
                 <Text style={authStyles.fbF}>f</Text>
               </View>
