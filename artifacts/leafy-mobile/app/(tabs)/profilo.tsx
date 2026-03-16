@@ -86,42 +86,44 @@ function LifetimeBadgeCard({ badge }: { badge: BadgeItem }) {
         category={badge.category}
         name={badge.name}
         isUnlocked={badge.isUnlocked}
-        size={64}
+        size={52}
       />
-      <Text style={badgeStyles.name} numberOfLines={2}>
-        {badge.name}
-      </Text>
-      <Text style={badgeStyles.category}>{badge.category}</Text>
+      <View style={{ flex: 1, marginLeft: 12 }}>
+        <Text style={badgeStyles.name} numberOfLines={1}>
+          {badge.name}
+        </Text>
+        <Text style={badgeStyles.category}>{badge.category}</Text>
 
-      {badge.isUnlocked ? (
-        <View style={badgeStyles.dateRow}>
-          <Feather name="calendar" size={10} color={Colors.leaf} />
-          <Text style={badgeStyles.dateText}>
-            Sbloccato il {formatDate(badge.unlockedAt)}
-          </Text>
-        </View>
-      ) : (
-        <View style={badgeStyles.hintSection}>
-          <View style={badgeStyles.hintRow}>
-            <Feather name="lock" size={10} color={Colors.textMuted} />
-            <Text style={badgeStyles.hintText} numberOfLines={1}>
-              {badge.unlockHint}
+        {badge.isUnlocked ? (
+          <View style={badgeStyles.dateRow}>
+            <Feather name="calendar" size={10} color={Colors.leaf} />
+            <Text style={badgeStyles.dateText}>
+              Sbloccato il {formatDate(badge.unlockedAt)}
             </Text>
           </View>
-          {badge.targetCount > 1 && (
-            <>
-              <View style={badgeStyles.progressTrack}>
-                <View
-                  style={[badgeStyles.progressFill, { width: `${progressPct}%` }]}
-                />
-              </View>
-              <Text style={badgeStyles.progressText}>
-                {badge.currentProgress}/{badge.targetCount}
+        ) : (
+          <View style={badgeStyles.hintSection}>
+            <View style={badgeStyles.hintRow}>
+              <Feather name="lock" size={10} color={Colors.textMuted} />
+              <Text style={badgeStyles.hintText} numberOfLines={1}>
+                {badge.unlockHint}
               </Text>
-            </>
-          )}
-        </View>
-      )}
+            </View>
+            {badge.targetCount > 1 && (
+              <>
+                <View style={badgeStyles.progressTrack}>
+                  <View
+                    style={[badgeStyles.progressFill, { width: `${progressPct}%` }]}
+                  />
+                </View>
+                <Text style={badgeStyles.progressText}>
+                  {badge.currentProgress}/{badge.targetCount}
+                </Text>
+              </>
+            )}
+          </View>
+        )}
+      </View>
     </View>
   );
 }
@@ -147,17 +149,19 @@ function TemporalBadgeCard({
           isUnlocked={badge.isUnlocked}
           size={40}
         />
-        <Text style={badgeStyles.archivedName} numberOfLines={1}>
-          {badge.name}
-        </Text>
-        <Text style={badgeStyles.archivedPeriod}>
-          {formatPeriod(badge.periodKey, badge.badgeType)}
-        </Text>
-        {badge.isUnlocked && badge.unlockedAt && (
-          <Text style={badgeStyles.archivedDate}>
-            {formatDate(badge.unlockedAt)}
+        <View style={{ flex: 1, marginLeft: 12 }}>
+          <Text style={badgeStyles.archivedName} numberOfLines={1}>
+            {badge.name}
           </Text>
-        )}
+          <Text style={badgeStyles.archivedPeriod}>
+            {formatPeriod(badge.periodKey, badge.badgeType)}
+          </Text>
+          {badge.isUnlocked && badge.unlockedAt && (
+            <Text style={badgeStyles.archivedDate}>
+              {formatDate(badge.unlockedAt)}
+            </Text>
+          )}
+        </View>
       </View>
     );
   }
@@ -174,53 +178,55 @@ function TemporalBadgeCard({
         badgeType={badge.badgeType}
         name={badge.name}
         isUnlocked={badge.isUnlocked}
-        size={64}
+        size={52}
       />
-      <Text style={badgeStyles.name} numberOfLines={2}>
-        {badge.name}
-      </Text>
-      <View style={badgeStyles.typeBadge}>
-        <Text style={badgeStyles.typeBadgeText}>{periodLabel(badge.badgeType)}</Text>
-      </View>
+      <View style={{ flex: 1, marginLeft: 12 }}>
+        <Text style={badgeStyles.name} numberOfLines={1}>
+          {badge.name}
+        </Text>
+        <View style={badgeStyles.typeBadge}>
+          <Text style={badgeStyles.typeBadgeText}>{periodLabel(badge.badgeType)}</Text>
+        </View>
 
-      {badge.isUnlocked ? (
-        <View style={{ alignItems: "center", gap: 2 }}>
-          <Text style={[badgeStyles.dateText, { color: Colors.leaf }]}>
-            Completata!
-          </Text>
-          <View style={badgeStyles.dateRow}>
-            <Feather name="calendar" size={9} color={Colors.textMuted} />
-            <Text style={[badgeStyles.dateText, { color: Colors.textMuted }]}>
-              {formatDate(badge.unlockedAt)}
+        {badge.isUnlocked ? (
+          <View style={{ gap: 2 }}>
+            <Text style={[badgeStyles.dateText, { color: Colors.leaf }]}>
+              Completata!
+            </Text>
+            <View style={badgeStyles.dateRow}>
+              <Feather name="calendar" size={9} color={Colors.textMuted} />
+              <Text style={[badgeStyles.dateText, { color: Colors.textMuted }]}>
+                {formatDate(badge.unlockedAt)}
+              </Text>
+            </View>
+          </View>
+        ) : (
+          <View>
+            <View style={badgeStyles.progressTrack}>
+              <View
+                style={[badgeStyles.progressFill, { width: `${progressPct}%` }]}
+              />
+            </View>
+            <Text style={badgeStyles.progressText}>
+              {badge.currentProgress}/{badge.targetCount}
             </Text>
           </View>
-        </View>
-      ) : (
-        <View style={{ width: "100%" }}>
-          <View style={badgeStyles.progressTrack}>
-            <View
-              style={[badgeStyles.progressFill, { width: `${progressPct}%` }]}
-            />
-          </View>
-          <Text style={badgeStyles.progressText}>
-            {badge.currentProgress}/{badge.targetCount}
-          </Text>
-        </View>
-      )}
+        )}
+      </View>
     </View>
   );
 }
 
 const badgeStyles = StyleSheet.create({
   card: {
-    flex: 1,
+    width: "100%",
     backgroundColor: Colors.card,
-    borderRadius: 24,
+    borderRadius: 16,
     padding: 14,
+    flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
     borderColor: Colors.border,
-    minWidth: "45%",
   },
   cardLocked: {
     opacity: 0.7,
@@ -230,12 +236,12 @@ const badgeStyles = StyleSheet.create({
     borderColor: "rgba(46,107,80,0.2)",
   },
   name: {
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: "Inter_600SemiBold",
     color: Colors.text,
-    textAlign: "center",
-    marginBottom: 4,
-    lineHeight: 16,
+    textAlign: "left",
+    marginBottom: 2,
+    lineHeight: 18,
   },
   category: {
     fontSize: 9,
@@ -303,14 +309,14 @@ const badgeStyles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   archivedCard: {
-    flex: 1,
+    width: "100%",
     backgroundColor: Colors.cardAlt,
     borderRadius: 12,
     padding: 10,
+    flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
     borderColor: Colors.border,
-    minWidth: "30%",
   },
   archivedEmoji: {
     width: 36,
@@ -1098,9 +1104,7 @@ const styles = StyleSheet.create({
     color: Colors.text,
   },
   badgeGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
+    gap: 10,
   },
   emptyBadges: {
     alignItems: "center",
@@ -1135,8 +1139,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   archivedGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
     gap: 8,
   },
   logoutBtn: {
