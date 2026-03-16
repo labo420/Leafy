@@ -42,6 +42,7 @@ export default function Home() {
             <img src={`${import.meta.env.BASE_URL}images/leafy-icon-dark.png`} alt="Leafy Logo" className="w-full h-full object-cover" />
           </div>
           <div>
+            <img src={`${import.meta.env.BASE_URL}images/leafy-logo-dark-transparent.png`} alt="Leafy" className="h-6 mb-1" />
             <h1 className="text-xl font-display font-bold text-foreground">Ciao, {p.username}!</h1>
             <p className="text-sm text-muted-foreground flex items-center gap-1">
               <Flame className="w-4 h-4 text-accent" fill="currentColor" />
