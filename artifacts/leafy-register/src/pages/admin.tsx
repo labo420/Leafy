@@ -96,9 +96,14 @@ export default function AdminPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-green-100 p-4">
         <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-sm">
-          <div className="flex items-center justify-center gap-3 mb-6">
-            <Lock className="w-6 h-6 text-green-600" />
-            <h1 className="text-2xl font-bold text-gray-900">Admin Anti-Frode</h1>
+          <div className="flex flex-col items-center gap-3 mb-6">
+            <div className="w-16 h-16 rounded-2xl bg-green-50 border border-green-100 flex items-center justify-center shadow-sm">
+              <img src="/leafy-icon-dark.png" alt="Leafy" className="w-10 h-10 object-contain" />
+            </div>
+            <div className="flex items-center gap-2">
+              <Lock className="w-5 h-5 text-green-600" />
+              <h1 className="text-2xl font-bold text-gray-900">Admin Anti-Frode</h1>
+            </div>
           </div>
           <form onSubmit={authenticate} className="space-y-4">
             <div>
