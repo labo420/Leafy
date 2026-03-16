@@ -105,6 +105,7 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
   const cp1x = xStart + bWidth * 0.80;
   const cp2x = xEnd - bWidth * 0.05;
   const fullBarPath = `M ${xStart},${topYStart} C ${cp1x},${topYStart} ${cp2x},${topYEnd} ${xEnd},${topYEnd} L ${xEnd},${BASELINE_Y} L ${xStart},${BASELINE_Y} Z`;
+  const topCurvePath = `M ${xStart},${topYStart} C ${cp1x},${topYStart} ${cp2x},${topYEnd} ${xEnd},${topYEnd}`;
 
   let progressX = xStart;
   if (safeIdx >= LEVEL_CONFIG.length - 1) {
@@ -141,8 +142,8 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
           </Defs>
           <Path d={fullBarPath} fill="rgba(255,255,255,0.28)" />
           <Path d={fullBarPath} fill="url(#barGrad)" clipPath="url(#progressClip)" />
-          <Path d={fullBarPath} fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth={1.5} />
-          {progressX > xStart && safeIdx < LEVEL_CONFIG.length - 1 && (
+          <Path d={topCurvePath} fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth={1.5} />
+          {progressX > nodes[0].cx && safeIdx < LEVEL_CONFIG.length - 1 && (
             <Circle cx={progressX} cy={BASELINE_Y} r={5} fill="rgba(255,255,255,0.85)" />
           )}
         </Svg>
