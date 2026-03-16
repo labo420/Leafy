@@ -30,7 +30,7 @@ import Animated, {
   withTiming,
   FadeInDown,
 } from "react-native-reanimated";
-import Svg, { Circle, Path } from "react-native-svg";
+import Svg, { Circle, Path, Defs, ClipPath, Rect, LinearGradient as SvgLinearGradient, Stop } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 
@@ -97,60 +97,53 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
     return { cx, cy, r, lvl };
   });
 
-  function trapPath(i: number, fillPct: number = 1, extStart: number = 0, extEnd: number = 0): string {
-    const { cx: x0, r: r0n } = nodes[i];
-    const { cx: x1, r: r1 } = nodes[i + 1];
-    const startX = x0 - extStart;
-    const endX = x1 + extEnd;
-    const topStartY = BASELINE_Y - r0n * BAR_TOP_FACTOR;
-    const topEndY = BASELINE_Y - r1 * BAR_TOP_FACTOR;
-    const partX = startX + (endX - startX) * fillPct;
-    const partTopY = topStartY + (topEndY - topStartY) * fillPct;
-    const midX = (startX + partX) / 2;
-    const midTopY = (topStartY + partTopY) / 2 - 7;
-    return `M ${startX},${topStartY} Q ${midX},${midTopY} ${partX},${partTopY} L ${partX},${BASELINE_Y} L ${startX},${BASELINE_Y} Z`;
+  const xStart = nodes[0].cx - BAR_EXTEND;
+  const xEnd = nodes[nodes.length - 1].cx + BAR_EXTEND;
+  const topYStart = BASELINE_Y - nodes[0].r * BAR_TOP_FACTOR;
+  const topYEnd = BASELINE_Y - nodes[nodes.length - 1].r * BAR_TOP_FACTOR;
+  const bWidth = xEnd - xStart;
+  const cp1x = xStart + bWidth * 0.65;
+  const cp2x = xEnd - bWidth * 0.05;
+  const fullBarPath = `M ${xStart},${topYStart} C ${cp1x},${topYStart} ${cp2x},${topYEnd} ${xEnd},${topYEnd} L ${xEnd},${BASELINE_Y} L ${xStart},${BASELINE_Y} Z`;
+
+  let progressX = xStart;
+  if (safeIdx >= LEVEL_CONFIG.length - 1) {
+    progressX = xEnd;
+  } else {
+    const curr = LEVEL_CONFIG[safeIdx];
+    const next = LEVEL_CONFIG[safeIdx + 1];
+    const range = next.minPts - curr.minPts;
+    const fillPct = Math.min(1, Math.max(0, (points - curr.minPts) / range));
+    progressX = nodes[safeIdx].cx + (nodes[safeIdx + 1].cx - nodes[safeIdx].cx) * fillPct;
   }
+
+  const gradientStops = [
+    { offset: "0%", color: SEGMENT_COLORS[0] },
+    { offset: `${(nodes[1].cx / barWidth) * 100}%`, color: SEGMENT_COLORS[0] },
+    { offset: `${(nodes[1].cx / barWidth) * 100}%`, color: SEGMENT_COLORS[1] },
+    { offset: `${(nodes[2].cx / barWidth) * 100}%`, color: SEGMENT_COLORS[1] },
+    { offset: `${(nodes[2].cx / barWidth) * 100}%`, color: SEGMENT_COLORS[2] },
+    { offset: `${(nodes[3].cx / barWidth) * 100}%`, color: SEGMENT_COLORS[2] },
+    { offset: `${(nodes[3].cx / barWidth) * 100}%`, color: SEGMENT_COLORS[3] },
+    { offset: "100%", color: SEGMENT_COLORS[3] },
+  ];
 
   return (
     <View style={milestoneStyles.container}>
       <View style={{ width: barWidth, height: BAR_TOTAL_H, position: "relative" }}>
         <Svg width={barWidth} height={BAR_TOTAL_H} style={{ position: "absolute", top: 0, left: 0 }}>
-          {LEVEL_CONFIG.map((_, i) => {
-            if (i >= LEVEL_CONFIG.length - 1) return null;
-            const extS = i === 0 ? BAR_EXTEND : 0;
-            const extE = i === LEVEL_CONFIG.length - 2 ? BAR_EXTEND : 0;
-            return (
-              <Path
-                key={`bg-${i}`}
-                d={trapPath(i, 1, extS, extE)}
-                fill="rgba(255,255,255,0.18)"
-              />
-            );
-          })}
-
-          {LEVEL_CONFIG.map((_, i) => {
-            if (i >= LEVEL_CONFIG.length - 1) return null;
-            const segColor = SEGMENT_COLORS[i];
-            const isFullyReached = safeIdx > i;
-            const isTransition = safeIdx === i;
-            if (!isFullyReached && !isTransition) return null;
-
-            let fillPct = 1;
-            if (isTransition) {
-              const curr = LEVEL_CONFIG[i];
-              const next = LEVEL_CONFIG[i + 1];
-              const range = next.minPts - curr.minPts;
-              fillPct = Math.min(1, Math.max(0, (points - curr.minPts) / range));
-            }
-
-            return (
-              <Path
-                key={`fill-${i}`}
-                d={trapPath(i, fillPct)}
-                fill={segColor}
-              />
-            );
-          })}
+          <Defs>
+            <SvgLinearGradient id="barGrad" x1={0} y1={0} x2={barWidth} y2={0} gradientUnits="userSpaceOnUse">
+              {gradientStops.map((s, i) => (
+                <Stop key={i} offset={s.offset} stopColor={s.color} />
+              ))}
+            </SvgLinearGradient>
+            <ClipPath id="progressClip">
+              <Rect x={0} y={0} width={progressX} height={BAR_TOTAL_H} />
+            </ClipPath>
+          </Defs>
+          <Path d={fullBarPath} fill="rgba(255,255,255,0.18)" />
+          <Path d={fullBarPath} fill="url(#barGrad)" clipPath="url(#progressClip)" />
         </Svg>
 
         {nodes.map(({ cx, cy, r, lvl }, i) => {

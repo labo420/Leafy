@@ -2,12 +2,6 @@ uploads = []
 generated = []
 
 [[outputs]]
-id = "dU9R-Jzbl6zzE5mek5_Hg"
-uri = "file://attached_assets/leafy-logo.svg"
-type = "image"
-title = "Logo completo — Vettoriale SVG"
-
-[[outputs]]
 id = "QLoQt48Pq8v9VJN_Thcep"
 uri = "file://attached_assets/leafy-icon-hq.png"
 type = "image"
