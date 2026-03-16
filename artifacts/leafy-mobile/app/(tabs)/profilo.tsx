@@ -1,8 +1,8 @@
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
-import { router } from "expo-router";
-import React, { useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -351,9 +351,15 @@ export default function ProfiloScreen() {
   const insets = useSafeAreaInsets();
   const { user, refetch } = useAuth();
   const queryClient = useQueryClient();
+  const params = useLocalSearchParams<{ tab?: string }>();
   const [loggingOut, setLoggingOut] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [badgeTab, setBadgeTab] = useState<BadgeTab>("traguardi");
+
+  useEffect(() => {
+    if (params.tab === "sfide") setBadgeTab("sfide");
+    else if (params.tab === "traguardi") setBadgeTab("traguardi");
+  }, [params.tab]);
 
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 + 84 : 100 + insets.bottom;

@@ -821,6 +821,15 @@ export default function HomeScreen() {
             </LinearGradient>
           </Pressable>
         </Animated.View>
+
+        <Pressable
+          style={styles.challengeButton}
+          onPress={() => router.push("/(tabs)/profilo?tab=sfide")}
+        >
+          <Feather name="zap" size={17} color={Colors.leaf} />
+          <Text style={styles.challengeButtonText}>Vai alle sfide</Text>
+          <Feather name="chevron-right" size={15} color={Colors.leaf} />
+        </Pressable>
       </View>
 
       {/* ── IMPACT CARDS ── */}
@@ -1109,6 +1118,23 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: "DMSans_700Bold",
     color: "#fff",
+  },
+  challengeButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 12,
+    paddingVertical: 13,
+    borderRadius: 16,
+    backgroundColor: "rgba(46,107,80,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(46,107,80,0.18)",
+  },
+  challengeButtonText: {
+    fontSize: 15,
+    fontFamily: "Inter_600SemiBold",
+    color: Colors.leaf,
   },
 });
 
