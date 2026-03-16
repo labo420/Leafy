@@ -2,7 +2,7 @@ import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -15,7 +15,7 @@ import {
   Text,
   View,
 } from "react-native";
-import Animated, { FadeInDown } from "react-native-reanimated";
+import Animated, { FadeInDown, useSharedValue, useAnimatedReaction, withTiming, runOnJS, Easing } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -69,26 +69,6 @@ function periodLabel(badgeType: string): string {
   return "Stagionale";
 }
 
-function useCountUp(target: number, duration = 1200): number {
-  const [val, setVal] = useState(0);
-  const raf = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (target === 0) { setVal(0); return; }
-    const start = Date.now();
-    const step = () => {
-      const p = Math.min((Date.now() - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - p, 3);
-      setVal(target * eased);
-      if (p < 1) raf.current = requestAnimationFrame(step);
-    };
-    raf.current = requestAnimationFrame(step);
-    return () => { if (raf.current) cancelAnimationFrame(raf.current); };
-  }, [target, duration]);
-
-  return val;
-}
-
 type ImpactMetric = {
   emoji: string;
   value: number;
@@ -100,9 +80,26 @@ type ImpactMetric = {
   decimals: number;
 };
 
-function ImpactMetricCard({ m }: { m: ImpactMetric }) {
-  const anim = useCountUp(m.value);
-  const display = m.decimals > 0 ? anim.toFixed(m.decimals) : Math.round(anim).toString();
+function ImpactMetricCard({ m, animate }: { m: ImpactMetric; animate: boolean }) {
+  const progress = useSharedValue(0);
+  const [display, setDisplay] = useState("0");
+
+  const updateDisplay = (p: number) => {
+    const val = m.value * p;
+    setDisplay(m.decimals > 0 ? val.toFixed(m.decimals) : Math.round(val).toString());
+  };
+
+  useEffect(() => {
+    if (animate && m.value > 0) {
+      progress.value = 0;
+      progress.value = withTiming(1, { duration: 1200, easing: Easing.out(Easing.cubic) });
+    }
+  }, [animate, m.value]);
+
+  useAnimatedReaction(
+    () => progress.value,
+    (p) => { runOnJS(updateDisplay)(p); }
+  );
 
   return (
     <View style={[impactStyles.card, { backgroundColor: m.bg }]}>
@@ -447,6 +444,7 @@ export default function ProfiloScreen() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [badgeTab, setBadgeTab] = useState<BadgeTab>("traguardi");
+  const [impactVisible, setImpactVisible] = useState(false);
 
   useEffect(() => {
     if (params.tab === "sfide") setBadgeTab("sfide");
@@ -643,7 +641,11 @@ export default function ProfiloScreen() {
         </View>
       </Animated.View>
 
-      <Animated.View entering={FadeInDown.delay(150).springify()} style={styles.section}>
+      <Animated.View
+        entering={FadeInDown.delay(150).springify()}
+        style={styles.section}
+        onLayout={() => { if (!impactVisible) setImpactVisible(true); }}
+      >
         <View style={styles.sectionHeader}>
           <Text style={{ fontSize: 18 }}>📊</Text>
           <Text style={styles.sectionTitle}>Il tuo impatto verde</Text>
@@ -660,7 +662,7 @@ export default function ProfiloScreen() {
             { emoji: "🌿", value: impact?.greenProductsCount ?? 0, unit: "", label: "Prodotti green", equiv: `${impact?.greenProductsCount ?? 0} articoli eco`, bg: "#F0FDF4", iconBg: "#DCFCE7", decimals: 0 },
             { emoji: "🧾", value: impact?.receiptsScanned ?? 0, unit: "", label: "Scontrini", equiv: `${impact?.receiptsScanned ?? 0} analizzati`, bg: "#FAF5FF", iconBg: "#F3E8FF", decimals: 0 },
           ].map((m, i) => (
-            <ImpactMetricCard key={i} m={m} />
+            <ImpactMetricCard key={i} m={m} animate={impactVisible} />
           ))}
         </ScrollView>
         <Text style={styles.impactDisclaimer}>
