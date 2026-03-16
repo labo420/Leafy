@@ -3,10 +3,41 @@ import { useGetProfile, useGetChallenges, useGetImpact, useGetMyBadges } from "@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Copy, Target, Award, Trophy, Settings, Camera, Wind, Droplets, Leaf, Lock, Calendar, Clock } from "lucide-react";
+import { Copy, Target, Award, Trophy, Settings, Camera, Leaf, Lock, Calendar, Clock } from "lucide-react";
 import { Link, useSearch } from "wouter";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+
+function useCountUp(target: number, duration = 1200): number {
+  const [val, setVal] = useState(0);
+  const raf = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (target === 0) { setVal(0); return; }
+    const start = Date.now();
+    const step = () => {
+      const p = Math.min((Date.now() - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setVal(target * eased);
+      if (p < 1) raf.current = requestAnimationFrame(step);
+    };
+    raf.current = requestAnimationFrame(step);
+    return () => { if (raf.current) cancelAnimationFrame(raf.current); };
+  }, [target, duration]);
+
+  return val;
+}
+
+function CountUpValue({ value, decimals, unit }: { value: number; decimals: number; unit: string }) {
+  const anim = useCountUp(value);
+  const display = decimals > 0 ? anim.toFixed(decimals) : Math.round(anim).toString();
+  return (
+    <p className="text-xl font-bold text-foreground">
+      {display}
+      {unit && <span className="text-xs font-medium text-muted-foreground ml-0.5">{unit}</span>}
+    </p>
+  );
+}
 
 type BadgeTab = "traguardi" | "sfide";
 
@@ -175,25 +206,27 @@ export default function Profile() {
             <Leaf className="w-5 h-5 text-primary" />
             Il tuo impatto verde
           </h3>
-          <div className="grid grid-cols-2 gap-3">
-            <Card className="bg-card/60 backdrop-blur-sm border-transparent shadow-sm">
-              <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
-                <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-1">
-                  <Wind className="w-5 h-5" />
-                </div>
-                <p className="text-2xl font-bold text-foreground">{imp.co2SavedKg} <span className="text-sm font-medium text-muted-foreground">kg</span></p>
-                <p className="text-xs text-muted-foreground">CO₂ risparmiata</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-card/60 backdrop-blur-sm border-transparent shadow-sm">
-              <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
-                <div className="w-10 h-10 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center mb-1">
-                  <Droplets className="w-5 h-5" />
-                </div>
-                <p className="text-2xl font-bold text-foreground">{imp.waterSavedLiters} <span className="text-sm font-medium text-muted-foreground">L</span></p>
-                <p className="text-xs text-muted-foreground">Acqua salvata</p>
-              </CardContent>
-            </Card>
+          <div className="flex gap-2.5 overflow-x-auto pb-2 -mx-6 px-6 scrollbar-hide">
+            {[
+              { emoji: "🌍", value: imp.co2SavedKg, unit: "kg", label: "CO₂ risparmiata", equiv: `≈ ${Math.round(imp.co2SavedKg * 5)} km in auto`, bg: "bg-blue-50", iconBg: "bg-blue-100", decimals: 1 },
+              { emoji: "💧", value: imp.waterSavedLiters, unit: "L", label: "Acqua salvata", equiv: `≈ ${Math.round(imp.waterSavedLiters / 40)} docce`, bg: "bg-teal-50", iconBg: "bg-teal-100", decimals: 0 },
+              { emoji: "♻️", value: imp.plasticAvoidedKg, unit: "kg", label: "Plastica evitata", equiv: `≈ ${Math.round(imp.plasticAvoidedKg / 0.025)} bottiglie`, bg: "bg-orange-50", iconBg: "bg-orange-100", decimals: 2 },
+              { emoji: "🌿", value: imp.greenProductsCount, unit: "", label: "Prodotti green", equiv: `${imp.greenProductsCount} articoli eco`, bg: "bg-green-50", iconBg: "bg-green-100", decimals: 0 },
+              { emoji: "🧾", value: imp.receiptsScanned, unit: "", label: "Scontrini", equiv: `${imp.receiptsScanned} analizzati`, bg: "bg-purple-50", iconBg: "bg-purple-100", decimals: 0 },
+            ].map((m, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4, delay: i * 0.08 }}
+                className={`min-w-[120px] ${m.bg} rounded-2xl p-3.5 flex flex-col items-center text-center gap-1 shrink-0`}
+              >
+                <div className={`w-9 h-9 rounded-full ${m.iconBg} flex items-center justify-center text-lg mb-0.5`}>{m.emoji}</div>
+                <CountUpValue value={m.value} decimals={m.decimals} unit={m.unit} />
+                <p className="text-[10px] font-semibold text-muted-foreground">{m.label}</p>
+                {m.equiv && <p className="text-[9px] text-muted-foreground/60">{m.equiv}</p>}
+              </motion.div>
+            ))}
           </div>
           <p className="text-[11px] text-muted-foreground/70 mt-2 px-1 text-left">
             Stime indicative basate sulla categoria del prodotto, non dati precisi per singolo articolo.

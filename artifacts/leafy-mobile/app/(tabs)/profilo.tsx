@@ -2,7 +2,7 @@ import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -68,6 +68,98 @@ function periodLabel(badgeType: string): string {
   if (badgeType === "monthly") return "Mensile";
   return "Stagionale";
 }
+
+function useCountUp(target: number, duration = 1200): number {
+  const [val, setVal] = useState(0);
+  const raf = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (target === 0) { setVal(0); return; }
+    const start = Date.now();
+    const step = () => {
+      const p = Math.min((Date.now() - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setVal(target * eased);
+      if (p < 1) raf.current = requestAnimationFrame(step);
+    };
+    raf.current = requestAnimationFrame(step);
+    return () => { if (raf.current) cancelAnimationFrame(raf.current); };
+  }, [target, duration]);
+
+  return val;
+}
+
+type ImpactMetric = {
+  emoji: string;
+  value: number;
+  unit: string;
+  label: string;
+  equiv: string;
+  bg: string;
+  iconBg: string;
+  decimals: number;
+};
+
+function ImpactMetricCard({ m }: { m: ImpactMetric }) {
+  const anim = useCountUp(m.value);
+  const display = m.decimals > 0 ? anim.toFixed(m.decimals) : Math.round(anim).toString();
+
+  return (
+    <View style={[impactStyles.card, { backgroundColor: m.bg }]}>
+      <View style={[impactStyles.iconCircle, { backgroundColor: m.iconBg }]}>
+        <Text style={{ fontSize: 18 }}>{m.emoji}</Text>
+      </View>
+      <Text style={impactStyles.value}>
+        {display}
+        {m.unit ? <Text style={impactStyles.unit}> {m.unit}</Text> : null}
+      </Text>
+      <Text style={impactStyles.label}>{m.label}</Text>
+      {m.equiv ? <Text style={impactStyles.equiv}>{m.equiv}</Text> : null}
+    </View>
+  );
+}
+
+const impactStyles = StyleSheet.create({
+  card: {
+    width: 130,
+    borderRadius: 20,
+    padding: 14,
+    alignItems: "center",
+    gap: 4,
+    marginRight: 10,
+  },
+  iconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 2,
+  },
+  value: {
+    fontSize: 20,
+    fontFamily: "DMSans_700Bold",
+    color: Colors.text,
+  },
+  unit: {
+    fontSize: 12,
+    fontFamily: "Inter_500Medium",
+    color: Colors.textSecondary,
+  },
+  label: {
+    fontSize: 10,
+    fontFamily: "Inter_600SemiBold",
+    color: Colors.textSecondary,
+    textAlign: "center",
+  },
+  equiv: {
+    fontSize: 9,
+    fontFamily: "Inter_400Regular",
+    color: Colors.textMuted,
+    textAlign: "center",
+    marginTop: 2,
+  },
+});
 
 function LifetimeBadgeCard({ badge }: { badge: BadgeItem }) {
   const progressPct = badge.targetCount > 1
@@ -556,28 +648,21 @@ export default function ProfiloScreen() {
           <Text style={{ fontSize: 18 }}>📊</Text>
           <Text style={styles.sectionTitle}>Il tuo impatto verde</Text>
         </View>
-        <View style={styles.impactGrid}>
-          <View style={[styles.impactCard, { backgroundColor: "#EFF6FF" }]}>
-            <View style={[styles.impactIconCircle, { backgroundColor: "#DBEAFE" }]}>
-              <Text style={{ fontSize: 20 }}>🌍</Text>
-            </View>
-            <Text style={styles.impactValue}>
-              {(impact?.co2SavedKg ?? 0).toFixed(1)}{" "}
-              <Text style={styles.impactUnit}>kg</Text>
-            </Text>
-            <Text style={styles.impactLabel}>CO₂ risparmiata</Text>
-          </View>
-          <View style={[styles.impactCard, { backgroundColor: "#F0FDFA" }]}>
-            <View style={[styles.impactIconCircle, { backgroundColor: "#CCFBF1" }]}>
-              <Text style={{ fontSize: 20 }}>💧</Text>
-            </View>
-            <Text style={styles.impactValue}>
-              {(impact?.waterSavedLiters ?? 0).toFixed(0)}{" "}
-              <Text style={styles.impactUnit}>L</Text>
-            </Text>
-            <Text style={styles.impactLabel}>Acqua salvata</Text>
-          </View>
-        </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingRight: 20 }}
+        >
+          {[
+            { emoji: "🌍", value: impact?.co2SavedKg ?? 0, unit: "kg", label: "CO₂ risparmiata", equiv: `≈ ${Math.round((impact?.co2SavedKg ?? 0) * 5)} km in auto`, bg: "#EFF6FF", iconBg: "#DBEAFE", decimals: 1 },
+            { emoji: "💧", value: impact?.waterSavedLiters ?? 0, unit: "L", label: "Acqua salvata", equiv: `≈ ${Math.round((impact?.waterSavedLiters ?? 0) / 40)} docce`, bg: "#F0FDFA", iconBg: "#CCFBF1", decimals: 0 },
+            { emoji: "♻️", value: impact?.plasticAvoidedKg ?? 0, unit: "kg", label: "Plastica evitata", equiv: `≈ ${Math.round((impact?.plasticAvoidedKg ?? 0) / 0.025)} bottiglie`, bg: "#FFF7ED", iconBg: "#FFEDD5", decimals: 2 },
+            { emoji: "🌿", value: impact?.greenProductsCount ?? 0, unit: "", label: "Prodotti green", equiv: `${impact?.greenProductsCount ?? 0} articoli eco`, bg: "#F0FDF4", iconBg: "#DCFCE7", decimals: 0 },
+            { emoji: "🧾", value: impact?.receiptsScanned ?? 0, unit: "", label: "Scontrini", equiv: `${impact?.receiptsScanned ?? 0} analizzati`, bg: "#FAF5FF", iconBg: "#F3E8FF", decimals: 0 },
+          ].map((m, i) => (
+            <ImpactMetricCard key={i} m={m} />
+          ))}
+        </ScrollView>
         <Text style={styles.impactDisclaimer}>
           Stime indicative basate sulla categoria del prodotto.
         </Text>
@@ -939,40 +1024,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: "Inter_600SemiBold",
     color: Colors.leaf,
-  },
-  impactGrid: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  impactCard: {
-    flex: 1,
-    borderRadius: 24,
-    padding: 16,
-    alignItems: "center",
-    gap: 6,
-  },
-  impactIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 4,
-  },
-  impactValue: {
-    fontSize: 22,
-    fontFamily: "DMSans_700Bold",
-    color: Colors.text,
-  },
-  impactUnit: {
-    fontSize: 13,
-    fontFamily: "Inter_500Medium",
-    color: Colors.textSecondary,
-  },
-  impactLabel: {
-    fontSize: 11,
-    fontFamily: "Inter_400Regular",
-    color: Colors.textSecondary,
   },
   impactDisclaimer: {
     fontSize: 10,
