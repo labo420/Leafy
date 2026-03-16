@@ -728,7 +728,12 @@ export default function HomeScreen() {
                 resizeMode="cover"
               />
             </View>
-            <View>
+            <View style={{ alignItems: "center" }}>
+              <Image
+                source={require("@/assets/leafy-logo-dark.png")}
+                style={{ width: 60, height: 60, marginBottom: 8 }}
+                resizeMode="contain"
+              />
               <Text style={styles.greetingHero}>Ciao, {username}! 👋</Text>
             </View>
           </View>
