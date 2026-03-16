@@ -148,7 +148,6 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
           </Defs>
           <Path d={fullBarPath} fill="rgba(255,255,255,0.28)" />
           <Path d={fullBarPath} fill="url(#barGrad)" clipPath="url(#progressClip)" />
-          <Path d={topCurvePath} fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth={1.5} />
           {progressX > nodes[0].cx && safeIdx < LEVEL_CONFIG.length - 1 && (
             <Circle cx={progressX} cy={BASELINE_Y} r={5} fill="rgba(255,255,255,0.85)" />
           )}
