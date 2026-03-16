@@ -217,7 +217,7 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
                 )}
 
                 {!reached && (
-                  <Text style={{ position: "absolute", bottom: 0, right: 0, fontSize: 10 }}>🔒</Text>
+                  <Text style={{ position: "absolute", fontSize: sz * 0.45 }}>🔒</Text>
                 )}
               </View>
 
