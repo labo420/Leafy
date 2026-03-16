@@ -76,7 +76,8 @@ const LEVEL_BADGE_IMAGES: Record<string, ImageSourcePropType> = {
 const BAR_PADDING_H = 16;
 const LABEL_HEIGHT = 16;
 const BAR_TOP_FACTOR = 1.6;
-const BAR_EXTEND = 12;
+const BAR_EXTEND = 70;
+const BAR_OVERFLOW = 60;
 const MAX_RADIUS = Math.max(...LEVEL_CONFIG.map(l => l.nodeSize / 2));
 const BASELINE_Y = MAX_RADIUS * 2;
 const BAR_TOTAL_H = BASELINE_Y + LABEL_HEIGHT + 10;
@@ -102,7 +103,7 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
   const topYStart = BASELINE_Y - nodes[0].r * BAR_TOP_FACTOR;
   const topYEnd = BASELINE_Y - nodes[nodes.length - 1].r * BAR_TOP_FACTOR;
   const bWidth = xEnd - xStart;
-  const cp1x = xStart + bWidth * 0.65;
+  const cp1x = xStart + bWidth * 0.80;
   const cp2x = xEnd - bWidth * 0.05;
   const fullBarPath = `M ${xStart},${topYStart} C ${cp1x},${topYStart} ${cp2x},${topYEnd} ${xEnd},${topYEnd} L ${xEnd},${BASELINE_Y} L ${xStart},${BASELINE_Y} Z`;
 
@@ -130,8 +131,8 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
 
   return (
     <View style={milestoneStyles.container}>
-      <View style={{ width: barWidth, height: BAR_TOTAL_H, position: "relative" }}>
-        <Svg width={barWidth} height={BAR_TOTAL_H} style={{ position: "absolute", top: 0, left: 0 }}>
+      <View style={{ width: barWidth, height: BAR_TOTAL_H, position: "relative", overflow: "visible" }}>
+        <Svg width={barWidth + BAR_OVERFLOW} height={BAR_TOTAL_H} overflow="visible" style={{ position: "absolute", top: 0, left: 0 }}>
           <Defs>
             <SvgLinearGradient id="barGrad" x1={0} y1={0} x2={barWidth} y2={0} gradientUnits="userSpaceOnUse">
               {gradientStops.map((s, i) => (
@@ -154,19 +155,19 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
           const clampedLeft = Math.max(0, Math.min(rawLeft, barWidth - labelW));
 
           return (
-            <View key={i} style={{ position: "absolute", left: clampedLeft, top: cy - r, width: labelW, alignItems: "center" }}>
+            <View key={i} style={{ position: "absolute", left: clampedLeft, top: cy - r, width: labelW, alignItems: "center", zIndex: 10 }}>
               <View
                 style={{
                   shadowColor: "#000",
-                  shadowOffset: { width: 0, height: reached ? 5 : 2 },
-                  shadowOpacity: reached ? 0.55 : 0.15,
-                  shadowRadius: reached ? 8 : 3,
-                  elevation: reached ? 12 : 3,
+                  shadowOffset: { width: 0, height: reached ? 7 : 2 },
+                  shadowOpacity: reached ? 0.72 : 0.15,
+                  shadowRadius: reached ? 14 : 3,
+                  elevation: reached ? 20 : 3,
                 }}
               >
                 <Image
                   source={LEVEL_BADGE_IMAGES[lvl.name]}
-                  style={{ width: sz, height: sz, opacity: reached ? 1 : 0.28 }}
+                  style={{ width: sz, height: sz, opacity: reached ? 1 : 0.42 }}
                   resizeMode="contain"
                 />
               </View>
