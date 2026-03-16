@@ -543,15 +543,9 @@ export default function ProfiloScreen() {
           </Pressable>
         </View>
         <Text style={styles.username}>{username}</Text>
-        <View style={[styles.levelPill, {
-          backgroundColor: level === "Germoglio" ? "#E8F5E9" : level === "Ramoscello" ? "#C8E6C9" : level === "Arbusto" ? "#A5D6A7" : level === "Albero" ? "#81C784" : "#66BB6A",
-        }]}>
-          <Text style={{ fontSize: 16 }}>
-            {level === "Germoglio" ? "🌱" : level === "Ramoscello" ? "🌿" : level === "Arbusto" ? "🍃" : level === "Albero" ? "🌳" : "🌲"}
-          </Text>
-          <Text style={[styles.levelPillText, {
-            color: level === "Germoglio" || level === "Ramoscello" ? "#1B5E20" : "#fff",
-          }]}>{level}</Text>
+        <View style={styles.levelPill}>
+          <Text style={{ fontSize: 14 }}>🏆</Text>
+          <Text style={styles.levelPillText}>Livello {level}</Text>
         </View>
       </Animated.View>
 
@@ -803,7 +797,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: Colors.leaf,
     paddingHorizontal: 20,
-    paddingBottom: 60,
+    paddingBottom: 80,
     position: "relative",
     overflow: "hidden",
   },
@@ -845,21 +839,24 @@ const styles = StyleSheet.create({
   },
   avatarCard: {
     marginHorizontal: 20,
-    marginTop: -40,
+    marginTop: -52,
     backgroundColor: Colors.card,
     borderRadius: 24,
-    padding: 20,
+    paddingTop: 0,
+    paddingHorizontal: 20,
+    paddingBottom: 24,
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
     elevation: 6,
     zIndex: 10,
   },
   avatarContainer: {
     position: "relative",
-    marginBottom: 12,
+    marginTop: -50,
+    marginBottom: 14,
   },
   avatar: {
     width: 96,
@@ -905,8 +902,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     backgroundColor: Colors.cardAlt,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: 20,
   },
   levelPillText: {
