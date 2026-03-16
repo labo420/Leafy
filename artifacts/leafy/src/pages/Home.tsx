@@ -2,7 +2,7 @@ import React from "react";
 import { useGetProfile } from "@workspace/api-client-react";
 import { LevelProgress } from "@/components/shared/LevelProgress";
 import { Button } from "@/components/ui/button";
-import { Flame, Camera } from "lucide-react";
+import { Flame, Camera, Zap, ChevronRight } from "lucide-react";
 import { Link } from "wouter";
 
 export default function Home() {
@@ -85,12 +85,22 @@ export default function Home() {
       </div>
 
       {/* Main CTA */}
-      <Link href="/scan" className="block w-full">
-        <Button className="w-full h-16 text-lg rounded-2xl gap-3 shadow-xl shadow-primary/25 bg-gradient-to-r from-primary to-[#23533e] hover:scale-[1.02] transition-transform">
-          <Camera className="w-6 h-6" />
-          Analizza la tua spesa
-        </Button>
-      </Link>
+      <div className="space-y-3">
+        <Link href="/scan" className="block w-full">
+          <Button className="w-full h-16 text-lg rounded-2xl gap-3 shadow-xl shadow-primary/25 bg-gradient-to-r from-primary to-[#23533e] hover:scale-[1.02] transition-transform">
+            <Camera className="w-6 h-6" />
+            Analizza la tua spesa
+          </Button>
+        </Link>
+
+        <Link href="/profilo?tab=sfide" className="block w-full">
+          <button className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors text-primary font-semibold text-sm">
+            <Zap className="w-4 h-4" />
+            Vai alle sfide
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </Link>
+      </div>
     </div>
   );
 }

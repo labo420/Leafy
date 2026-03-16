@@ -1,10 +1,10 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useGetProfile, useGetChallenges, useGetImpact, useGetMyBadges } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Copy, Target, Award, Trophy, Info, Settings, Camera, Wind, Droplets, Leaf, Zap, Lock, Calendar, Clock } from "lucide-react";
-import { Link } from "wouter";
+import { Copy, Target, Award, Trophy, Settings, Camera, Wind, Droplets, Leaf, Lock, Calendar, Clock } from "lucide-react";
+import { Link, useSearch } from "wouter";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -42,9 +42,17 @@ export default function Profile() {
   const { data: challenges } = useGetChallenges();
   const { data: impact } = useGetImpact();
   const { data: badgesData } = useGetMyBadges();
+  const search = useSearch();
   const [uploadingImage, setUploadingImage] = useState(false);
   const [badgeTab, setBadgeTab] = useState<BadgeTab>("traguardi");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(search);
+    const tab = params.get("tab");
+    if (tab === "sfide") setBadgeTab("sfide");
+    else if (tab === "traguardi") setBadgeTab("traguardi");
+  }, [search]);
 
   const p = profile || {
     id: 1, username: "GuestUser", email: "guest@leafy.app", totalPoints: 1250,
@@ -286,56 +294,58 @@ export default function Profile() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="grid grid-cols-2 gap-3"
+                className="space-y-2.5"
               >
                 {lifetimeBadges.map((badge) => (
                   <div
                     key={badge.id}
-                    className={`rounded-2xl p-4 flex flex-col items-center text-center transition-shadow ${
+                    className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow ${
                       badge.isUnlocked
                         ? "bg-card border border-border/50 shadow-sm hover:shadow-md"
                         : "bg-muted/20 border border-dashed border-border/40 opacity-70"
                     }`}
                   >
-                    <div className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl mb-2 ${
+                    <div className={`w-13 h-13 min-w-[52px] min-h-[52px] rounded-full flex items-center justify-center text-2xl ${
                       badge.isUnlocked ? "bg-primary/10" : "bg-muted/50 blur-[2px]"
                     }`}>
                       {badge.emoji}
                     </div>
-                    <p className="font-semibold text-xs leading-tight mb-1">{badge.name}</p>
-                    <p className="text-[9px] text-muted-foreground uppercase tracking-wider mb-2">{badge.category}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm leading-tight mb-0.5 truncate">{badge.name}</p>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">{badge.category}</p>
 
-                    {badge.isUnlocked ? (
-                      <div className="flex items-center gap-1 text-[10px] text-primary">
-                        <Calendar className="w-3 h-3" />
-                        <span>Sbloccato il {formatDate(badge.unlockedAt)}</span>
-                      </div>
-                    ) : (
-                      <div className="w-full space-y-1.5">
-                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                          <Lock className="w-3 h-3" />
-                          <span className="truncate">{badge.unlockHint}</span>
+                      {badge.isUnlocked ? (
+                        <div className="flex items-center gap-1 text-[10px] text-primary">
+                          <Calendar className="w-3 h-3 shrink-0" />
+                          <span>Sbloccato il {formatDate(badge.unlockedAt)}</span>
                         </div>
-                        {badge.targetCount > 1 && (
-                          <div className="space-y-0.5">
-                            <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                              <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${Math.min(100, (badge.currentProgress / badge.targetCount) * 100)}%` }}
-                                transition={{ duration: 0.8, ease: "easeOut" }}
-                                className="h-full bg-accent/60 rounded-full"
-                              />
-                            </div>
-                            <p className="text-[9px] text-muted-foreground text-right">{badge.currentProgress}/{badge.targetCount}</p>
+                      ) : (
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                            <Lock className="w-3 h-3 shrink-0" />
+                            <span className="truncate">{badge.unlockHint}</span>
                           </div>
-                        )}
-                      </div>
-                    )}
+                          {badge.targetCount > 1 && (
+                            <div className="space-y-0.5">
+                              <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                                <motion.div
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${Math.min(100, (badge.currentProgress / badge.targetCount) * 100)}%` }}
+                                  transition={{ duration: 0.8, ease: "easeOut" }}
+                                  className="h-full bg-accent/60 rounded-full"
+                                />
+                              </div>
+                              <p className="text-[9px] text-muted-foreground text-right">{badge.currentProgress}/{badge.targetCount}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
 
                 {lifetimeBadges.length === 0 && (
-                  <div className="col-span-2 text-center py-8 text-muted-foreground">
+                  <div className="text-center py-8 text-muted-foreground">
                     <Award className="w-8 h-8 mx-auto mb-2 opacity-40" />
                     <p className="text-sm">Nessun traguardo ancora. Inizia a scansionare!</p>
                   </div>
@@ -355,49 +365,51 @@ export default function Profile() {
                     <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-3 flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5" /> Attive
                     </p>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2.5">
                       {activeTemporal.map((badge, i) => (
                         <div
                           key={`${badge.id}-${badge.periodKey}-${i}`}
-                          className={`rounded-2xl p-4 flex flex-col items-center text-center transition-shadow ${
+                          className={`rounded-2xl p-4 flex items-center gap-3 transition-shadow ${
                             badge.isUnlocked
                               ? "bg-card border border-primary/20 shadow-sm ring-1 ring-primary/10"
                               : "bg-card border border-border/50 shadow-sm"
                           }`}
                         >
-                          <div className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl mb-2 ${
+                          <div className={`min-w-[52px] min-h-[52px] rounded-full flex items-center justify-center text-2xl ${
                             badge.isUnlocked ? "bg-primary/10" : "bg-accent/10"
                           }`}>
                             {badge.emoji}
                           </div>
-                          <p className="font-semibold text-xs leading-tight mb-1">{badge.name}</p>
-                          <Badge variant="secondary" className="text-[8px] px-1.5 py-0 mb-2">
-                            {periodLabel(badge.badgeType)}
-                          </Badge>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm leading-tight mb-0.5 truncate">{badge.name}</p>
+                            <Badge variant="secondary" className="text-[8px] px-1.5 py-0 mb-1.5">
+                              {periodLabel(badge.badgeType)}
+                            </Badge>
 
-                          {badge.isUnlocked ? (
-                            <div className="flex flex-col items-center gap-0.5">
-                              <div className="flex items-center gap-1 text-[10px] text-primary">
-                                <span>Completata!</span>
+                            {badge.isUnlocked ? (
+                              <div className="space-y-0.5">
+                                <div className="flex items-center gap-1 text-[10px] text-primary">
+                                  <span>Completata!</span>
+                                </div>
+                                <div className="flex items-center gap-1 text-[9px] text-muted-foreground">
+                                  <Calendar className="w-2.5 h-2.5 shrink-0" />
+                                  <span>{formatDate(badge.unlockedAt)}</span>
+                                </div>
                               </div>
-                              <div className="flex items-center gap-1 text-[9px] text-muted-foreground">
-                                <Calendar className="w-2.5 h-2.5" />
-                                <span>{formatDate(badge.unlockedAt)}</span>
+                            ) : (
+                              <div className="space-y-0.5">
+                                <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                                  <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${Math.min(100, (badge.currentProgress / badge.targetCount) * 100)}%` }}
+                                    transition={{ duration: 0.8, ease: "easeOut" }}
+                                    className="h-full bg-accent rounded-full"
+                                  />
+                                </div>
+                                <p className="text-[9px] text-muted-foreground text-right">{badge.currentProgress}/{badge.targetCount}</p>
                               </div>
-                            </div>
-                          ) : (
-                            <div className="w-full space-y-1">
-                              <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                                <motion.div
-                                  initial={{ width: 0 }}
-                                  animate={{ width: `${Math.min(100, (badge.currentProgress / badge.targetCount) * 100)}%` }}
-                                  transition={{ duration: 0.8, ease: "easeOut" }}
-                                  className="h-full bg-accent rounded-full"
-                                />
-                              </div>
-                              <p className="text-[9px] text-muted-foreground text-right">{badge.currentProgress}/{badge.targetCount}</p>
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -409,26 +421,28 @@ export default function Profile() {
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                       Archivio
                     </p>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="space-y-2">
                       {archivedTemporal.map((badge, i) => (
                         <div
                           key={`${badge.id}-${badge.periodKey}-${i}`}
-                          className={`rounded-xl p-3 flex flex-col items-center text-center ${
+                          className={`rounded-xl p-3 flex items-center gap-3 ${
                             badge.isUnlocked
                               ? "bg-muted/30 border border-border/30"
                               : "bg-muted/15 border border-dashed border-border/20 opacity-50"
                           }`}
                         >
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg mb-1 grayscale ${
+                          <div className={`min-w-[40px] min-h-[40px] rounded-full flex items-center justify-center text-lg grayscale ${
                             badge.isUnlocked ? "opacity-70" : "opacity-30"
                           }`}>
                             {badge.emoji}
                           </div>
-                          <p className="font-medium text-[10px] leading-tight text-muted-foreground">{badge.name}</p>
-                          <p className="text-[8px] text-muted-foreground/60 mt-0.5">{formatPeriod(badge.periodKey, badge.badgeType)}</p>
-                          {badge.isUnlocked && badge.unlockedAt && (
-                            <p className="text-[7px] text-muted-foreground/50 mt-0.5">{formatDate(badge.unlockedAt)}</p>
-                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-xs leading-tight text-muted-foreground truncate">{badge.name}</p>
+                            <p className="text-[9px] text-muted-foreground/60 mt-0.5">{formatPeriod(badge.periodKey, badge.badgeType)}</p>
+                            {badge.isUnlocked && badge.unlockedAt && (
+                              <p className="text-[8px] text-muted-foreground/50 mt-0.5">{formatDate(badge.unlockedAt)}</p>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
