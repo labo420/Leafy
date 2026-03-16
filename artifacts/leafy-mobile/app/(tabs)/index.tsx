@@ -724,8 +724,8 @@ export default function HomeScreen() {
             <View style={styles.logoBoxHero}>
               <Image
                 source={require("@/assets/leafy-icon-dark.png")}
-                style={{ width: 28, height: 28 }}
-                resizeMode="contain"
+                style={{ width: 40, height: 40 }}
+                resizeMode="cover"
               />
             </View>
             <View>
@@ -878,7 +878,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.92)",
+    overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
   },
