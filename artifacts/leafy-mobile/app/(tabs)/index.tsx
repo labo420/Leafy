@@ -153,8 +153,9 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
             <Circle cx={progressX} cy={BASELINE_Y} r={5} fill="rgba(255,255,255,0.85)" />
           )}
         </Svg>
+      </View>
 
-        <View style={{ position: "absolute", top: 0, left: 0, width: barWidth, height: BAR_TOTAL_H, zIndex: 20, overflow: "visible" }}>
+      <View style={{ position: "absolute", top: 4, left: BAR_PADDING_H, width: barWidth, height: BAR_TOTAL_H, zIndex: 100, overflow: "visible", elevation: 50 }}>
         {nodes.map(({ cx, cy, r, lvl }, i) => {
           const reached = safeIdx >= i;
           const isCurrent = i === safeIdx;
@@ -250,7 +251,6 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
             </TouchableOpacity>
           );
         })}
-        </View>
       </View>
     </View>
   );
@@ -261,6 +261,7 @@ const milestoneStyles = StyleSheet.create({
     paddingHorizontal: BAR_PADDING_H,
     paddingTop: 4,
     paddingBottom: 4,
+    overflow: "visible",
   },
   nodeLabel: {
     fontSize: 9,
