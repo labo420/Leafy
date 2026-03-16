@@ -1,27 +1,23 @@
-<?xml version="1.0" encoding="UTF-8"?>
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="1024" height="1024">
-    <!-- Sfondo verde scuro (angoli gestiti dall'OS) -->
-    <rect width="512" height="512" fill="#2E6B50"/>
-
-    <!-- Foglia sinistra (mint #51B888) -->
-    <path d="M 256 420
-             C 225 395 130 310 120 200
-             C 110 110 175 65 250 82
-             C 218 195 243 345 256 420 Z"
-          fill="#51B888"/>
-    <!-- Evidenziazione foglia sinistra -->
-    <path d="M 254 410 C 225 338 162 250 138 168"
-          fill="none" stroke="white" stroke-width="16"
-          stroke-linecap="round" stroke-linejoin="round"/>
-
-    <!-- Foglia destra (dark green - integrata con sfondo) -->
-    <path d="M 256 420
-             C 285 395 378 310 388 200
-             C 398 110 335 65 260 82
-             C 292 195 270 345 256 420 Z"
-          fill="#2E6B50"/>
-    <!-- Evidenziazione foglia destra (invisibile, stesso colore) -->
-    <path d="M 258 410 C 287 338 350 250 374 168"
-          fill="none" stroke="#2E6B50" stroke-width="16"
-          stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Dark green leaf icon (forest green #1b5e20) -->
+  <defs>
+    <linearGradient id="leafGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2d7a3a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0d3817;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Leaf shape with smooth curves -->
+  <path d="M 100 20 Q 140 60 135 100 Q 130 140 100 170 Q 70 140 65 100 Q 60 60 100 20 Z" 
+        fill="url(#leafGradient)" 
+        stroke="#1b5e20" 
+        stroke-width="1.5"/>
+  
+  <!-- Leaf vein detail -->
+  <path d="M 100 20 Q 105 80 100 170" 
+        stroke="#ffffff" 
+        stroke-width="2" 
+        opacity="0.3" 
+        fill="none" 
+        stroke-linecap="round"/>
+</svg>
