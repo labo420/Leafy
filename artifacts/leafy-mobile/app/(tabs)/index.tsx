@@ -51,11 +51,11 @@ const LEVEL_LABELS: Record<string, string> = {
 };
 
 const LEVEL_CONFIG = [
-  { name: "Germoglio", emoji: "🌱", minPts: 0, color: "#8BC34A", fruitColor: "#8BC34A", nodeSize: 32, imgSize: 20 },
-  { name: "Ramoscello", emoji: "🌿", minPts: 500, color: "#66BB6A", fruitColor: "#8BC34A", nodeSize: 36, imgSize: 24 },
-  { name: "Arbusto", emoji: "🍃", minPts: 2000, color: "#43A047", fruitColor: "#F4D03F", nodeSize: 40, imgSize: 28 },
-  { name: "Albero", emoji: "🌳", minPts: 5000, color: "#2E7D32", fruitColor: "#FF8C42", nodeSize: 46, imgSize: 32 },
-  { name: "Foresta", emoji: "🌲", minPts: 10000, color: "#1B5E20", fruitColor: "#E74C3C", nodeSize: 54, imgSize: 38 },
+  { name: "Germoglio", emoji: "🌱", minPts: 0, color: "#8BC34A", fruitColor: "#8BC34A", nodeSize: 26, imgSize: 16 },
+  { name: "Ramoscello", emoji: "🌿", minPts: 500, color: "#66BB6A", fruitColor: "#8BC34A", nodeSize: 36, imgSize: 22 },
+  { name: "Arbusto", emoji: "🍃", minPts: 2000, color: "#43A047", fruitColor: "#F4D03F", nodeSize: 48, imgSize: 30 },
+  { name: "Albero", emoji: "🌳", minPts: 5000, color: "#2E7D32", fruitColor: "#FF8C42", nodeSize: 62, imgSize: 38 },
+  { name: "Foresta", emoji: "🌲", minPts: 10000, color: "#1B5E20", fruitColor: "#E74C3C", nodeSize: 78, imgSize: 48 },
 ];
 
 const SEGMENT_COLORS = [
@@ -75,6 +75,8 @@ const LEVEL_BADGE_IMAGES: Record<string, ImageSourcePropType> = {
 
 const BAR_PADDING_H = 16;
 const LABEL_HEIGHT = 16;
+const BAR_TOP_FACTOR = 1.0;
+const BAR_EXTEND = 12;
 const MAX_RADIUS = Math.max(...LEVEL_CONFIG.map(l => l.nodeSize / 2));
 const BASELINE_Y = MAX_RADIUS * 2;
 const BAR_TOTAL_H = BASELINE_Y + LABEL_HEIGHT + 10;
@@ -95,16 +97,18 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
     return { cx, cy, r, lvl };
   });
 
-  function trapPath(i: number, fillPct: number = 1): string {
+  function trapPath(i: number, fillPct: number = 1, extStart: number = 0, extEnd: number = 0): string {
     const { cx: x0, r: r0n } = nodes[i];
     const { cx: x1, r: r1 } = nodes[i + 1];
-    const startX = x0;
-    const endX = x1;
-    const topStartY = BASELINE_Y - r0n * 2;
-    const topEndY = BASELINE_Y - r1 * 2;
+    const startX = x0 - extStart;
+    const endX = x1 + extEnd;
+    const topStartY = BASELINE_Y - r0n * BAR_TOP_FACTOR;
+    const topEndY = BASELINE_Y - r1 * BAR_TOP_FACTOR;
     const partX = startX + (endX - startX) * fillPct;
     const partTopY = topStartY + (topEndY - topStartY) * fillPct;
-    return `M ${startX},${topStartY} L ${partX},${partTopY} L ${partX},${BASELINE_Y} L ${startX},${BASELINE_Y} Z`;
+    const midX = (startX + partX) / 2;
+    const midTopY = (topStartY + partTopY) / 2 - 7;
+    return `M ${startX},${topStartY} Q ${midX},${midTopY} ${partX},${partTopY} L ${partX},${BASELINE_Y} L ${startX},${BASELINE_Y} Z`;
   }
 
   return (
@@ -113,10 +117,12 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
         <Svg width={barWidth} height={BAR_TOTAL_H} style={{ position: "absolute", top: 0, left: 0 }}>
           {LEVEL_CONFIG.map((_, i) => {
             if (i >= LEVEL_CONFIG.length - 1) return null;
+            const extS = i === 0 ? BAR_EXTEND : 0;
+            const extE = i === LEVEL_CONFIG.length - 2 ? BAR_EXTEND : 0;
             return (
               <Path
                 key={`bg-${i}`}
-                d={trapPath(i, 1)}
+                d={trapPath(i, 1, extS, extE)}
                 fill="rgba(255,255,255,0.18)"
               />
             );
