@@ -201,7 +201,7 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
                 </View>
 
                 {(isCurrent && !isLast) && (
-                  <Svg width={ringSize} height={ringSize} style={{ position: "absolute", top: 0, left: 0 }}>
+                  <Svg width={ringSize} height={ringSize} overflow="visible" style={{ position: "absolute", top: 0, left: 0 }}>
                     <Circle cx={ringSize / 2} cy={ringSize / 2} r={ringR} stroke="rgba(255,255,255,0.15)" strokeWidth={3} fill="none" />
                     <Circle
                       cx={ringSize / 2} cy={ringSize / 2} r={ringR}
@@ -214,7 +214,7 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
                   </Svg>
                 )}
                 {!reached && (
-                  <Svg width={ringSize} height={ringSize} style={{ position: "absolute", top: 0, left: 0 }}>
+                  <Svg width={ringSize} height={ringSize} overflow="visible" style={{ position: "absolute", top: 0, left: 0 }}>
                     <Circle
                       cx={ringSize / 2} cy={ringSize / 2} r={ringR}
                       stroke="rgba(255,255,255,0.25)"
@@ -225,7 +225,7 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
                   </Svg>
                 )}
                 {reached && !isCurrent && (
-                  <Svg width={ringSize} height={ringSize} style={{ position: "absolute", top: 0, left: 0 }}>
+                  <Svg width={ringSize} height={ringSize} overflow="visible" style={{ position: "absolute", top: 0, left: 0 }}>
                     <Circle
                       cx={ringSize / 2} cy={ringSize / 2} r={ringR}
                       stroke={segColor}
