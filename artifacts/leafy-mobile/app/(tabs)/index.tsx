@@ -76,8 +76,7 @@ const LEVEL_BADGE_IMAGES: Record<string, ImageSourcePropType> = {
 const BAR_PADDING_H = 16;
 const LABEL_HEIGHT = 16;
 const BAR_TOP_FACTOR = 1.6;
-const BAR_EXTEND = 70;
-const BAR_OVERFLOW = 60;
+const BAR_EXTRA = 10;
 const MAX_RADIUS = Math.max(...LEVEL_CONFIG.map(l => l.nodeSize / 2));
 const BASELINE_Y = MAX_RADIUS * 2;
 const BAR_TOTAL_H = BASELINE_Y + LABEL_HEIGHT + 10;
@@ -98,8 +97,8 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
     return { cx, cy, r, lvl };
   });
 
-  const xStart = nodes[0].cx - BAR_EXTEND;
-  const xEnd = nodes[nodes.length - 1].cx + BAR_EXTEND;
+  const xStart = -BAR_EXTRA;
+  const xEnd = barWidth + BAR_EXTRA;
   const topYStart = BASELINE_Y - nodes[0].r * BAR_TOP_FACTOR;
   const topYEnd = BASELINE_Y - nodes[nodes.length - 1].r * BAR_TOP_FACTOR;
   const bWidth = xEnd - xStart;
@@ -132,7 +131,7 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
   return (
     <View style={milestoneStyles.container}>
       <View style={{ width: barWidth, height: BAR_TOTAL_H, position: "relative", overflow: "visible" }}>
-        <Svg width={barWidth + BAR_OVERFLOW} height={BAR_TOTAL_H} overflow="visible" style={{ position: "absolute", top: 0, left: 0 }}>
+        <Svg width={barWidth + BAR_EXTRA * 2} height={BAR_TOTAL_H} overflow="visible" style={{ position: "absolute", top: 0, left: -BAR_EXTRA }}>
           <Defs>
             <SvgLinearGradient id="barGrad" x1={0} y1={0} x2={barWidth} y2={0} gradientUnits="userSpaceOnUse">
               {gradientStops.map((s, i) => (
@@ -140,7 +139,7 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
               ))}
             </SvgLinearGradient>
             <ClipPath id="progressClip">
-              <Rect x={0} y={0} width={progressX} height={BAR_TOTAL_H} />
+              <Rect x={xStart} y={0} width={progressX - xStart} height={BAR_TOTAL_H} />
             </ClipPath>
           </Defs>
           <Path d={fullBarPath} fill="rgba(255,255,255,0.18)" />
