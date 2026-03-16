@@ -154,6 +154,7 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
           )}
         </Svg>
 
+        <View style={{ position: "absolute", top: 0, left: 0, width: barWidth, height: BAR_TOTAL_H, zIndex: 20, overflow: "visible" }}>
         {nodes.map(({ cx, cy, r, lvl }, i) => {
           const reached = safeIdx >= i;
           const isCurrent = i === safeIdx;
@@ -175,7 +176,7 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
           };
 
           return (
-            <TouchableOpacity key={i} onPress={toggleExpand} activeOpacity={0.7} style={{ position: "absolute", left: clampedLeft, top: cy - r - chevronH, width: labelW, alignItems: "center", zIndex: 10 }}>
+            <TouchableOpacity key={i} onPress={toggleExpand} activeOpacity={0.7} style={{ position: "absolute", left: clampedLeft, top: cy - r - chevronH, width: labelW, alignItems: "center" }}>
               {isCurrent && (
                 <Svg width={10} height={6} style={{ marginBottom: 4 }}>
                   <Path d="M 0,0 L 5,6 L 10,0 Z" fill="white" />
@@ -245,6 +246,7 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
             </TouchableOpacity>
           );
         })}
+        </View>
       </View>
     </View>
   );
