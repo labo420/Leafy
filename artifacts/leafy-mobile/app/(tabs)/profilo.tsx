@@ -544,7 +544,9 @@ export default function ProfiloScreen() {
         </View>
         <Text style={styles.username}>{username}</Text>
         <View style={styles.levelPill}>
-          <Text style={{ fontSize: 14 }}>🏆</Text>
+          <Text style={{ fontSize: 14 }}>
+            {level === "Germoglio" ? "🌱" : level === "Ramoscello" ? "🌿" : level === "Arbusto" ? "🍃" : level === "Albero" ? "🌳" : "🌲"}
+          </Text>
           <Text style={styles.levelPillText}>Livello {level}</Text>
         </View>
       </Animated.View>
