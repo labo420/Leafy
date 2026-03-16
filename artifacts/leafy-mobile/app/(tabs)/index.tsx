@@ -59,10 +59,10 @@ const LEVEL_CONFIG = [
 ];
 
 const SEGMENT_COLORS = [
-  "#8BC34A",
-  "#F4D03F",
-  "#FF8C42",
-  "#E74C3C",
+  "#AADF2A",
+  "#FFD600",
+  "#FF6D00",
+  "#F53B3B",
 ];
 
 const LEVEL_BADGE_IMAGES: Record<string, ImageSourcePropType> = {
@@ -119,11 +119,8 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
 
   const gradientStops = [
     { offset: "0%", color: SEGMENT_COLORS[0] },
-    { offset: `${(nodes[1].cx / barWidth) * 100}%`, color: SEGMENT_COLORS[0] },
     { offset: `${(nodes[1].cx / barWidth) * 100}%`, color: SEGMENT_COLORS[1] },
-    { offset: `${(nodes[2].cx / barWidth) * 100}%`, color: SEGMENT_COLORS[1] },
     { offset: `${(nodes[2].cx / barWidth) * 100}%`, color: SEGMENT_COLORS[2] },
-    { offset: `${(nodes[3].cx / barWidth) * 100}%`, color: SEGMENT_COLORS[2] },
     { offset: `${(nodes[3].cx / barWidth) * 100}%`, color: SEGMENT_COLORS[3] },
     { offset: "100%", color: SEGMENT_COLORS[3] },
   ];
@@ -142,8 +139,12 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
               <Rect x={xStart} y={0} width={progressX - xStart} height={BAR_TOTAL_H} />
             </ClipPath>
           </Defs>
-          <Path d={fullBarPath} fill="rgba(255,255,255,0.18)" />
+          <Path d={fullBarPath} fill="rgba(255,255,255,0.28)" />
           <Path d={fullBarPath} fill="url(#barGrad)" clipPath="url(#progressClip)" />
+          <Path d={fullBarPath} fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth={1.5} />
+          {progressX > xStart && safeIdx < LEVEL_CONFIG.length - 1 && (
+            <Circle cx={progressX} cy={BASELINE_Y} r={5} fill="rgba(255,255,255,0.85)" />
+          )}
         </Svg>
 
         {nodes.map(({ cx, cy, r, lvl }, i) => {
