@@ -51,11 +51,11 @@ const LEVEL_LABELS: Record<string, string> = {
 };
 
 const LEVEL_CONFIG = [
-  { name: "Germoglio", emoji: "🌱", minPts: 0, color: "#8BC34A", fruitColor: "#8BC34A", nodeSize: 26, imgSize: 16 },
-  { name: "Ramoscello", emoji: "🌿", minPts: 500, color: "#66BB6A", fruitColor: "#8BC34A", nodeSize: 36, imgSize: 22 },
-  { name: "Arbusto", emoji: "🍃", minPts: 2000, color: "#43A047", fruitColor: "#F4D03F", nodeSize: 48, imgSize: 30 },
-  { name: "Albero", emoji: "🌳", minPts: 5000, color: "#2E7D32", fruitColor: "#FF8C42", nodeSize: 62, imgSize: 38 },
-  { name: "Foresta", emoji: "🌲", minPts: 10000, color: "#1B5E20", fruitColor: "#E74C3C", nodeSize: 78, imgSize: 48 },
+  { name: "Germoglio", emoji: "🌱", minPts: 0, color: "#8BC34A", fruitColor: "#8BC34A", nodeSize: 26, imgSize: 26 },
+  { name: "Ramoscello", emoji: "🌿", minPts: 500, color: "#66BB6A", fruitColor: "#8BC34A", nodeSize: 36, imgSize: 36 },
+  { name: "Arbusto", emoji: "🍃", minPts: 2000, color: "#43A047", fruitColor: "#F4D03F", nodeSize: 48, imgSize: 48 },
+  { name: "Albero", emoji: "🌳", minPts: 5000, color: "#2E7D32", fruitColor: "#FF8C42", nodeSize: 62, imgSize: 62 },
+  { name: "Foresta", emoji: "🌲", minPts: 10000, color: "#1B5E20", fruitColor: "#E74C3C", nodeSize: 78, imgSize: 78 },
 ];
 
 const SEGMENT_COLORS = [
@@ -75,7 +75,7 @@ const LEVEL_BADGE_IMAGES: Record<string, ImageSourcePropType> = {
 
 const BAR_PADDING_H = 16;
 const LABEL_HEIGHT = 16;
-const BAR_TOP_FACTOR = 1.0;
+const BAR_TOP_FACTOR = 1.6;
 const BAR_EXTEND = 12;
 const MAX_RADIUS = Math.max(...LEVEL_CONFIG.map(l => l.nodeSize / 2));
 const BASELINE_Y = MAX_RADIUS * 2;
@@ -149,8 +149,6 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
         {nodes.map(({ cx, cy, r, lvl }, i) => {
           const reached = safeIdx >= i;
           const sz = lvl.nodeSize;
-          const imgSz = lvl.imgSize;
-          const segColor = i === 0 ? SEGMENT_COLORS[0] : SEGMENT_COLORS[Math.min(i - 1, SEGMENT_COLORS.length - 1)];
           const labelW = 70;
           const rawLeft = cx - labelW / 2;
           const clampedLeft = Math.max(0, Math.min(rawLeft, barWidth - labelW));
@@ -158,16 +156,17 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
           return (
             <View key={i} style={{ position: "absolute", left: clampedLeft, top: cy - r, width: labelW, alignItems: "center" }}>
               <View
-                style={[
-                  { width: sz, height: sz, borderRadius: sz / 2, alignItems: "center" as const, justifyContent: "center" as const },
-                  reached
-                    ? { backgroundColor: `${segColor}33`, borderWidth: 2.5, borderColor: segColor }
-                    : milestoneStyles.nodeLocked,
-                ]}
+                style={{
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: reached ? 5 : 2 },
+                  shadowOpacity: reached ? 0.55 : 0.15,
+                  shadowRadius: reached ? 8 : 3,
+                  elevation: reached ? 12 : 3,
+                }}
               >
                 <Image
                   source={LEVEL_BADGE_IMAGES[lvl.name]}
-                  style={{ width: imgSz, height: imgSz, opacity: reached ? 1 : 0.35 }}
+                  style={{ width: sz, height: sz, opacity: reached ? 1 : 0.28 }}
                   resizeMode="contain"
                 />
               </View>
@@ -190,11 +189,6 @@ const milestoneStyles = StyleSheet.create({
     paddingHorizontal: BAR_PADDING_H,
     paddingTop: 4,
     paddingBottom: 4,
-  },
-  nodeLocked: {
-    backgroundColor: "rgba(255,255,255,0.08)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.15)",
   },
   nodeLabel: {
     fontSize: 9,
