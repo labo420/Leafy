@@ -719,33 +719,29 @@ export default function HomeScreen() {
         <View style={styles.decoCircle1} />
         <View style={styles.decoCircle2} />
 
-        <View style={{ paddingTop: topPadding + 12, paddingHorizontal: 20, paddingBottom: 12 }}>
-          <View style={{ alignItems: "center", marginBottom: 12 }}>
-            <Image
-              source={require("@/assets/leafy-logo-dark.png")}
-              style={{ width: 80, height: 80 }}
-              resizeMode="contain"
-            />
-          </View>
-          <View style={[styles.header, { marginHorizontal: -20, paddingHorizontal: 20 }]}>
-            <View style={styles.headerLeft}>
-              <View style={styles.logoBoxHero}>
-                <Image
-                  source={require("@/assets/leafy-icon-dark.png")}
-                  style={{ width: 40, height: 40 }}
-                  resizeMode="cover"
-                />
-              </View>
-              <View>
-                <Text style={styles.greetingHero}>Ciao, {username}! 👋</Text>
-              </View>
+        <View style={[styles.header, { paddingTop: topPadding + 12 }]}>
+          <View style={styles.headerLeft}>
+            <View style={styles.logoBoxHero}>
+              <Image
+                source={require("@/assets/leafy-icon-dark.png")}
+                style={{ width: 40, height: 40 }}
+                resizeMode="cover"
+              />
             </View>
-            <Pressable onPress={() => router.push("/(tabs)/profilo")}>
-              <View style={styles.avatarCircleHero}>
-                <Text style={styles.avatarInitial}>{safeInitial}</Text>
-              </View>
-            </Pressable>
+            <View>
+              <Image
+                source={require("@/assets/images/leafy-logo-dark.png")}
+                style={{ width: 100, height: 70, marginBottom: 2 }}
+                resizeMode="contain"
+              />
+              <Text style={styles.greetingHero}>Ciao, {username}! 👋</Text>
+            </View>
           </View>
+          <Pressable onPress={() => router.push("/(tabs)/profilo")}>
+            <View style={styles.avatarCircleHero}>
+              <Text style={styles.avatarInitial}>{safeInitial}</Text>
+            </View>
+          </Pressable>
         </View>
 
         <Animated.View
