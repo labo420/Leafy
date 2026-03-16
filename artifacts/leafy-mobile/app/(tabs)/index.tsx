@@ -82,6 +82,7 @@ const BASELINE_Y = MAX_RADIUS * 2;
 const BAR_TOTAL_H = BASELINE_Y + LABEL_HEIGHT + 10;
 
 function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; points: number }) {
+  const [expandedBadge, setExpandedBadge] = useState<number | null>(null);
   const currentIdx = LEVEL_CONFIG.findIndex((l) => l.name === currentLevel);
   const safeIdx = currentIdx >= 0 ? currentIdx : 0;
   const screenW = Dimensions.get("window").width;
@@ -107,16 +108,20 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
   const fullBarPath = `M ${xStart},${topYStart} C ${cp1x},${topYStart} ${cp2x},${topYEnd} ${xEnd},${topYEnd} L ${xEnd},${BASELINE_Y} L ${xStart},${BASELINE_Y} Z`;
   const topCurvePath = `M ${xStart},${topYStart} C ${cp1x},${topYStart} ${cp2x},${topYEnd} ${xEnd},${topYEnd}`;
 
+  const isMaxLevel = safeIdx >= LEVEL_CONFIG.length - 1;
+  let fillPct = 0;
   let progressX = xStart;
-  if (safeIdx >= LEVEL_CONFIG.length - 1) {
+  if (isMaxLevel) {
+    fillPct = 1;
     progressX = xEnd;
   } else {
     const curr = LEVEL_CONFIG[safeIdx];
     const next = LEVEL_CONFIG[safeIdx + 1];
     const range = next.minPts - curr.minPts;
-    const fillPct = Math.min(1, Math.max(0, (points - curr.minPts) / range));
+    fillPct = Math.min(1, Math.max(0, (points - curr.minPts) / range));
     progressX = nodes[safeIdx].cx + (nodes[safeIdx + 1].cx - nodes[safeIdx].cx) * fillPct;
   }
+  const pointsRemaining = isMaxLevel ? 0 : LEVEL_CONFIG[safeIdx + 1].minPts - points;
 
   const gradientStops = [
     { offset: "0%", color: SEGMENT_COLORS[0] },
@@ -150,35 +155,93 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
 
         {nodes.map(({ cx, cy, r, lvl }, i) => {
           const reached = safeIdx >= i;
+          const isCurrent = i === safeIdx;
+          const isLast = i === LEVEL_CONFIG.length - 1;
           const sz = lvl.nodeSize;
-          const labelW = 70;
+          const segColor = SEGMENT_COLORS[Math.min(i, SEGMENT_COLORS.length - 1)];
+          const labelW = 80;
           const rawLeft = cx - labelW / 2;
           const clampedLeft = Math.max(0, Math.min(rawLeft, barWidth - labelW));
+          const chevronH = isCurrent ? 10 : 0;
+          const ringGap = 4;
+          const ringR = sz / 2 + ringGap;
+          const ringSize = sz + ringGap * 2;
+          const circumference = 2 * Math.PI * ringR;
+
+          const toggleExpand = () => {
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+            setExpandedBadge(expandedBadge === i ? null : i);
+          };
 
           return (
-            <View key={i} style={{ position: "absolute", left: clampedLeft, top: cy - r, width: labelW, alignItems: "center", zIndex: 10 }}>
-              <View
-                style={{
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: reached ? 7 : 2 },
-                  shadowOpacity: reached ? 0.72 : 0.15,
-                  shadowRadius: reached ? 14 : 3,
-                  elevation: reached ? 20 : 3,
-                }}
-              >
-                <Image
-                  source={LEVEL_BADGE_IMAGES[lvl.name]}
-                  style={{ width: sz, height: sz, opacity: reached ? 1 : 0.42 }}
-                  resizeMode="contain"
-                />
+            <Pressable key={i} onPress={toggleExpand} style={{ position: "absolute", left: clampedLeft, top: cy - r - chevronH, width: labelW, alignItems: "center", zIndex: 10 }}>
+              {isCurrent && (
+                <Svg width={10} height={6} style={{ marginBottom: 4 }}>
+                  <Path d="M 0,0 L 5,6 L 10,0 Z" fill="white" />
+                </Svg>
+              )}
+
+              <View style={{ position: "relative", width: ringSize, height: ringSize, alignItems: "center", justifyContent: "center" }}>
+                <View
+                  style={{
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: reached ? 7 : 2 },
+                    shadowOpacity: reached ? 0.72 : 0.15,
+                    shadowRadius: reached ? 14 : 3,
+                    elevation: reached ? 20 : 3,
+                  }}
+                >
+                  <Image
+                    source={LEVEL_BADGE_IMAGES[lvl.name]}
+                    style={{ width: sz, height: sz, opacity: reached ? 1 : 0.42 }}
+                    resizeMode="contain"
+                  />
+                </View>
+
+                {isCurrent && !isLast && (
+                  <Svg width={ringSize} height={ringSize} style={{ position: "absolute", top: 0, left: 0 }}>
+                    <Circle cx={ringSize / 2} cy={ringSize / 2} r={ringR} stroke="rgba(255,255,255,0.15)" strokeWidth={3} fill="none" />
+                    <Circle
+                      cx={ringSize / 2} cy={ringSize / 2} r={ringR}
+                      stroke={segColor} strokeWidth={3} fill="none"
+                      strokeDasharray={`${circumference}`}
+                      strokeDashoffset={`${circumference * (1 - fillPct)}`}
+                      strokeLinecap="round"
+                      transform={`rotate(-90, ${ringSize / 2}, ${ringSize / 2})`}
+                    />
+                  </Svg>
+                )}
+
+                {!reached && (
+                  <Text style={{ position: "absolute", bottom: 0, right: 0, fontSize: 10 }}>🔒</Text>
+                )}
               </View>
+
+              <View style={{ width: sz * 0.8, height: 5, borderRadius: 3, backgroundColor: reached ? segColor : "rgba(255,255,255,0.18)", marginTop: 2 }} />
+
+              {isCurrent && !isLast && (
+                <Text style={{ fontSize: 7, fontFamily: "Inter_500Medium", color: segColor, marginTop: 1 }} numberOfLines={1}>
+                  – {pointsRemaining.toLocaleString("it-IT")} pt
+                </Text>
+              )}
+
               <Text
                 style={[milestoneStyles.nodeLabel, reached && { color: "#fff" }]}
                 numberOfLines={1}
               >
                 {lvl.name}
               </Text>
-            </View>
+
+              {expandedBadge === i && (
+                <View style={{ backgroundColor: "rgba(0,0,0,0.7)", borderRadius: 8, padding: 8, marginTop: 4, width: labelW }}>
+                  <Text style={{ color: "#fff", fontFamily: "Inter_700Bold", fontSize: 11, textAlign: "center" }}>{lvl.name}</Text>
+                  <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 9, textAlign: "center", marginTop: 2 }}>{lvl.minPts.toLocaleString("it-IT")} pt</Text>
+                  <Text style={{ color: reached ? "#AADF2A" : "rgba(255,255,255,0.5)", fontSize: 9, textAlign: "center", marginTop: 2, fontFamily: "Inter_500Medium" }}>
+                    {reached ? "✓ Sbloccato" : `Mancano ${(lvl.minPts - points).toLocaleString("it-IT")} pt`}
+                  </Text>
+                </View>
+              )}
+            </Pressable>
           );
         })}
       </View>
