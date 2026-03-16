@@ -15,6 +15,7 @@ import {
   Platform,
   Pressable,
   RefreshControl,
+  TouchableOpacity,
   ScrollView,
   StyleSheet,
   Text,
@@ -174,7 +175,7 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
           };
 
           return (
-            <Pressable key={i} onPress={toggleExpand} style={{ position: "absolute", left: clampedLeft, top: cy - r - chevronH, width: labelW, alignItems: "center", zIndex: 10 }}>
+            <TouchableOpacity key={i} onPress={toggleExpand} activeOpacity={0.7} style={{ position: "absolute", left: clampedLeft, top: cy - r - chevronH, width: labelW, alignItems: "center", zIndex: 10 }}>
               {isCurrent && (
                 <Svg width={10} height={6} style={{ marginBottom: 4 }}>
                   <Path d="M 0,0 L 5,6 L 10,0 Z" fill="white" />
@@ -241,7 +242,7 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
                   </Text>
                 </View>
               )}
-            </Pressable>
+            </TouchableOpacity>
           );
         })}
       </View>
