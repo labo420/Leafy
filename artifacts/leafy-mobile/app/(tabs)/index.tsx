@@ -134,8 +134,8 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
 
   return (
     <View style={milestoneStyles.container}>
-      <View style={{ width: barWidth, height: BAR_TOTAL_H, position: "relative", overflow: "visible" }}>
-        <Svg width={barWidth + BAR_EXTRA * 2} height={BAR_TOTAL_H} overflow="visible" style={{ position: "absolute", top: 0, left: -BAR_EXTRA }}>
+      <View style={{ width: barWidth, height: BAR_TOTAL_H, position: "relative", overflow: "visible", elevation: 0, zIndex: 0 }}>
+        <Svg width={barWidth + BAR_EXTRA * 2} height={BAR_TOTAL_H} style={{ position: "absolute", top: 0, left: -BAR_EXTRA }}>
           <Defs>
             <SvgLinearGradient id="barGrad" x1={0} y1={0} x2={barWidth} y2={0} gradientUnits="userSpaceOnUse">
               {gradientStops.map((s, i) => (
