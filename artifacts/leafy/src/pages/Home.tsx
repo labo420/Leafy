@@ -38,8 +38,8 @@ export default function Home() {
       {/* Header */}
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center p-1.5 shadow-inner">
-            <img src={`${import.meta.env.BASE_URL}images/leafy-icon-dark.png`} alt="Leafy Logo" className="w-full h-full object-contain" />
+          <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-inner overflow-hidden">
+            <img src={`${import.meta.env.BASE_URL}images/leafy-icon-dark.png`} alt="Leafy Logo" className="w-full h-full object-cover" />
           </div>
           <div>
             <h1 className="text-xl font-display font-bold text-foreground">Ciao, {p.username}!</h1>
