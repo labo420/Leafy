@@ -224,6 +224,16 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
                     />
                   </Svg>
                 )}
+                {reached && !isCurrent && (
+                  <Svg width={ringSize} height={ringSize} style={{ position: "absolute", top: 0, left: 0 }}>
+                    <Circle
+                      cx={ringSize / 2} cy={ringSize / 2} r={ringR}
+                      stroke="rgba(255,255,255,0.35)"
+                      strokeWidth={1.5}
+                      fill="none"
+                    />
+                  </Svg>
+                )}
 
                 {!reached && (
                   <Text style={{ position: "absolute", fontSize: sz * 0.45 }}>🔒</Text>
