@@ -14,13 +14,13 @@
           fill="none" stroke="white" stroke-width="16"
           stroke-linecap="round" stroke-linejoin="round"/>
 
-    <!-- Foglia destra (white) -->
+    <!-- Foglia destra (dark green - integrata con sfondo) -->
     <path d="M 256 420
              C 285 395 378 310 388 200
              C 398 110 335 65 260 82
              C 292 195 270 345 256 420 Z"
-          fill="white"/>
-    <!-- Evidenziazione foglia destra -->
+          fill="#2E6B50"/>
+    <!-- Evidenziazione foglia destra (invisibile, stesso colore) -->
     <path d="M 258 410 C 287 338 350 250 374 168"
           fill="none" stroke="#2E6B50" stroke-width="16"
           stroke-linecap="round" stroke-linejoin="round"/>
