@@ -121,7 +121,7 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
     fillPct = Math.min(1, Math.max(0, (points - curr.minPts) / range));
     progressX = nodes[safeIdx].cx + (nodes[safeIdx + 1].cx - nodes[safeIdx].cx) * fillPct;
   }
-  const pointsRemaining = isMaxLevel ? 0 : LEVEL_CONFIG[safeIdx + 1].minPts - points;
+  const pointsRemaining = isMaxLevel ? 0 : Math.max(0, LEVEL_CONFIG[safeIdx + 1].minPts - points);
 
   const gradientStops = [
     { offset: "0%", color: SEGMENT_COLORS[0] },
