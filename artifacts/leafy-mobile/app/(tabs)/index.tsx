@@ -196,7 +196,7 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
                 >
                   <Image
                     source={LEVEL_BADGE_IMAGES[lvl.name]}
-                    style={{ width: sz, height: sz, opacity: reached ? 1 : 0.42 }}
+                    style={{ width: sz, height: sz, opacity: reached ? 1 : 0.18 }}
                     resizeMode="contain"
                   />
                 </View>
