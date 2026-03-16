@@ -36,13 +36,15 @@ Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti 
 
 ## Artifacts
 
-| Artifact | Path | Descrizione |
-|----------|------|-------------|
-| `leafy-mobile` | Expo app (preview path `/leafy-mobile/`) | App principale React Native (iOS/Android/web) |
-| `api-server` | Express 5 (porta 8080, workflow: `artifacts/api-server: API Server`) | Backend REST API |
-| `leafy` | React/Vite (porta 24389, preview path `/`) | Frontend web con sistema badge a due livelli |
-| `leafy-register` | React/Vite (porta 5000, preview path `/leafy-register/`) | Pannello admin web |
-| `mockup-sandbox` | Vite (preview path `/__mockup/`, workflow: `artifacts/mockup-sandbox: Component Preview Server`) | Sandbox per mockup componenti su canvas. ⚠️ Conflitto porta 8081 con leafy-mobile — non avviato automaticamente. |
+| Artifact | Path | Porta | Descrizione |
+|----------|------|-------|-------------|
+| `leafy-mobile` | Expo app (preview path `/leafy-mobile/`) | 23546 | App principale React Native (iOS/Android/web) |
+| `api-server` | Express 5 (preview path `/api`) | 8080 | Backend REST API |
+| `leafy` | React/Vite (preview path `/`) | 24389 | Frontend web con sistema badge a due livelli |
+| `leafy-register` | React/Vite (preview path `/`) | 18794 | Pannello admin web |
+| `mockup-sandbox` | Vite (preview path `/__mockup`) | 8081 | Sandbox per mockup componenti su canvas |
+
+> **Porte post-migrazione Replit**: leafy-mobile usa porta 23546 direttamente (niente bridge). leafy-register usa porta 18794 (gestita dall'artifact system). mockup-sandbox usa porta 8081 (workflow: `artifacts/mockup-sandbox: Component Preview Server`).
 
 > **Nota migrazione Replit**: tutti gli artifact sono ora registrati nel selettore app. L'API server gira tramite il workflow dedicato `artifacts/api-server: API Server` (non più via "Start application").
 
