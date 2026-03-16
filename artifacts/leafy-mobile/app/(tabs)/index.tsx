@@ -200,19 +200,17 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
                   />
                 </View>
 
-                {((isCurrent && !isLast) || !reached) && (
+                {isCurrent && !isLast && (
                   <Svg width={ringSize} height={ringSize} style={{ position: "absolute", top: 0, left: 0 }}>
                     <Circle cx={ringSize / 2} cy={ringSize / 2} r={ringR} stroke="rgba(255,255,255,0.15)" strokeWidth={3} fill="none" />
-                    {isCurrent && !isLast && (
-                      <Circle
-                        cx={ringSize / 2} cy={ringSize / 2} r={ringR}
-                        stroke={segColor} strokeWidth={3} fill="none"
-                        strokeDasharray={`${circumference}`}
-                        strokeDashoffset={`${circumference * (1 - fillPct)}`}
-                        strokeLinecap="round"
-                        transform={`rotate(-90, ${ringSize / 2}, ${ringSize / 2})`}
-                      />
-                    )}
+                    <Circle
+                      cx={ringSize / 2} cy={ringSize / 2} r={ringR}
+                      stroke={segColor} strokeWidth={3} fill="none"
+                      strokeDasharray={`${circumference}`}
+                      strokeDashoffset={`${circumference * (1 - fillPct)}`}
+                      strokeLinecap="round"
+                      transform={`rotate(-90, ${ringSize / 2}, ${ringSize / 2})`}
+                    />
                   </Svg>
                 )}
 
