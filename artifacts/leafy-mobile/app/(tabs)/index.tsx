@@ -237,7 +237,7 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
                   <Text style={{ color: "#fff", fontFamily: "Inter_700Bold", fontSize: 11, textAlign: "center" }}>{lvl.name}</Text>
                   <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 9, textAlign: "center", marginTop: 2 }}>{lvl.minPts.toLocaleString("it-IT")} pt</Text>
                   <Text style={{ color: reached ? "#AADF2A" : "rgba(255,255,255,0.5)", fontSize: 9, textAlign: "center", marginTop: 2, fontFamily: "Inter_500Medium" }}>
-                    {reached ? "✓ Sbloccato" : `Mancano ${(lvl.minPts - points).toLocaleString("it-IT")} pt`}
+                    {reached ? "✓ Sbloccato" : `Mancano ${Math.max(0, lvl.minPts - points).toLocaleString("it-IT")} pt`}
                   </Text>
                 </View>
               )}
