@@ -292,15 +292,6 @@ const milestoneStyles = StyleSheet.create({
   },
 });
 
-const MOTIVATIONAL_MESSAGES = [
-  (name: string) => `Oggi sei già un passo avanti, ${name}!`,
-  (name: string) => `Stai accumulando punti reali, ${name}!`,
-  () => `Ogni scontrino vale qualcosa per te.`,
-  (name: string) => `Grande slancio questa settimana, ${name}!`,
-  (_name: string, pts: number) => `${pts.toLocaleString("it-IT")} punti nel tuo portafoglio — continua così!`,
-  () => `Potresti sorprenderti di quanti punti guadagni già.`,
-  () => `Ogni scelta conta. La tua fa la differenza!`,
-];
 
 const RING_SIZE = 220;
 const RING_STROKE = 14;
@@ -714,8 +705,6 @@ export default function HomeScreen() {
   const nextLevelPoints = profile?.nextLevelPoints ?? 0;
   const safeInitial = (username.trim().charAt(0) || "U").toUpperCase();
 
-  const msgFn = MOTIVATIONAL_MESSAGES[streak % MOTIVATIONAL_MESSAGES.length];
-  const motivationalMessage = msgFn(username, points);
 
   return (
     <ScrollView
@@ -749,8 +738,9 @@ export default function HomeScreen() {
                 resizeMode="cover"
               />
             </View>
-            <View>
-              <Text style={styles.greetingHero}>Ciao, {username}! 👋</Text>
+            <View style={styles.greetingBlock}>
+              <Text style={styles.greetingLabel}>Ciao,</Text>
+              <Text style={styles.greetingName} numberOfLines={1}>{username}</Text>
             </View>
           </View>
           <Pressable onPress={() => router.push("/(tabs)/profilo")}>
@@ -795,16 +785,7 @@ export default function HomeScreen() {
         </Text>
       </Animated.View>
 
-      {/* ── MOTIVATIONAL ── */}
-      <Animated.View
-        entering={FadeInDown.delay(260).springify()}
-        style={styles.motivationalBox}
-      >
-        <View style={styles.motivationalRow}>
-          <MaterialCommunityIcons name="leaf" size={16} color={Colors.leaf} />
-          <Text style={styles.motivationalText}>{motivationalMessage}</Text>
-        </View>
-      </Animated.View>
+
 
       {/* ── CTA ── */}
       <View style={styles.ctaSection}>
@@ -917,10 +898,23 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     marginBottom: 2,
   },
-  greetingHero: {
-    fontSize: 16,
-    fontFamily: "DMSans_600SemiBold",
-    color: "rgba(255,255,255,0.85)",
+  greetingBlock: {
+    justifyContent: "center",
+  },
+  greetingLabel: {
+    fontSize: 12,
+    fontFamily: "Inter_500Medium",
+    color: "rgba(255,255,255,0.55)",
+    letterSpacing: 0.5,
+    lineHeight: 15,
+  },
+  greetingName: {
+    fontSize: 22,
+    fontFamily: "DMSans_700Bold",
+    color: "#fff",
+    letterSpacing: -0.3,
+    lineHeight: 26,
+    maxWidth: 180,
   },
   avatarCircleHero: {
     width: 46,
@@ -1070,31 +1064,6 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: Colors.leaf,
-  },
-  motivationalBox: {
-    marginHorizontal: 20,
-    marginTop: 8,
-    marginBottom: 4,
-    backgroundColor: Colors.primaryLight,
-    borderWidth: 1,
-    borderColor: "rgba(46, 107, 80, 0.15)",
-    borderRadius: 24,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    alignItems: "center",
-  },
-  motivationalRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  motivationalText: {
-    fontSize: 14,
-    fontFamily: "Inter_500Medium",
-    color: Colors.leaf,
-    textAlign: "center",
-    lineHeight: 22,
-    flex: 1,
   },
   ctaSection: {
     paddingHorizontal: 20,
