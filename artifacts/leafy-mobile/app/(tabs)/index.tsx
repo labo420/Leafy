@@ -729,7 +729,6 @@ export default function HomeScreen() {
               />
             </View>
             <View>
-              <Text style={styles.logoTextHero}>Leafy</Text>
               <Text style={styles.greetingHero}>Ciao, {username}! 👋</Text>
             </View>
           </View>
