@@ -730,7 +730,7 @@ export default function HomeScreen() {
             </View>
             <View>
               <Image
-                source={require("@/assets/images/leafy-logo-dark.png")}
+                source={require("@/assets/images/leafy-logo-dark-transparent.png")}
                 style={{ width: 100, height: 70, marginBottom: 2 }}
                 resizeMode="contain"
               />
