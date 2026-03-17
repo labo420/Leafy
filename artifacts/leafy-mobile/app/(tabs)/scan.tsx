@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Linking,
   Modal,
   Platform,
   Pressable,
@@ -229,18 +230,31 @@ export default function ScanScreen() {
       router.push("/(tabs)");
       return;
     }
-    const perm = await ImagePicker.requestCameraPermissionsAsync();
-    if (!perm.granted) {
-      Alert.alert("Permesso negato", "Abilita l'accesso alla fotocamera nelle impostazioni");
-      return;
-    }
-    const result = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.8, mediaTypes: "images" });
-    if (!result.canceled && result.assets[0]) {
-      const asset = result.assets[0];
-      setImageUri(asset.uri);
-      setImageBase64(asset.base64 ?? null);
-      setState("preview");
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try {
+      const { granted, canAskAgain } = await ImagePicker.requestCameraPermissionsAsync();
+      if (!granted) {
+        Alert.alert(
+          "Fotocamera non autorizzata",
+          canAskAgain
+            ? "Leafy ha bisogno della fotocamera per scansionare gli scontrini."
+            : "Hai negato l'accesso alla fotocamera. Abilitalo nelle impostazioni del dispositivo.",
+          [
+            { text: "Non ora", style: "cancel" },
+            { text: "Apri Impostazioni", onPress: () => Linking.openSettings() },
+          ]
+        );
+        return;
+      }
+      const result = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.8, mediaTypes: "images" });
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+        setImageUri(asset.uri);
+        setImageBase64(asset.base64 ?? null);
+        setState("preview");
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+    } catch {
+      Alert.alert("Errore fotocamera", "Impossibile accedere alla fotocamera. Controlla i permessi nelle impostazioni.");
     }
   };
 

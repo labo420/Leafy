@@ -11,6 +11,7 @@ import {
   FlatList,
   Image,
   KeyboardAvoidingView,
+  Linking,
   Modal,
   Platform,
   Pressable,
@@ -252,18 +253,31 @@ export default function BarcodeScannerScreen() {
   );
 
   const takeManualPhoto = async (side: "front" | "back") => {
-    const perm = await ImagePicker.requestCameraPermissionsAsync();
-    if (!perm.granted) {
-      Alert.alert("Permesso negato", "Abilita l'accesso alla fotocamera nelle impostazioni");
-      return;
-    }
-    const result = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.6, mediaTypes: "images" });
-    if (!result.canceled && result.assets[0]) {
-      const { uri, base64 } = result.assets[0];
-      if (base64) {
-        if (side === "front") setManualFrontPhoto({ uri, base64 });
-        else setManualBackPhoto({ uri, base64 });
+    try {
+      const { granted, canAskAgain } = await ImagePicker.requestCameraPermissionsAsync();
+      if (!granted) {
+        Alert.alert(
+          "Fotocamera non autorizzata",
+          canAskAgain
+            ? "Leafy ha bisogno della fotocamera per fotografare il prodotto."
+            : "Hai negato l'accesso alla fotocamera. Abilitalo nelle impostazioni del dispositivo.",
+          [
+            { text: "Non ora", style: "cancel" },
+            { text: "Apri Impostazioni", onPress: () => Linking.openSettings() },
+          ]
+        );
+        return;
       }
+      const result = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.6, mediaTypes: "images" });
+      if (!result.canceled && result.assets[0]) {
+        const { uri, base64 } = result.assets[0];
+        if (base64) {
+          if (side === "front") setManualFrontPhoto({ uri, base64 });
+          else setManualBackPhoto({ uri, base64 });
+        }
+      }
+    } catch {
+      Alert.alert("Errore fotocamera", "Impossibile accedere alla fotocamera. Controlla i permessi nelle impostazioni.");
     }
   };
 
