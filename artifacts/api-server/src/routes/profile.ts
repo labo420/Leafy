@@ -9,7 +9,7 @@ import {
   ApplyReferralResponse,
 } from "@workspace/api-zod";
 import { calculateLevel } from "../lib/scanner";
-import { xpToLea, leaToEur } from "../lib/economy";
+import { leaToEur } from "../lib/economy";
 
 const router: IRouter = Router();
 
