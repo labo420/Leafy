@@ -164,7 +164,7 @@ function HowItWorksSection() {
 
 export default function ScanScreen() {
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
+  const { user, refreshBalances } = useAuth();
   const queryClient = useQueryClient();
   const [state, setState] = useState<ScanState>("idle");
   const [imageUri, setImageUri] = useState<string | null>(null);
@@ -210,6 +210,7 @@ export default function ScanScreen() {
       await queryClient.invalidateQueries({ queryKey: ["profile"] });
       queryClient.invalidateQueries({ queryKey: ["receipts"] });
       queryClient.invalidateQueries({ queryKey: ["active-session"] });
+      refreshBalances();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       checkForLevelUp();
     },
