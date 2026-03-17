@@ -16,25 +16,33 @@ import Colors from "@/constants/colors";
 import { useAuth } from "@/context/auth";
 import BattlePassModal from "@/components/BattlePassModal";
 
-const XP_TO_EUR = 0.01;
+const LEA_TO_EUR = 0.01;
 
 export default function WalletScreen() {
   const insets = useSafeAreaInsets();
   const { user, leaBalance, hasBattlePass } = useAuth();
   const [showBattlePass, setShowBattlePass] = useState(false);
-  const [showWithdrawInfo, setShowWithdrawInfo] = useState(false);
 
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 + 84 : 100 + insets.bottom;
 
-  const euroValue = leaBalance * XP_TO_EUR;
+  const euroValue = leaBalance * LEA_TO_EUR;
+
+  const formattedLea = leaBalance.toLocaleString("it-IT", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  const formattedEuro = euroValue.toLocaleString("it-IT", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 
   if (!user) {
     return (
       <View style={styles.centered}>
         <Feather name="credit-card" size={48} color={Colors.textMuted} />
         <Text style={styles.guestTitle}>Il tuo Wallet</Text>
-        <Text style={styles.guestSub}>Accedi per vedere il tuo saldo $LEA e prelevare i guadagni.</Text>
+        <Text style={styles.guestSub}>Accedi per vedere il tuo saldo $LEA.</Text>
       </View>
     );
   }
@@ -45,17 +53,19 @@ export default function WalletScreen() {
 
       <ScrollView
         style={styles.container}
-        contentContainerStyle={{ paddingBottom: bottomPad }}
+        contentContainerStyle={{ paddingTop: topPadding + 20, paddingBottom: bottomPad }}
         showsVerticalScrollIndicator={false}
       >
-        <LinearGradient
-          colors={[Colors.forest, Colors.leaf]}
-          style={[styles.headerGrad, { paddingTop: topPadding + 12 }]}
-        >
-          <Animated.View entering={FadeInDown.delay(100).springify()}>
-            <Text style={styles.headerLabel}>Saldo $LEA</Text>
-            <Text style={styles.headerBalance}>{leaBalance.toFixed(4)}</Text>
-            <Text style={styles.headerEuro}>≈ {euroValue.toFixed(2)}€</Text>
+        <View style={styles.content}>
+          <Animated.View entering={FadeInDown.delay(80).springify()} style={styles.balanceCard}>
+            <Text style={styles.balanceLabel}>Mio Wallet</Text>
+
+            <View style={styles.balanceRow}>
+              <Text style={styles.balanceAmount}>{formattedLea}</Text>
+              <Text style={styles.balanceCurrency}>$LEA</Text>
+            </View>
+
+            <Text style={styles.balanceEuro}>≈ {formattedEuro} €</Text>
 
             {hasBattlePass && (
               <View style={styles.bpActiveBadge}>
@@ -64,64 +74,9 @@ export default function WalletScreen() {
               </View>
             )}
           </Animated.View>
-        </LinearGradient>
-
-        <View style={styles.content}>
-          <Animated.View entering={FadeInDown.delay(160).springify()}>
-            <Pressable
-              style={[styles.withdrawCard, !hasBattlePass && styles.withdrawCardLocked]}
-              onPress={() => {
-                if (!hasBattlePass) {
-                  setShowBattlePass(true);
-                } else {
-                  setShowWithdrawInfo(true);
-                }
-              }}
-            >
-              {hasBattlePass ? (
-                <LinearGradient
-                  colors={["#3a8f65", Colors.leaf]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.withdrawGrad}
-                >
-                  <View style={styles.withdrawIconWrap}>
-                    <Feather name="dollar-sign" size={24} color="#fff" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.withdrawTitle}>Ritira su PayPal</Text>
-                    <Text style={styles.withdrawSub}>Invia i tuoi $LEA al tuo account PayPal</Text>
-                  </View>
-                  <Feather name="chevron-right" size={20} color="rgba(255,255,255,0.7)" />
-                </LinearGradient>
-              ) : (
-                <View style={styles.withdrawLocked}>
-                  <View style={styles.withdrawLockedIcon}>
-                    <Feather name="lock" size={22} color={Colors.textSecondary} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.withdrawLockedTitle}>Ritira su PayPal</Text>
-                    <Text style={styles.withdrawLockedSub}>Richiede Battle Pass attivo</Text>
-                  </View>
-                  <View style={styles.unlockChip}>
-                    <Text style={styles.unlockChipText}>Sblocca</Text>
-                  </View>
-                </View>
-              )}
-            </Pressable>
-          </Animated.View>
-
-          {showWithdrawInfo && hasBattlePass && (
-            <Animated.View entering={FadeInDown.springify()} style={styles.infoBox}>
-              <Feather name="info" size={16} color={Colors.leaf} />
-              <Text style={styles.infoText}>
-                La funzione di prelievo PayPal sarà disponibile a breve. Continua ad accumulare $LEA!
-              </Text>
-            </Animated.View>
-          )}
 
           {!hasBattlePass && (
-            <Animated.View entering={FadeInDown.delay(220).springify()}>
+            <Animated.View entering={FadeInDown.delay(160).springify()}>
               <Pressable style={styles.bpPromoCard} onPress={() => setShowBattlePass(true)}>
                 <LinearGradient
                   colors={["#0f2a1e", "#1a4a2e"]}
@@ -143,7 +98,7 @@ export default function WalletScreen() {
             </Animated.View>
           )}
 
-          <Animated.View entering={FadeInDown.delay(280).springify()} style={styles.infoSection}>
+          <Animated.View entering={FadeInDown.delay(240).springify()} style={styles.infoSection}>
             <Text style={styles.infoSectionTitle}>Come funziona $LEA</Text>
             {[
               { icon: "camera" as const, text: "Scansiona uno scontrino e guadagna XP" },
@@ -189,29 +144,49 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 
-  headerGrad: {
-    paddingHorizontal: 24,
-    paddingBottom: 40,
+  content: {
+    paddingHorizontal: 20,
+    gap: 16,
   },
-  headerLabel: {
+
+  balanceCard: {
+    backgroundColor: Colors.primaryLight,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: Colors.primaryMuted,
+    padding: 24,
+    gap: 4,
+  },
+  balanceLabel: {
     fontSize: 12,
     fontFamily: "Inter_600SemiBold",
-    color: "rgba(255,255,255,0.7)",
+    color: Colors.primary,
     textTransform: "uppercase",
     letterSpacing: 1,
     marginBottom: 8,
   },
-  headerBalance: {
+  balanceRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 8,
+  },
+  balanceAmount: {
     fontSize: 52,
     fontFamily: "DMSans_700Bold",
-    color: "#fff",
-    lineHeight: 60,
+    color: Colors.primaryDeep,
+    lineHeight: 58,
   },
-  headerEuro: {
-    fontSize: 18,
+  balanceCurrency: {
+    fontSize: 20,
+    fontFamily: "Inter_700Bold",
+    color: Colors.primary,
+    marginBottom: 6,
+  },
+  balanceEuro: {
+    fontSize: 16,
     fontFamily: "Inter_400Regular",
-    color: "rgba(255,255,255,0.7)",
-    marginTop: 4,
+    color: Colors.textSecondary,
+    marginTop: 2,
   },
   bpActiveBadge: {
     flexDirection: "row",
@@ -222,106 +197,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 5,
     alignSelf: "flex-start",
-    marginTop: 12,
+    marginTop: 10,
   },
   bpActiveBadgeText: {
     fontSize: 12,
     fontFamily: "Inter_700Bold",
     color: "#1a4a2e",
-  },
-
-  content: {
-    padding: 20,
-    gap: 16,
-  },
-
-  withdrawCard: {
-    borderRadius: 20,
-    overflow: "hidden",
-  },
-  withdrawCardLocked: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 20,
-  },
-  withdrawGrad: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 20,
-    gap: 14,
-  },
-  withdrawIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  withdrawTitle: {
-    fontSize: 17,
-    fontFamily: "Inter_700Bold",
-    color: "#fff",
-  },
-  withdrawSub: {
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
-    color: "rgba(255,255,255,0.7)",
-    marginTop: 2,
-  },
-  withdrawLocked: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 20,
-    gap: 14,
-    backgroundColor: Colors.card,
-    borderRadius: 20,
-  },
-  withdrawLockedIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.background,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  withdrawLockedTitle: {
-    fontSize: 17,
-    fontFamily: "Inter_600SemiBold",
-    color: Colors.text,
-  },
-  withdrawLockedSub: {
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
-    color: Colors.textSecondary,
-    marginTop: 2,
-  },
-  unlockChip: {
-    backgroundColor: "#FFD700",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  unlockChipText: {
-    fontSize: 12,
-    fontFamily: "Inter_700Bold",
-    color: "#1a4a2e",
-  },
-
-  infoBox: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-    backgroundColor: Colors.primaryLight,
-    borderRadius: 16,
-    padding: 14,
-  },
-  infoText: {
-    fontSize: 13,
-    fontFamily: "Inter_400Regular",
-    color: Colors.text,
-    flex: 1,
-    lineHeight: 19,
   },
 
   bpPromoCard: {
