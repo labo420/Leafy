@@ -13,6 +13,8 @@ export interface Profile {
   username: string;
   email: string;
   totalPoints: number;
+  xp: number;
+  leaBalance: number;
   level: ProfileLevel;
   /** Progress percentage to next level (0-100) */
   levelProgress: number;

@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db, usersTable, receiptsTable, productCacheTable } from "@workspace/db";
 import {
   GetProfileResponse,
@@ -9,6 +9,7 @@ import {
   ApplyReferralResponse,
 } from "@workspace/api-zod";
 import { calculateLevel } from "../lib/scanner";
+import { xpToLea } from "../lib/economy";
 
 const router: IRouter = Router();
 
@@ -96,7 +97,9 @@ router.get("/profile", async (req, res): Promise<void> => {
   const user = await requireUser(req, res);
   if (!user) return;
 
-  const { level, nextLevelPoints, progressPercent } = calculateLevel(user.totalPoints);
+  const userXp = user.xp ?? user.totalPoints;
+  const { level, nextLevelPoints, progressPercent } = calculateLevel(userXp);
+  const leaBalance = parseFloat(String(user.leaBalance ?? "0"));
 
   const receipts = await db.select().from(receiptsTable).where(eq(receiptsTable.userId, user.id));
   const categories = [...new Set(receipts.flatMap(r => r.categories))];
@@ -109,10 +112,10 @@ router.get("/profile", async (req, res): Promise<void> => {
   if (categories.includes("Equo Solidale")) earnedBadges.push("fair_hero");
   if (categories.includes("Vegano")) earnedBadges.push("vegan_champ");
   if (user.streak >= 7) earnedBadges.push("streak_7");
-  if (user.totalPoints >= 500) earnedBadges.push("level_ramoscello");
-  if (user.totalPoints >= 2000) earnedBadges.push("level_arbusto");
-  if (user.totalPoints >= 5000) earnedBadges.push("level_albero");
-  if (user.totalPoints >= 10000) earnedBadges.push("level_foresta");
+  if (userXp >= 500) earnedBadges.push("level_ramoscello");
+  if (userXp >= 2000) earnedBadges.push("level_arbusto");
+  if (userXp >= 5000) earnedBadges.push("level_albero");
+  if (userXp >= 10000) earnedBadges.push("level_foresta");
 
   const badges = ALL_BADGES.map(b => ({
     ...b,
@@ -124,6 +127,8 @@ router.get("/profile", async (req, res): Promise<void> => {
     username: user.username,
     email: user.email,
     totalPoints: user.totalPoints,
+    xp: userXp,
+    leaBalance,
     level,
     levelProgress: progressPercent,
     nextLevelPoints,
@@ -248,8 +253,13 @@ router.post("/profile/referral/apply", async (req, res): Promise<void> => {
   }
 
   const REFERRAL_BONUS = 50;
+  const referralLeaDelta = Math.round(REFERRAL_BONUS * 0.01 * 100) / 100;
   await db.update(usersTable)
-    .set({ totalPoints: user.totalPoints + REFERRAL_BONUS })
+    .set({
+      totalPoints: user.totalPoints + REFERRAL_BONUS,
+      xp: sql`xp + ${REFERRAL_BONUS}`,
+      leaBalance: sql`lea_balance + ${referralLeaDelta}`,
+    })
     .where(eq(usersTable.id, user.id));
 
   res.json(ApplyReferralResponse.parse({

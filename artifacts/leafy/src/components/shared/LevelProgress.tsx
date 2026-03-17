@@ -59,7 +59,7 @@ export function LevelProgress({
         <span className="font-display text-4xl font-bold text-primary tracking-tighter">
           {new Intl.NumberFormat("it-IT").format(points)}
         </span>
-        <span className="text-xs font-medium text-muted-foreground mt-1">PUNTI</span>
+        <span className="text-xs font-medium text-muted-foreground mt-1">XP</span>
       </div>
     </div>
   );

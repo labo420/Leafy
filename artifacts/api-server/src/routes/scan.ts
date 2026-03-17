@@ -3,6 +3,7 @@ import { eq, and, gte, gt, ne, desc, sql } from "drizzle-orm";
 import { db, usersTable, receiptsTable, barcodeScansTable, productCacheTable, userProductSubmissionsTable } from "@workspace/db";
 import { ScanReceiptBody } from "@workspace/api-zod";
 import { hashImage, extractTextViaGoogleVision, calculateLevel } from "../lib/scanner";
+import { XP_TO_LEA_RATE } from "../lib/economy";
 import { runAntiFraudChecks, approvePendingPoints } from "../lib/antiFraud";
 import { lookupBarcode, validateReceiptWithAI, classifyProductsBatch, validateBarcodeImage, isValidBarcode, matchProductToReceipt, classifyManualProduct, type PendingProduct } from "../lib/productClassifier";
 import { uploadReceiptImage } from "../lib/receiptImages";
@@ -208,9 +209,14 @@ router.post("/scan", async (req, res): Promise<void> => {
     receiptBonusAwarded = true;
 
     const bonusTotal = RECEIPT_SCAN_BONUS + (welcomeBonus ? WELCOME_BONUS : 0);
+    const bonusLeaDelta = Math.round(bonusTotal * XP_TO_LEA_RATE * 100) / 100;
     await db
       .update(usersTable)
-      .set({ totalPoints: sql`total_points + ${bonusTotal}` })
+      .set({
+        totalPoints: sql`total_points + ${bonusTotal}`,
+        xp: sql`xp + ${bonusTotal}`,
+        leaBalance: sql`lea_balance + ${bonusLeaDelta}`,
+      })
       .where(eq(usersTable.id, user.id));
     await db
       .update(receiptsTable)
@@ -721,9 +727,14 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
       .returning();
 
     const totalPointsDelta = finalPoints + bonusVirtuosoPoints;
+    const leaDelta = Math.round(totalPointsDelta * XP_TO_LEA_RATE * 100) / 100;
     await tx
       .update(usersTable)
-      .set({ totalPoints: sql`total_points + ${totalPointsDelta}` })
+      .set({
+        totalPoints: sql`total_points + ${totalPointsDelta}`,
+        xp: sql`xp + ${totalPointsDelta}`,
+        leaBalance: sql`lea_balance + ${leaDelta}`,
+      })
       .where(eq(usersTable.id, user.id));
 
     let updatedGreenItemsJson = receipt.greenItemsJson;
@@ -751,7 +762,7 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
       .where(eq(receiptsTable.id, receiptId));
 
     const [updatedUser] = await tx
-      .select({ totalPoints: usersTable.totalPoints })
+      .select({ totalPoints: usersTable.totalPoints, xp: usersTable.xp, leaBalance: usersTable.leaBalance })
       .from(usersTable)
       .where(eq(usersTable.id, user.id));
 
@@ -779,7 +790,9 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
     }
   }
 
-  const level = calculateLevel(updatedUser?.totalPoints ?? 0);
+  const userXp = updatedUser?.xp ?? updatedUser?.totalPoints ?? 0;
+  const userLeaBalance = parseFloat(String(updatedUser?.leaBalance ?? "0"));
+  const level = calculateLevel(userXp);
 
   res.json({
     scanId: scan.id,
@@ -791,6 +804,8 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
     reasoning: product.reasoning,
     source: product.source,
     totalPoints: updatedUser?.totalPoints ?? 0,
+    xp: userXp,
+    leaBalance: userLeaBalance,
     level: level.level,
     remainingDailyPoints: remainingDailyCap - finalPoints,
     remainingReceiptPoints: remainingReceiptCap - finalPoints,

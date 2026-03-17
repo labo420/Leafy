@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, varchar, numeric } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -10,6 +10,8 @@ export const usersTable = pgTable("users", {
   email: text("email").notNull().default("demo@leafy.app"),
   profileImageUrl: text("profile_image_url"),
   totalPoints: integer("total_points").notNull().default(0),
+  xp: integer("xp").notNull().default(0),
+  leaBalance: numeric("lea_balance", { precision: 10, scale: 2 }).notNull().default("0.00"),
   pendingPoints: integer("pending_points").notNull().default(0),
   streak: integer("streak").notNull().default(0),
   lastScanDate: timestamp("last_scan_date", { withTimezone: true }),

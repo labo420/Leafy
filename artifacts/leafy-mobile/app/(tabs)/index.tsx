@@ -243,12 +243,12 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
               <View style={{ width: sz * 0.8, height: 5, borderRadius: 3, backgroundColor: reached ? segColor : "rgba(255,255,255,0.18)", marginTop: 2 }} />
 
               <Text style={{ fontSize: 8, fontFamily: "Inter_500Medium", color: reached ? "#fff" : "rgba(255,255,255,0.45)", marginTop: 2 }} numberOfLines={1}>
-                {lvl.minPts.toLocaleString("it-IT")} pt
+                {lvl.minPts.toLocaleString("it-IT")} xp
               </Text>
 
               {isCurrent && !isLast && (
                 <Text style={{ fontSize: 7, fontFamily: "Inter_500Medium", color: segColor, marginTop: 1 }} numberOfLines={1}>
-                  – {pointsRemaining.toLocaleString("it-IT")} pt
+                  – {pointsRemaining.toLocaleString("it-IT")} xp
                 </Text>
               )}
 
@@ -262,9 +262,9 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
               {expandedBadge === i && (
                 <View style={{ backgroundColor: "rgba(0,0,0,0.7)", borderRadius: 8, padding: 8, marginTop: 4, width: labelW }}>
                   <Text style={{ color: "#fff", fontFamily: "Inter_700Bold", fontSize: 11, textAlign: "center" }}>{lvl.name}</Text>
-                  <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 9, textAlign: "center", marginTop: 2 }}>{lvl.minPts.toLocaleString("it-IT")} pt</Text>
+                  <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 9, textAlign: "center", marginTop: 2 }}>{lvl.minPts.toLocaleString("it-IT")} xp</Text>
                   <Text style={{ color: reached ? "#AADF2A" : "rgba(255,255,255,0.5)", fontSize: 9, textAlign: "center", marginTop: 2, fontFamily: "Inter_500Medium" }}>
-                    {reached ? "✓ Sbloccato" : `Mancano ${Math.max(0, lvl.minPts - points).toLocaleString("it-IT")} pt`}
+                    {reached ? "✓ Sbloccato" : `Mancano ${Math.max(0, lvl.minPts - points).toLocaleString("it-IT")} xp`}
                   </Text>
                 </View>
               )}
@@ -294,11 +294,11 @@ const milestoneStyles = StyleSheet.create({
 
 const MOTIVATIONAL_MESSAGES = [
   (name: string) => `Oggi sei già un passo avanti, ${name}!`,
-  (name: string) => `Stai accumulando punti reali, ${name}!`,
+  (name: string) => `Stai accumulando XP reali, ${name}!`,
   () => `Ogni scontrino vale qualcosa per te.`,
   (name: string) => `Grande slancio questa settimana, ${name}!`,
-  (_name: string, pts: number) => `${pts.toLocaleString("it-IT")} punti nel tuo portafoglio — continua così!`,
-  () => `Potresti sorprenderti di quanti punti guadagni già.`,
+  (_name: string, pts: number) => `${pts.toLocaleString("it-IT")} XP nel tuo portafoglio — continua così!`,
+  () => `Potresti sorprenderti di quanti XP guadagni già.`,
   () => `Ogni scelta conta. La tua fa la differenza!`,
 ];
 
@@ -379,7 +379,7 @@ function LevelProgressRing({
         <Text style={[ringStyles.pointsValue, { color: valueColor }]}>
           {new Intl.NumberFormat("it-IT").format(points)}
         </Text>
-        <Text style={[ringStyles.pointsLabel, { color: labelColor }]}>PUNTI</Text>
+        <Text style={[ringStyles.pointsLabel, { color: labelColor }]}>XP</Text>
       </View>
     </Animated.View>
   );
@@ -708,7 +708,9 @@ export default function HomeScreen() {
 
   const username = profile?.username || user?.firstName || "Utente";
   const streak = profile?.streak ?? 0;
-  const points = profile?.totalPoints ?? 0;
+  const xp = profile?.xp ?? profile?.totalPoints ?? 0;
+  const leaBalance = profile?.leaBalance ?? 0;
+  const points = xp;
   const level = profile?.level ?? "Germoglio";
   const levelProgress = Math.max(0, Math.min(100, profile?.levelProgress ?? 0));
   const nextLevelPoints = profile?.nextLevelPoints ?? 0;
@@ -753,11 +755,17 @@ export default function HomeScreen() {
               <Text style={styles.greetingHero}>Ciao, {username}! 👋</Text>
             </View>
           </View>
-          <Pressable onPress={() => router.push("/(tabs)/profilo")}>
-            <View style={styles.avatarCircleHero}>
-              <Text style={styles.avatarInitial}>{safeInitial}</Text>
+          <View style={styles.headerRight}>
+            <View style={styles.leaBadge}>
+              <Text style={styles.leaBadgeSymbol}>$LEA</Text>
+              <Text style={styles.leaBadgeValue}>{leaBalance.toFixed(2)}€</Text>
             </View>
-          </Pressable>
+            <Pressable onPress={() => router.push("/(tabs)/profilo")}>
+              <View style={styles.avatarCircleHero}>
+                <Text style={styles.avatarInitial}>{safeInitial}</Text>
+              </View>
+            </Pressable>
+          </View>
         </View>
 
         <Animated.View
@@ -921,6 +929,33 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: "DMSans_600SemiBold",
     color: "rgba(255,255,255,0.85)",
+  },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  leaBadge: {
+    backgroundColor: "rgba(255,255,255,0.15)",
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.20)",
+  },
+  leaBadgeSymbol: {
+    fontSize: 10,
+    fontFamily: "DMSans_700Bold",
+    color: "#AADF2A",
+    letterSpacing: 0.5,
+  },
+  leaBadgeValue: {
+    fontSize: 14,
+    fontFamily: "DMSans_700Bold",
+    color: "#ffffff",
   },
   avatarCircleHero: {
     width: 46,

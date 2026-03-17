@@ -19,16 +19,20 @@ export default function Home() {
 
   const p = profile || {
     id: 1, username: "Guest", email: "guest@leafy.app", totalPoints: 1250,
+    xp: 1250, leaBalance: 12.50,
     level: "Ramoscello", levelProgress: 65, nextLevelPoints: 2000, streak: 5, badgesCount: 12, badges: []
   };
 
+  const xp = p.xp ?? p.totalPoints;
+  const leaBalance = p.leaBalance ?? 0;
+
   const motivationalMessages = [
     `Oggi sei già un passo avanti, ${p.username}! 🌿`,
-    `Stai accumulando punti reali, ${p.username}! 🏆`,
+    `Stai accumulando XP reali, ${p.username}! 🏆`,
     `Ogni scontrino vale qualcosa per te. 💫`,
     `Grande slancio questa settimana, ${p.username}! ♻️`,
-    `${p.totalPoints} punti nel tuo portafoglio — continua così! 🎁`,
-    `Potresti sorprenderti di quanti punti guadagni già. 🛒`,
+    `${xp.toLocaleString("it-IT")} XP nel tuo portafoglio — continua così! 🎁`,
+    `Potresti sorprenderti di quanti XP guadagni già. 🛒`,
     `Ogni scelta conta. La tua fa la differenza! 🌱`,
   ];
   const message = motivationalMessages[p.streak % motivationalMessages.length];
@@ -49,11 +53,17 @@ export default function Home() {
             </p>
           </div>
         </div>
-        <Link href="/profilo" className="block">
-          <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-background shadow-md shadow-black/10 hover:scale-105 transition-transform">
-            <img src={`${import.meta.env.BASE_URL}images/avatar.png`} alt="Avatar" className="w-full h-full object-cover" />
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 rounded-full px-3 py-1.5">
+            <span className="text-[10px] font-bold text-green-600 tracking-wide">$LEA</span>
+            <span className="text-sm font-bold text-green-700">{leaBalance.toFixed(2)}€</span>
           </div>
-        </Link>
+          <Link href="/profilo" className="block">
+            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-background shadow-md shadow-black/10 hover:scale-105 transition-transform">
+              <img src={`${import.meta.env.BASE_URL}images/avatar.png`} alt="Avatar" className="w-full h-full object-cover" />
+            </div>
+          </Link>
+        </div>
       </header>
 
       {/* Main Progress */}
@@ -62,13 +72,13 @@ export default function Home() {
         <LevelProgress
           progress={p.levelProgress}
           level={p.level}
-          points={p.totalPoints}
+          points={xp}
           size={240}
         />
         <div className="mt-6 w-full max-w-[280px]">
           <div className="flex justify-between text-xs font-medium text-muted-foreground mb-2">
             <span>{p.level}</span>
-            <span>{p.nextLevelPoints?.toLocaleString("it-IT")} pts per il prossimo livello</span>
+            <span>{p.nextLevelPoints?.toLocaleString("it-IT")} xp per il prossimo livello</span>
           </div>
           <div className="h-2.5 bg-muted rounded-full overflow-hidden">
             <div

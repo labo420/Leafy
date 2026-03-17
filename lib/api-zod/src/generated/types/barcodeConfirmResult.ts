@@ -16,6 +16,8 @@ export interface BarcodeConfirmResult {
   reasoning: string;
   source: string;
   totalPoints: number;
-  level: number;
+  xp: number;
+  leaBalance: number;
+  level: string;
   remainingDailyPoints: number;
 }

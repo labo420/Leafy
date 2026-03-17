@@ -37,6 +37,8 @@ export interface Profile {
   username: string;
   email: string;
   totalPoints: number;
+  xp: number;
+  leaBalance: number;
   level: ProfileLevel;
   /** Progress percentage to next level (0-100) */
   levelProgress: number;
@@ -162,7 +164,9 @@ export interface BarcodeConfirmResult {
   reasoning: string;
   source: string;
   totalPoints: number;
-  level: number;
+  xp: number;
+  leaBalance: number;
+  level: string;
   remainingDailyPoints: number;
 }
 

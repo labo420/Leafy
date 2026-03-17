@@ -22,6 +22,8 @@ export const GetProfileResponse = zod.object({
   username: zod.string(),
   email: zod.string(),
   totalPoints: zod.number(),
+  xp: zod.number(),
+  leaBalance: zod.number(),
   level: zod.enum(["Germoglio", "Ramoscello", "Arbusto", "Albero", "Foresta"]),
   levelProgress: zod
     .number()
@@ -177,7 +179,9 @@ export const BarcodeConfirmResponse = zod.object({
   reasoning: zod.string(),
   source: zod.string(),
   totalPoints: zod.number(),
-  level: zod.number(),
+  xp: zod.number(),
+  leaBalance: zod.number(),
+  level: zod.string(),
   remainingDailyPoints: zod.number(),
 });
 
