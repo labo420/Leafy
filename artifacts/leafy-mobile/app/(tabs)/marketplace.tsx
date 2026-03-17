@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primaryLight,
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: Colors.primaryMuted,
+    borderColor: Colors.leaf,
     padding: 24,
     gap: 4,
   },
