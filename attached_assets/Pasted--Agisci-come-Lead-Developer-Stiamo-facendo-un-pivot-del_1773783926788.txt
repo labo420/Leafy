@@ -1,0 +1,24 @@
+"Agisci come Lead Developer. Stiamo facendo un pivot dell'app passando da un sistema generico a punti/gift card a un modello 'Green Fintech' basato sul cashback. Analizza il codice attuale e applica questi cambiamenti strutturali:
+
+1. Economia Duale (Stato Globale):
+Sostituisci il contatore singolo dei 'punti' con due variabili distinte: XP (punti esperienza per il livello della piantina) e $LEA (valuta cashback). Aggiorna la Top Bar dell'app in modo che mostri sempre entrambi i saldi affiancati.
+
+2. Semplificazione Flusso Fotocamera (Scudo UX):
+Rimuovi la doppia opzione di scansione. Il pulsante d'azione centrale deve aprire direttamente e unicamente la fotocamera per lo scontrino. Rimuovi qualsiasi opzione per caricare foto dalla galleria del telefono (solo scatto live).
+
+3. Refactoring Sezione 'Premi' in 'Wallet':
+Elimina l'intera logica e l'interfaccia delle Gift Card e dei pacchi regalo. Rinomina la pagina in 'Wallet'. Inserisci una card centrale che mostri il saldo totale in $LEA e la sua conversione stimata in Euro.
+
+4. Paywall di Prelievo:
+Nella pagina Wallet, aggiungi un pulsante 'Ritira su PayPal'. Inserisci un blocco logico: se l'utente non ha lo stato hasBattlePass attivo (o simile variabile di abbonamento nel database), il pulsante deve mostrare un lucchetto. Cliccandolo, apri un modal che invita ad abbonarsi per sbloccare i prelievi.
+
+5. Pulizia UI (Green Fintech):
+Fai un audit delle schermate. Rimuovi tutte le emoji native del sistema operativo usate nell'interfaccia strutturale e sostituiscile con icone vettoriali minimali e monocromatiche, coerenti con il design system attuale.
+
+6. Aggiornamento Schermata Profilo:
+Aggiungi una nuova voce nel menù del profilo chiamata 'Aiuto e Supporto / FAQ' che porti a una schermata dedicata (per ora genera un layout vuoto pronto per i testi).
+
+7. Risultato Scansione (Rinforzo Positivo):
+Modifica il modal di risultato post-scansione. Deve sempre mostrare e celebrare l'acquisizione di XP in grande (anche se i $LEA guadagnati sono 0). Aggiungi un box 'Consiglio del Radar' in basso per i suggerimenti testuali dinamici.
+
+Procedi un passo alla volta, partendo dalla logica di stato globale (Punto 1), e chiedimi conferma prima di passare al punto successivo."
