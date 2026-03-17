@@ -56,6 +56,8 @@ interface ScanResponse {
   receiptBonusPts?: number;
   welcomeBonus?: boolean;
   welcomeBonusPts?: number;
+  xpEarned?: number;
+  leaEarned?: number;
 }
 
 interface ActiveSession {
@@ -164,7 +166,7 @@ function HowItWorksSection() {
 
 export default function ScanScreen() {
   const insets = useSafeAreaInsets();
-  const { user, refreshBalances } = useAuth();
+  const { user, refreshBalances, hasBattlePass } = useAuth();
   const queryClient = useQueryClient();
   const [state, setState] = useState<ScanState>("idle");
   const [imageUri, setImageUri] = useState<string | null>(null);
@@ -340,6 +342,27 @@ export default function ScanScreen() {
               </Animated.View>
             </LinearGradient>
 
+            {((scanResult.xpEarned ?? 0) > 0 || (scanResult.leaEarned ?? 0) > 0) && (
+              <Animated.View entering={FadeInDown.delay(220)} style={styles.earnedRow}>
+                <View style={styles.earnedItem}>
+                  <Feather name="star" size={20} color={Colors.leaf} />
+                  <Text style={styles.earnedLabel}>XP guadagnati</Text>
+                  <Text style={styles.earnedValue}>+{scanResult.xpEarned ?? 0} XP</Text>
+                </View>
+                <View style={styles.earnedDivider} />
+                <View style={styles.earnedItem}>
+                  <Feather name="dollar-sign" size={20} color="#FFD700" />
+                  <Text style={styles.earnedLabel}>$LEA guadagnati</Text>
+                  <Text style={[styles.earnedValue, { color: "#FFD700" }]}>+{(scanResult.leaEarned ?? 0).toFixed(2)} $LEA</Text>
+                  {hasBattlePass && (
+                    <View style={styles.x2Badge}>
+                      <Text style={styles.x2BadgeText}>x2</Text>
+                    </View>
+                  )}
+                </View>
+              </Animated.View>
+            )}
+
             {totalIdonei > 0 && (
               <Animated.View entering={FadeInDown.delay(300)} style={styles.section}>
                 <Text style={styles.pendingTitle}>Prodotti idonei ({totalIdonei})</Text>
@@ -379,6 +402,22 @@ export default function ScanScreen() {
                 ))}
               </Animated.View>
             )}
+
+            <Animated.View entering={FadeInDown.delay(400)} style={styles.radarTipCard}>
+              <View style={styles.radarTipHeader}>
+                <Feather name="radio" size={16} color={Colors.leaf} />
+                <Text style={styles.radarTipTitle}>Consiglio del Radar</Text>
+              </View>
+              <Text style={styles.radarTipText}>
+                {[
+                  "Scansiona i barcode dei prodotti idonei per guadagnare ancora più $LEA.",
+                  "Prodotti con Eco-Score A o B valgono il doppio in punti.",
+                  "Con il Battle Pass ogni $LEA guadagnato viene raddoppiato automaticamente.",
+                  "Più scansioni fai ogni mese, più sali di livello e sblocchi badge esclusivi.",
+                  "I prodotti bio e a km0 ottengono un bonus punti aggiuntivo.",
+                ][scanResult.receiptId % 5]}
+              </Text>
+            </Animated.View>
 
             <View style={styles.section}>
               <Pressable style={styles.scanProductsBtn} onPress={goToStorico}>
@@ -435,8 +474,8 @@ export default function ScanScreen() {
         </View>
         <Image source={{ uri: imageUri }} style={styles.previewImage} resizeMode="contain" />
         <Animated.View entering={SlideInDown.springify()} style={[styles.previewActions, { paddingBottom: bottomPad / 2 }]}>
-          <Pressable style={styles.secondaryBtn} onPress={() => pickImage("gallery")}>
-            <Feather name="refresh-ccw" size={18} color={Colors.leaf} />
+          <Pressable style={styles.secondaryBtn} onPress={() => pickImage("camera")}>
+            <Feather name="camera" size={18} color={Colors.leaf} />
             <Text style={styles.secondaryBtnText}>Cambia</Text>
           </Pressable>
           <Pressable style={styles.primaryBtn} onPress={startScan}>
@@ -595,32 +634,22 @@ export default function ScanScreen() {
               </Animated.View>
             </Pressable>
 
-            <View style={styles.actionRow}>
-              <Pressable
-                style={({ pressed }) => [styles.actionCardSmall, pressed && { opacity: 0.85 }]}
-                onPress={() => pickImage("gallery")}
-              >
-                <View style={[styles.actionCardSmallIcon, { backgroundColor: "#DBEAFE" }]}>
-                  <Feather name="image" size={22} color="#3B82F6" />
-                </View>
-                <Text style={styles.actionCardSmallTitle}>Dalla galleria</Text>
-                <Text style={styles.actionCardSmallSub}>Carica un'immagine</Text>
-              </Pressable>
-
-              <Pressable
-                style={({ pressed }) => [styles.actionCardSmall, pressed && { opacity: 0.85 }]}
-                onPress={() => {
-                  if (!user) { router.push("/(tabs)"); return; }
-                  router.push("/shopping-scanner");
-                }}
-              >
-                <View style={[styles.actionCardSmallIcon, { backgroundColor: Colors.primaryLight }]}>
-                  <MaterialCommunityIcons name="cart-outline" size={22} color={Colors.leaf} />
-                </View>
+            <Pressable
+              style={({ pressed }) => [styles.actionCardWide, pressed && { opacity: 0.85 }]}
+              onPress={() => {
+                if (!user) { router.push("/(tabs)"); return; }
+                router.push("/shopping-scanner");
+              }}
+            >
+              <View style={[styles.actionCardSmallIcon, { backgroundColor: Colors.primaryLight }]}>
+                <MaterialCommunityIcons name="cart-outline" size={22} color={Colors.leaf} />
+              </View>
+              <View style={{ flex: 1 }}>
                 <Text style={styles.actionCardSmallTitle}>Modalità Spesa</Text>
-                <Text style={styles.actionCardSmallSub}>Scansiona prodotti</Text>
-              </Pressable>
-            </View>
+                <Text style={styles.actionCardSmallSub}>Scansiona i barcode dei prodotti</Text>
+              </View>
+              <Feather name="chevron-right" size={18} color={Colors.textSecondary} />
+            </Pressable>
 
             <View style={styles.scanHint}>
               <Feather name="info" size={13} color={Colors.textSecondary} />
@@ -908,4 +937,91 @@ const styles = StyleSheet.create({
   storesCategory: { gap: 4 },
   storesCatTitle: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: Colors.text },
   storesCatList: { fontSize: 12, fontFamily: "Inter_400Regular", color: Colors.textSecondary, lineHeight: 18 },
+
+  earnedRow: {
+    flexDirection: "row",
+    marginHorizontal: 20,
+    marginTop: 16,
+    backgroundColor: Colors.card,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    overflow: "hidden",
+  },
+  earnedItem: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 18,
+    paddingHorizontal: 12,
+    gap: 4,
+  },
+  earnedLabel: {
+    fontSize: 11,
+    fontFamily: "Inter_500Medium",
+    color: Colors.textSecondary,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  earnedValue: {
+    fontSize: 20,
+    fontFamily: "DMSans_700Bold",
+    color: Colors.leaf,
+  },
+  earnedDivider: {
+    width: 1,
+    backgroundColor: Colors.border,
+    marginVertical: 12,
+  },
+  x2Badge: {
+    backgroundColor: "#FFD700",
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginTop: 2,
+  },
+  x2BadgeText: {
+    fontSize: 11,
+    fontFamily: "Inter_700Bold",
+    color: "#1a4a2e",
+  },
+
+  radarTipCard: {
+    marginHorizontal: 20,
+    marginTop: 16,
+    backgroundColor: Colors.primaryLight,
+    borderRadius: 20,
+    padding: 16,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: "rgba(46,107,80,0.15)",
+  },
+  radarTipHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  radarTipTitle: {
+    fontSize: 13,
+    fontFamily: "Inter_700Bold",
+    color: Colors.leaf,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  radarTipText: {
+    fontSize: 14,
+    fontFamily: "Inter_400Regular",
+    color: Colors.text,
+    lineHeight: 20,
+  },
+
+  actionCardWide: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    backgroundColor: Colors.card,
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
 });

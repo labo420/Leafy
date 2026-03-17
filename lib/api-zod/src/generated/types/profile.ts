@@ -25,4 +25,5 @@ export interface Profile {
   badgesCount: number;
   badges: Badge[];
   profileImageUrl?: string | null;
+  hasBattlePass?: boolean;
 }

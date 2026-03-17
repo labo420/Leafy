@@ -24,6 +24,7 @@ import { Fonts } from "@/constants/typography";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/context/auth";
 import BadgeIcon3D from "@/components/BadgeIcon3D";
+import BattlePassModal from "@/components/BattlePassModal";
 import type {
   Profile,
   ImpactStats,
@@ -444,13 +445,14 @@ const badgeStyles = StyleSheet.create({
 
 export default function ProfiloScreen() {
   const insets = useSafeAreaInsets();
-  const { user, refetch } = useAuth();
+  const { user, refetch, hasBattlePass } = useAuth();
   const queryClient = useQueryClient();
   const params = useLocalSearchParams<{ tab?: string }>();
   const [loggingOut, setLoggingOut] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [badgeTab, setBadgeTab] = useState<BadgeTab>("traguardi");
   const [impactVisible, setImpactVisible] = useState(false);
+  const [showBattlePassModal, setShowBattlePassModal] = useState(false);
 
   useEffect(() => {
     if (params.tab === "sfide") setBadgeTab("sfide");
@@ -598,6 +600,8 @@ export default function ProfiloScreen() {
   const profileImageUrl = user?.profileImageUrl;
 
   return (
+    <>
+      <BattlePassModal visible={showBattlePassModal} onClose={() => setShowBattlePassModal(false)} />
     <ScrollView
       style={styles.container}
       contentContainerStyle={{ paddingBottom: bottomPad }}
@@ -833,6 +837,46 @@ export default function ProfiloScreen() {
         )}
       </Animated.View>
 
+      <Animated.View entering={FadeInDown.delay(320).springify()} style={styles.section}>
+        <Text style={styles.sectionTitle}>Supporto</Text>
+
+        <Pressable style={styles.menuRow} onPress={() => router.push("/faq")}>
+          <View style={[styles.menuRowIcon, { backgroundColor: Colors.primaryLight }]}>
+            <Feather name="help-circle" size={18} color={Colors.leaf} />
+          </View>
+          <Text style={styles.menuRowText}>Aiuto e FAQ</Text>
+          <Feather name="chevron-right" size={16} color={Colors.textSecondary} />
+        </Pressable>
+
+        {!hasBattlePass ? (
+          <Pressable style={styles.menuRow} onPress={() => setShowBattlePassModal(true)}>
+            <View style={[styles.menuRowIcon, { backgroundColor: "rgba(255,215,0,0.15)" }]}>
+              <Feather name="star" size={18} color="#FFD700" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.menuRowText}>Battle Pass</Text>
+              <Text style={styles.menuRowSub}>x2 $LEA · Preleva su PayPal</Text>
+            </View>
+            <View style={styles.menuRowBadge}>
+              <Text style={styles.menuRowBadgeText}>0,89€/mese</Text>
+            </View>
+          </Pressable>
+        ) : (
+          <View style={styles.menuRow}>
+            <View style={[styles.menuRowIcon, { backgroundColor: "rgba(255,215,0,0.15)" }]}>
+              <Feather name="star" size={18} color="#FFD700" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.menuRowText}>Battle Pass</Text>
+              <Text style={styles.menuRowSub}>Attivo · $LEA x2</Text>
+            </View>
+            <View style={[styles.menuRowBadge, { backgroundColor: "#4ade80" }]}>
+              <Text style={[styles.menuRowBadgeText, { color: "#fff" }]}>Attivo</Text>
+            </View>
+          </View>
+        )}
+      </Animated.View>
+
       <View style={styles.section}>
         <Pressable
           style={styles.logoutBtn}
@@ -850,6 +894,7 @@ export default function ProfiloScreen() {
         </Pressable>
       </View>
     </ScrollView>
+    </>
   );
 }
 
@@ -1219,5 +1264,44 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: "Inter_600SemiBold",
     color: Colors.red,
+  },
+
+  menuRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  menuRowIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  menuRowText: {
+    flex: 1,
+    fontSize: 15,
+    fontFamily: "Inter_500Medium",
+    color: Colors.text,
+  },
+  menuRowSub: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    color: Colors.textSecondary,
+    marginTop: 1,
+  },
+  menuRowBadge: {
+    backgroundColor: "#FFD700",
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  menuRowBadgeText: {
+    fontSize: 11,
+    fontFamily: "Inter_700Bold",
+    color: "#1a4a2e",
   },
 });

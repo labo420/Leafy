@@ -174,10 +174,10 @@ export default function TabLayout() {
       <Tabs.Screen
         name="marketplace"
         options={{
-          title: "Premi",
+          title: "Wallet",
           tabBarIcon: ({ color, focused }) => (
             <TabIcon focused={focused}>
-              <Ionicons name="gift-outline" size={22} color={color} />
+              <Feather name="credit-card" size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
             </TabIcon>
           ),
         }}

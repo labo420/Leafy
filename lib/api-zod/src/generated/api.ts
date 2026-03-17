@@ -42,6 +42,7 @@ export const GetProfileResponse = zod.object({
     }),
   ),
   profileImageUrl: zod.string().nullish(),
+  hasBattlePass: zod.boolean().optional(),
 });
 
 /**

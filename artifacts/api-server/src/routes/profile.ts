@@ -160,7 +160,7 @@ router.get("/profile", async (req, res): Promise<void> => {
       };
     });
 
-  res.json({ ...data, pendingValidations });
+  res.json({ ...data, pendingValidations, hasBattlePass: user.hasBattlePass ?? false });
 });
 
 router.get("/profile/impact", async (req, res): Promise<void> => {
@@ -236,6 +236,23 @@ router.get("/profile/referral", async (req, res): Promise<void> => {
     referralCount: user.referralCount,
     pointsEarned: user.referralPointsEarned,
   }));
+});
+
+router.post("/profile/battle-pass/activate", async (req, res): Promise<void> => {
+  const user = await requireUser(req, res);
+  if (!user) return;
+
+  // TODO: Integrare gateway di pagamento Stripe/IAP qui
+  // Attualmente è un mock: imposta hasBattlePass = true senza pagamento reale
+  const expiry = new Date();
+  expiry.setMonth(expiry.getMonth() + 1);
+
+  await db.update(usersTable).set({
+    hasBattlePass: true,
+    battlePassExpiry: expiry,
+  }).where(eq(usersTable.id, user.id));
+
+  res.json({ success: true, hasBattlePass: true, expiresAt: expiry.toISOString() });
 });
 
 router.post("/profile/referral/apply", async (req, res): Promise<void> => {

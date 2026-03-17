@@ -209,7 +209,8 @@ router.post("/scan", async (req, res): Promise<void> => {
     receiptBonusAwarded = true;
 
     const bonusTotal = RECEIPT_SCAN_BONUS + (welcomeBonus ? WELCOME_BONUS : 0);
-    const bonusLeaDelta = Math.round(bonusTotal * XP_TO_LEA_RATE * 100) / 100;
+    const leaMultiplier = user.hasBattlePass ? 2 : 1;
+    const bonusLeaDelta = Math.round(bonusTotal * XP_TO_LEA_RATE * leaMultiplier * 100) / 100;
     await db
       .update(usersTable)
       .set({
@@ -271,6 +272,10 @@ router.post("/scan", async (req, res): Promise<void> => {
 
   const [refreshedUser] = await db.select({ xp: usersTable.xp, leaBalance: usersTable.leaBalance }).from(usersTable).where(eq(usersTable.id, user.id));
 
+  const totalXpEarned = receiptBonusAwarded ? (RECEIPT_SCAN_BONUS + (welcomeBonus ? WELCOME_BONUS : 0)) : 0;
+  const leaMultiplierResp = user.hasBattlePass ? 2 : 1;
+  const totalLeaEarned = Math.round(totalXpEarned * XP_TO_LEA_RATE * leaMultiplierResp * 100) / 100;
+
   res.json({
     receiptId: receipt.id,
     barcodeExpiry: barcodeExpiry.toISOString(),
@@ -281,6 +286,8 @@ router.post("/scan", async (req, res): Promise<void> => {
     receiptBonusPts: receiptBonusAwarded ? RECEIPT_SCAN_BONUS : 0,
     welcomeBonus,
     welcomeBonusPts: welcomeBonus ? WELCOME_BONUS : 0,
+    xpEarned: totalXpEarned,
+    leaEarned: totalLeaEarned,
     xp: refreshedUser?.xp ?? 0,
     leaBalance: parseFloat(String(refreshedUser?.leaBalance ?? "0")),
     greenItemsFound: pendingProducts.map((p) => ({
@@ -731,7 +738,8 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
       .returning();
 
     const totalPointsDelta = finalPoints + bonusVirtuosoPoints;
-    const leaDelta = Math.round(totalPointsDelta * XP_TO_LEA_RATE * 100) / 100;
+    const leaMultiplierBarcode = user.hasBattlePass ? 2 : 1;
+    const leaDelta = Math.round(totalPointsDelta * XP_TO_LEA_RATE * leaMultiplierBarcode * 100) / 100;
     await tx
       .update(usersTable)
       .set({

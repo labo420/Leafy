@@ -7,8 +7,10 @@ type AuthContextType = {
   isLoading: boolean;
   xp: number;
   leaBalance: number;
+  hasBattlePass: boolean;
   refetch: () => void;
   refreshBalances: () => Promise<void>;
+  activateBattlePass: () => Promise<void>;
   setUser: (user: AuthUser | null) => void;
   logout: () => Promise<void>;
 };
@@ -18,8 +20,10 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   xp: 0,
   leaBalance: 0,
+  hasBattlePass: false,
   refetch: () => {},
   refreshBalances: async () => {},
+  activateBattlePass: async () => {},
   setUser: () => {},
   logout: async () => {},
 });
@@ -29,6 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [xp, setXp] = useState(0);
   const [leaBalance, setLeaBalance] = useState(0);
+  const [hasBattlePass, setHasBattlePass] = useState(false);
 
   const saveUserLocally = async (userData: AuthUser | null) => {
     try {
@@ -51,6 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const data = await res.json();
         setXp(data.xp ?? 0);
         setLeaBalance(typeof data.leaBalance === "string" ? parseFloat(data.leaBalance) : (data.leaBalance ?? 0));
+        setHasBattlePass(data.hasBattlePass ?? false);
       }
     } catch {
     }
@@ -81,6 +87,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const activateBattlePass = async () => {
+    try {
+      const domain = process.env.EXPO_PUBLIC_DOMAIN;
+      const base = domain ? `https://${domain}` : "";
+      const res = await fetch(`${base}/api/profile/battle-pass/activate`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (res.ok) {
+        setHasBattlePass(true);
+        await fetchBalances();
+      }
+    } catch (e) {
+      console.error("Failed to activate Battle Pass:", e);
+    }
+  };
+
   const logout = async () => {
     try {
       const domain = process.env.EXPO_PUBLIC_DOMAIN;
@@ -91,6 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setXp(0);
       setLeaBalance(0);
+      setHasBattlePass(false);
       await saveUserLocally(null);
     }
   };
@@ -111,7 +135,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, xp, leaBalance, refetch: fetchUser, refreshBalances: fetchBalances, setUser, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, xp, leaBalance, hasBattlePass, refetch: fetchUser, refreshBalances: fetchBalances, activateBattlePass, setUser, logout }}>
       {children}
     </AuthContext.Provider>
   );
