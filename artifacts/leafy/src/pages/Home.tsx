@@ -18,13 +18,13 @@ export default function Home() {
   }
 
   const p = profile || {
-    id: 1, username: "Guest", email: "guest@leafy.app", totalPoints: 1250,
-    xp: 1250, leaBalance: 12.50,
+    id: 1, username: "Guest", email: "guest@leafy.app",
+    xp: 1200, leaBalance: 4.50,
     level: "Ramoscello", levelProgress: 65, nextLevelPoints: 2000, streak: 5, badgesCount: 12, badges: []
   };
 
-  const xp = p.xp ?? p.totalPoints;
-  const leaBalance = p.leaBalance ?? 0;
+  const xp = p.xp ?? 0;
+  const lea = p.leaBalance ?? 0;
 
   const motivationalMessages = [
     `Oggi sei già un passo avanti, ${p.username}! 🌿`,
@@ -53,10 +53,14 @@ export default function Home() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 rounded-full px-3 py-1.5">
+            <Zap className="w-3 h-3 text-primary" fill="currentColor" />
+            <span className="text-sm font-bold text-primary">{xp.toLocaleString("it-IT")} XP</span>
+          </div>
           <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 rounded-full px-3 py-1.5">
             <span className="text-[10px] font-bold text-green-600 tracking-wide">$LEA</span>
-            <span className="text-sm font-bold text-green-700">{leaBalance.toFixed(2)}€</span>
+            <span className="text-sm font-bold text-green-700">{lea.toFixed(2)}</span>
           </div>
           <Link href="/profilo" className="block">
             <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-background shadow-md shadow-black/10 hover:scale-105 transition-transform">
