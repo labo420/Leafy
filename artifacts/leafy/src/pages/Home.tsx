@@ -59,8 +59,8 @@ export default function Home() {
             <span className="text-sm font-bold text-primary">{xp.toLocaleString("it-IT")} XP</span>
           </div>
           <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 rounded-full px-3 py-1.5">
-            <span className="text-[10px] font-bold text-green-600 tracking-wide">$LEA</span>
             <span className="text-sm font-bold text-green-700">{lea.toFixed(2)}</span>
+            <span className="text-[10px] font-bold text-green-600 tracking-wide">$LEA</span>
           </div>
           <Link href="/profilo" className="block">
             <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-background shadow-md shadow-black/10 hover:scale-105 transition-transform">
