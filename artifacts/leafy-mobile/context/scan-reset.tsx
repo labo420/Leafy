@@ -17,6 +17,7 @@ const ScanResetContext = createContext<ScanResetContextType>({
 export function ScanResetProvider({ children }: { children: React.ReactNode }) {
   const resetFnRef = useRef<(() => void) | null>(null);
   const cameraFnRef = useRef<(() => void) | null>(null);
+  const pendingCameraRef = useRef(false);
 
   const registerReset = useCallback((fn: () => void) => {
     resetFnRef.current = fn;
@@ -28,10 +29,18 @@ export function ScanResetProvider({ children }: { children: React.ReactNode }) {
 
   const registerCamera = useCallback((fn: () => void) => {
     cameraFnRef.current = fn;
+    if (pendingCameraRef.current) {
+      pendingCameraRef.current = false;
+      fn();
+    }
   }, []);
 
   const triggerCamera = useCallback(() => {
-    cameraFnRef.current?.();
+    if (cameraFnRef.current) {
+      cameraFnRef.current();
+    } else {
+      pendingCameraRef.current = true;
+    }
   }, []);
 
   return (
