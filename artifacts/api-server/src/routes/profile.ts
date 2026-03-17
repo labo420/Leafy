@@ -129,6 +129,7 @@ router.get("/profile", async (req, res): Promise<void> => {
     totalPoints: user.totalPoints,
     xp: userXp,
     leaBalance,
+    leaToEur: xpToLea(userXp),
     level,
     levelProgress: progressPercent,
     nextLevelPoints,

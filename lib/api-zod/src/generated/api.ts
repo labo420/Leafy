@@ -24,6 +24,7 @@ export const GetProfileResponse = zod.object({
   totalPoints: zod.number(),
   xp: zod.number(),
   leaBalance: zod.number(),
+  leaToEur: zod.number(),
   level: zod.enum(["Germoglio", "Ramoscello", "Arbusto", "Albero", "Foresta"]),
   levelProgress: zod
     .number()

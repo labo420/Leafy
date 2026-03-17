@@ -756,6 +756,10 @@ export default function HomeScreen() {
             </View>
           </View>
           <View style={styles.headerRight}>
+            <View style={styles.xpBadge}>
+              <Text style={styles.xpBadgeValue}>{xp.toLocaleString("it-IT")}</Text>
+              <Text style={styles.xpBadgeSymbol}>XP</Text>
+            </View>
             <View style={styles.leaBadge}>
               <Text style={styles.leaBadgeSymbol}>$LEA</Text>
               <Text style={styles.leaBadgeValue}>{leaBalance.toFixed(2)}€</Text>
@@ -935,13 +939,33 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
   },
+  xpBadge: {
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderRadius: 16,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 3,
+  },
+  xpBadgeValue: {
+    fontSize: 13,
+    fontFamily: "DMSans_700Bold",
+    color: "#ffffff",
+  },
+  xpBadgeSymbol: {
+    fontSize: 10,
+    fontFamily: "DMSans_700Bold",
+    color: "rgba(255,255,255,0.6)",
+    letterSpacing: 0.5,
+  },
   leaBadge: {
     backgroundColor: "rgba(255,255,255,0.15)",
     borderRadius: 16,
     paddingHorizontal: 10,
     paddingVertical: 5,
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
     gap: 4,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.20)",

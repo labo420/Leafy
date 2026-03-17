@@ -269,6 +269,8 @@ router.post("/scan", async (req, res): Promise<void> => {
     ? `${pendingProducts.length} prodott${pendingProducts.length === 1 ? "o" : "i"} trovat${pendingProducts.length === 1 ? "o" : "i"} — scansiona i barcode per guadagnare i punti!`
     : "Scontrino registrato. Scansiona i codici a barre dei tuoi prodotti per guadagnare punti.";
 
+  const [refreshedUser] = await db.select({ xp: usersTable.xp, leaBalance: usersTable.leaBalance }).from(usersTable).where(eq(usersTable.id, user.id));
+
   res.json({
     receiptId: receipt.id,
     barcodeExpiry: barcodeExpiry.toISOString(),
@@ -279,6 +281,8 @@ router.post("/scan", async (req, res): Promise<void> => {
     receiptBonusPts: receiptBonusAwarded ? RECEIPT_SCAN_BONUS : 0,
     welcomeBonus,
     welcomeBonusPts: welcomeBonus ? WELCOME_BONUS : 0,
+    xp: refreshedUser?.xp ?? 0,
+    leaBalance: parseFloat(String(refreshedUser?.leaBalance ?? "0")),
     greenItemsFound: pendingProducts.map((p) => ({
       name: p.name,
       matched: false,

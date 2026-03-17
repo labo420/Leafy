@@ -15,6 +15,7 @@ export interface Profile {
   totalPoints: number;
   xp: number;
   leaBalance: number;
+  leaToEur: number;
   level: ProfileLevel;
   /** Progress percentage to next level (0-100) */
   levelProgress: number;
