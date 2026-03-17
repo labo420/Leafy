@@ -59,12 +59,14 @@ function BalanceBar() {
     <View style={[styles.balanceBar, { paddingTop: insets.top + 4 }]}>
       <View style={styles.balanceInner}>
         <View style={styles.balanceChip}>
+          <Ionicons name="leaf" size={12} color="rgba(255,255,255,0.7)" />
           <Text style={styles.balanceChipValue}>{xp.toLocaleString("it-IT")}</Text>
           <Text style={styles.balanceChipLabel}>XP</Text>
         </View>
         <View style={styles.balanceDot} />
         <View style={styles.balanceChip}>
-          <Text style={styles.balanceChipLeaLabel}>$LEA</Text>
+          <Feather name="dollar-sign" size={12} color="#AADF2A" />
+          <Text style={styles.balanceChipLeaLabel}>LEA</Text>
           <Text style={styles.balanceChipValue}>{leaBalance.toFixed(2)}€</Text>
         </View>
       </View>
