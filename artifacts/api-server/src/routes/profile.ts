@@ -266,7 +266,7 @@ router.post("/profile/referral/apply", async (req, res): Promise<void> => {
   res.json(ApplyReferralResponse.parse({
     success: true,
     pointsAwarded: REFERRAL_BONUS,
-    message: `Referral applicato! Hai guadagnato ${REFERRAL_BONUS} punti bonus. 🎉`,
+    message: `Referral applicato! Hai guadagnato ${REFERRAL_BONUS} XP bonus. 🎉`,
   }));
 });
 

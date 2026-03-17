@@ -266,8 +266,8 @@ router.post("/scan", async (req, res): Promise<void> => {
   }
 
   const message = pendingProducts.length > 0
-    ? `${pendingProducts.length} prodott${pendingProducts.length === 1 ? "o" : "i"} trovat${pendingProducts.length === 1 ? "o" : "i"} — scansiona i barcode per guadagnare i punti!`
-    : "Scontrino registrato. Scansiona i codici a barre dei tuoi prodotti per guadagnare punti.";
+    ? `${pendingProducts.length} prodott${pendingProducts.length === 1 ? "o" : "i"} trovat${pendingProducts.length === 1 ? "o" : "i"} — scansiona i barcode per guadagnare XP!`
+    : "Scontrino registrato. Scansiona i codici a barre dei tuoi prodotti per guadagnare XP.";
 
   const [refreshedUser] = await db.select({ xp: usersTable.xp, leaBalance: usersTable.leaBalance }).from(usersTable).where(eq(usersTable.id, user.id));
 
@@ -403,7 +403,7 @@ router.post("/scan/barcode/lookup", async (req, res): Promise<void> => {
   const remainingDailyCap = MAX_DAILY_POINTS - pointsEarnedToday;
 
   if (remainingDailyCap <= 0) {
-    res.status(400).json({ error: `Hai raggiunto il limite di ${MAX_DAILY_POINTS} punti al giorno. Torna domani!` });
+    res.status(400).json({ error: `Hai raggiunto il limite di ${MAX_DAILY_POINTS} XP al giorno. Torna domani!` });
     return;
   }
 
@@ -416,7 +416,7 @@ router.post("/scan/barcode/lookup", async (req, res): Promise<void> => {
 
   if (remainingReceiptCap <= 0) {
     res.status(400).json({
-      error: `Hai raggiunto il limite di ${MAX_RECEIPT_POINTS} punti per questo scontrino. Ottimo lavoro! 🌿`,
+      error: `Hai raggiunto il limite di ${MAX_RECEIPT_POINTS} XP per questo scontrino. Ottimo lavoro! 🌿`,
       receiptCapReached: true,
     });
     return;
@@ -535,7 +535,7 @@ router.post("/scan/barcode/manual-classify", async (req, res): Promise<void> => 
   const remainingDailyCap = MAX_DAILY_POINTS - pointsEarnedToday;
 
   if (remainingDailyCap <= 0) {
-    res.status(400).json({ error: `Hai raggiunto il limite di ${MAX_DAILY_POINTS} punti al giorno. Torna domani!` });
+    res.status(400).json({ error: `Hai raggiunto il limite di ${MAX_DAILY_POINTS} XP al giorno. Torna domani!` });
     return;
   }
 
@@ -554,8 +554,8 @@ router.post("/scan/barcode/manual-classify", async (req, res): Promise<void> => 
   if (effectiveCap <= 0) {
     res.status(400).json({
       error: remainingReceiptCap <= 0
-        ? `Hai raggiunto il limite di ${MAX_RECEIPT_POINTS} punti per questo scontrino.`
-        : `Hai raggiunto il limite di ${MAX_DAILY_POINTS} punti al giorno. Torna domani!`,
+        ? `Hai raggiunto il limite di ${MAX_RECEIPT_POINTS} XP per questo scontrino.`
+        : `Hai raggiunto il limite di ${MAX_DAILY_POINTS} XP al giorno. Torna domani!`,
     });
     return;
   }
@@ -636,7 +636,7 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
   const remainingDailyCap = MAX_DAILY_POINTS - pointsEarnedToday;
 
   if (remainingDailyCap <= 0) {
-    res.status(400).json({ error: `Hai raggiunto il limite di ${MAX_DAILY_POINTS} punti al giorno. Torna domani!` });
+    res.status(400).json({ error: `Hai raggiunto il limite di ${MAX_DAILY_POINTS} XP al giorno. Torna domani!` });
     return;
   }
 
@@ -649,7 +649,7 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
 
   if (remainingReceiptCap <= 0) {
     res.status(400).json({
-      error: `Hai raggiunto il limite di ${MAX_RECEIPT_POINTS} punti per questo scontrino. Ottimo lavoro! 🌿`,
+      error: `Hai raggiunto il limite di ${MAX_RECEIPT_POINTS} XP per questo scontrino. Ottimo lavoro! 🌿`,
       receiptCapReached: true,
     });
     return;
