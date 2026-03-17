@@ -176,6 +176,7 @@ function startExpo() {
   const child = spawn("pnpm", ["exec", "expo", "start", ...args], {
     stdio: ["inherit", "pipe", "pipe"],
     env: spawnEnv,
+    cwd: path.join(__dirname, ".."),
   });
 
   function handleOutput(data) {
