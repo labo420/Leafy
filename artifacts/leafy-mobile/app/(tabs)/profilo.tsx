@@ -15,7 +15,7 @@ import {
   Text,
   View,
 } from "react-native";
-import Animated, { FadeInDown, useSharedValue, useAnimatedReaction, withTiming, runOnJS, Easing } from "react-native-reanimated";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -81,25 +81,31 @@ type ImpactMetric = {
 };
 
 function ImpactMetricCard({ m, animate }: { m: ImpactMetric; animate: boolean }) {
-  const progress = useSharedValue(0);
   const [display, setDisplay] = useState("0");
-
-  const updateDisplay = (p: number) => {
-    const val = m.value * p;
-    setDisplay(m.decimals > 0 ? val.toFixed(m.decimals) : Math.round(val).toString());
-  };
+  const hasAnimated = useRef(false);
 
   useEffect(() => {
-    if (animate && m.value > 0) {
-      progress.value = 0;
-      progress.value = withTiming(1, { duration: 1200, easing: Easing.out(Easing.cubic) });
-    }
-  }, [animate, m.value]);
+    if (!animate || hasAnimated.current || m.value === 0) return;
+    hasAnimated.current = true;
 
-  useAnimatedReaction(
-    () => progress.value,
-    (p) => { runOnJS(updateDisplay)(p); }
-  );
+    const start = Date.now();
+    const duration = 1200;
+    let raf: NodeJS.Timeout | null = null;
+
+    const step = () => {
+      const p = Math.min((Date.now() - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      const val = m.value * eased;
+      setDisplay(m.decimals > 0 ? val.toFixed(m.decimals) : Math.round(val).toString());
+
+      if (p < 1) {
+        raf = setTimeout(step, 16);
+      }
+    };
+
+    raf = setTimeout(step, 0);
+    return () => { if (raf) clearTimeout(raf); };
+  }, [animate, m.value, m.decimals]);
 
   return (
     <View style={[impactStyles.card, { backgroundColor: m.bg }]}>

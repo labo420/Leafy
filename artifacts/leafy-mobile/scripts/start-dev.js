@@ -181,7 +181,7 @@ process.on("SIGINT", () => { intentionalExit = true; process.exit(0); });
 function startExpo() {
   console.log(`Starting Expo on port ${expoPort}... (attempt ${restartAttempts + 1})`);
 
-  const child = spawn("pnpm", ["exec", "expo", "start", ...args], {
+  const child = spawn("pnpm", ["exec", "expo", "start", "--non-interactive", ...args], {
     stdio: ["inherit", "pipe", "pipe"],
     env: process.env,
   });
