@@ -79,7 +79,7 @@ export default function TabLayout() {
   const isWeb = Platform.OS === "web";
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { triggerReset } = useScanReset();
+  const { triggerReset, triggerCamera } = useScanReset();
 
   return (
     <View style={{ flex: 1 }}>
@@ -162,6 +162,7 @@ export default function TabLayout() {
           tabPress: (e) => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             triggerReset();
+            triggerCamera();
             if (e.target) {
               const stateName = e.target;
               if (!stateName?.includes("scan")) {

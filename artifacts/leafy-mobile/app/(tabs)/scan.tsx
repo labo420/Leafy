@@ -2,7 +2,7 @@ import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -174,10 +174,12 @@ export default function ScanScreen() {
   const [scanResult, setScanResult] = useState<ScanResponse | null>(null);
   const [showWelcomeOverlay, setShowWelcomeOverlay] = useState(false);
   const { checkForLevelUp } = useLevelUp();
-  const { registerReset } = useScanReset();
+  const { registerReset, registerCamera } = useScanReset();
 
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 + 84 : 100 + insets.bottom;
+  const scanStateRef = useRef(state);
+  const activeSessionRef = useRef<ActiveSession | undefined>(undefined);
   const cameraScale = useSharedValue(1);
   const cameraAnimStyle = useAnimatedStyle(() => ({
     transform: [{ scale: cameraScale.value }],
@@ -222,27 +224,17 @@ export default function ScanScreen() {
     },
   });
 
-  const pickImage = async (source: "camera" | "gallery") => {
+  const pickImage = async () => {
     if (!user) {
       router.push("/(tabs)");
       return;
     }
-    let result;
-    if (source === "camera") {
-      const perm = await ImagePicker.requestCameraPermissionsAsync();
-      if (!perm.granted) {
-        Alert.alert("Permesso negato", "Abilita l'accesso alla fotocamera nelle impostazioni");
-        return;
-      }
-      result = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.8, mediaTypes: "images" });
-    } else {
-      const mediaPerm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!mediaPerm.granted) {
-        Alert.alert("Permesso negato", "Abilita l'accesso alla galleria nelle impostazioni");
-        return;
-      }
-      result = await ImagePicker.launchImageLibraryAsync({ base64: true, quality: 0.8, mediaTypes: "images" });
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert("Permesso negato", "Abilita l'accesso alla fotocamera nelle impostazioni");
+      return;
     }
+    const result = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.8, mediaTypes: "images" });
     if (!result.canceled && result.assets[0]) {
       const asset = result.assets[0];
       setImageUri(asset.uri);
@@ -251,6 +243,9 @@ export default function ScanScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
   };
+
+  const pickImageRef = useRef(pickImage);
+  pickImageRef.current = pickImage;
 
   const startScan = () => {
     if (!imageBase64) return;
@@ -266,7 +261,20 @@ export default function ScanScreen() {
   };
 
   useEffect(() => {
+    scanStateRef.current = state;
+  }, [state]);
+
+  useEffect(() => {
+    activeSessionRef.current = activeSession;
+  }, [activeSession]);
+
+  useEffect(() => {
     registerReset(reset);
+    registerCamera(() => {
+      if (scanStateRef.current === "idle" && !activeSessionRef.current?.active) {
+        pickImageRef.current();
+      }
+    });
   }, []);
 
   const openBarcodeScanner = (receiptId: number, productName?: string) => {
@@ -474,7 +482,7 @@ export default function ScanScreen() {
         </View>
         <Image source={{ uri: imageUri }} style={styles.previewImage} resizeMode="contain" />
         <Animated.View entering={SlideInDown.springify()} style={[styles.previewActions, { paddingBottom: bottomPad / 2 }]}>
-          <Pressable style={styles.secondaryBtn} onPress={() => pickImage("camera")}>
+          <Pressable style={styles.secondaryBtn} onPress={() => pickImage()}>
             <Feather name="camera" size={18} color={Colors.leaf} />
             <Text style={styles.secondaryBtnText}>Cambia</Text>
           </Pressable>
@@ -579,7 +587,7 @@ export default function ScanScreen() {
 
           <View style={styles.section}>
             <Text style={styles.orText}>oppure</Text>
-            <Pressable style={styles.newReceiptBtn} onPress={() => pickImage("camera")}>
+            <Pressable style={styles.newReceiptBtn} onPress={() => pickImage()}>
               <Feather name="camera" size={18} color={Colors.leaf} />
               <Text style={styles.newReceiptBtnText}>Scansiona un nuovo scontrino</Text>
             </Pressable>
@@ -610,7 +618,7 @@ export default function ScanScreen() {
             <Pressable
               onPressIn={() => { cameraScale.value = withSpring(0.97, { damping: 15, stiffness: 250 }); }}
               onPressOut={() => { cameraScale.value = withSpring(1, { damping: 10, stiffness: 180 }); }}
-              onPress={() => pickImage("camera")}
+              onPress={() => pickImage()}
               accessibilityRole="button"
               accessibilityLabel="Fotografa lo scontrino"
             >
