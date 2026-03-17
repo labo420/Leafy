@@ -82,15 +82,15 @@ type ImpactMetric = {
 
 function ImpactMetricCard({ m, animate }: { m: ImpactMetric; animate: boolean }) {
   const [display, setDisplay] = useState("0");
-  const hasAnimated = useRef(false);
+  const [started, setStarted] = useState(false);
 
   useEffect(() => {
-    if (!animate || hasAnimated.current || m.value === 0) return;
-    hasAnimated.current = true;
+    if (!animate || started || m.value === 0) return;
+    setStarted(true);
 
     const start = Date.now();
     const duration = 1200;
-    let raf: NodeJS.Timeout | null = null;
+    let timeout: any = null;
 
     const step = () => {
       const p = Math.min((Date.now() - start) / duration, 1);
@@ -99,13 +99,13 @@ function ImpactMetricCard({ m, animate }: { m: ImpactMetric; animate: boolean })
       setDisplay(m.decimals > 0 ? val.toFixed(m.decimals) : Math.round(val).toString());
 
       if (p < 1) {
-        raf = setTimeout(step, 16);
+        timeout = setTimeout(step, 16);
       }
     };
 
-    raf = setTimeout(step, 0);
-    return () => { if (raf) clearTimeout(raf); };
-  }, [animate, m.value, m.decimals]);
+    timeout = setTimeout(step, 0);
+    return () => { if (timeout) clearTimeout(timeout); };
+  }, [animate, m.value, m.decimals, started]);
 
   return (
     <View style={[impactStyles.card, { backgroundColor: m.bg }]}>
