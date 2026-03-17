@@ -1,5 +1,5 @@
 import { BlurView } from "expo-blur";
-import { Tabs, router } from "expo-router";
+import { Tabs } from "expo-router";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
@@ -159,16 +159,10 @@ export default function TabLayout() {
           },
         }}
         listeners={{
-          tabPress: (e) => {
+          tabPress: () => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             triggerReset();
             triggerCamera();
-            if (e.target) {
-              const stateName = e.target;
-              if (!stateName?.includes("scan")) {
-                router.navigate("/(tabs)/scan");
-              }
-            }
           },
         }}
       />
