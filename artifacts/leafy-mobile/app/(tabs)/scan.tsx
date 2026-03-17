@@ -255,6 +255,7 @@ export default function ScanScreen() {
 
   const reset = () => {
     setState("idle");
+    scanStateRef.current = "idle";
     setImageUri(null);
     setImageBase64(null);
     setScanResult(null);
