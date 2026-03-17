@@ -42,11 +42,7 @@ const args = process.argv.slice(2);
 const portFlag = args.indexOf("--port");
 const cliPort = portFlag !== -1 && args[portFlag + 1] ? args[portFlag + 1] : null;
 
-// Remove --tunnel flag if present (ngrok has issues)
-const tunnelIndex = args.indexOf("--tunnel");
-if (tunnelIndex !== -1) {
-  args.splice(tunnelIndex, 1);
-}
+// Keep --tunnel flag so Expo manages ngrok internally
 
 const expoPort = ARTIFACT_PORT || (cliPort ? Number(cliPort) : 8081);
 const workflowPort = cliPort ? Number(cliPort) : null;
@@ -101,22 +97,50 @@ function killStaleProcesses() {
 
 killStaleProcesses();
 
-// Disabled ngrok due to connectivity issues; use local dev server instead
-// const ngrokBin = findNgrokBin();
-// if (ngrokBin) {
-//   try {
-//     execSync(`"${ngrokBin}" authtoken ${NGROK_AUTH_TOKEN}`, { stdio: "ignore" });
-//     console.log("ngrok authtoken set.");
-//   } catch (e) {
-//     console.warn("Failed to set ngrok authtoken:", e.message);
-//   }
-// }
+const ngrokBin = findNgrokBin();
+if (ngrokBin) {
+  try {
+    execSync(`"${ngrokBin}" authtoken ${NGROK_AUTH_TOKEN}`, { stdio: "ignore" });
+    console.log("ngrok authtoken set.");
+  } catch (e) {
+    console.warn("Failed to set ngrok authtoken:", e.message);
+  }
+}
 
 if (fs.existsSync(TUNNEL_FILE)) fs.unlinkSync(TUNNEL_FILE);
 
 function pollNgrokAPI() {
-  // Disabled: ngrok API polling has issues; rely on Expo's built-in tunnel detection
-  return;
+  try {
+    const req = http.get(NGROK_API, { timeout: 5000 }, (res) => {
+      if (!res || res.statusCode !== 200) {
+        console.warn(`ngrok API returned status ${res?.statusCode || "unknown"}`);
+        return;
+      }
+      let data = "";
+      res.on("data", (chunk) => { if (chunk) data += chunk; });
+      res.on("end", () => {
+        try {
+          if (!data) return;
+          const json = JSON.parse(data);
+          if (!json || !Array.isArray(json.tunnels)) return;
+          const httpTunnel = json.tunnels.find(
+            (t) => t && t.public_url && t.public_url.startsWith("http://") && t.public_url.includes(".exp.direct")
+          );
+          if (httpTunnel) {
+            const expUrl = httpTunnel.public_url.replace("http://", "exp://");
+            fs.writeFileSync(TUNNEL_FILE, expUrl, "utf8");
+            console.log(`\n› Metro waiting on ${expUrl}`);
+          }
+        } catch (e) {
+          console.warn("Failed to parse ngrok API response:", e.message);
+        }
+      });
+    });
+    req.on("error", (err) => { console.warn("ngrok API error:", err.message); });
+    req.on("timeout", () => { req.destroy(); });
+  } catch (e) {
+    console.warn("pollNgrokAPI error:", e.message);
+  }
 }
 
 if (workflowPort && workflowPort !== expoPort) {
@@ -146,9 +170,12 @@ process.on("SIGINT", () => { intentionalExit = true; process.exit(0); });
 function startExpo() {
   console.log(`Starting Expo on port ${expoPort}... (attempt ${restartAttempts + 1})`);
 
-  const child = spawn("pnpm", ["exec", "expo", "start", "--non-interactive", "--clear", ...args], {
+  const spawnEnv = Object.assign({}, process.env);
+  delete spawnEnv.CI;
+
+  const child = spawn("pnpm", ["exec", "expo", "start", ...args], {
     stdio: ["inherit", "pipe", "pipe"],
-    env: process.env,
+    env: spawnEnv,
   });
 
   function handleOutput(data) {
