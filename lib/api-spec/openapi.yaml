@@ -511,6 +511,17 @@ components:
           type: string
         totalPoints:
           type: integer
+        xp:
+          type: integer
+          description: Experience points (used for leveling)
+        leaBalance:
+          type: number
+          format: double
+          description: $LEA cashback balance in EUR
+        leaToEur:
+          type: number
+          format: double
+          description: EUR equivalent of leaBalance (1:1 ratio)
         level:
           type: string
           enum: [Germoglio, Ramoscello, Arbusto, Albero, Foresta]
@@ -536,6 +547,9 @@ components:
         - username
         - email
         - totalPoints
+        - xp
+        - leaBalance
+        - leaToEur
         - level
         - levelProgress
         - nextLevelPoints
@@ -662,6 +676,13 @@ components:
           type: boolean
         welcomeBonusPts:
           type: integer
+        xp:
+          type: integer
+          description: Current total XP after scan
+        leaBalance:
+          type: number
+          format: double
+          description: Current $LEA balance after scan
         greenItemsFound:
           type: array
           items:
@@ -696,6 +717,8 @@ components:
         - receiptBonusPts
         - welcomeBonus
         - welcomeBonusPts
+        - xp
+        - leaBalance
         - greenItemsFound
         - leveledUp
         - badges
@@ -815,8 +838,15 @@ components:
           type: string
         totalPoints:
           type: integer
-        level:
+        xp:
           type: integer
+          description: Current total XP after barcode confirm
+        leaBalance:
+          type: number
+          format: double
+          description: Current $LEA balance after barcode confirm
+        level:
+          type: string
         remainingDailyPoints:
           type: integer
       required:
@@ -828,6 +858,8 @@ components:
         - reasoning
         - source
         - totalPoints
+        - xp
+        - leaBalance
         - level
         - remainingDailyPoints
 

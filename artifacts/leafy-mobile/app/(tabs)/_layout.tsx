@@ -3,7 +3,7 @@ import { Tabs, router } from "expo-router";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
-import { Platform, StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   withSpring,
@@ -49,6 +49,29 @@ function FloatingScanButton({ focused }: { focused: boolean }) {
   );
 }
 
+function BalanceBar() {
+  const { user, xp, leaBalance } = useAuth();
+  const insets = useSafeAreaInsets();
+
+  if (!user) return null;
+
+  return (
+    <View style={[styles.balanceBar, { paddingTop: insets.top + 4 }]}>
+      <View style={styles.balanceInner}>
+        <View style={styles.balanceChip}>
+          <Text style={styles.balanceChipValue}>{xp.toLocaleString("it-IT")}</Text>
+          <Text style={styles.balanceChipLabel}>XP</Text>
+        </View>
+        <View style={styles.balanceDot} />
+        <View style={styles.balanceChip}>
+          <Text style={styles.balanceChipLeaLabel}>$LEA</Text>
+          <Text style={styles.balanceChipValue}>{leaBalance.toFixed(2)}€</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 export default function TabLayout() {
   const isIOS = Platform.OS === "ios";
   const isWeb = Platform.OS === "web";
@@ -57,6 +80,8 @@ export default function TabLayout() {
   const { triggerReset } = useScanReset();
 
   return (
+    <View style={{ flex: 1 }}>
+      <BalanceBar />
     <Tabs
       screenOptions={{
         headerShown: false,
@@ -167,10 +192,50 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  balanceBar: {
+    backgroundColor: Colors.leaf,
+    paddingBottom: 6,
+    paddingHorizontal: 16,
+  },
+  balanceInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  balanceChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  balanceChipValue: {
+    fontSize: 13,
+    fontFamily: Fonts.bodyBold,
+    color: "#ffffff",
+  },
+  balanceChipLabel: {
+    fontSize: 10,
+    fontFamily: Fonts.bodyBold,
+    color: "rgba(255,255,255,0.6)",
+    letterSpacing: 0.5,
+  },
+  balanceChipLeaLabel: {
+    fontSize: 10,
+    fontFamily: Fonts.bodyBold,
+    color: "#AADF2A",
+    letterSpacing: 0.5,
+  },
+  balanceDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "rgba(255,255,255,0.3)",
+  },
   activeIconWrap: {
     backgroundColor: "rgba(46,107,80,0.10)",
     borderRadius: 14,
