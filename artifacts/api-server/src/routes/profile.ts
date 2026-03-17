@@ -9,7 +9,7 @@ import {
   ApplyReferralResponse,
 } from "@workspace/api-zod";
 import { calculateLevel } from "../lib/scanner";
-import { xpToLea } from "../lib/economy";
+import { xpToLea, leaToEur } from "../lib/economy";
 
 const router: IRouter = Router();
 
@@ -129,7 +129,7 @@ router.get("/profile", async (req, res): Promise<void> => {
     totalPoints: user.totalPoints,
     xp: userXp,
     leaBalance,
-    leaToEur: xpToLea(userXp),
+    leaToEur: leaToEur(leaBalance),
     level,
     levelProgress: progressPercent,
     nextLevelPoints,
