@@ -18,6 +18,8 @@ export interface ScanResult {
   receiptBonusPts: number;
   welcomeBonus: boolean;
   welcomeBonusPts: number;
+  xp: number;
+  leaBalance: number;
   greenItemsFound: FoundGreenItem[];
   leveledUp: boolean;
   newLevel?: string | null;

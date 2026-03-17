@@ -9,7 +9,7 @@ import {
   ApplyReferralResponse,
 } from "@workspace/api-zod";
 import { calculateLevel } from "../lib/scanner";
-import { leaToEur } from "../lib/economy";
+import { leaToEur, xpToLea } from "../lib/economy";
 
 const router: IRouter = Router();
 
@@ -254,7 +254,7 @@ router.post("/profile/referral/apply", async (req, res): Promise<void> => {
   }
 
   const REFERRAL_BONUS = 50;
-  const referralLeaDelta = Math.round(REFERRAL_BONUS * 0.01 * 100) / 100;
+  const referralLeaDelta = xpToLea(REFERRAL_BONUS);
   await db.update(usersTable)
     .set({
       totalPoints: user.totalPoints + REFERRAL_BONUS,
