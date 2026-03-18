@@ -160,12 +160,18 @@ router.get("/profile", async (req, res): Promise<void> => {
       };
     });
 
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const bpCompleted = (user.bpStreakCompleted ?? false) && (user.bpStreakCompletedMonth === currentMonth);
+
   res.json({
     ...data,
     pendingValidations,
     hasBattlePass: user.hasBattlePass ?? false,
     loginStreak: user.loginStreak ?? 0,
     referralXpMultiplierRemaining: user.referralXpMultiplierRemaining ?? 0,
+    bpStreakDay: user.bpStreakDay ?? 0,
+    bpStreakClaimed: user.bpStreakClaimed ?? 0,
+    bpStreakCompleted: bpCompleted,
   });
 });
 
@@ -310,51 +316,115 @@ router.post("/profile/referral/apply", async (req, res): Promise<void> => {
   }));
 });
 
+const BP_PRIZES: { xp: number; lea: number }[] = [
+  { xp: 50,  lea: 0  },
+  { xp: 0,   lea: 5  },
+  { xp: 75,  lea: 0  },
+  { xp: 0,   lea: 8  },
+  { xp: 100, lea: 0  },
+  { xp: 0,   lea: 10 },
+  { xp: 150, lea: 15 },
+];
+
 router.post("/profile/daily-checkin", async (req, res): Promise<void> => {
   const user = await requireUser(req, res);
   if (!user) return;
 
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const today = new Date();
+  const todayStr = today.toISOString().slice(0, 10);
+  const currentMonth = todayStr.slice(0, 7);
+
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().slice(0, 10);
+
   const lastStr = user.lastLoginDate ? new Date(user.lastLoginDate).toISOString().slice(0, 10) : null;
 
   if (lastStr === todayStr) {
+    const bpCompleted = (user.bpStreakCompleted ?? false) && (user.bpStreakCompletedMonth === currentMonth);
     res.json({
       alreadyCheckedIn: true,
       loginStreak: user.loginStreak ?? 0,
       bonusAwarded: false,
       xpBonus: 0,
+      bpStreakDay: user.bpStreakDay ?? 0,
+      bpStreakClaimed: user.bpStreakClaimed ?? 0,
+      bpStreakCompleted: bpCompleted,
+      bpPrize: null,
     });
     return;
   }
 
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = yesterday.toISOString().slice(0, 10);
-  const newStreak = lastStr === yesterdayStr ? (user.loginStreak ?? 0) + 1 : 1;
+  // ── Classic streak ──
+  const STREAK_MAX = 7;
+  const STREAK_BONUS_XP = 250;
+  const prevStreak = user.loginStreak ?? 0;
+  let newStreak = lastStr === yesterdayStr ? prevStreak + 1 : 1;
+  const classicBonusAwarded = newStreak >= STREAK_MAX;
+  if (classicBonusAwarded) newStreak = 1;
 
-  const STREAK_CYCLE = 7;
-  const STREAK_BONUS_XP = 50;
-  const bonusAwarded = newStreak % STREAK_CYCLE === 0;
+  // ── Battle Pass streak ──
+  let bpPrize: { xp: number; lea: number } | null = null;
+  let newBpDay = user.bpStreakDay ?? 0;
+  let newBpClaimed = user.bpStreakClaimed ?? 0;
+  let newBpCompleted = user.bpStreakCompleted ?? false;
+  let newBpMonth = user.bpStreakCompletedMonth ?? null;
 
-  if (bonusAwarded) {
-    await db.update(usersTable).set({
-      loginStreak: newStreak,
-      lastLoginDate: new Date(),
-      xp: sql`xp + ${STREAK_BONUS_XP}`,
-      totalPoints: sql`total_points + ${STREAK_BONUS_XP}`,
-    }).where(eq(usersTable.id, user.id));
-  } else {
-    await db.update(usersTable).set({
-      loginStreak: newStreak,
-      lastLoginDate: new Date(),
-    }).where(eq(usersTable.id, user.id));
+  if (user.hasBattlePass) {
+    // Reset monthly completion if month changed
+    if (newBpCompleted && newBpMonth !== currentMonth) {
+      newBpCompleted = false;
+      newBpClaimed = 0;
+      newBpDay = 0;
+      newBpMonth = null;
+    }
+
+    if (!newBpCompleted) {
+      const bpLastStr = user.bpLastLoginDate ? new Date(user.bpLastLoginDate).toISOString().slice(0, 10) : null;
+      newBpDay = bpLastStr === yesterdayStr ? newBpDay + 1 : 1;
+
+      // Prize unlocks when consecutive day reaches the next unclaimed slot
+      const nextPrizeDay = newBpClaimed + 1;
+      if (newBpDay >= nextPrizeDay && newBpClaimed < 7) {
+        bpPrize = BP_PRIZES[newBpClaimed];
+        newBpClaimed += 1;
+        if (newBpClaimed >= 7) {
+          newBpCompleted = true;
+          newBpMonth = currentMonth;
+        }
+      }
+    }
   }
+
+  // ── DB update ──
+  const totalXpGain = (classicBonusAwarded ? STREAK_BONUS_XP : 0) + (bpPrize?.xp ?? 0);
+
+  await db.update(usersTable).set({
+    loginStreak: newStreak,
+    lastLoginDate: today,
+    bpStreakDay: newBpDay,
+    bpStreakClaimed: newBpClaimed,
+    bpStreakCompleted: newBpCompleted,
+    bpStreakCompletedMonth: newBpMonth,
+    ...(user.hasBattlePass ? { bpLastLoginDate: today } : {}),
+    ...(totalXpGain > 0 ? {
+      xp: sql`xp + ${totalXpGain}`,
+      totalPoints: sql`total_points + ${totalXpGain}`,
+    } : {}),
+    ...(bpPrize && bpPrize.lea > 0 ? {
+      leaBalance: sql`lea_balance + ${bpPrize.lea}`,
+    } : {}),
+  }).where(eq(usersTable.id, user.id));
 
   res.json({
     alreadyCheckedIn: false,
     loginStreak: newStreak,
-    bonusAwarded,
-    xpBonus: bonusAwarded ? STREAK_BONUS_XP : 0,
+    bonusAwarded: classicBonusAwarded,
+    xpBonus: classicBonusAwarded ? STREAK_BONUS_XP : 0,
+    bpStreakDay: newBpDay,
+    bpStreakClaimed: newBpClaimed,
+    bpStreakCompleted: newBpCompleted,
+    bpPrize,
   });
 });
 

@@ -114,6 +114,16 @@ const LEVEL_MCI_ICONS: Record<string, React.ComponentProps<typeof MaterialCommun
   Foresta: "forest",
 };
 
+const BP_PRIZES_DISPLAY = [
+  { type: "xp" as const, label: "50 XP" },
+  { type: "lea" as const, label: "5 LEA" },
+  { type: "xp" as const, label: "75 XP" },
+  { type: "lea" as const, label: "8 LEA" },
+  { type: "xp" as const, label: "100 XP" },
+  { type: "lea" as const, label: "10 LEA" },
+  { type: "both" as const, label: "150+15" },
+];
+
 const ICON_BASE_SIZE = 44;
 const ICON_MIN_SCALE = 0.52;
 const ICON_MAX_SCALE = 1.4;
@@ -708,7 +718,12 @@ export default function HomeScreen() {
   });
 
   const [refreshing, setRefreshing] = React.useState(false);
-  const [streakToast, setStreakToast] = React.useState<{ streak: number; bonusAwarded: boolean; xpBonus: number } | null>(null);
+  const [streakToast, setStreakToast] = React.useState<{
+    loginStreak: number;
+    bonusAwarded: boolean;
+    xpBonus: number;
+    bpPrize: { xp: number; lea: number } | null;
+  } | null>(null);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -720,8 +735,13 @@ export default function HomeScreen() {
     if (!user) return;
     apiFetch("/profile/daily-checkin", { method: "POST" }).then((data: any) => {
       if (!data.alreadyCheckedIn) {
-        setStreakToast({ streak: data.loginStreak, bonusAwarded: data.bonusAwarded, xpBonus: data.xpBonus });
-        setTimeout(() => setStreakToast(null), 4000);
+        setStreakToast({
+          loginStreak: data.loginStreak,
+          bonusAwarded: data.bonusAwarded,
+          xpBonus: data.xpBonus,
+          bpPrize: data.bpPrize ?? null,
+        });
+        setTimeout(() => setStreakToast(null), 4500);
         refetchProfile();
       }
     }).catch(() => {});
@@ -766,6 +786,11 @@ export default function HomeScreen() {
 
   const username = profile?.username || user?.firstName || "Utente";
   const streak = profile?.streak ?? 0;
+  const loginStreak = (profile as any)?.loginStreak ?? 0;
+  const hasBattlePass = (profile as any)?.hasBattlePass ?? false;
+  const bpStreakDay = (profile as any)?.bpStreakDay ?? 0;
+  const bpStreakClaimed = (profile as any)?.bpStreakClaimed ?? 0;
+  const bpStreakCompleted = (profile as any)?.bpStreakCompleted ?? false;
   const xp = profile?.xp ?? profile?.totalPoints ?? 0;
   const leaBalance = profile?.leaBalance ?? 0;
   const points = xp;
@@ -784,15 +809,30 @@ export default function HomeScreen() {
         entering={FadeInDown.springify()}
         style={[streakStyles.toast, { top: topPadding + 12, backgroundColor: "#1A3028" }]}
       >
-        <MaterialCommunityIcons name="fire" size={22} color="#F97316" />
+        <MaterialCommunityIcons
+          name={streakToast.bonusAwarded ? "trophy" : streakToast.bpPrize ? "shield-star" : "fire"}
+          size={22}
+          color={streakToast.bonusAwarded ? "#FACC15" : streakToast.bpPrize ? "#A78BFA" : "#F97316"}
+        />
         <View style={{ flex: 1 }}>
           <Text style={streakStyles.toastTitle}>
-            {streakToast.bonusAwarded ? "🎉 Streak Bonus!" : `🔥 Streak: ${streakToast.streak} giorni`}
+            {streakToast.bonusAwarded
+              ? "Streak completata!"
+              : streakToast.bpPrize
+              ? "Battle Pass — Premio!"
+              : `Streak: giorno ${streakToast.loginStreak}`}
           </Text>
           <Text style={streakStyles.toastSub}>
             {streakToast.bonusAwarded
-              ? `Hai completato ${streakToast.streak} giorni! +${streakToast.xpBonus} XP bonus`
-              : streakToast.streak === 1 ? "Ottimo inizio! Torna domani." : `Continua così! ${7 - (streakToast.streak % 7)} giorni al bonus.`}
+              ? `7 giorni consecutivi! +${streakToast.xpBonus} XP`
+              : streakToast.bpPrize
+              ? [
+                  streakToast.bpPrize.xp > 0 ? `+${streakToast.bpPrize.xp} XP` : "",
+                  streakToast.bpPrize.lea > 0 ? `+${streakToast.bpPrize.lea} $LEA` : "",
+                ].filter(Boolean).join("  ")
+              : streakToast.loginStreak === 1
+              ? "Ottimo inizio! Torna domani."
+              : `${7 - streakToast.loginStreak} giorni al premio da 250 XP.`}
           </Text>
         </View>
       </Animated.View>
@@ -861,25 +901,92 @@ export default function HomeScreen() {
         </Animated.View>
       </LinearGradient>
 
-      {/* ── STREAK CARD ── */}
-      <Animated.View entering={FadeInDown.delay(180).springify()} style={[styles.streakCard, { backgroundColor: theme.card }]}>
-        <View style={styles.streakCardLeft}>
-          <View style={styles.streakIconWrap}>
-            <MaterialCommunityIcons name="fire" size={30} color="#F97316" />
-          </View>
-          <View>
-            <Text style={[styles.streakCardValue, { color: theme.text }]}>{streak}</Text>
-            <Text style={[styles.streakCardSubLabel, { color: theme.textSecondary }]}>giorni di fila</Text>
-          </View>
+      {/* ── STREAK CLASSICA ── */}
+      <Animated.View entering={FadeInDown.delay(180).springify()} style={[streakStyles.card, { backgroundColor: theme.card }]}>
+        <View style={streakStyles.cardHeader}>
+          <MaterialCommunityIcons name="fire" size={18} color="#F97316" />
+          <Text style={[streakStyles.cardTitle, { color: theme.text }]}>Streak Classica</Text>
+          <Text style={[streakStyles.cardBadge, { color: theme.textSecondary }]}>Giorno {loginStreak}/7</Text>
         </View>
-        <Text style={styles.streakCardMsg}>
-          {streak === 0
-            ? "Inizia il tuo streak!"
-            : streak === 1
-            ? "Ottimo inizio!"
-            : `Super combo x${streak}!`}
+        <View style={streakStyles.dotsRow}>
+          {Array.from({ length: 7 }, (_, i) => {
+            const filled = i < loginStreak;
+            return (
+              <View
+                key={i}
+                style={[
+                  streakStyles.dot,
+                  filled
+                    ? { backgroundColor: "#F97316" }
+                    : { backgroundColor: theme.primaryLight, borderWidth: 1.5, borderColor: "rgba(249,115,22,0.25)" },
+                ]}
+              >
+                {filled && <MaterialCommunityIcons name="fire" size={13} color="#fff" />}
+              </View>
+            );
+          })}
+        </View>
+        <Text style={[streakStyles.cardHint, { color: theme.textSecondary }]}>
+          {loginStreak === 0
+            ? "Fai check-in ogni giorno per 7 giorni di fila"
+            : loginStreak >= 6
+            ? "Domani completi la streak e vinci 250 XP!"
+            : `${7 - loginStreak} giorni al premio da 250 XP`}
         </Text>
       </Animated.View>
+
+      {/* ── STREAK BATTLE PASS ── */}
+      {hasBattlePass && (
+        <Animated.View entering={FadeInDown.delay(220).springify()} style={[streakStyles.card, { backgroundColor: theme.card }]}>
+          <View style={streakStyles.cardHeader}>
+            <MaterialCommunityIcons name="shield-star" size={18} color="#A78BFA" />
+            <Text style={[streakStyles.cardTitle, { color: theme.text }]}>Streak Battle Pass</Text>
+            {bpStreakCompleted
+              ? <Text style={[streakStyles.cardBadge, { color: "#A78BFA" }]}>Completata ✓</Text>
+              : <Text style={[streakStyles.cardBadge, { color: theme.textSecondary }]}>{bpStreakClaimed}/7 premi</Text>
+            }
+          </View>
+          <View style={streakStyles.bpRow}>
+            {BP_PRIZES_DISPLAY.map((prize, i) => {
+              const claimed = i < bpStreakClaimed;
+              const isXp = prize.type === "xp" || prize.type === "both";
+              const isLea = prize.type === "lea" || prize.type === "both";
+              const dotColor = claimed
+                ? (isLea && !isXp ? "#FACC15" : "#A78BFA")
+                : theme.primaryLight;
+              return (
+                <View key={i} style={streakStyles.bpSlot}>
+                  <View style={[
+                    streakStyles.bpDot,
+                    { backgroundColor: dotColor },
+                    !claimed && { borderWidth: 1.5, borderColor: "rgba(167,139,250,0.25)" },
+                  ]}>
+                    {claimed ? (
+                      <MaterialCommunityIcons name="check" size={11} color="#fff" />
+                    ) : prize.type === "both" ? (
+                      <MaterialCommunityIcons name="star" size={11} color="rgba(167,139,250,0.5)" />
+                    ) : isLea ? (
+                      <Text style={{ fontSize: 7, color: "rgba(250,204,21,0.5)", fontFamily: "DMSans_700Bold" }}>$</Text>
+                    ) : (
+                      <Text style={{ fontSize: 7, color: "rgba(167,139,250,0.5)", fontFamily: "DMSans_700Bold" }}>XP</Text>
+                    )}
+                  </View>
+                  <Text style={[streakStyles.bpLabel, { color: claimed ? (isLea && !isXp ? "#FACC15" : "#A78BFA") : theme.textSecondary }]}>
+                    {prize.label}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+          <Text style={[streakStyles.cardHint, { color: theme.textSecondary }]}>
+            {bpStreakCompleted
+              ? "Ottimo lavoro! Il ciclo si azzera il 1° del mese."
+              : bpStreakClaimed === 0
+              ? "Fai check-in ogni giorno per sbloccare i premi"
+              : `Streak attuale: ${bpStreakDay} ${bpStreakDay === 1 ? "giorno" : "giorni"} consecutivi`}
+          </Text>
+        </Animated.View>
+      )}
 
       {/* ── MOTIVATIONAL ── */}
       <Animated.View
@@ -972,6 +1079,71 @@ const streakStyles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     color: "rgba(255,255,255,0.75)",
     marginTop: 2,
+  },
+  card: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    borderRadius: 18,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 12,
+  },
+  cardTitle: {
+    fontFamily: "DMSans_700Bold",
+    fontSize: 14,
+    flex: 1,
+  },
+  cardBadge: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 12,
+  },
+  dotsRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 10,
+  },
+  dot: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cardHint: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  bpRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  bpSlot: {
+    alignItems: "center",
+    gap: 4,
+    flex: 1,
+  },
+  bpDot: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  bpLabel: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 9,
+    textAlign: "center",
   },
 });
 
@@ -1104,55 +1276,6 @@ const styles = StyleSheet.create({
   progressSection: {
     alignItems: "center",
     paddingVertical: 8,
-  },
-
-  streakCard: {
-    marginHorizontal: 20,
-    marginTop: -16,
-    marginBottom: 4,
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
-  },
-  streakCardLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-  },
-  streakIconWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    backgroundColor: "#FFF7ED",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  streakCardValue: {
-    fontSize: 26,
-    fontFamily: "DMSans_700Bold",
-    color: Colors.text,
-    lineHeight: 30,
-  },
-  streakCardSubLabel: {
-    fontSize: 13,
-    fontFamily: "Inter_400Regular",
-    color: Colors.textSecondary,
-  },
-  streakCardMsg: {
-    fontSize: 13,
-    fontFamily: "Inter_500Medium",
-    color: "#F97316",
-    maxWidth: 110,
-    textAlign: "right",
   },
 
   impactSection: {

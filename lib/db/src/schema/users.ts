@@ -23,6 +23,11 @@ export const usersTable = pgTable("users", {
   referralXpMultiplierRemaining: integer("referral_xp_multiplier_remaining").notNull().default(0),
   loginStreak: integer("login_streak").notNull().default(0),
   lastLoginDate: timestamp("last_login_date", { withTimezone: true }),
+  bpStreakDay: integer("bp_streak_day").notNull().default(0),
+  bpStreakClaimed: integer("bp_streak_claimed").notNull().default(0),
+  bpStreakCompleted: boolean("bp_streak_completed").notNull().default(false),
+  bpStreakCompletedMonth: varchar("bp_streak_completed_month", { length: 7 }),
+  bpLastLoginDate: timestamp("bp_last_login_date", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
