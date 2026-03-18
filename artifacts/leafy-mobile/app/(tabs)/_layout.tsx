@@ -84,7 +84,10 @@ export default function TabLayout() {
 
   return (
     <View style={{ flex: 1 }}>
-      <StatusBar style="light" />
+      <StatusBar
+        style="light"
+        backgroundColor={user ? "#2E6B50" : mode === "dark" ? "#121212" : "#2E6B50"}
+      />
       <View style={{ backgroundColor: user ? "#2E6B50" : undefined, paddingTop: insets.top }}>
         <BalanceBar />
       </View>
