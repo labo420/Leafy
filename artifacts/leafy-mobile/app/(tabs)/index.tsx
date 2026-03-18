@@ -180,7 +180,7 @@ function LevelProgressRing({
           )}
         </Svg>
         <View style={ringStyles.innerContent}>
-          <MaterialCommunityIcons name={levelIcon} size={34} color="rgba(255,255,255,0.95)" />
+          <MaterialCommunityIcons name={levelIcon} size={32} color="rgba(255,255,255,0.90)" />
           <Text style={ringStyles.levelName}>{LEVEL_LABELS[level] ?? level}</Text>
           <Text style={ringStyles.xpProgress}>
             {new Intl.NumberFormat("it-IT").format(points)} / {new Intl.NumberFormat("it-IT").format(targetPts)} XP
@@ -214,9 +214,9 @@ const ringStyles = StyleSheet.create({
     gap: 4,
   },
   levelName: {
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: "DMSans_600SemiBold",
-    color: "rgba(255,255,255,0.88)",
+    color: "rgba(255,255,255,0.85)",
     letterSpacing: 0.4,
     marginTop: 2,
   },
@@ -906,17 +906,6 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     color: Colors.textSecondary,
     textAlign: "center",
-  },
-  progressBarTrack: {
-    height: 8,
-    backgroundColor: Colors.border,
-    borderRadius: 4,
-    overflow: "hidden",
-  },
-  progressBarFill: {
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.leaf,
   },
   motivationalBox: {
     marginHorizontal: 20,
