@@ -23,6 +23,7 @@ import {
 } from "react-native";
 import Animated, {
   useAnimatedStyle,
+  useAnimatedProps,
   useSharedValue,
   withSpring,
   withTiming,
@@ -31,7 +32,7 @@ import Animated, {
   Easing,
   FadeInDown,
 } from "react-native-reanimated";
-import Svg, { Circle, Path } from "react-native-svg";
+import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 
@@ -74,37 +75,9 @@ const RING_STROKE = 16;
 const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2;
 const RING_CX = RING_SIZE / 2;
 const RING_CY = RING_SIZE / 2;
-const N_SEGS = 60;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
-const SWEEP_STOPS: { t: number; r: number; g: number; b: number }[] = [
-  { t: 0,    r: 170, g: 223, b: 42  },
-  { t: 0.33, r: 255, g: 214, b: 0   },
-  { t: 0.67, r: 255, g: 107, b: 0   },
-  { t: 1,    r: 245, g: 59,  b: 59  },
-];
-
-function sweepColor(t: number): string {
-  t = Math.max(0, Math.min(1, t));
-  let lo = SWEEP_STOPS[0];
-  let hi = SWEEP_STOPS[SWEEP_STOPS.length - 1];
-  for (let i = 0; i < SWEEP_STOPS.length - 1; i++) {
-    if (t <= SWEEP_STOPS[i + 1].t) {
-      lo = SWEEP_STOPS[i];
-      hi = SWEEP_STOPS[i + 1];
-      break;
-    }
-  }
-  const f = hi.t > lo.t ? (t - lo.t) / (hi.t - lo.t) : 0;
-  return `rgb(${Math.round(lo.r + f * (hi.r - lo.r))},${Math.round(lo.g + f * (hi.g - lo.g))},${Math.round(lo.b + f * (hi.b - lo.b))})`;
-}
-
-function arcSegPath(a1: number, a2: number): string {
-  const x1 = (RING_CX + RING_RADIUS * Math.cos(a1)).toFixed(3);
-  const y1 = (RING_CY + RING_RADIUS * Math.sin(a1)).toFixed(3);
-  const x2 = (RING_CX + RING_RADIUS * Math.cos(a2)).toFixed(3);
-  const y2 = (RING_CY + RING_RADIUS * Math.sin(a2)).toFixed(3);
-  return `M ${x1} ${y1} A ${RING_RADIUS} ${RING_RADIUS} 0 0 1 ${x2} ${y2}`;
-}
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 const LEVEL_MCI_ICONS: Record<string, React.ComponentProps<typeof MaterialCommunityIcons>["name"]> = {
   Germoglio: "sprout",
@@ -170,28 +143,12 @@ function LevelProgressRing({
   const prevPointsRef = useRef<number | null>(null);
   const mountedRef = useRef(false);
 
-  // ── Animated progress bar ──
-  const [displayProgress, setDisplayProgress] = useState(progress);
-  const displayProgressRef = useRef(progress);
-  const rafRef = useRef<number | null>(null);
-  const progTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // ── Animated progress bar (UI thread via useAnimatedProps) ──
   const hapticTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const animateProgress = React.useCallback((from: number, to: number) => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    const duration = 700;
-    const start = Date.now();
-    const step = () => {
-      const elapsed = Date.now() - start;
-      const t = Math.min(1, elapsed / duration);
-      const eased = 1 - Math.pow(1 - t, 3);
-      const val = from + eased * (to - from);
-      displayProgressRef.current = val;
-      setDisplayProgress(val);
-      if (t < 1) rafRef.current = requestAnimationFrame(step);
-    };
-    rafRef.current = requestAnimationFrame(step);
-  }, []);
+  const dashOffsetSV = useSharedValue(RING_CIRCUMFERENCE * (1 - progress / 100));
+  const animatedRingProps = useAnimatedProps(() => ({
+    strokeDashoffset: dashOffsetSV.value,
+  }));
 
   const canOpacity = useSharedValue(0);
   const canRotate = useSharedValue(0);
@@ -231,8 +188,7 @@ function LevelProgressRing({
 
     // Level evolution animation
     if (prevLev !== level) {
-      displayProgressRef.current = progress;
-      setDisplayProgress(progress);
+      dashOffsetSV.value = RING_CIRCUMFERENCE * (1 - progress / 100);
       badgeOpacity.value = withSequence(
         withTiming(0, { duration: 220, easing: Easing.out(Easing.quad) }),
         withDelay(60, withTiming(1, { duration: 380, easing: Easing.out(Easing.quad) })),
@@ -247,13 +203,9 @@ function LevelProgressRing({
 
     // XP gain: watering animation
     if (points > prev && prev > 0) {
-      // Cancel any in-flight animations
-      if (progTimeoutRef.current) clearTimeout(progTimeoutRef.current);
       if (hapticTimeoutRef.current) clearTimeout(hapticTimeoutRef.current);
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
 
-      const oldP = displayProgressRef.current;
-      const newP = progress;
+      const newOffset = RING_CIRCUMFERENCE * (1 - progress / 100);
 
       // Can fades in (450ms), holds (1750ms), fades out (500ms) → total 2700ms
       canOpacity.value = withSequence(
@@ -301,19 +253,19 @@ function LevelProgressRing({
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }, 1970);
 
-      // 5. Progress bar fills at landing
-      progTimeoutRef.current = setTimeout(() => animateProgress(oldP, newP), 1970);
+      // 5. Progress bar fills at landing (UI thread — no JS re-renders)
+      dashOffsetSV.value = withDelay(
+        1970,
+        withTiming(newOffset, { duration: 700, easing: Easing.out(Easing.cubic) }),
+      );
 
     } else {
-      displayProgressRef.current = progress;
-      setDisplayProgress(progress);
+      dashOffsetSV.value = RING_CIRCUMFERENCE * (1 - progress / 100);
       iconScale.value = withSpring(newIconScale, { damping: 12, stiffness: 80 });
     }
 
     return () => {
-      if (progTimeoutRef.current) clearTimeout(progTimeoutRef.current);
       if (hapticTimeoutRef.current) clearTimeout(hapticTimeoutRef.current);
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, [points, progress, level]);
 
@@ -324,17 +276,20 @@ function LevelProgressRing({
   const pointsRemaining = isMaxLevel ? 0 : Math.max(0, nextLevel!.minPts - points);
   const targetPts = isMaxLevel ? LEVEL_CONFIG[safeIdx].minPts : nextLevel!.minPts;
 
-  const totalAngle = (displayProgress / 100) * 2 * Math.PI;
-  const segAngle = N_SEGS > 0 ? totalAngle / N_SEGS : 0;
-  const endCapX = RING_CX + RING_RADIUS * Math.cos(totalAngle);
-  const endCapY = RING_CY + RING_RADIUS * Math.sin(totalAngle);
-
   const levelIcon = LEVEL_MCI_ICONS[level] ?? "sprout";
 
   return (
     <Animated.View style={[ringStyles.outerContainer, containerAnimStyle]}>
       <View style={ringStyles.container}>
         <Svg width={RING_SIZE} height={RING_SIZE} style={{ transform: [{ rotate: "-90deg" }] }}>
+          <Defs>
+            <SvgLinearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="0">
+              <Stop offset="0" stopColor="rgb(170,223,42)" />
+              <Stop offset="0.33" stopColor="rgb(255,214,0)" />
+              <Stop offset="0.67" stopColor="rgb(255,107,0)" />
+              <Stop offset="1" stopColor="rgb(245,59,59)" />
+            </SvgLinearGradient>
+          </Defs>
           <Circle
             cx={RING_CX}
             cy={RING_CY}
@@ -343,29 +298,17 @@ function LevelProgressRing({
             strokeWidth={RING_STROKE}
             fill="none"
           />
-          {displayProgress > 0 && Array.from({ length: N_SEGS }, (_, i) => {
-            const a1 = i * segAngle;
-            const a2 = (i + 1) * segAngle;
-            const t = (i + 0.5) * displayProgress / (100 * N_SEGS);
-            return (
-              <Path
-                key={i}
-                d={arcSegPath(a1, a2)}
-                stroke={sweepColor(t)}
-                strokeWidth={RING_STROKE}
-                fill="none"
-                strokeLinecap="butt"
-              />
-            );
-          })}
-          {displayProgress > 0 && displayProgress < 100 && (
-            <Circle
-              cx={endCapX}
-              cy={endCapY}
-              r={RING_STROKE / 2}
-              fill={sweepColor(displayProgress / 100)}
-            />
-          )}
+          <AnimatedCircle
+            cx={RING_CX}
+            cy={RING_CY}
+            r={RING_RADIUS}
+            stroke="url(#ringGrad)"
+            strokeWidth={RING_STROKE}
+            fill="none"
+            strokeDasharray={RING_CIRCUMFERENCE}
+            strokeLinecap="round"
+            animatedProps={animatedRingProps}
+          />
         </Svg>
 
         {/* Center: badge icon + text */}
