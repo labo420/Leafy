@@ -7,6 +7,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -62,6 +63,16 @@ export default function WalletScreen() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([
+      refreshBalances(),
+      queryClient.invalidateQueries({ queryKey: ["wallet-withdrawals"] }),
+    ]);
+    setRefreshing(false);
+  }, [refreshBalances, queryClient]);
 
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 + 84 : 100 + insets.bottom;
@@ -199,6 +210,14 @@ export default function WalletScreen() {
           contentContainerStyle={{ paddingTop: topPadding + 20, paddingBottom: bottomPad }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={theme.primary}
+              colors={[theme.primary]}
+            />
+          }
         >
           <View style={styles.content}>
             <Animated.View entering={FadeInDown.delay(80).springify()} style={[styles.balanceCard, { backgroundColor: theme.primaryLight, borderColor: theme.leaf }]}>

@@ -2,13 +2,14 @@ import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Image,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   Share,
   StyleSheet,
@@ -460,6 +461,13 @@ export default function ProfiloScreen() {
   const [badgeTab, setBadgeTab] = useState<BadgeTab>("traguardi");
   const [impactVisible, setImpactVisible] = useState(false);
   const [showBattlePassModal, setShowBattlePassModal] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await queryClient.invalidateQueries();
+    setRefreshing(false);
+  }, [queryClient]);
 
   useEffect(() => {
     if (params.tab === "sfide") setBadgeTab("sfide");
@@ -613,6 +621,14 @@ export default function ProfiloScreen() {
       style={[styles.container, { backgroundColor: theme.background }]}
       contentContainerStyle={{ paddingBottom: bottomPad }}
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={theme.primary}
+          colors={[theme.primary]}
+        />
+      }
     >
       <View style={[styles.header, { paddingTop: topPadding + 16, backgroundColor: mode === "dark" ? Colors.leaf : "#F2F9F5" }]}>
         <View style={[styles.decorCircleBig, { backgroundColor: mode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(46,107,80,0.07)" }]} />

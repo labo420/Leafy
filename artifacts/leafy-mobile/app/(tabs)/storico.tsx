@@ -1,5 +1,5 @@
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -8,6 +8,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -543,7 +544,9 @@ export default function StoricoScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { theme } = useTheme();
+  const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const { openReceiptId } = useLocalSearchParams<{ openReceiptId?: string }>();
 
   React.useEffect(() => {
@@ -552,6 +555,12 @@ export default function StoricoScreen() {
       router.setParams({ openReceiptId: "" });
     }
   }, [openReceiptId]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await queryClient.invalidateQueries({ queryKey: ["receipts"] });
+    setRefreshing(false);
+  }, [queryClient]);
 
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 + 84 : 100 + insets.bottom;
@@ -585,26 +594,34 @@ export default function StoricoScreen() {
 
       {isLoading ? (
         <ActivityIndicator size="large" color={theme.leaf} style={{ marginTop: 40 }} />
-      ) : !receipts || receipts.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Feather name="inbox" size={56} color={theme.textMuted} />
-          <Text style={[styles.emptyTitle, { color: theme.text }]}>Nessuno scontrino ancora</Text>
-          <Text style={[styles.emptySub, { color: theme.textSecondary }]}>Il tuo primo scontrino vale punti green!</Text>
-          <Pressable style={[styles.scanBtn, { backgroundColor: theme.leaf }]} onPress={() => router.push("/(tabs)/scan")}>
-            <Feather name="camera" size={16} color="#fff" />
-            <Text style={styles.scanBtnText}>Scansiona ora</Text>
-          </Pressable>
-        </View>
       ) : (
         <FlatList
-          data={receipts}
+          data={receipts ?? []}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
             <ReceiptCard receipt={item} onPress={() => setSelectedId(item.id)} />
           )}
-          contentContainerStyle={{ padding: 20, paddingBottom: bottomPad }}
+          contentContainerStyle={{ padding: 20, paddingBottom: bottomPad, flexGrow: 1 }}
           showsVerticalScrollIndicator={false}
-          scrollEnabled={!!receipts?.length}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={theme.leaf}
+              colors={[theme.leaf]}
+            />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Feather name="inbox" size={56} color={theme.textMuted} />
+              <Text style={[styles.emptyTitle, { color: theme.text }]}>Nessuno scontrino ancora</Text>
+              <Text style={[styles.emptySub, { color: theme.textSecondary }]}>Il tuo primo scontrino vale punti green!</Text>
+              <Pressable style={[styles.scanBtn, { backgroundColor: theme.leaf }]} onPress={() => router.push("/(tabs)/scan")}>
+                <Feather name="camera" size={16} color="#fff" />
+                <Text style={styles.scanBtnText}>Scansiona ora</Text>
+              </Pressable>
+            </View>
+          }
         />
       )}
 
