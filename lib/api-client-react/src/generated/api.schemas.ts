@@ -49,6 +49,11 @@ export interface Profile {
   badgesCount: number;
   badges: Badge[];
   profileImageUrl?: string | null;
+  hasBattlePass?: boolean;
+  loginStreak?: number;
+  bpStreakDay?: number;
+  bpStreakClaimed?: number;
+  bpStreakCompleted?: boolean;
 }
 
 export interface ImpactStats {

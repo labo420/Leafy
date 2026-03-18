@@ -26,4 +26,8 @@ export interface Profile {
   badges: Badge[];
   profileImageUrl?: string | null;
   hasBattlePass?: boolean;
+  loginStreak?: number;
+  bpStreakDay?: number;
+  bpStreakClaimed?: number;
+  bpStreakCompleted?: boolean;
 }

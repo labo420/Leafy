@@ -43,6 +43,10 @@ export const GetProfileResponse = zod.object({
   ),
   profileImageUrl: zod.string().nullish(),
   hasBattlePass: zod.boolean().optional(),
+  loginStreak: zod.number().optional(),
+  bpStreakDay: zod.number().optional(),
+  bpStreakClaimed: zod.number().optional(),
+  bpStreakCompleted: zod.boolean().optional(),
 });
 
 /**

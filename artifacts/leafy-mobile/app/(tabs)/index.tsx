@@ -786,11 +786,11 @@ export default function HomeScreen() {
 
   const username = profile?.username || user?.firstName || "Utente";
   const streak = profile?.streak ?? 0;
-  const loginStreak = (profile as any)?.loginStreak ?? 0;
-  const hasBattlePass = (profile as any)?.hasBattlePass ?? false;
-  const bpStreakDay = (profile as any)?.bpStreakDay ?? 0;
-  const bpStreakClaimed = (profile as any)?.bpStreakClaimed ?? 0;
-  const bpStreakCompleted = (profile as any)?.bpStreakCompleted ?? false;
+  const loginStreak = profile?.loginStreak ?? 0;
+  const hasBattlePass = profile?.hasBattlePass ?? false;
+  const bpStreakDay = profile?.bpStreakDay ?? 0;
+  const bpStreakClaimed = profile?.bpStreakClaimed ?? 0;
+  const bpStreakCompleted = profile?.bpStreakCompleted ?? false;
   const xp = profile?.xp ?? profile?.totalPoints ?? 0;
   const leaBalance = profile?.leaBalance ?? 0;
   const points = xp;
