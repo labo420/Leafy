@@ -70,6 +70,9 @@ export interface DailyCheckinResponse {
   bonusAwarded: boolean;
   xpBonus: number;
   bpPrize?: { xp: number; lea: number } | null;
+  bpStreakDay?: number;
+  bpStreakClaimed?: number;
+  bpStreakCompleted?: boolean;
 }
 
 export interface ReferralInfo {
