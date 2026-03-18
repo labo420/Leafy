@@ -21,10 +21,12 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { DevConnect } from "@/components/DevConnect";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { AuthProvider } from "@/context/auth";
+import { WelcomeTutorial } from "@/components/WelcomeTutorial";
+import { AuthProvider, useAuth } from "@/context/auth";
 import { LevelUpProvider } from "@/context/level-up";
 import { ScanResetProvider } from "@/context/scan-reset";
 import { ThemeProvider } from "@/context/theme";
+import { useOnboardingTutorial } from "@/hooks/useOnboardingTutorial";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -34,15 +36,24 @@ const queryClient = new QueryClient({
   },
 });
 
+function TutorialGate() {
+  const { user } = useAuth();
+  const { shouldShow, dismiss } = useOnboardingTutorial(!!user);
+  return <WelcomeTutorial visible={shouldShow} onDismiss={dismiss} />;
+}
+
 function RootLayoutNav() {
   return (
-    <Stack screenOptions={{ headerBackTitle: "Indietro" }}>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="login" options={{ headerShown: false }} />
-      <Stack.Screen name="barcode-scanner" options={{ headerShown: false, presentation: "fullScreenModal" }} />
-      <Stack.Screen name="shopping-scanner" options={{ headerShown: false, presentation: "fullScreenModal" }} />
-      <Stack.Screen name="support" options={{ headerShown: false }} />
-    </Stack>
+    <>
+      <Stack screenOptions={{ headerBackTitle: "Indietro" }}>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="barcode-scanner" options={{ headerShown: false, presentation: "fullScreenModal" }} />
+        <Stack.Screen name="shopping-scanner" options={{ headerShown: false, presentation: "fullScreenModal" }} />
+        <Stack.Screen name="support" options={{ headerShown: false }} />
+      </Stack>
+      <TutorialGate />
+    </>
   );
 }
 

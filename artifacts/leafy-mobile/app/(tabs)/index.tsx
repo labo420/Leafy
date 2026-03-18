@@ -119,6 +119,14 @@ function LevelProgressRing({
   level: string;
   points: number;
 }) {
+  const { mode } = useTheme();
+  const onDark = mode === "dark";
+  const trackColor = onDark ? "rgba(255,255,255,0.15)" : "rgba(46,107,80,0.13)";
+  const iconColor = onDark ? "rgba(255,255,255,0.90)" : "#2E6B50";
+  const nameColor = onDark ? "rgba(255,255,255,0.85)" : "#1A3028";
+  const xpSubColor = onDark ? "rgba(255,255,255,0.55)" : "rgba(26,48,40,0.55)";
+  const nextLvlColor = onDark ? "rgba(255,255,255,0.70)" : "rgba(26,48,40,0.60)";
+
   const scale = useSharedValue(0.82);
 
   useEffect(() => {
@@ -152,7 +160,7 @@ function LevelProgressRing({
             cx={RING_CX}
             cy={RING_CY}
             r={RING_RADIUS}
-            stroke="rgba(255,255,255,0.15)"
+            stroke={trackColor}
             strokeWidth={RING_STROKE}
             fill="none"
           />
@@ -181,14 +189,14 @@ function LevelProgressRing({
           )}
         </Svg>
         <View style={ringStyles.innerContent}>
-          <MaterialCommunityIcons name={levelIcon} size={32} color="rgba(255,255,255,0.90)" />
-          <Text style={ringStyles.levelName}>{LEVEL_LABELS[level] ?? level}</Text>
-          <Text style={ringStyles.xpProgress}>
+          <MaterialCommunityIcons name={levelIcon} size={32} color={iconColor} />
+          <Text style={[ringStyles.levelName, { color: nameColor }]}>{LEVEL_LABELS[level] ?? level}</Text>
+          <Text style={[ringStyles.xpProgress, { color: xpSubColor }]}>
             {new Intl.NumberFormat("it-IT").format(points)} / {new Intl.NumberFormat("it-IT").format(targetPts)} XP
           </Text>
         </View>
       </View>
-      <Text style={ringStyles.nextLevelText} numberOfLines={3}>
+      <Text style={[ringStyles.nextLevelText, { color: nextLvlColor }]} numberOfLines={3}>
         {isMaxLevel
           ? "Hai raggiunto il massimo livello!"
           : `Ti mancano solo ${new Intl.NumberFormat("it-IT").format(pointsRemaining)} XP per sbloccare ${nextLevel!.name} e ottenere i nuovi vantaggi.`}
@@ -467,7 +475,7 @@ function GuestAuthScreen() {
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { theme } = useTheme();
+  const { theme, mode } = useTheme();
 
   const {
     data: profile,
@@ -556,13 +564,13 @@ export default function HomeScreen() {
     >
       {/* ── HERO SECTION ── */}
       <LinearGradient
-        colors={["#2E6B50", "#1a4a35"]}
+        colors={mode === "dark" ? ["#142A20", "#0D1F16"] : ["#F2F9F5", "#E3F2EA"]}
         start={{ x: 0.2, y: 0 }}
         end={{ x: 0.8, y: 1 }}
         style={styles.heroSection}
       >
-        <View style={styles.decoCircle1} />
-        <View style={styles.decoCircle2} />
+        <View style={[styles.decoCircle1, { backgroundColor: mode === "dark" ? "rgba(255,255,255,0.06)" : "rgba(46,107,80,0.07)" }]} />
+        <View style={[styles.decoCircle2, { backgroundColor: mode === "dark" ? "rgba(255,255,255,0.04)" : "rgba(46,107,80,0.05)" }]} />
 
         <View style={[styles.header, { paddingTop: topPadding + 12 }]}>
           <View style={styles.headerLeft}>
@@ -574,21 +582,21 @@ export default function HomeScreen() {
               />
             </View>
             <View>
-              <Text style={styles.greetingHero}>Ciao, {username}! 👋</Text>
+              <Text style={[styles.greetingHero, { color: mode === "dark" ? "rgba(255,255,255,0.85)" : "#1A3028" }]}>Ciao, {username}! 👋</Text>
             </View>
           </View>
           <View style={styles.headerRight}>
-            <View style={styles.xpBadge}>
-              <Text style={styles.xpBadgeValue}>{xp.toLocaleString("it-IT")}</Text>
-              <Text style={styles.xpBadgeSymbol}>XP</Text>
+            <View style={[styles.xpBadge, { backgroundColor: mode === "dark" ? "rgba(255,255,255,0.12)" : "rgba(46,107,80,0.10)" }]}>
+              <Text style={[styles.xpBadgeValue, { color: mode === "dark" ? "#ffffff" : "#2E6B50" }]}>{xp.toLocaleString("it-IT")}</Text>
+              <Text style={[styles.xpBadgeSymbol, { color: mode === "dark" ? "rgba(255,255,255,0.6)" : "rgba(46,107,80,0.65)" }]}>XP</Text>
             </View>
-            <View style={styles.leaBadge}>
-              <Text style={styles.leaBadgeSymbol}>$LEA</Text>
-              <Text style={styles.leaBadgeValue}>{leaBalance.toFixed(2)}€</Text>
+            <View style={[styles.leaBadge, { backgroundColor: mode === "dark" ? "rgba(255,255,255,0.15)" : "rgba(46,107,80,0.08)", borderColor: mode === "dark" ? "rgba(255,255,255,0.20)" : "rgba(46,107,80,0.18)" }]}>
+              <Text style={[styles.leaBadgeSymbol, { color: mode === "dark" ? "#AADF2A" : "#2E6B50" }]}>$LEA</Text>
+              <Text style={[styles.leaBadgeValue, { color: mode === "dark" ? "#ffffff" : "#1A3028" }]}>{leaBalance.toFixed(2)}€</Text>
             </View>
             <Pressable onPress={() => router.push("/(tabs)/profilo")}>
-              <View style={styles.avatarCircleHero}>
-                <Text style={styles.avatarInitial}>{safeInitial}</Text>
+              <View style={[styles.avatarCircleHero, { backgroundColor: mode === "dark" ? "rgba(255,255,255,0.22)" : "rgba(46,107,80,0.12)", borderColor: mode === "dark" ? "rgba(255,255,255,0.35)" : "rgba(46,107,80,0.22)" }]}>
+                <Text style={[styles.avatarInitial, { color: mode === "dark" ? "#fff" : "#2E6B50" }]}>{safeInitial}</Text>
               </View>
             </Pressable>
           </View>

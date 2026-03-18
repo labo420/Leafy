@@ -614,17 +614,17 @@ export default function ProfiloScreen() {
       contentContainerStyle={{ paddingBottom: bottomPad }}
       showsVerticalScrollIndicator={false}
     >
-      <View style={[styles.header, { paddingTop: topPadding + 16 }]}>
-        <View style={styles.decorCircleBig} />
-        <View style={styles.decorCircleSmall} />
+      <View style={[styles.header, { paddingTop: topPadding + 16, backgroundColor: mode === "dark" ? Colors.leaf : "#F2F9F5" }]}>
+        <View style={[styles.decorCircleBig, { backgroundColor: mode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(46,107,80,0.07)" }]} />
+        <View style={[styles.decorCircleSmall, { backgroundColor: mode === "dark" ? "rgba(255,255,255,0.06)" : "rgba(46,107,80,0.05)" }]} />
         <View style={styles.headerRow}>
-          <Text style={styles.headerTitle}>Profilo</Text>
+          <Text style={[styles.headerTitle, { color: mode === "dark" ? "#fff" : "#1A3028" }]}>Profilo</Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <Pressable
-              style={styles.settingsBtn}
+              style={[styles.settingsBtn, { backgroundColor: mode === "dark" ? "rgba(0,0,0,0.1)" : "rgba(46,107,80,0.10)" }]}
               onPress={() => router.push("/impostazioni")}
             >
-              <Feather name="settings" size={20} color="#fff" />
+              <Feather name="settings" size={20} color={mode === "dark" ? "#fff" : "#2E6B50"} />
             </Pressable>
           </View>
         </View>

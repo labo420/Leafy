@@ -18,7 +18,7 @@ import {
 } from "react-native";
 import Animated, {
   FadeIn, FadeInDown, SlideInDown,
-  useSharedValue, useAnimatedStyle, withSpring,
+  useSharedValue, useAnimatedStyle, withSpring, withDelay,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -196,6 +196,30 @@ export default function ScanScreen() {
   const cameraAnimStyle = useAnimatedStyle(() => ({
     transform: [{ scale: cameraScale.value }],
   }));
+
+  const [displayXp, setDisplayXp] = useState(0);
+  const barFill = useSharedValue(0);
+  const barAnimStyle = useAnimatedStyle(() => ({
+    width: `${barFill.value * 100}%` as any,
+  }));
+
+  useEffect(() => {
+    if (state !== "confirmed" || !scanResult) return;
+    const target = scanResult.xpEarned ?? 0;
+    setDisplayXp(0);
+    barFill.value = 0;
+    const steps = 30;
+    const duration = 750;
+    const intervalMs = duration / steps;
+    let current = 0;
+    const timer = setInterval(() => {
+      current = Math.min(target, current + Math.max(1, Math.ceil(target / steps)));
+      setDisplayXp(current);
+      if (current >= target) clearInterval(timer);
+    }, intervalMs);
+    barFill.value = withDelay(200, withSpring(Math.min(1, target / 100), { damping: 18, stiffness: 65 }));
+    return () => clearInterval(timer);
+  }, [state, scanResult?.xpEarned]);
 
   const { data: activeSession, isLoading: sessionLoading } = useQuery<ActiveSession>({
     queryKey: ["active-session"],
@@ -377,8 +401,20 @@ export default function ScanScreen() {
             </LinearGradient>
 
             <Animated.View entering={FadeInDown.delay(220)} style={[styles.xpHeroCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-              <Text style={[styles.xpBigValue, { color: theme.leaf }]}>+{scanResult.xpEarned ?? 0} XP</Text>
+              <Text style={[styles.xpBigValue, { color: theme.leaf }]}>+{displayXp} XP</Text>
               <Text style={[styles.xpMotivation, { color: theme.text }]}>{getMotivationMessage(scanResult.xpEarned ?? 0)}</Text>
+              <View style={[styles.xpBarTrack, { backgroundColor: theme.border }]}>
+                <Animated.View
+                  style={[
+                    styles.xpBarFill,
+                    barAnimStyle,
+                    { backgroundColor: (scanResult.xpEarned ?? 0) >= 50 ? Colors.amber : theme.leaf },
+                  ]}
+                />
+              </View>
+              <Text style={[styles.xpBarLabel, { color: theme.textMuted }]}>
+                {scanResult.xpEarned ?? 0} / 100 XP
+              </Text>
               <View style={styles.leaSecondaryRow}>
                 <Feather name="dollar-sign" size={14} color={theme.textSecondary} />
                 <Text style={[styles.leaSecondaryText, { color: theme.textSecondary }]}>
@@ -996,6 +1032,23 @@ const styles = StyleSheet.create({
     color: Colors.text,
     textAlign: "center",
     lineHeight: 22,
+  },
+  xpBarTrack: {
+    width: "100%",
+    height: 8,
+    borderRadius: 4,
+    overflow: "hidden",
+    marginTop: 14,
+  },
+  xpBarFill: {
+    height: 8,
+    borderRadius: 4,
+  },
+  xpBarLabel: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    marginTop: 5,
+    alignSelf: "flex-end",
   },
   leaSecondaryRow: {
     flexDirection: "row",
