@@ -40,7 +40,7 @@ import { Fonts } from "@/constants/typography";
 import { useAuth } from "@/context/auth";
 import { useTheme } from "@/context/theme";
 import { apiFetch } from "@/lib/api";
-import type { Profile } from "@workspace/api-client-react";
+import type { Profile, DailyCheckinResponse } from "@workspace/api-client-react";
 
 const LEVEL_LABELS: Record<string, string> = {
   Germoglio: "Germoglio",
@@ -733,7 +733,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (!user) return;
-    apiFetch("/profile/daily-checkin", { method: "POST" }).then((data: any) => {
+    apiFetch("/profile/daily-checkin", { method: "POST" }).then((data: DailyCheckinResponse) => {
       if (!data.alreadyCheckedIn) {
         setStreakToast({
           loginStreak: data.loginStreak,

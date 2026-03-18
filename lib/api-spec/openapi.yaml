@@ -542,6 +542,21 @@ components:
         profileImageUrl:
           type: string
           nullable: true
+        hasBattlePass:
+          type: boolean
+          description: Whether the user has an active Battle Pass
+        loginStreak:
+          type: integer
+          description: Classic daily login streak (resets to 1 after 7-day cycle)
+        bpStreakDay:
+          type: integer
+          description: Current consecutive login days in the BP streak
+        bpStreakClaimed:
+          type: integer
+          description: Number of BP streak prizes already claimed this cycle
+        bpStreakCompleted:
+          type: boolean
+          description: Whether the full 7-day BP streak cycle is completed this month
       required:
         - id
         - username

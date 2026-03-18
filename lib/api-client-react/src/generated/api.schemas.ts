@@ -64,6 +64,14 @@ export interface ImpactStats {
   receiptsScanned: number;
 }
 
+export interface DailyCheckinResponse {
+  alreadyCheckedIn: boolean;
+  loginStreak: number;
+  bonusAwarded: boolean;
+  xpBonus: number;
+  bpPrize?: { xp: number; lea: number } | null;
+}
+
 export interface ReferralInfo {
   code: string;
   referralUrl: string;
