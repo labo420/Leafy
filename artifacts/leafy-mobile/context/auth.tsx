@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { AuthUser } from "@workspace/api-client-react";
 
@@ -28,6 +28,19 @@ const AuthContext = createContext<AuthContextType>({
   logout: async () => {},
 });
 
+const STORAGE_KEYS = {
+  user: "auth_user",
+  token: "auth_session_token",
+  xp: "auth_xp",
+  leaBalance: "auth_lea",
+  hasBattlePass: "auth_bp",
+};
+
+function getBase(): string {
+  const domain = process.env.EXPO_PUBLIC_DOMAIN;
+  return domain ? `https://${domain}` : "";
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -35,65 +48,125 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [leaBalance, setLeaBalance] = useState(0);
   const [hasBattlePass, setHasBattlePass] = useState(false);
 
+  const sessionTokenRef = useRef<string | null>(null);
+
+  const apiFetch = useCallback(
+    (url: string, options: RequestInit = {}): Promise<Response> => {
+      const headers: Record<string, string> = {
+        ...(options.headers as Record<string, string> | undefined),
+      };
+      if (sessionTokenRef.current) {
+        headers["Authorization"] = `Bearer ${sessionTokenRef.current}`;
+      }
+      return fetch(url, { ...options, credentials: "include", headers });
+    },
+    [],
+  );
+
+  const saveToken = async (token: string | null) => {
+    try {
+      if (token) {
+        sessionTokenRef.current = token;
+        await AsyncStorage.setItem(STORAGE_KEYS.token, token);
+      } else {
+        sessionTokenRef.current = null;
+        await AsyncStorage.removeItem(STORAGE_KEYS.token);
+      }
+    } catch {}
+  };
+
+  const fetchAndSaveToken = useCallback(async () => {
+    try {
+      const base = getBase();
+      const res = await apiFetch(`${base}/api/auth/token`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.token) await saveToken(data.token);
+      }
+    } catch {}
+  }, [apiFetch]);
+
   const saveUserLocally = async (userData: AuthUser | null) => {
     try {
       if (userData) {
-        await AsyncStorage.setItem("auth_user", JSON.stringify(userData));
+        await AsyncStorage.setItem(STORAGE_KEYS.user, JSON.stringify(userData));
       } else {
-        await AsyncStorage.removeItem("auth_user");
+        await AsyncStorage.removeItem(STORAGE_KEYS.user);
       }
-    } catch (e) {
-      console.error("Failed to save auth user:", e);
-    }
+    } catch {}
+  };
+
+  const saveBalancesLocally = async (xpVal: number, leaVal: number, bpVal: boolean) => {
+    try {
+      await AsyncStorage.multiSet([
+        [STORAGE_KEYS.xp, String(xpVal)],
+        [STORAGE_KEYS.leaBalance, String(leaVal)],
+        [STORAGE_KEYS.hasBattlePass, bpVal ? "1" : "0"],
+      ]);
+    } catch {}
+  };
+
+  const loadBalancesLocally = async () => {
+    try {
+      const vals = await AsyncStorage.multiGet([
+        STORAGE_KEYS.xp,
+        STORAGE_KEYS.leaBalance,
+        STORAGE_KEYS.hasBattlePass,
+      ]);
+      setXp(parseFloat(vals[0][1] ?? "0") || 0);
+      setLeaBalance(parseFloat(vals[1][1] ?? "0") || 0);
+      setHasBattlePass(vals[2][1] === "1");
+    } catch {}
   };
 
   const fetchBalances = useCallback(async () => {
     try {
-      const domain = process.env.EXPO_PUBLIC_DOMAIN;
-      const base = domain ? `https://${domain}` : "";
-      const res = await fetch(`${base}/api/profile`, { credentials: "include" });
+      const base = getBase();
+      const res = await apiFetch(`${base}/api/profile`);
       if (res.ok) {
         const data = await res.json();
-        setXp(data.xp ?? 0);
-        setLeaBalance(typeof data.leaBalance === "string" ? parseFloat(data.leaBalance) : (data.leaBalance ?? 0));
-        setHasBattlePass(data.hasBattlePass ?? false);
+        const xpVal = data.xp ?? 0;
+        const leaVal = typeof data.leaBalance === "string"
+          ? parseFloat(data.leaBalance)
+          : (data.leaBalance ?? 0);
+        const bpVal = data.hasBattlePass ?? false;
+        setXp(xpVal);
+        setLeaBalance(leaVal);
+        setHasBattlePass(bpVal);
+        await saveBalancesLocally(xpVal, leaVal, bpVal);
       }
-    } catch {
-    }
-  }, []);
+    } catch {}
+  }, [apiFetch]);
 
-  const fetchUser = async () => {
+  const fetchUser = useCallback(async () => {
     try {
-      const domain = process.env.EXPO_PUBLIC_DOMAIN;
-      const base = domain ? `https://${domain}` : "";
-      const res = await fetch(`${base}/api/auth/me`, { credentials: "include" });
+      const base = getBase();
+      const res = await apiFetch(`${base}/api/auth/user`);
       if (res.ok) {
         const data = await res.json();
         const userData = data.user ?? null;
         setUser(userData);
         await saveUserLocally(userData);
         if (userData) {
+          await fetchAndSaveToken();
           fetchBalances();
         }
-      } else {
+      } else if (res.status === 401) {
         setUser(null);
         await saveUserLocally(null);
+        await saveToken(null);
       }
     } catch {
-      setUser(null);
-      await saveUserLocally(null);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [apiFetch, fetchBalances, fetchAndSaveToken]);
 
   const activateBattlePass = async () => {
     try {
-      const domain = process.env.EXPO_PUBLIC_DOMAIN;
-      const base = domain ? `https://${domain}` : "";
-      const res = await fetch(`${base}/api/profile/battle-pass/activate`, {
+      const base = getBase();
+      const res = await apiFetch(`${base}/api/profile/battle-pass/activate`, {
         method: "POST",
-        credentials: "include",
       });
       if (res.ok) {
         setHasBattlePass(true);
@@ -106,9 +179,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      const domain = process.env.EXPO_PUBLIC_DOMAIN;
-      const base = domain ? `https://${domain}` : "";
-      await fetch(`${base}/api/auth/logout`, { method: "POST", credentials: "include" });
+      const base = getBase();
+      await apiFetch(`${base}/api/auth/logout`, { method: "POST" });
     } catch {
     } finally {
       setUser(null);
@@ -116,26 +188,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLeaBalance(0);
       setHasBattlePass(false);
       await saveUserLocally(null);
+      await saveToken(null);
+      await saveBalancesLocally(0, 0, false);
     }
   };
 
   useEffect(() => {
     const initAuth = async () => {
       try {
-        const savedUser = await AsyncStorage.getItem("auth_user");
+        const [savedUser, savedToken] = await Promise.all([
+          AsyncStorage.getItem(STORAGE_KEYS.user),
+          AsyncStorage.getItem(STORAGE_KEYS.token),
+          loadBalancesLocally(),
+        ]);
+
+        if (savedToken) {
+          sessionTokenRef.current = savedToken;
+        }
+
         if (savedUser) {
           setUser(JSON.parse(savedUser));
         }
       } catch (e) {
         console.error("Failed to load saved auth:", e);
       }
-      fetchUser();
+
+      await fetchUser();
     };
     initAuth();
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, xp, leaBalance, hasBattlePass, refetch: fetchUser, refreshBalances: fetchBalances, activateBattlePass, setUser, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        xp,
+        leaBalance,
+        hasBattlePass,
+        refetch: fetchUser,
+        refreshBalances: fetchBalances,
+        activateBattlePass,
+        setUser,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

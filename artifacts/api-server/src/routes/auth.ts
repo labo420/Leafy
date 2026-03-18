@@ -241,6 +241,19 @@ router.get("/auth/user", (req: Request, res: Response) => {
   );
 });
 
+// ─── GET /auth/token (mobile: returns session token for Bearer auth) ──────────
+
+router.get("/auth/token", (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Non autenticato." });
+    return;
+  }
+  const sid = req.headers["authorization"]?.startsWith("Bearer ")
+    ? req.headers["authorization"].slice(7)
+    : req.cookies?.[SESSION_COOKIE];
+  res.json({ token: sid ?? null });
+});
+
 // ─── POST /auth/register ─────────────────────────────────────────────────────
 
 router.post("/auth/register", async (req: Request, res: Response) => {
