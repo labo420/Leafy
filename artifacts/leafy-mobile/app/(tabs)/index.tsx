@@ -117,11 +117,12 @@ const LEVEL_MCI_ICONS: Record<string, React.ComponentProps<typeof MaterialCommun
 const ICON_BASE_SIZE = 44;
 const ICON_MIN_SCALE = 0.52;
 const ICON_MAX_SCALE = 1.4;
-const CAN_TOP = 18;
-const CAN_LEFT = RING_SIZE / 2 + 12;
-const DROP_TOP = 58;
-const DROP_LEFT = RING_SIZE / 2 - 4;
-const DROP_TRAVEL = 44;
+const CAN_TOP = 8;
+const CAN_LEFT = RING_SIZE / 2 + 16;
+const CAN_PIVOT = 17;
+const DROP_TOP = 48;
+const DROP_LEFT = RING_SIZE / 2 - 2;
+const DROP_TRAVEL = 56;
 
 function LevelProgressRing({
   progress,
@@ -177,11 +178,11 @@ function LevelProgressRing({
   const canAnimStyle = useAnimatedStyle(() => ({
     opacity: canOpacity.value,
     transform: [
-      { translateX: 14 },
-      { translateY: 14 },
+      { translateX: CAN_PIVOT },
+      { translateY: CAN_PIVOT },
       { rotate: `${canRotate.value}deg` },
-      { translateX: -14 },
-      { translateY: -14 },
+      { translateX: -CAN_PIVOT },
+      { translateY: -CAN_PIVOT },
     ],
   }));
   const dropAnimStyle = useAnimatedStyle(() => ({
@@ -220,34 +221,34 @@ function LevelProgressRing({
 
     // XP gain: watering animation
     if (points > prev && prev > 0) {
-      // Can fades in, holds, fades out
+      // Can fades in (450ms), holds (1750ms), fades out (500ms) → total 2700ms
       canOpacity.value = withSequence(
-        withTiming(1, { duration: 220 }),
-        withTiming(1, { duration: 880 }),
+        withTiming(1, { duration: 450 }),
+        withTiming(1, { duration: 1750 }),
+        withTiming(0, { duration: 500 }),
+      );
+      // Can tilts 35° to pour then returns → total 2200ms
+      canRotate.value = withSequence(
+        withTiming(0, { duration: 100 }),
+        withTiming(35, { duration: 750, easing: Easing.out(Easing.quad) }),
+        withTiming(35, { duration: 700 }),
+        withTiming(0, { duration: 650, easing: Easing.inOut(Easing.quad) }),
+      );
+      // Droplet: wait 950ms, appear 120ms, fall 900ms, fade 300ms → total 2270ms
+      dropOpacity.value = withSequence(
+        withTiming(0, { duration: 950 }),
+        withTiming(1, { duration: 120 }),
+        withTiming(1, { duration: 900 }),
         withTiming(0, { duration: 300 }),
       );
-      // Can tilts to pour then returns
-      canRotate.value = withSequence(
-        withTiming(0, { duration: 80 }),
-        withTiming(26, { duration: 420, easing: Easing.out(Easing.quad) }),
-        withTiming(26, { duration: 300 }),
-        withTiming(0, { duration: 340, easing: Easing.inOut(Easing.quad) }),
-      );
-      // Droplet appears and falls
-      dropOpacity.value = withSequence(
-        withTiming(0, { duration: 380 }),
-        withTiming(1, { duration: 90 }),
-        withTiming(1, { duration: 330 }),
-        withTiming(0, { duration: 200 }),
-      );
       dropY.value = withSequence(
-        withTiming(0, { duration: 380 }),
-        withTiming(DROP_TRAVEL, { duration: 420, easing: Easing.in(Easing.quad) }),
+        withTiming(0, { duration: 950 }),
+        withTiming(DROP_TRAVEL, { duration: 1020, easing: Easing.in(Easing.quad) }),
         withTiming(0, { duration: 0 }),
       );
-      // Badge springs to new size when drop lands
+      // Badge springs when drop lands (950 + 1020 = 1970ms)
       iconScale.value = withDelay(
-        780,
+        1970,
         withSpring(newIconScale, { damping: 6, stiffness: 130, mass: 0.8 }),
       );
     } else {
