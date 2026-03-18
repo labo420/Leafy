@@ -651,15 +651,25 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
 
   // ── AI Environment Background Check (silent, risk-based) ─────────────────
   const { contextImageBase64 } = req.body;
-  if (contextImageBase64 && typeof contextImageBase64 === "string" && contextImageBase64.length > 100) {
-    const trustLevel = await getUserTrustLevel(user);
+  const trustLevel = await getUserTrustLevel(user);
+  const hasImage = typeof contextImageBase64 === "string" && contextImageBase64.length > 100;
+
+  if (trustLevel === "strict" && !hasImage) {
+    // Strict users must provide a context frame captured by the mobile app.
+    // Absence of the image on a strict account indicates a scripted/non-app call.
+    console.log(`[antiFraud] Strict user ${user.id} submitted barcode confirm without context image — blocked`);
+    res.status(400).json({ error: "Impossibile convalidare questa scansione. Assicurati di usare l'app aggiornata." });
+    return;
+  }
+
+  if (hasImage) {
     const shouldCheck =
       trustLevel === "strict" ||
       (trustLevel === "moderate" && Math.random() < 0.3);
 
     if (shouldCheck) {
       try {
-        const envResult = await analyzeEnvironmentContext(contextImageBase64);
+        const envResult = await analyzeEnvironmentContext(contextImageBase64!);
         if (envResult.environment === "store" && envResult.confidence > 0.75) {
           console.log(`[antiFraud] Environment check blocked scan — user=${user.id} trustLevel=${trustLevel} env=${envResult.environment} conf=${envResult.confidence}`);
           res.status(400).json({ error: "Impossibile convalidare questa scansione. Assicurati di essere in un ambiente idoneo." });

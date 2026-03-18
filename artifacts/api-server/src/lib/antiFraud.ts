@@ -17,10 +17,11 @@ export async function getUserTrustLevel(user: User): Promise<TrustLevel> {
   const approvedCount = countRow?.count ?? 0;
 
   if (approvedCount >= 50) return "trusted";
-  if (approvedCount >= 10) return "moderate";
 
   const accountAgeDays = (Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24);
-  if (accountAgeDays < 30) return "strict";
+
+  // strict: Germoglio — account <7 days OR fewer than 10 approved receipts
+  if (accountAgeDays < 7 || approvedCount < 10) return "strict";
 
   return "moderate";
 }

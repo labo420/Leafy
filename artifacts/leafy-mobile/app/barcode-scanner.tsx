@@ -239,7 +239,7 @@ export default function BarcodeScannerScreen() {
 
       let imageBase64: string | undefined;
       try {
-        if (cameraRef.current && Platform.OS !== "web") {
+        if (cameraRef.current) {
           const photo = await cameraRef.current.takePictureAsync({
             base64: true,
             quality: 0.2,
