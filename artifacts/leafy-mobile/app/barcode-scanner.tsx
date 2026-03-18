@@ -109,6 +109,7 @@ export default function BarcodeScannerScreen() {
   const [lookupData, setLookupData] = useState<LookupResult | null>(null);
   const [lastConfirmed, setLastConfirmed] = useState<ConfirmResult | null>(null);
   const [cooldown, setCooldown] = useState(false);
+  const [capturedContextImage, setCapturedContextImage] = useState<string | undefined>(undefined);
   const [showManualInput, setShowManualInput] = useState(false);
   const [manualCode, setManualCode] = useState("");
   const lastBarcodeRef = useRef<string>("");
@@ -196,10 +197,10 @@ export default function BarcodeScannerScreen() {
   });
 
   const confirmMutation = useMutation({
-    mutationFn: (barcode: string) =>
+    mutationFn: (params: { barcode: string; contextImageBase64?: string }) =>
       apiFetch<ConfirmResult>("/scan/barcode/confirm", {
         method: "POST",
-        body: JSON.stringify({ barcode, receiptId }),
+        body: JSON.stringify({ barcode: params.barcode, receiptId, contextImageBase64: params.contextImageBase64 }),
       }),
     onSuccess: async (data) => {
       setLastConfirmed(data);
@@ -246,6 +247,7 @@ export default function BarcodeScannerScreen() {
           });
           if (photo?.base64) {
             imageBase64 = photo.base64;
+            setCapturedContextImage(photo.base64);
           }
         }
       } catch {}
@@ -311,7 +313,7 @@ export default function BarcodeScannerScreen() {
   const handleConfirm = () => {
     if (!lookupData) return;
     setPhase("confirming");
-    confirmMutation.mutate(lookupData.barcode);
+    confirmMutation.mutate({ barcode: lookupData.barcode, contextImageBase64: capturedContextImage });
   };
 
   const handleReject = () => {

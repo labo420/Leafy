@@ -2,6 +2,29 @@ import { db, receiptsTable, usersTable } from "@workspace/db";
 import { eq, and, gte, ne, sql } from "drizzle-orm";
 import type { User } from "@workspace/db";
 
+export type TrustLevel = "strict" | "moderate" | "trusted";
+
+export async function getUserTrustLevel(user: User): Promise<TrustLevel> {
+  if (user.hasBattlePass) return "trusted";
+
+  const [countRow] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(receiptsTable)
+    .where(and(
+      eq(receiptsTable.userId, user.id),
+      eq(receiptsTable.status, "approved"),
+    ));
+  const approvedCount = countRow?.count ?? 0;
+
+  if (approvedCount >= 50) return "trusted";
+  if (approvedCount >= 10) return "moderate";
+
+  const accountAgeDays = (Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24);
+  if (accountAgeDays < 30) return "strict";
+
+  return "moderate";
+}
+
 export const ANTI_FRAUD = {
   MAX_RECEIPT_AGE_DAYS: 7,
   MAX_SCANS_PER_DAY: 10,

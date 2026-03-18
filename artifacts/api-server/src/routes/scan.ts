@@ -4,8 +4,8 @@ import { db, usersTable, receiptsTable, barcodeScansTable, productCacheTable, us
 import { ScanReceiptBody } from "@workspace/api-zod";
 import { hashImage, extractTextViaGoogleVision, calculateLevel } from "../lib/scanner";
 import { XP_TO_LEA_RATE } from "../lib/economy";
-import { runAntiFraudChecks, approvePendingPoints } from "../lib/antiFraud";
-import { lookupBarcode, validateReceiptWithAI, classifyProductsBatch, validateBarcodeImage, isValidBarcode, matchProductToReceipt, classifyManualProduct, type PendingProduct } from "../lib/productClassifier";
+import { runAntiFraudChecks, approvePendingPoints, getUserTrustLevel } from "../lib/antiFraud";
+import { lookupBarcode, validateReceiptWithAI, classifyProductsBatch, validateBarcodeImage, isValidBarcode, matchProductToReceipt, classifyManualProduct, analyzeEnvironmentContext, type PendingProduct } from "../lib/productClassifier";
 import { uploadReceiptImage } from "../lib/receiptImages";
 import { matchChain, isAcceptedStore } from "../lib/supermarketWhitelist";
 import { requireUser } from "./profile";
@@ -134,6 +134,26 @@ router.post("/scan", async (req, res): Promise<void> => {
     }
   }
 
+  // ── Document number cross-user watermark check ────────────────────────────
+  if (validation.documentNumber) {
+    const [docDuplicate] = await db
+      .select({ id: receiptsTable.id, userId: receiptsTable.userId })
+      .from(receiptsTable)
+      .where(
+        and(
+          eq(receiptsTable.documentNumber, validation.documentNumber),
+          ne(receiptsTable.userId, user.id),
+        ),
+      )
+      .limit(1);
+
+    if (docDuplicate) {
+      return void res.status(400).json({
+        error: "Questo scontrino è già stato scansionato da un altro utente. Anti-frode attivo.",
+      });
+    }
+  }
+
   const now = new Date();
   const barcodeExpiry = new Date(now.getTime() + BARCODE_SESSION_HOURS * 60 * 60 * 1000);
 
@@ -186,6 +206,7 @@ router.post("/scan", async (req, res): Promise<void> => {
         receiptTotal: effectiveTotal,
         storeChain: resolvedChain,
         province: validation.province ?? null,
+        documentNumber: validation.documentNumber ?? null,
       })
       .returning();
     receipt = newReceipt;
@@ -627,6 +648,29 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
   if (!validated) return;
 
   const { user, receipt, barcode, receiptId } = validated;
+
+  // ── AI Environment Background Check (silent, risk-based) ─────────────────
+  const { contextImageBase64 } = req.body;
+  if (contextImageBase64 && typeof contextImageBase64 === "string" && contextImageBase64.length > 100) {
+    const trustLevel = await getUserTrustLevel(user);
+    const shouldCheck =
+      trustLevel === "strict" ||
+      (trustLevel === "moderate" && Math.random() < 0.3);
+
+    if (shouldCheck) {
+      try {
+        const envResult = await analyzeEnvironmentContext(contextImageBase64);
+        if (envResult.environment === "store" && envResult.confidence > 0.75) {
+          console.log(`[antiFraud] Environment check blocked scan — user=${user.id} trustLevel=${trustLevel} env=${envResult.environment} conf=${envResult.confidence}`);
+          res.status(400).json({ error: "Impossibile convalidare questa scansione. Assicurati di essere in un ambiente idoneo." });
+          return;
+        }
+        console.log(`[antiFraud] Environment check passed — user=${user.id} trustLevel=${trustLevel} env=${envResult.environment} conf=${envResult.confidence}`);
+      } catch {
+        // Never block on AI error — fail open
+      }
+    }
+  }
 
   const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const [pointsSumRow] = await db

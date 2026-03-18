@@ -25,6 +25,7 @@ export const receiptsTable = pgTable("receipts", {
   imageExpiresAt: timestamp("image_expires_at", { withTimezone: true }),
   storeChain: text("store_chain"),
   province: text("province"),
+  documentNumber: text("document_number"),
 });
 
 export const insertReceiptSchema = createInsertSchema(receiptsTable).omit({ id: true, scannedAt: true });

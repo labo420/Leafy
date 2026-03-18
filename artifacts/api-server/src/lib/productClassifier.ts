@@ -1264,6 +1264,61 @@ export interface ReceiptValidation {
   totalCents: number | null;
   products: string[];
   reason: string;
+  documentNumber: string | null;
+}
+
+export interface EnvironmentAnalysis {
+  environment: "home" | "store" | "uncertain";
+  confidence: number;
+}
+
+export async function analyzeEnvironmentContext(imageBase64: string): Promise<EnvironmentAnalysis> {
+  try {
+    const message = await anthropic.messages.create({
+      model: "claude-haiku-4-5",
+      max_tokens: 256,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image",
+              source: { type: "base64", media_type: "image/jpeg" as const, data: imageBase64 },
+            },
+            {
+              type: "text",
+              text: `Analyze this image and determine the environment where it was taken.
+
+Reply ONLY with valid JSON:
+{
+  "environment": "home" or "store" or "uncertain",
+  "confidence": <number 0.0-1.0>
+}
+
+Definitions:
+- "store": supermarket, grocery store, retail shelves with products for sale, price tags, industrial/neon commercial lighting typical of large retail
+- "home": house, domestic kitchen, table, sofa, warm light, household objects, neutral background
+- "uncertain": cannot determine with certainty
+
+Be VERY conservative: classify as "store" ONLY if you CLEARLY see retail shelves or multiple price tags.`,
+            },
+          ],
+        },
+      ],
+    });
+
+    const text = message.content[0].type === "text" ? message.content[0].text : "{}";
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return { environment: "uncertain", confidence: 0 };
+    const parsed = JSON.parse(jsonMatch[0]) as { environment?: string; confidence?: number };
+    const env = ["home", "store", "uncertain"].includes(parsed.environment ?? "")
+      ? (parsed.environment as "home" | "store" | "uncertain")
+      : "uncertain";
+    const conf = typeof parsed.confidence === "number" ? Math.min(1, Math.max(0, parsed.confidence)) : 0;
+    return { environment: env, confidence: conf };
+  } catch {
+    return { environment: "uncertain", confidence: 0 };
+  }
 }
 
 export async function validateReceiptWithAI(imageBase64: string): Promise<ReceiptValidation> {
@@ -1292,8 +1347,18 @@ Rispondi SOLO con un JSON valido, senza altro testo:
   "province": "Nome Comune" o null,
   "date": "YYYY-MM-DD" o null,
   "totalCents": 1250 o null,
+  "documentNumber": "numero progressivo/documento unico dello scontrino" o null,
   "products": [{"raw": "TESTO ORIGINALE", "name": "Nome Normalizzato"}]
 }
+
+=== REGOLE NUMERO DOCUMENTO ===
+Cerca il numero documento/progressivo fiscale dello scontrino. Appare spesso come:
+- "N. DOC. 001-0042" o "N.DOC 001-0042"
+- "NUMERO PROGRESSIVO: 001234"
+- "DOC. N. 0042"
+- "Ricevuta N. 12345"
+- Un codice progressivo univoco nell'intestazione o footer del documento
+Se non trovi un numero documento esplicito, restituisci null.
 
 === REGOLE DATA ===
 Cerca la data in QUALSIASI parte dello scontrino, anche nelle righe di codice transazione, numero di ricevuta, footer. Non limitarti alle etichette "DATA" o "ORA".
@@ -1374,7 +1439,7 @@ Se non riesci a determinare il comune, usa null.
     const text = message.content[0].type === "text" ? message.content[0].text : "{}";
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      return { valid: true, complete: false, missingInfo: [], store: null, storeChain: null, province: null, date: null, totalCents: null, products: [], reason: "Risposta AI non parsabile" };
+      return { valid: true, complete: false, missingInfo: [], store: null, storeChain: null, province: null, date: null, totalCents: null, products: [], reason: "Risposta AI non parsabile", documentNumber: null };
     }
 
     const parsed = JSON.parse(jsonMatch[0]) as {
@@ -1386,6 +1451,7 @@ Se non riesci a determinare il comune, usa null.
       province?: string | null;
       date?: string | null;
       totalCents?: number | null;
+      documentNumber?: string | null;
       products?: unknown[];
     };
 
@@ -1457,8 +1523,9 @@ Se non riesci a determinare il comune, usa null.
     const extractedStore = typeof parsed.store === "string" && parsed.store.trim().length > 0 ? parsed.store.trim() : null;
     const extractedStoreChain = typeof parsed.storeChain === "string" && parsed.storeChain.trim().length > 0 ? parsed.storeChain.trim() : null;
     const extractedProvince = typeof parsed.province === "string" && parsed.province.trim().length > 0 ? parsed.province.trim() : null;
+    const extractedDocumentNumber = typeof parsed.documentNumber === "string" && parsed.documentNumber.trim().length > 0 ? parsed.documentNumber.trim() : null;
 
-    console.log(`[validateReceiptWithAI] Extracted: store="${extractedStore}", storeChain="${extractedStoreChain}"`);
+    console.log(`[validateReceiptWithAI] Extracted: store="${extractedStore}", storeChain="${extractedStoreChain}", docNumber="${extractedDocumentNumber}"`);
 
     const missingInfo: string[] = [];
     if (!extractedDate) missingInfo.push("data");
@@ -1482,10 +1549,11 @@ Se non riesci a determinare il comune, usa null.
       totalCents: extractedTotal,
       products,
       reason,
+      documentNumber: extractedDocumentNumber,
     };
   } catch (err) {
     console.error("[validateReceiptWithAI]", err);
-    return { valid: true, complete: false, missingInfo: [], store: null, storeChain: null, province: null, date: null, totalCents: null, products: [], reason: "Errore AI, validazione non disponibile" };
+    return { valid: true, complete: false, missingInfo: [], store: null, storeChain: null, province: null, date: null, totalCents: null, products: [], reason: "Errore AI, validazione non disponibile", documentNumber: null };
   }
 }
 
