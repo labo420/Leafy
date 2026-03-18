@@ -311,10 +311,19 @@ export default function BarcodeScannerScreen() {
     });
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!lookupData) return;
     setPhase("confirming");
-    confirmMutation.mutate({ barcode: lookupData.barcode, contextImageBase64: capturedContextImage });
+
+    let contextImage = capturedContextImage;
+    if (!contextImage && cameraRef.current) {
+      try {
+        const retryPhoto = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.2, skipProcessing: true });
+        if (retryPhoto?.base64) contextImage = retryPhoto.base64;
+      } catch {}
+    }
+
+    confirmMutation.mutate({ barcode: lookupData.barcode, contextImageBase64: contextImage });
   };
 
   const handleReject = () => {

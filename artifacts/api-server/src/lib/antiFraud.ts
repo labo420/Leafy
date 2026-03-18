@@ -4,6 +4,14 @@ import type { User } from "@workspace/db";
 
 export type TrustLevel = "strict" | "moderate" | "trusted";
 
+/**
+ * Canonicalise a receipt document number for consistent cross-photo comparison.
+ * Removes spaces, punctuation and uppercases so minor OCR variants match.
+ */
+export function normalizeDocumentNumber(raw: string): string {
+  return raw.toUpperCase().replace(/[\s.\-_/\\]+/g, "").trim();
+}
+
 export async function getUserTrustLevel(user: User): Promise<TrustLevel> {
   if (user.hasBattlePass) return "trusted";
 

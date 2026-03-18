@@ -4,7 +4,7 @@ import { db, usersTable, receiptsTable, barcodeScansTable, productCacheTable, us
 import { ScanReceiptBody } from "@workspace/api-zod";
 import { hashImage, extractTextViaGoogleVision, calculateLevel } from "../lib/scanner";
 import { XP_TO_LEA_RATE } from "../lib/economy";
-import { runAntiFraudChecks, approvePendingPoints, getUserTrustLevel } from "../lib/antiFraud";
+import { runAntiFraudChecks, approvePendingPoints, getUserTrustLevel, normalizeDocumentNumber } from "../lib/antiFraud";
 import { lookupBarcode, validateReceiptWithAI, classifyProductsBatch, validateBarcodeImage, isValidBarcode, matchProductToReceipt, classifyManualProduct, analyzeEnvironmentContext, type PendingProduct } from "../lib/productClassifier";
 import { uploadReceiptImage } from "../lib/receiptImages";
 import { matchChain, isAcceptedStore } from "../lib/supermarketWhitelist";
@@ -135,13 +135,14 @@ router.post("/scan", async (req, res): Promise<void> => {
   }
 
   // ── Document number cross-user watermark check ────────────────────────────
-  if (validation.documentNumber) {
+  const normalizedDocNumber = validation.documentNumber ? normalizeDocumentNumber(validation.documentNumber) : null;
+  if (normalizedDocNumber) {
     const [docDuplicate] = await db
       .select({ id: receiptsTable.id, userId: receiptsTable.userId })
       .from(receiptsTable)
       .where(
         and(
-          eq(receiptsTable.documentNumber, validation.documentNumber),
+          eq(receiptsTable.documentNumber, normalizedDocNumber),
           ne(receiptsTable.userId, user.id),
         ),
       )
@@ -206,7 +207,7 @@ router.post("/scan", async (req, res): Promise<void> => {
         receiptTotal: effectiveTotal,
         storeChain: resolvedChain,
         province: validation.province ?? null,
-        documentNumber: validation.documentNumber ?? null,
+        documentNumber: normalizedDocNumber,
       })
       .returning();
     receipt = newReceipt;
