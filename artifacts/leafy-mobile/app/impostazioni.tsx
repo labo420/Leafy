@@ -16,6 +16,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import Colors from "@/constants/colors";
 import { useAuth } from "@/context/auth";
+import { useTheme } from "@/context/theme";
 import { apiFetch } from "@/lib/api";
 
 function SettingsRow({
@@ -23,11 +24,13 @@ function SettingsRow({
   label,
   value,
   onPress,
+  theme,
 }: {
   icon: React.ComponentProps<typeof Feather>["name"];
   label: string;
   value?: string;
   onPress?: () => void;
+  theme: import("@/constants/theme").ThemeColors;
 }) {
   return (
     <Pressable
@@ -35,12 +38,12 @@ function SettingsRow({
       onPress={onPress}
       disabled={!onPress}
     >
-      <View style={styles.rowIconCircle}>
-        <Feather name={icon} size={16} color={Colors.leaf} />
+      <View style={[styles.rowIconCircle, { backgroundColor: theme.primaryLight }]}>
+        <Feather name={icon} size={16} color={theme.leaf} />
       </View>
-      <Text style={styles.rowLabel}>{label}</Text>
-      {value ? <Text style={styles.rowValue}>{value}</Text> : null}
-      {onPress ? <Feather name="chevron-right" size={16} color={Colors.textMuted} /> : null}
+      <Text style={[styles.rowLabel, { color: theme.text }]}>{label}</Text>
+      {value ? <Text style={[styles.rowValue, { color: theme.textSecondary }]}>{value}</Text> : null}
+      {onPress ? <Feather name="chevron-right" size={16} color={theme.textMuted} /> : null}
     </Pressable>
   );
 }
@@ -51,26 +54,28 @@ function ToggleRow({
   description,
   value,
   onChange,
+  theme,
 }: {
   icon: React.ComponentProps<typeof Feather>["name"];
   label: string;
   description: string;
   value: boolean;
   onChange: (v: boolean) => void;
+  theme: import("@/constants/theme").ThemeColors;
 }) {
   return (
     <View style={styles.row}>
-      <View style={styles.rowIconCircle}>
-        <Feather name={icon} size={16} color={Colors.leaf} />
+      <View style={[styles.rowIconCircle, { backgroundColor: theme.primaryLight }]}>
+        <Feather name={icon} size={16} color={theme.leaf} />
       </View>
       <View style={styles.toggleTextCol}>
-        <Text style={styles.rowLabel}>{label}</Text>
-        <Text style={styles.toggleDesc}>{description}</Text>
+        <Text style={[styles.rowLabel, { color: theme.text }]}>{label}</Text>
+        <Text style={[styles.toggleDesc, { color: theme.textSecondary }]}>{description}</Text>
       </View>
       <Switch
         value={value}
         onValueChange={onChange}
-        trackColor={{ false: Colors.border, true: Colors.mint }}
+        trackColor={{ false: theme.border, true: theme.mint }}
         thumbColor="#fff"
       />
     </View>
@@ -81,6 +86,7 @@ export default function ImpostazioniScreen() {
   const insets = useSafeAreaInsets();
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
   const { user, logout } = useAuth();
+  const { theme } = useTheme();
   const queryClient = useQueryClient();
 
   const [pushNotifications, setPushNotifications] = useState(true);
@@ -115,69 +121,73 @@ export default function ImpostazioniScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <View style={[styles.container, { paddingTop: topPadding + 16 }]}>
+      <View style={[styles.container, { paddingTop: topPadding + 16, backgroundColor: theme.background }]}>
         <View style={styles.header}>
-          <Pressable style={styles.backBtn} onPress={() => router.back()}>
-            <Feather name="arrow-left" size={22} color={Colors.text} />
+          <Pressable style={[styles.backBtn, { backgroundColor: theme.cardAlt }]} onPress={() => router.back()}>
+            <Feather name="arrow-left" size={22} color={theme.text} />
           </Pressable>
-          <Text style={styles.title}>Impostazioni</Text>
+          <Text style={[styles.title, { color: theme.text }]}>Impostazioni</Text>
           <View style={{ width: 40 }} />
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <Text style={styles.sectionLabel}>Account</Text>
-          <View style={styles.card}>
-            <SettingsRow icon="user" label="Nome utente" value={user?.firstName ?? ""} />
-            <View style={styles.divider} />
-            <SettingsRow icon="mail" label="Email" value={user?.email ?? ""} />
+          <Text style={[styles.sectionLabel, { color: theme.textMuted }]}>Account</Text>
+          <View style={[styles.card, { backgroundColor: theme.card }]}>
+            <SettingsRow icon="user" label="Nome utente" value={user?.firstName ?? ""} theme={theme} />
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
+            <SettingsRow icon="mail" label="Email" value={user?.email ?? ""} theme={theme} />
           </View>
 
-          <Text style={styles.sectionLabel}>Notifiche</Text>
-          <View style={styles.card}>
+          <Text style={[styles.sectionLabel, { color: theme.textMuted }]}>Notifiche</Text>
+          <View style={[styles.card, { backgroundColor: theme.card }]}>
             <ToggleRow
               icon="bell"
               label="Notifiche push"
               description="Avvisi su punti e sfide"
               value={pushNotifications}
               onChange={setPushNotifications}
+              theme={theme}
             />
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
             <ToggleRow
               icon="mail"
               label="Notifiche email"
               description="Aggiornamenti settimanali via email"
               value={emailNotifications}
               onChange={setEmailNotifications}
+              theme={theme}
             />
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
             <ToggleRow
               icon="globe"
               label="Report settimanale"
               description="Riepilogo del tuo impatto verde"
               value={weeklyReport}
               onChange={setWeeklyReport}
+              theme={theme}
             />
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
             <ToggleRow
               icon="bell"
               label="Avvisi sfide"
               description="Promemoria scadenze sfide mensili"
               value={challengeAlerts}
               onChange={setChallengeAlerts}
+              theme={theme}
             />
           </View>
 
-          <Text style={styles.sectionLabel}>Privacy e Sicurezza</Text>
-          <View style={styles.card}>
-            <SettingsRow icon="shield" label="Informativa Privacy" onPress={() => {}} />
-            <View style={styles.divider} />
-            <SettingsRow icon="lock" label="Termini di Servizio" onPress={() => {}} />
-            <View style={styles.divider} />
-            <SettingsRow icon="globe" label="Lingua" value="Italiano" onPress={() => {}} />
+          <Text style={[styles.sectionLabel, { color: theme.textMuted }]}>Privacy e Sicurezza</Text>
+          <View style={[styles.card, { backgroundColor: theme.card }]}>
+            <SettingsRow icon="shield" label="Informativa Privacy" onPress={() => {}} theme={theme} />
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
+            <SettingsRow icon="lock" label="Termini di Servizio" onPress={() => {}} theme={theme} />
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
+            <SettingsRow icon="globe" label="Lingua" value="Italiano" onPress={() => {}} theme={theme} />
           </View>
 
-          <Text style={styles.sectionLabel}>Zona Pericolo</Text>
-          <View style={styles.card}>
+          <Text style={[styles.sectionLabel, { color: theme.textMuted }]}>Zona Pericolo</Text>
+          <View style={[styles.card, { backgroundColor: theme.card }]}>
             <Pressable style={styles.row} onPress={handleDeleteAccount}>
               <View style={[styles.rowIconCircle, { backgroundColor: "rgba(239,67,67,0.1)" }]}>
                 <Feather name="trash-2" size={16} color={Colors.red} />
@@ -196,7 +206,6 @@ export default function ImpostazioniScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: "row",
@@ -209,14 +218,12 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.cardAlt,
     alignItems: "center",
     justifyContent: "center",
   },
   title: {
     fontSize: 20,
     fontFamily: "DMSans_700Bold",
-    color: Colors.text,
   },
   scrollContent: {
     paddingHorizontal: 20,
@@ -225,7 +232,6 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 11,
     fontFamily: "Inter_600SemiBold",
-    color: Colors.textMuted,
     textTransform: "uppercase",
     letterSpacing: 1.5,
     paddingHorizontal: 4,
@@ -233,7 +239,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   card: {
-    backgroundColor: Colors.card,
     borderRadius: 24,
     overflow: "hidden",
     shadowColor: "#000",
@@ -253,7 +258,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "rgba(46,107,80,0.1)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -261,12 +265,10 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontFamily: "Inter_600SemiBold",
-    color: Colors.text,
   },
   rowValue: {
     fontSize: 13,
     fontFamily: "Inter_400Regular",
-    color: Colors.textSecondary,
     marginRight: 4,
   },
   toggleTextCol: {
@@ -275,12 +277,10 @@ const styles = StyleSheet.create({
   toggleDesc: {
     fontSize: 12,
     fontFamily: "Inter_400Regular",
-    color: Colors.textSecondary,
     marginTop: 2,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: Colors.border,
     marginLeft: 60,
   },
 });

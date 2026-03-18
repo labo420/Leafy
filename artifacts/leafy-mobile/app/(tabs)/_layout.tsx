@@ -11,10 +11,10 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 
-import Colors from "@/constants/colors";
 import { Fonts } from "@/constants/typography";
 import { useAuth } from "@/context/auth";
 import { useScanReset } from "@/context/scan-reset";
+import { useTheme } from "@/context/theme";
 
 function TabIcon({ focused, children }: { focused: boolean; children: React.ReactNode }) {
   const pillStyle = useAnimatedStyle(() => ({
@@ -30,14 +30,15 @@ function TabIcon({ focused, children }: { focused: boolean; children: React.Reac
 }
 
 function FloatingScanButton({ focused }: { focused: boolean }) {
+  const { theme } = useTheme();
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ scale: withSpring(focused ? 1.08 : 1) }],
   }));
 
   return (
-    <Animated.View style={[styles.scanBtnOuter, animStyle]}>
+    <Animated.View style={[styles.scanBtnOuter, animStyle, { shadowColor: theme.leaf }]}>
       <LinearGradient
-        colors={[Colors.leaf, "#23533e"]}
+        colors={[theme.leaf, "#23533e"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.scanBtnGradient}
@@ -76,10 +77,10 @@ function BalanceBar() {
 
 export default function TabLayout() {
   const isIOS = Platform.OS === "ios";
-  const isWeb = Platform.OS === "web";
   const insets = useSafeAreaInsets();
   const { user, hasBattlePass } = useAuth();
   const { triggerReset, triggerCamera } = useScanReset();
+  const { theme, mode } = useTheme();
 
   return (
     <View style={{ flex: 1 }}>
@@ -87,10 +88,10 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: Colors.leaf,
-        tabBarInactiveTintColor: Colors.tabInactive,
+        tabBarActiveTintColor: theme.tabActive,
+        tabBarInactiveTintColor: theme.tabInactive,
         tabBarStyle: {
-          backgroundColor: isIOS ? "transparent" : Colors.card,
+          backgroundColor: isIOS ? "transparent" : theme.card,
           borderTopWidth: 0,
           elevation: 0,
           height: 84 + insets.bottom,
@@ -108,11 +109,11 @@ export default function TabLayout() {
           isIOS ? (
             <BlurView
               intensity={80}
-              tint="light"
+              tint={mode === "dark" ? "dark" : "light"}
               style={[StyleSheet.absoluteFill, { borderTopLeftRadius: 24, borderTopRightRadius: 24 }]}
             />
           ) : (
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: Colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24 }]} />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: theme.card, borderTopLeftRadius: 24, borderTopRightRadius: 24 }]} />
           ),
         tabBarLabelStyle: {
           fontSize: 10,
@@ -202,7 +203,7 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   balanceBar: {
-    backgroundColor: Colors.leaf,
+    backgroundColor: "#2E6B50",
     paddingBottom: 6,
     paddingHorizontal: 16,
   },
@@ -251,7 +252,6 @@ const styles = StyleSheet.create({
     borderRadius: 37.5,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: Colors.leaf,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.35,
     shadowRadius: 14,

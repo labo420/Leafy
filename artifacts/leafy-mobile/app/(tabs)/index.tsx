@@ -34,6 +34,7 @@ import { useQuery } from "@tanstack/react-query";
 import Colors from "@/constants/colors";
 import { Fonts } from "@/constants/typography";
 import { useAuth } from "@/context/auth";
+import { useTheme } from "@/context/theme";
 import { apiFetch } from "@/lib/api";
 import type { Profile } from "@workspace/api-client-react";
 
@@ -466,6 +467,7 @@ function GuestAuthScreen() {
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const { theme } = useTheme();
 
   const {
     data: profile,
@@ -519,9 +521,9 @@ export default function HomeScreen() {
 
   if (profileLoading) {
     return (
-      <View style={[styles.centered, { paddingTop: topPadding }]}>
-        <ActivityIndicator size="large" color={Colors.leaf} />
-        <Text style={{ marginTop: 12, fontSize: 15, fontFamily: "Inter_400Regular", color: Colors.textSecondary, textAlign: "center" }}>Caricamento...</Text>
+      <View style={[styles.centered, { paddingTop: topPadding, backgroundColor: theme.background }]}>
+        <ActivityIndicator size="large" color={theme.leaf} />
+        <Text style={{ marginTop: 12, fontSize: 15, fontFamily: "Inter_400Regular", color: theme.textSecondary, textAlign: "center" }}>Caricamento...</Text>
       </View>
     );
   }
@@ -541,7 +543,7 @@ export default function HomeScreen() {
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.background }]}
       contentContainerStyle={{ paddingBottom: bottomPad }}
       showsVerticalScrollIndicator={false}
       refreshControl={
@@ -605,14 +607,14 @@ export default function HomeScreen() {
       </LinearGradient>
 
       {/* ── STREAK CARD ── */}
-      <Animated.View entering={FadeInDown.delay(180).springify()} style={styles.streakCard}>
+      <Animated.View entering={FadeInDown.delay(180).springify()} style={[styles.streakCard, { backgroundColor: theme.card }]}>
         <View style={styles.streakCardLeft}>
           <View style={styles.streakIconWrap}>
             <MaterialCommunityIcons name="fire" size={30} color="#F97316" />
           </View>
           <View>
-            <Text style={styles.streakCardValue}>{streak}</Text>
-            <Text style={styles.streakCardSubLabel}>giorni di fila</Text>
+            <Text style={[styles.streakCardValue, { color: theme.text }]}>{streak}</Text>
+            <Text style={[styles.streakCardSubLabel, { color: theme.textSecondary }]}>giorni di fila</Text>
           </View>
         </View>
         <Text style={styles.streakCardMsg}>
@@ -627,11 +629,11 @@ export default function HomeScreen() {
       {/* ── MOTIVATIONAL ── */}
       <Animated.View
         entering={FadeInDown.delay(260).springify()}
-        style={styles.motivationalBox}
+        style={[styles.motivationalBox, { backgroundColor: theme.primaryLight }]}
       >
         <View style={styles.motivationalRow}>
-          <MaterialCommunityIcons name="leaf" size={16} color={Colors.leaf} />
-          <Text style={styles.motivationalText}>{motivationalMessage}</Text>
+          <MaterialCommunityIcons name="leaf" size={16} color={theme.leaf} />
+          <Text style={[styles.motivationalText, { color: theme.leaf }]}>{motivationalMessage}</Text>
         </View>
       </Animated.View>
 
@@ -640,7 +642,7 @@ export default function HomeScreen() {
         <Animated.View style={scanAnimStyle}>
           <Pressable onPress={handleScanPress}>
             <LinearGradient
-              colors={[Colors.leaf, "#23533e"]}
+              colors={[theme.leaf, "#23533e"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.ctaButton}
@@ -652,33 +654,33 @@ export default function HomeScreen() {
         </Animated.View>
 
         <Pressable
-          style={styles.challengeButton}
+          style={[styles.challengeButton, { backgroundColor: theme.primaryLight }]}
           onPress={() => router.push("/(tabs)/profilo?tab=sfide")}
         >
-          <Feather name="zap" size={17} color={Colors.leaf} />
-          <Text style={styles.challengeButtonText}>Vai alle sfide</Text>
-          <Feather name="chevron-right" size={15} color={Colors.leaf} />
+          <Feather name="zap" size={17} color={theme.leaf} />
+          <Text style={[styles.challengeButtonText, { color: theme.leaf }]}>Vai alle sfide</Text>
+          <Feather name="chevron-right" size={15} color={theme.leaf} />
         </Pressable>
       </View>
 
       {/* ── IMPACT CARDS ── */}
       <Animated.View entering={FadeInDown.delay(340).springify()} style={styles.impactSection}>
-        <Text style={styles.impactTitle}>Il tuo impatto</Text>
+        <Text style={[styles.impactTitle, { color: theme.text }]}>Il tuo impatto</Text>
         <View style={styles.impactRow}>
-          <View style={styles.impactCard}>
-            <Feather name="file-text" size={22} color={Colors.leaf} />
-            <Text style={styles.impactCardValue}>{impact?.receiptsScanned ?? 0}</Text>
-            <Text style={styles.impactCardLabel}>Scontrini</Text>
+          <View style={[styles.impactCard, { backgroundColor: theme.card }]}>
+            <Feather name="file-text" size={22} color={theme.leaf} />
+            <Text style={[styles.impactCardValue, { color: theme.text }]}>{impact?.receiptsScanned ?? 0}</Text>
+            <Text style={[styles.impactCardLabel, { color: theme.textSecondary }]}>Scontrini</Text>
           </View>
-          <View style={styles.impactCard}>
-            <Feather name="feather" size={22} color={Colors.leaf} />
-            <Text style={styles.impactCardValue}>{impact?.greenProductsCount ?? 0}</Text>
-            <Text style={styles.impactCardLabel}>Prodotti green</Text>
+          <View style={[styles.impactCard, { backgroundColor: theme.card }]}>
+            <Feather name="feather" size={22} color={theme.leaf} />
+            <Text style={[styles.impactCardValue, { color: theme.text }]}>{impact?.greenProductsCount ?? 0}</Text>
+            <Text style={[styles.impactCardLabel, { color: theme.textSecondary }]}>Prodotti green</Text>
           </View>
-          <View style={styles.impactCard}>
-            <Feather name="globe" size={22} color={Colors.leaf} />
-            <Text style={styles.impactCardValue}>{(impact?.co2SavedKg ?? 0).toFixed(1)}</Text>
-            <Text style={styles.impactCardLabel}>kg CO₂</Text>
+          <View style={[styles.impactCard, { backgroundColor: theme.card }]}>
+            <Feather name="globe" size={22} color={theme.leaf} />
+            <Text style={[styles.impactCardValue, { color: theme.text }]}>{(impact?.co2SavedKg ?? 0).toFixed(1)}</Text>
+            <Text style={[styles.impactCardLabel, { color: theme.textSecondary }]}>kg CO₂</Text>
           </View>
         </View>
       </Animated.View>

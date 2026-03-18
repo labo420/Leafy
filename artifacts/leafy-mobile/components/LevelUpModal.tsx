@@ -19,7 +19,7 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import ConfettiCannon from "react-native-confetti-cannon";
-import Colors from "@/constants/colors";
+import { useTheme } from "@/context/theme";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 
@@ -103,6 +103,7 @@ export default function LevelUpModal({
   toLevel,
   onClose,
 }: LevelUpModalProps) {
+  const { theme, mode } = useTheme();
   const oldScale = useSharedValue(1);
   const oldOpacity = useSharedValue(1);
   const flashScale = useSharedValue(0);
@@ -252,9 +253,9 @@ export default function LevelUpModal({
           </Animated.View>
         </View>
 
-        <Animated.View style={[s.textBox, textStyle]}>
-          <Text style={s.title}>Nuovo livello!</Text>
-          <Text style={s.subtitle}>
+        <Animated.View style={[s.textBox, textStyle, { backgroundColor: theme.modalBackground === "#FFFFFF" ? "transparent" : "rgba(30,30,30,0.8)", borderRadius: 16, paddingHorizontal: 24, paddingVertical: 12 }]}>
+          <Text style={[s.title, { color: "#fff" }]}>Nuovo livello!</Text>
+          <Text style={[s.subtitle, { color: "rgba(255,255,255,0.85)" }]}>
             Sei diventato un {toLevel}! {toEmoji}
           </Text>
         </Animated.View>

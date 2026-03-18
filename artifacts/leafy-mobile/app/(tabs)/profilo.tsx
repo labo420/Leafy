@@ -23,6 +23,7 @@ import Colors from "@/constants/colors";
 import { Fonts } from "@/constants/typography";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/context/auth";
+import { useTheme } from "@/context/theme";
 import BadgeIcon3D from "@/components/BadgeIcon3D";
 import BattlePassModal from "@/components/BattlePassModal";
 import type {
@@ -82,7 +83,7 @@ type ImpactMetric = {
   decimals: number;
 };
 
-function ImpactMetricCard({ m, animate }: { m: ImpactMetric; animate: boolean }) {
+function ImpactMetricCard({ m, animate, theme }: { m: ImpactMetric; animate: boolean; theme: import("@/constants/theme").ThemeColors }) {
   const [display, setDisplay] = useState("0");
   const [started, setStarted] = useState(false);
 
@@ -114,12 +115,12 @@ function ImpactMetricCard({ m, animate }: { m: ImpactMetric; animate: boolean })
       <View style={[impactStyles.iconCircle, { backgroundColor: m.iconBg }]}>
         <Feather name={m.icon} size={18} color={m.iconColor} />
       </View>
-      <Text style={impactStyles.value}>
+      <Text style={[impactStyles.value, { color: theme.text }]}>
         {display}
-        {m.unit ? <Text style={impactStyles.unit}> {m.unit}</Text> : null}
+        {m.unit ? <Text style={[impactStyles.unit, { color: theme.textSecondary }]}> {m.unit}</Text> : null}
       </Text>
-      <Text style={impactStyles.label}>{m.label}</Text>
-      {m.equiv ? <Text style={impactStyles.equiv}>{m.equiv}</Text> : null}
+      <Text style={[impactStyles.label, { color: theme.textSecondary }]}>{m.label}</Text>
+      {m.equiv ? <Text style={[impactStyles.equiv, { color: theme.textMuted }]}>{m.equiv}</Text> : null}
     </View>
   );
 }
@@ -166,7 +167,7 @@ const impactStyles = StyleSheet.create({
   },
 });
 
-function LifetimeBadgeCard({ badge }: { badge: BadgeItem }) {
+function LifetimeBadgeCard({ badge, theme }: { badge: BadgeItem; theme: import("@/constants/theme").ThemeColors }) {
   const progressPct = badge.targetCount > 1
     ? Math.min(100, (badge.currentProgress / badge.targetCount) * 100)
     : 0;
@@ -175,6 +176,7 @@ function LifetimeBadgeCard({ badge }: { badge: BadgeItem }) {
     <View
       style={[
         badgeStyles.card,
+        { backgroundColor: theme.card, borderColor: theme.border },
         !badge.isUnlocked && badgeStyles.cardLocked,
       ]}
     >
@@ -186,34 +188,34 @@ function LifetimeBadgeCard({ badge }: { badge: BadgeItem }) {
         size={52}
       />
       <View style={{ flex: 1, marginLeft: 12 }}>
-        <Text style={badgeStyles.name} numberOfLines={1}>
+        <Text style={[badgeStyles.name, { color: theme.text }]} numberOfLines={1}>
           {badge.name}
         </Text>
-        <Text style={badgeStyles.category}>{badge.category}</Text>
+        <Text style={[badgeStyles.category, { color: theme.textMuted }]}>{badge.category}</Text>
 
         {badge.isUnlocked ? (
           <View style={badgeStyles.dateRow}>
-            <Feather name="calendar" size={10} color={Colors.leaf} />
-            <Text style={badgeStyles.dateText}>
+            <Feather name="calendar" size={10} color={theme.leaf} />
+            <Text style={[badgeStyles.dateText, { color: theme.leaf }]}>
               Sbloccato il {formatDate(badge.unlockedAt)}
             </Text>
           </View>
         ) : (
           <View style={badgeStyles.hintSection}>
             <View style={badgeStyles.hintRow}>
-              <Feather name="lock" size={10} color={Colors.textMuted} />
-              <Text style={badgeStyles.hintText} numberOfLines={1}>
+              <Feather name="lock" size={10} color={theme.textMuted} />
+              <Text style={[badgeStyles.hintText, { color: theme.textMuted }]} numberOfLines={1}>
                 {badge.unlockHint}
               </Text>
             </View>
             {badge.targetCount > 1 && (
               <>
-                <View style={badgeStyles.progressTrack}>
+                <View style={[badgeStyles.progressTrack, { backgroundColor: theme.border }]}>
                   <View
-                    style={[badgeStyles.progressFill, { width: `${progressPct}%` }]}
+                    style={[badgeStyles.progressFill, { width: `${progressPct}%`, backgroundColor: theme.mint }]}
                   />
                 </View>
-                <Text style={badgeStyles.progressText}>
+                <Text style={[badgeStyles.progressText, { color: theme.textMuted }]}>
                   {badge.currentProgress}/{badge.targetCount}
                 </Text>
               </>
@@ -228,9 +230,11 @@ function LifetimeBadgeCard({ badge }: { badge: BadgeItem }) {
 function TemporalBadgeCard({
   badge,
   compact,
+  theme,
 }: {
   badge: TemporalBadgeItem;
   compact?: boolean;
+  theme: import("@/constants/theme").ThemeColors;
 }) {
   const progressPct = badge.targetCount > 0
     ? Math.min(100, (badge.currentProgress / badge.targetCount) * 100)
@@ -238,7 +242,7 @@ function TemporalBadgeCard({
 
   if (compact) {
     return (
-      <View style={badgeStyles.archivedCard}>
+      <View style={[badgeStyles.archivedCard, { backgroundColor: theme.cardAlt, borderColor: theme.border }]}>
         <BadgeIcon3D
           emoji={badge.emoji}
           badgeType={badge.badgeType}
@@ -247,14 +251,14 @@ function TemporalBadgeCard({
           size={40}
         />
         <View style={{ flex: 1, marginLeft: 12 }}>
-          <Text style={badgeStyles.archivedName} numberOfLines={1}>
+          <Text style={[badgeStyles.archivedName, { color: theme.textSecondary }]} numberOfLines={1}>
             {badge.name}
           </Text>
-          <Text style={badgeStyles.archivedPeriod}>
+          <Text style={[badgeStyles.archivedPeriod, { color: theme.textMuted }]}>
             {formatPeriod(badge.periodKey, badge.badgeType)}
           </Text>
           {badge.isUnlocked && badge.unlockedAt && (
-            <Text style={badgeStyles.archivedDate}>
+            <Text style={[badgeStyles.archivedDate, { color: theme.textMuted }]}>
               {formatDate(badge.unlockedAt)}
             </Text>
           )}
@@ -267,6 +271,7 @@ function TemporalBadgeCard({
     <View
       style={[
         badgeStyles.card,
+        { backgroundColor: theme.card, borderColor: theme.border },
         badge.isUnlocked && badgeStyles.cardActive,
       ]}
     >
@@ -278,33 +283,33 @@ function TemporalBadgeCard({
         size={52}
       />
       <View style={{ flex: 1, marginLeft: 12 }}>
-        <Text style={badgeStyles.name} numberOfLines={1}>
+        <Text style={[badgeStyles.name, { color: theme.text }]} numberOfLines={1}>
           {badge.name}
         </Text>
-        <View style={badgeStyles.typeBadge}>
-          <Text style={badgeStyles.typeBadgeText}>{periodLabel(badge.badgeType)}</Text>
+        <View style={[badgeStyles.typeBadge, { backgroundColor: theme.cardAlt }]}>
+          <Text style={[badgeStyles.typeBadgeText, { color: theme.textSecondary }]}>{periodLabel(badge.badgeType)}</Text>
         </View>
 
         {badge.isUnlocked ? (
           <View style={{ gap: 2 }}>
-            <Text style={[badgeStyles.dateText, { color: Colors.leaf }]}>
+            <Text style={[badgeStyles.dateText, { color: theme.leaf }]}>
               Completata!
             </Text>
             <View style={badgeStyles.dateRow}>
-              <Feather name="calendar" size={9} color={Colors.textMuted} />
-              <Text style={[badgeStyles.dateText, { color: Colors.textMuted }]}>
+              <Feather name="calendar" size={9} color={theme.textMuted} />
+              <Text style={[badgeStyles.dateText, { color: theme.textMuted }]}>
                 {formatDate(badge.unlockedAt)}
               </Text>
             </View>
           </View>
         ) : (
           <View>
-            <View style={badgeStyles.progressTrack}>
+            <View style={[badgeStyles.progressTrack, { backgroundColor: theme.border }]}>
               <View
-                style={[badgeStyles.progressFill, { width: `${progressPct}%` }]}
+                style={[badgeStyles.progressFill, { width: `${progressPct}%`, backgroundColor: theme.mint }]}
               />
             </View>
-            <Text style={badgeStyles.progressText}>
+            <Text style={[badgeStyles.progressText, { color: theme.textMuted }]}>
               {badge.currentProgress}/{badge.targetCount}
             </Text>
           </View>
@@ -447,6 +452,7 @@ const badgeStyles = StyleSheet.create({
 export default function ProfiloScreen() {
   const insets = useSafeAreaInsets();
   const { user, refetch, hasBattlePass } = useAuth();
+  const { theme, mode, toggleTheme } = useTheme();
   const queryClient = useQueryClient();
   const params = useLocalSearchParams<{ tab?: string }>();
   const [loggingOut, setLoggingOut] = useState(false);
@@ -579,14 +585,14 @@ export default function ProfiloScreen() {
 
   if (!user) {
     return (
-      <View style={[styles.centered, { paddingTop: topPadding }]}>
+      <View style={[styles.centered, { paddingTop: topPadding, backgroundColor: theme.background }]}>
         <Text style={{ fontSize: 48 }}>👤</Text>
-        <Text style={styles.guestTitle}>Il tuo profilo</Text>
-        <Text style={styles.guestSub}>
+        <Text style={[styles.guestTitle, { color: theme.text }]}>Il tuo profilo</Text>
+        <Text style={[styles.guestSub, { color: theme.textSecondary }]}>
           Accedi per vedere i tuoi progressi
         </Text>
         <Pressable
-          style={styles.loginBtn}
+          style={[styles.loginBtn, { backgroundColor: theme.leaf }]}
           onPress={() => router.push("/(tabs)")}
         >
           <Text style={styles.loginBtnText}>Accedi</Text>
@@ -604,7 +610,7 @@ export default function ProfiloScreen() {
     <>
       <BattlePassModal visible={showBattlePassModal} onClose={() => setShowBattlePassModal(false)} />
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.background }]}
       contentContainerStyle={{ paddingBottom: bottomPad }}
       showsVerticalScrollIndicator={false}
     >
@@ -613,26 +619,28 @@ export default function ProfiloScreen() {
         <View style={styles.decorCircleSmall} />
         <View style={styles.headerRow}>
           <Text style={styles.headerTitle}>Profilo</Text>
-          <Pressable
-            style={styles.settingsBtn}
-            onPress={() => router.push("/impostazioni")}
-          >
-            <Feather name="settings" size={20} color="#fff" />
-          </Pressable>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <Pressable
+              style={styles.settingsBtn}
+              onPress={() => router.push("/impostazioni")}
+            >
+              <Feather name="settings" size={20} color="#fff" />
+            </Pressable>
+          </View>
         </View>
       </View>
 
-      <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.avatarCard}>
+      <Animated.View entering={FadeInDown.delay(100).springify()} style={[styles.avatarCard, { backgroundColor: theme.card }]}>
         <View style={styles.avatarContainer}>
           {profileImageUrl ? (
-            <Image source={{ uri: profileImageUrl }} style={styles.avatar} />
+            <Image source={{ uri: profileImageUrl }} style={[styles.avatar, { borderColor: theme.background }]} />
           ) : (
-            <View style={[styles.avatar, styles.avatarPlaceholder]}>
+            <View style={[styles.avatar, styles.avatarPlaceholder, { borderColor: theme.background }]}>
               <Text style={styles.avatarInitial}>{safeInitial}</Text>
             </View>
           )}
           <Pressable
-            style={styles.cameraBtn}
+            style={[styles.cameraBtn, { backgroundColor: theme.leaf }]}
             onPress={handlePickImage}
             disabled={uploadingImage}
           >
@@ -643,10 +651,10 @@ export default function ProfiloScreen() {
             )}
           </Pressable>
         </View>
-        <Text style={styles.username}>{username}</Text>
-        <View style={styles.levelPill}>
-          <Feather name="leaf" size={14} color={Colors.leaf} />
-          <Text style={styles.levelPillText}>Livello {level}</Text>
+        <Text style={[styles.username, { color: theme.text }]}>{username}</Text>
+        <View style={[styles.levelPill, { backgroundColor: theme.cardAlt }]}>
+          <Feather name="leaf" size={14} color={theme.leaf} />
+          <Text style={[styles.levelPillText, { color: theme.text }]}>Livello {level}</Text>
         </View>
       </Animated.View>
 
@@ -656,8 +664,8 @@ export default function ProfiloScreen() {
         onLayout={() => { if (!impactVisible) setImpactVisible(true); }}
       >
         <View style={styles.sectionHeader}>
-          <Feather name="bar-chart-2" size={18} color={Colors.leaf} />
-          <Text style={styles.sectionTitle}>Il tuo impatto verde</Text>
+          <Feather name="bar-chart-2" size={18} color={theme.leaf} />
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Il tuo impatto verde</Text>
         </View>
         <ScrollView
           horizontal
@@ -665,16 +673,16 @@ export default function ProfiloScreen() {
           contentContainerStyle={{ paddingRight: 20 }}
         >
           {[
-            { icon: "globe", iconColor: "#2563EB", value: impact?.co2SavedKg ?? 0, unit: "kg", label: "CO₂ risparmiata", equiv: `≈ ${Math.round((impact?.co2SavedKg ?? 0) * 5)} km in auto`, bg: "#EFF6FF", iconBg: "#DBEAFE", decimals: 1 },
-            { icon: "droplet", iconColor: "#0D9488", value: impact?.waterSavedLiters ?? 0, unit: "L", label: "Acqua salvata", equiv: `≈ ${Math.round((impact?.waterSavedLiters ?? 0) / 40)} docce`, bg: "#F0FDFA", iconBg: "#CCFBF1", decimals: 0 },
-            { icon: "refresh-cw", iconColor: "#D97706", value: impact?.plasticAvoidedKg ?? 0, unit: "kg", label: "Plastica evitata", equiv: `≈ ${Math.round((impact?.plasticAvoidedKg ?? 0) / 0.025)} bottiglie`, bg: "#FFF7ED", iconBg: "#FFEDD5", decimals: 2 },
-            { icon: "feather", iconColor: Colors.leaf, value: impact?.greenProductsCount ?? 0, unit: "", label: "Prodotti green", equiv: `${impact?.greenProductsCount ?? 0} articoli eco`, bg: "#F0FDF4", iconBg: "#DCFCE7", decimals: 0 },
-            { icon: "file-text", iconColor: "#7C3AED", value: impact?.receiptsScanned ?? 0, unit: "", label: "Scontrini", equiv: `${impact?.receiptsScanned ?? 0} analizzati`, bg: "#FAF5FF", iconBg: "#F3E8FF", decimals: 0 },
+            { icon: "globe", iconColor: "#2563EB", value: impact?.co2SavedKg ?? 0, unit: "kg", label: "CO₂ risparmiata", equiv: `≈ ${Math.round((impact?.co2SavedKg ?? 0) * 5)} km in auto`, bg: mode === "dark" ? "#1a2540" : "#EFF6FF", iconBg: mode === "dark" ? "#1e3a7a" : "#DBEAFE", decimals: 1 },
+            { icon: "droplet", iconColor: "#0D9488", value: impact?.waterSavedLiters ?? 0, unit: "L", label: "Acqua salvata", equiv: `≈ ${Math.round((impact?.waterSavedLiters ?? 0) / 40)} docce`, bg: mode === "dark" ? "#12302c" : "#F0FDFA", iconBg: mode === "dark" ? "#1a4a44" : "#CCFBF1", decimals: 0 },
+            { icon: "refresh-cw", iconColor: "#D97706", value: impact?.plasticAvoidedKg ?? 0, unit: "kg", label: "Plastica evitata", equiv: `≈ ${Math.round((impact?.plasticAvoidedKg ?? 0) / 0.025)} bottiglie`, bg: mode === "dark" ? "#2a1e0d" : "#FFF7ED", iconBg: mode === "dark" ? "#3a2810" : "#FFEDD5", decimals: 2 },
+            { icon: "feather", iconColor: theme.leaf, value: impact?.greenProductsCount ?? 0, unit: "", label: "Prodotti green", equiv: `${impact?.greenProductsCount ?? 0} articoli eco`, bg: theme.primaryLight, iconBg: mode === "dark" ? "#1E3328" : "#DCFCE7", decimals: 0 },
+            { icon: "file-text", iconColor: "#7C3AED", value: impact?.receiptsScanned ?? 0, unit: "", label: "Scontrini", equiv: `${impact?.receiptsScanned ?? 0} analizzati`, bg: mode === "dark" ? "#1e1226" : "#FAF5FF", iconBg: mode === "dark" ? "#2d1a3e" : "#F3E8FF", decimals: 0 },
           ].map((m, i) => (
-            <ImpactMetricCard key={i} m={m} animate={impactVisible} />
+            <ImpactMetricCard key={i} m={m} animate={impactVisible} theme={theme} />
           ))}
         </ScrollView>
-        <Text style={styles.impactDisclaimer}>
+        <Text style={[styles.impactDisclaimer, { color: theme.textMuted }]}>
           Stime indicative basate sulla categoria del prodotto.
         </Text>
       </Animated.View>
@@ -685,14 +693,14 @@ export default function ProfiloScreen() {
             <View style={styles.referralLeft}>
               <Text style={{ fontSize: 22 }}>👥</Text>
               <View style={{ flex: 1 }}>
-                <Text style={styles.referralTitle}>Invita un amico</Text>
-                <Text style={styles.referralSub}>
+                <Text style={[styles.referralTitle, { color: theme.text }]}>Invita un amico</Text>
+                <Text style={[styles.referralSub, { color: theme.textSecondary }]}>
                   +500 punti per entrambi!
                 </Text>
               </View>
             </View>
             <View style={styles.referralCopyBtn}>
-              <Feather name="share-2" size={16} color={Colors.leaf} />
+              <Feather name="share-2" size={16} color={theme.leaf} />
             </View>
           </Pressable>
         </Animated.View>
@@ -701,38 +709,38 @@ export default function ProfiloScreen() {
       {challenges && challenges.length > 0 && (
         <Animated.View entering={FadeInDown.delay(250).springify()} style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Feather name="target" size={18} color={Colors.leaf} />
-            <Text style={styles.sectionTitle}>Sfide Attive</Text>
-            <View style={styles.monthBadge}>
-              <Text style={styles.monthBadgeText}>Mese in corso</Text>
+            <Feather name="target" size={18} color={theme.leaf} />
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Sfide Attive</Text>
+            <View style={[styles.monthBadge, { backgroundColor: "rgba(46,107,80,0.1)" }]}>
+              <Text style={[styles.monthBadgeText, { color: theme.leaf }]}>Mese in corso</Text>
             </View>
           </View>
           {challenges.map((c) => (
-            <View key={c.id} style={styles.challengeCard}>
+            <View key={c.id} style={[styles.challengeCard, { backgroundColor: theme.card }]}>
               <View style={styles.challengeHeader}>
-                <Text style={styles.challengeName}>{c.title}</Text>
+                <Text style={[styles.challengeName, { color: theme.text }]}>{c.title}</Text>
                 {c.isCompleted ? (
-                  <View style={styles.completedBadge}>
-                    <Feather name="check" size={12} color={Colors.leaf} />
-                    <Text style={styles.completedText}>Completata</Text>
+                  <View style={[styles.completedBadge, { backgroundColor: theme.primaryLight }]}>
+                    <Feather name="check" size={12} color={theme.leaf} />
+                    <Text style={[styles.completedText, { color: theme.leaf }]}>Completata</Text>
                   </View>
                 ) : (
-                  <Text style={styles.challengeBonus}>+{c.rewardPoints} pt</Text>
+                  <Text style={[styles.challengeBonus, { color: theme.amber }]}>+{c.rewardPoints} pt</Text>
                 )}
               </View>
-              <Text style={styles.challengeDesc}>{c.description}</Text>
-              <View style={styles.challengeProgressWrap}>
+              <Text style={[styles.challengeDesc, { color: theme.textSecondary }]}>{c.description}</Text>
+              <View style={[styles.challengeProgressWrap, { backgroundColor: theme.border }]}>
                 <View
                   style={[
                     styles.challengeProgressFill,
                     {
                       width: `${Math.min(100, c.progressPercent)}%`,
-                      backgroundColor: c.isCompleted ? Colors.leaf : Colors.primary,
+                      backgroundColor: c.isCompleted ? theme.leaf : theme.primary,
                     },
                   ]}
                 />
               </View>
-              <Text style={styles.challengeProgressLabel}>
+              <Text style={[styles.challengeProgressLabel, { color: theme.textMuted }]}>
                 {c.currentCount} / {c.targetCount}
               </Text>
             </View>
@@ -742,32 +750,34 @@ export default function ProfiloScreen() {
 
       <Animated.View entering={FadeInDown.delay(300).springify()} style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Feather name="award" size={18} color={Colors.leaf} />
-          <Text style={styles.sectionTitle}>Collezione Badge</Text>
+          <Feather name="award" size={18} color={theme.leaf} />
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Collezione Badge</Text>
         </View>
 
-        <View style={styles.tabSwitcher}>
+        <View style={[styles.tabSwitcher, { backgroundColor: theme.cardAlt }]}>
           <Pressable
-            style={[styles.tab, badgeTab === "traguardi" && styles.tabActive]}
+            style={[styles.tab, badgeTab === "traguardi" && [styles.tabActive, { backgroundColor: theme.card }]]}
             onPress={() => setBadgeTab("traguardi")}
           >
             <Text
               style={[
                 styles.tabText,
-                badgeTab === "traguardi" && styles.tabTextActive,
+                { color: theme.textSecondary },
+                badgeTab === "traguardi" && [styles.tabTextActive, { color: theme.leaf }],
               ]}
             >
               Traguardi
             </Text>
           </Pressable>
           <Pressable
-            style={[styles.tab, badgeTab === "sfide" && styles.tabActive]}
+            style={[styles.tab, badgeTab === "sfide" && [styles.tabActive, { backgroundColor: theme.card }]]}
             onPress={() => setBadgeTab("sfide")}
           >
             <Text
               style={[
                 styles.tabText,
-                badgeTab === "sfide" && styles.tabTextActive,
+                { color: theme.textSecondary },
+                badgeTab === "sfide" && [styles.tabTextActive, { color: theme.leaf }],
               ]}
             >
               Sfide
@@ -779,12 +789,12 @@ export default function ProfiloScreen() {
           <View style={styles.badgeGrid}>
             {lifetimeBadges.length > 0 ? (
               lifetimeBadges.map((badge) => (
-                <LifetimeBadgeCard key={badge.id} badge={badge} />
+                <LifetimeBadgeCard key={badge.id} badge={badge} theme={theme} />
               ))
             ) : (
               <View style={styles.emptyBadges}>
-                <Feather name="award" size={28} color={Colors.textMuted} />
-                <Text style={styles.emptyBadgesText}>
+                <Feather name="award" size={28} color={theme.textMuted} />
+                <Text style={[styles.emptyBadgesText, { color: theme.textSecondary }]}>
                   Nessun traguardo ancora. Inizia a scansionare!
                 </Text>
               </View>
@@ -795,14 +805,15 @@ export default function ProfiloScreen() {
             {activeTemporal.length > 0 && (
               <View style={{ marginBottom: 16 }}>
                 <View style={styles.temporalSectionHeader}>
-                  <Feather name="clock" size={12} color={Colors.leaf} />
-                  <Text style={styles.temporalSectionTitle}>Attive</Text>
+                  <Feather name="clock" size={12} color={theme.leaf} />
+                  <Text style={[styles.temporalSectionTitle, { color: theme.text }]}>Attive</Text>
                 </View>
                 <View style={styles.badgeGrid}>
                   {activeTemporal.map((badge, i) => (
                     <TemporalBadgeCard
                       key={`${badge.id}-${badge.periodKey}-${i}`}
                       badge={badge}
+                      theme={theme}
                     />
                   ))}
                 </View>
@@ -811,13 +822,14 @@ export default function ProfiloScreen() {
 
             {archivedTemporal.length > 0 && (
               <View>
-                <Text style={styles.archivedSectionTitle}>Archivio</Text>
+                <Text style={[styles.archivedSectionTitle, { color: theme.textMuted }]}>Archivio</Text>
                 <View style={styles.archivedGrid}>
                   {archivedTemporal.map((badge, i) => (
                     <TemporalBadgeCard
                       key={`${badge.id}-${badge.periodKey}-${i}`}
                       badge={badge}
                       compact
+                      theme={theme}
                     />
                   ))}
                 </View>
@@ -826,8 +838,8 @@ export default function ProfiloScreen() {
 
             {activeTemporal.length === 0 && archivedTemporal.length === 0 && (
               <View style={styles.emptyBadges}>
-                <Feather name="target" size={28} color={Colors.textMuted} />
-                <Text style={styles.emptyBadgesText}>
+                <Feather name="target" size={28} color={theme.textMuted} />
+                <Text style={[styles.emptyBadgesText, { color: theme.textSecondary }]}>
                   Le sfide a tempo appariranno qui.
                 </Text>
               </View>
@@ -837,37 +849,51 @@ export default function ProfiloScreen() {
       </Animated.View>
 
       <Animated.View entering={FadeInDown.delay(320).springify()} style={styles.section}>
-        <Text style={styles.sectionTitle}>Supporto</Text>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Impostazioni</Text>
 
-        <Pressable style={styles.menuRow} onPress={() => router.push("/support")}>
-          <View style={[styles.menuRowIcon, { backgroundColor: Colors.primaryLight }]}>
-            <Feather name="help-circle" size={18} color={Colors.leaf} />
+        <Pressable
+          style={[styles.menuRow, { backgroundColor: theme.card, borderColor: theme.border }]}
+          onPress={toggleTheme}
+        >
+          <View style={[styles.menuRowIcon, { backgroundColor: theme.primaryLight }]}>
+            <Feather name={mode === "dark" ? "sun" : "moon"} size={18} color={theme.leaf} />
           </View>
-          <Text style={styles.menuRowText}>Aiuto e Supporto / FAQ</Text>
-          <Feather name="chevron-right" size={16} color={Colors.textSecondary} />
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.menuRowText, { color: theme.text }]}>Tema</Text>
+            <Text style={[styles.menuRowSub, { color: theme.textSecondary }]}>{mode === "dark" ? "Scuro" : "Chiaro"}</Text>
+          </View>
+          <Feather name="chevron-right" size={16} color={theme.textSecondary} />
+        </Pressable>
+
+        <Pressable style={[styles.menuRow, { backgroundColor: theme.card, borderColor: theme.border }]} onPress={() => router.push("/support")}>
+          <View style={[styles.menuRowIcon, { backgroundColor: theme.primaryLight }]}>
+            <Feather name="help-circle" size={18} color={theme.leaf} />
+          </View>
+          <Text style={[styles.menuRowText, { color: theme.text }]}>Aiuto e Supporto / FAQ</Text>
+          <Feather name="chevron-right" size={16} color={theme.textSecondary} />
         </Pressable>
 
         {!hasBattlePass ? (
-          <Pressable style={styles.menuRow} onPress={() => setShowBattlePassModal(true)}>
+          <Pressable style={[styles.menuRow, { backgroundColor: theme.card, borderColor: theme.border }]} onPress={() => setShowBattlePassModal(true)}>
             <View style={[styles.menuRowIcon, { backgroundColor: "rgba(255,215,0,0.15)" }]}>
               <Feather name="star" size={18} color="#FFD700" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.menuRowText}>Battle Pass</Text>
-              <Text style={styles.menuRowSub}>x2 $LEA · Preleva su PayPal</Text>
+              <Text style={[styles.menuRowText, { color: theme.text }]}>Battle Pass</Text>
+              <Text style={[styles.menuRowSub, { color: theme.textSecondary }]}>x2 $LEA · Preleva su PayPal</Text>
             </View>
             <View style={styles.menuRowBadge}>
               <Text style={styles.menuRowBadgeText}>0,89€/mese</Text>
             </View>
           </Pressable>
         ) : (
-          <View style={styles.menuRow}>
+          <View style={[styles.menuRow, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <View style={[styles.menuRowIcon, { backgroundColor: "rgba(255,215,0,0.15)" }]}>
               <Feather name="star" size={18} color="#FFD700" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.menuRowText}>Battle Pass</Text>
-              <Text style={styles.menuRowSub}>Attivo · $LEA x2</Text>
+              <Text style={[styles.menuRowText, { color: theme.text }]}>Battle Pass</Text>
+              <Text style={[styles.menuRowSub, { color: theme.textSecondary }]}>Attivo · $LEA x2</Text>
             </View>
             <View style={[styles.menuRowBadge, { backgroundColor: "#4ade80" }]}>
               <Text style={[styles.menuRowBadgeText, { color: "#fff" }]}>Attivo</Text>
@@ -883,10 +909,10 @@ export default function ProfiloScreen() {
           disabled={loggingOut}
         >
           {loggingOut ? (
-            <ActivityIndicator color={Colors.red} />
+            <ActivityIndicator color={theme.red} />
           ) : (
             <>
-              <Feather name="log-out" size={18} color={Colors.red} />
+              <Feather name="log-out" size={18} color={theme.red} />
               <Text style={styles.logoutText}>Esci dall'account</Text>
             </>
           )}

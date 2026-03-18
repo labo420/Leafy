@@ -24,6 +24,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/context/auth";
 import { LevelUpProvider } from "@/context/level-up";
 import { ScanResetProvider } from "@/context/scan-reset";
+import { ThemeProvider } from "@/context/theme";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -71,6 +72,7 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <GestureHandlerRootView style={{ flex: 1 }}>
             <KeyboardProvider>
+              <ThemeProvider>
               <AuthProvider>
                 <LevelUpProvider>
                   <ScanResetProvider>
@@ -79,6 +81,7 @@ export default function RootLayout() {
                   </ScanResetProvider>
                 </LevelUpProvider>
               </AuthProvider>
+              </ThemeProvider>
             </KeyboardProvider>
           </GestureHandlerRootView>
         </QueryClientProvider>

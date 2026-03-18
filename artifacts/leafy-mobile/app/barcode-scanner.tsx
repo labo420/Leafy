@@ -27,6 +27,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import Colors from "@/constants/colors";
 import { useLevelUp } from "@/context/level-up";
+import { useTheme } from "@/context/theme";
 
 interface LookupResult {
   barcode: string;
@@ -82,9 +83,10 @@ const ECO_COLORS: Record<string, string> = {
 type ScanPhase = "scanning" | "looking-up" | "preview" | "confirming" | "confirmed" | "manual-form" | "manual-classifying";
 
 function EcoScoreBadge({ score }: { score: string | null }) {
+  const { theme } = useTheme();
   if (!score) return null;
   const letter = score.toLowerCase();
-  const bg = ECO_COLORS[letter] ?? Colors.textSecondary;
+  const bg = ECO_COLORS[letter] ?? theme.textSecondary;
   return (
     <View style={[styles.ecoBadge, { backgroundColor: bg }]}>
       <Text style={styles.ecoBadgeText}>{letter.toUpperCase()}</Text>
@@ -93,6 +95,7 @@ function EcoScoreBadge({ score }: { score: string | null }) {
 }
 
 export default function BarcodeScannerScreen() {
+  const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const { receiptId: receiptIdStr, productName: productNameParam } = useLocalSearchParams<{ receiptId: string; productName?: string }>();
@@ -121,14 +124,14 @@ export default function BarcodeScannerScreen() {
 
   if (!receiptId || receiptId === 0) {
     return (
-      <View style={[styles.centered, { paddingTop: topPadding }]}>
-        <Feather name="alert-circle" size={56} color={Colors.amber} />
-        <Text style={styles.permTitle}>Nessuna sessione attiva</Text>
-        <Text style={styles.permSub}>
+      <View style={[styles.centered, { paddingTop: topPadding, backgroundColor: theme.background }]}>
+        <Feather name="alert-circle" size={56} color={theme.amber} />
+        <Text style={[styles.permTitle, { color: theme.text }]}>Nessuna sessione attiva</Text>
+        <Text style={[styles.permSub, { color: theme.textSecondary }]}>
           Per scansionare i prodotti devi prima scansionare uno scontrino come prova d'acquisto.
           Vai alla schermata Scansiona per fotografare il tuo scontrino.
         </Text>
-        <Pressable style={styles.permBtn} onPress={() => router.back()}>
+        <Pressable style={[styles.permBtn, { backgroundColor: theme.leaf }]} onPress={() => router.back()}>
           <Text style={styles.permBtnText}>Scansiona scontrino</Text>
         </Pressable>
       </View>
@@ -353,23 +356,23 @@ export default function BarcodeScannerScreen() {
   if (Platform.OS !== "web") {
     if (!permission) {
       return (
-        <View style={[styles.centered, { paddingTop: topPadding }]}>
-          <ActivityIndicator size="large" color={Colors.leaf} />
+        <View style={[styles.centered, { paddingTop: topPadding, backgroundColor: theme.background }]}>
+          <ActivityIndicator size="large" color={theme.leaf} />
         </View>
       );
     }
 
     if (!permission.granted) {
       return (
-        <View style={[styles.centered, { paddingTop: topPadding }]}>
-          <Feather name="camera-off" size={56} color={Colors.textSecondary} />
-          <Text style={styles.permTitle}>Fotocamera richiesta</Text>
-          <Text style={styles.permSub}>Per scansionare i codici a barre serve accesso alla fotocamera</Text>
-          <Pressable style={styles.permBtn} onPress={requestPermission}>
+        <View style={[styles.centered, { paddingTop: topPadding, backgroundColor: theme.background }]}>
+          <Feather name="camera-off" size={56} color={theme.textSecondary} />
+          <Text style={[styles.permTitle, { color: theme.text }]}>Fotocamera richiesta</Text>
+          <Text style={[styles.permSub, { color: theme.textSecondary }]}>Per scansionare i codici a barre serve accesso alla fotocamera</Text>
+          <Pressable style={[styles.permBtn, { backgroundColor: theme.leaf }]} onPress={requestPermission}>
             <Text style={styles.permBtnText}>Abilita fotocamera</Text>
           </Pressable>
           <Pressable onPress={() => router.back()} style={{ marginTop: 16 }}>
-            <Text style={[styles.permSub, { color: Colors.leaf }]}>Torna indietro</Text>
+            <Text style={[styles.permSub, { color: theme.leaf }]}>Torna indietro</Text>
           </Pressable>
         </View>
       );
@@ -379,8 +382,8 @@ export default function BarcodeScannerScreen() {
   if (phase === "preview" && lookupData) {
     const isGeneric = lookupData.source === "ai-fallback" || lookupData.source === "ai" || lookupData.productName.startsWith("Prodotto ");
     return (
-      <View style={[styles.container, { paddingTop: topPadding }]}>
-        <LinearGradient colors={[Colors.forest, Colors.leaf]} style={styles.previewBanner}>
+      <View style={[styles.container, { paddingTop: topPadding, backgroundColor: theme.background }]}>
+        <LinearGradient colors={[theme.forest, theme.leaf]} style={styles.previewBanner}>
           <Animated.View entering={FadeIn.delay(100)} style={styles.previewContent}>
             <Text style={styles.previewEmoji}>{lookupData.emoji}</Text>
             <Text style={styles.previewName}>{lookupData.productName}</Text>
@@ -396,14 +399,14 @@ export default function BarcodeScannerScreen() {
           </Animated.View>
         </LinearGradient>
 
-        <Animated.View entering={FadeInDown.delay(200)} style={styles.previewConfirmQuestion}>
-          <Feather name="help-circle" size={16} color={Colors.text} />
-          <Text style={styles.previewConfirmText}>Il prodotto rilevato è corretto?</Text>
+        <Animated.View entering={FadeInDown.delay(200)} style={[styles.previewConfirmQuestion, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <Feather name="help-circle" size={16} color={theme.text} />
+          <Text style={[styles.previewConfirmText, { color: theme.text }]}>Il prodotto rilevato è corretto?</Text>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(250)} style={styles.previewActions}>
           <Pressable
-            style={styles.rejectBtn}
+            style={[styles.rejectBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
             onPress={() => {
               setManualName("");
               setManualWeight("");
@@ -414,18 +417,18 @@ export default function BarcodeScannerScreen() {
               setPhase("manual-form");
             }}
           >
-            <Feather name="edit-2" size={18} color={Colors.leaf} />
-            <Text style={[styles.rejectBtnText, { color: Colors.leaf }]}>No, aggiungi</Text>
+            <Feather name="edit-2" size={18} color={theme.leaf} />
+            <Text style={[styles.rejectBtnText, { color: theme.leaf }]}>No, aggiungi</Text>
           </Pressable>
-          <Pressable style={styles.confirmBtn} onPress={handleConfirm}>
+          <Pressable style={[styles.confirmBtn, { backgroundColor: theme.leaf }]} onPress={handleConfirm}>
             <Feather name="check" size={18} color="#fff" />
             <Text style={styles.confirmBtnText}>Sì, aggiungi</Text>
           </Pressable>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(350)} style={styles.previewHintBox}>
-          <Feather name="info" size={14} color={Colors.textSecondary} />
-          <Text style={styles.previewHintText}>
+        <Animated.View entering={FadeInDown.delay(350)} style={[styles.previewHintBox, { backgroundColor: theme.cardAlt }]}>
+          <Feather name="info" size={14} color={theme.textSecondary} />
+          <Text style={[styles.previewHintText, { color: theme.textSecondary }]}>
             Conferma solo se hai acquistato questo prodotto
           </Text>
         </Animated.View>
@@ -435,17 +438,17 @@ export default function BarcodeScannerScreen() {
 
   if (phase === "confirming") {
     return (
-      <View style={[styles.centered, { paddingTop: topPadding }]}>
-        <ActivityIndicator size="large" color={Colors.leaf} />
-        <Text style={styles.processingFullText}>Conferma in corso...</Text>
+      <View style={[styles.centered, { paddingTop: topPadding, backgroundColor: theme.background }]}>
+        <ActivityIndicator size="large" color={theme.leaf} />
+        <Text style={[styles.processingFullText, { color: theme.text }]}>Conferma in corso...</Text>
       </View>
     );
   }
 
   if (phase === "confirmed" && lastConfirmed) {
     return (
-      <View style={[styles.container, { paddingTop: topPadding }]}>
-        <LinearGradient colors={[Colors.forest, Colors.leaf]} style={styles.resultBanner}>
+      <View style={[styles.container, { paddingTop: topPadding, backgroundColor: theme.background }]}>
+        <LinearGradient colors={[theme.forest, theme.leaf]} style={styles.resultBanner}>
           <Animated.View entering={FadeIn.delay(100)} style={styles.resultContent}>
             <Feather name="check-circle" size={40} color="#fff" />
             <Text style={styles.resultEmoji}>{lastConfirmed.emoji}</Text>
@@ -461,7 +464,7 @@ export default function BarcodeScannerScreen() {
 
             {lastConfirmed.bonusVirtuoso && (
               <View style={styles.virtuosoChip}>
-                <Feather name="star" size={14} color={Colors.amber} />
+                <Feather name="star" size={14} color={theme.amber} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.virtuosoChipTitle}>Scontrino Virtuoso!</Text>
                   <Text style={styles.virtuosoChipSub}>3+ prodotti green +{lastConfirmed.bonusVirtuosoPts} pt bonus</Text>
@@ -471,12 +474,12 @@ export default function BarcodeScannerScreen() {
           </Animated.View>
         </LinearGradient>
 
-        <View style={styles.capsInfoBar}>
-          <Feather name="info" size={12} color={Colors.textSecondary} />
-          <Text style={styles.capsInfoText}>
+        <View style={[styles.capsInfoBar, { backgroundColor: theme.cardAlt, borderColor: theme.border }]}>
+          <Feather name="info" size={12} color={theme.textSecondary} />
+          <Text style={[styles.capsInfoText, { color: theme.textSecondary }]}>
             Max {lastConfirmed.receiptCapPts ?? 150} pt/scontrino · {lastConfirmed.dailyCapPts ?? 200} pt/giorno
           </Text>
-          <Text style={styles.capsInfoRemaining}>
+          <Text style={[styles.capsInfoRemaining, { color: theme.textMuted }]}>
             Rimasti: {Math.max(0, lastConfirmed.remainingReceiptPoints ?? 0)} scontrino · {Math.max(0, lastConfirmed.remainingDailyPoints ?? 0)} oggi
           </Text>
         </View>
@@ -484,24 +487,24 @@ export default function BarcodeScannerScreen() {
         <Animated.View entering={FadeInDown.delay(200)} style={styles.resultActions}>
           {targetProductName ? (
             <>
-              <Pressable style={styles.primaryBtn} onPress={finishAndGoBack}>
+              <Pressable style={[styles.primaryBtn, { backgroundColor: theme.leaf }]} onPress={finishAndGoBack}>
                 <Feather name="check" size={18} color="#fff" />
                 <Text style={styles.primaryBtnText}>Torna alla lista</Text>
               </Pressable>
-              <Pressable style={styles.secondaryBtn} onPress={continueScan}>
-                <MaterialCommunityIcons name="barcode-scan" size={18} color={Colors.leaf} />
-                <Text style={styles.secondaryBtnText}>Scansiona ancora</Text>
+              <Pressable style={[styles.secondaryBtn, { backgroundColor: theme.card, borderColor: theme.leaf }]} onPress={continueScan}>
+                <MaterialCommunityIcons name="barcode-scan" size={18} color={theme.leaf} />
+                <Text style={[styles.secondaryBtnText, { color: theme.leaf }]}>Scansiona ancora</Text>
               </Pressable>
             </>
           ) : (
             <>
-              <Pressable style={styles.primaryBtn} onPress={continueScan}>
+              <Pressable style={[styles.primaryBtn, { backgroundColor: theme.leaf }]} onPress={continueScan}>
                 <Feather name="camera" size={18} color="#fff" />
                 <Text style={styles.primaryBtnText}>Scansiona altro</Text>
               </Pressable>
-              <Pressable style={styles.secondaryBtn} onPress={finish}>
-                <Feather name="check" size={18} color={Colors.leaf} />
-                <Text style={styles.secondaryBtnText}>Finito ({totalPointsEarned} pt)</Text>
+              <Pressable style={[styles.secondaryBtn, { backgroundColor: theme.card, borderColor: theme.leaf }]} onPress={finish}>
+                <Feather name="check" size={18} color={theme.leaf} />
+                <Text style={[styles.secondaryBtnText, { color: theme.leaf }]}>Finito ({totalPointsEarned} pt)</Text>
               </Pressable>
             </>
           )}
@@ -509,22 +512,22 @@ export default function BarcodeScannerScreen() {
 
         {scannedProducts.length > 1 && (
           <Animated.View entering={FadeInDown.delay(300)}>
-            <Text style={styles.listTitle}>Prodotti scansionati ({scannedProducts.length})</Text>
+            <Text style={[styles.listTitle, { color: theme.text }]}>Prodotti scansionati ({scannedProducts.length})</Text>
             <FlatList
               data={scannedProducts}
               keyExtractor={(_, i) => i.toString()}
               renderItem={({ item }) => (
-                <View style={styles.listItem}>
+                <View style={[styles.listItem, { backgroundColor: theme.card }]}>
                   <View style={styles.listItemLeft}>
                     <Text style={styles.listItemEmoji}>{item.emoji}</Text>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.listItemName} numberOfLines={1}>{item.productName}</Text>
-                      <Text style={styles.listItemCat}>{item.category}</Text>
+                      <Text style={[styles.listItemName, { color: theme.text }]} numberOfLines={1}>{item.productName}</Text>
+                      <Text style={[styles.listItemCat, { color: theme.textSecondary }]}>{item.category}</Text>
                     </View>
                   </View>
                   <View style={styles.listItemRight}>
                     <EcoScoreBadge score={item.ecoScore} />
-                    <Text style={styles.listItemPts}>+{item.pointsEarned}</Text>
+                    <Text style={[styles.listItemPts, { color: theme.leaf }]}>+{item.pointsEarned}</Text>
                   </View>
                 </View>
               )}
@@ -539,10 +542,10 @@ export default function BarcodeScannerScreen() {
 
   if (phase === "manual-classifying") {
     return (
-      <View style={[styles.centered, { paddingTop: topPadding }]}>
-        <ActivityIndicator size="large" color={Colors.leaf} />
-        <Text style={styles.processingFullText}>Classificazione in corso...</Text>
-        <Text style={[styles.processingFullText, { fontSize: 14, color: Colors.textSecondary, marginTop: 4 }]}>
+      <View style={[styles.centered, { paddingTop: topPadding, backgroundColor: theme.background }]}>
+        <ActivityIndicator size="large" color={theme.leaf} />
+        <Text style={[styles.processingFullText, { color: theme.text }]}>Classificazione in corso...</Text>
+        <Text style={[styles.processingFullText, { fontSize: 14, color: theme.textSecondary, marginTop: 4 }]}>
           Claude sta analizzando il prodotto
         </Text>
       </View>
@@ -554,11 +557,11 @@ export default function BarcodeScannerScreen() {
     const canSubmit = manualName.trim().length >= 2 && !isNaN(weightNum) && weightNum > 0 && (manualFrontPhoto !== null || manualBackPhoto !== null);
     return (
       <KeyboardAvoidingView
-        style={[styles.container, { paddingTop: topPadding }]}
+        style={[styles.container, { paddingTop: topPadding, backgroundColor: theme.background }]}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <ScrollView contentContainerStyle={{ paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
-          <View style={styles.manualFormHeader}>
+          <View style={[styles.manualFormHeader, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <Pressable
               onPress={() => {
                 if (cameFromReject) {
@@ -568,89 +571,89 @@ export default function BarcodeScannerScreen() {
                   setPhase("scanning");
                 }
               }}
-              style={styles.manualFormBack}
+              style={[styles.manualFormBack, { backgroundColor: theme.cardAlt }]}
             >
-              <Feather name={cameFromReject ? "arrow-left" : "x"} size={22} color={Colors.text} />
+              <Feather name={cameFromReject ? "arrow-left" : "x"} size={22} color={theme.text} />
             </Pressable>
-            <Text style={styles.manualFormTitle}>
+            <Text style={[styles.manualFormTitle, { color: theme.text }]}>
               {cameFromReject ? "Correggi prodotto" : "Inserimento manuale"}
             </Text>
             <View style={{ width: 36 }} />
           </View>
 
           <View style={styles.manualFormSection}>
-            <Text style={styles.manualFormLabel}>Nome prodotto *</Text>
+            <Text style={[styles.manualFormLabel, { color: theme.text }]}>Nome prodotto *</Text>
             <TextInput
-              style={styles.manualFormInput}
+              style={[styles.manualFormInput, { backgroundColor: theme.cardAlt, color: theme.text, borderColor: theme.border }]}
               value={manualName}
               onChangeText={setManualName}
               placeholder="Es. Pane integrale Mulino Bianco"
-              placeholderTextColor={Colors.textSecondary}
+              placeholderTextColor={theme.textSecondary}
               returnKeyType="next"
               autoFocus
             />
           </View>
 
           <View style={styles.manualFormSection}>
-            <Text style={styles.manualFormLabel}>Peso / Quantità *</Text>
+            <Text style={[styles.manualFormLabel, { color: theme.text }]}>Peso / Quantità *</Text>
             <View style={styles.manualWeightRow}>
               <TextInput
-                style={[styles.manualFormInput, { flex: 1, marginRight: 10 }]}
+                style={[styles.manualFormInput, { flex: 1, marginRight: 10, backgroundColor: theme.cardAlt, color: theme.text, borderColor: theme.border }]}
                 value={manualWeight}
                 onChangeText={setManualWeight}
                 placeholder="Es. 500"
-                placeholderTextColor={Colors.textSecondary}
+                placeholderTextColor={theme.textSecondary}
                 keyboardType="decimal-pad"
                 returnKeyType="done"
               />
-              <View style={styles.unitToggle}>
+              <View style={[styles.unitToggle, { backgroundColor: theme.cardAlt, borderColor: theme.border }]}>
                 <Pressable
-                  style={[styles.unitBtn, manualUnit === "g" && styles.unitBtnActive]}
+                  style={[styles.unitBtn, manualUnit === "g" && [styles.unitBtnActive, { backgroundColor: theme.leaf }]]}
                   onPress={() => setManualUnit("g")}
                 >
-                  <Text style={[styles.unitBtnText, manualUnit === "g" && styles.unitBtnTextActive]}>g</Text>
+                  <Text style={[styles.unitBtnText, { color: theme.textSecondary }, manualUnit === "g" && styles.unitBtnTextActive]}>g</Text>
                 </Pressable>
                 <Pressable
-                  style={[styles.unitBtn, manualUnit === "kg" && styles.unitBtnActive]}
+                  style={[styles.unitBtn, manualUnit === "kg" && [styles.unitBtnActive, { backgroundColor: theme.leaf }]]}
                   onPress={() => setManualUnit("kg")}
                 >
-                  <Text style={[styles.unitBtnText, manualUnit === "kg" && styles.unitBtnTextActive]}>kg</Text>
+                  <Text style={[styles.unitBtnText, { color: theme.textSecondary }, manualUnit === "kg" && styles.unitBtnTextActive]}>kg</Text>
                 </Pressable>
               </View>
             </View>
           </View>
 
           <View style={styles.manualFormSection}>
-            <Text style={styles.manualFormLabel}>Foto confezione * (almeno una)</Text>
-            <Text style={styles.manualFormSublabel}>Includi il codice a barre nel fronte o retro</Text>
+            <Text style={[styles.manualFormLabel, { color: theme.text }]}>Foto confezione * (almeno una)</Text>
+            <Text style={[styles.manualFormSublabel, { color: theme.textSecondary }]}>Includi il codice a barre nel fronte o retro</Text>
             <View style={styles.photoRow}>
-              <Pressable style={styles.photoBtn} onPress={() => takeManualPhoto("front")}>
+              <Pressable style={[styles.photoBtn, { backgroundColor: theme.cardAlt, borderColor: theme.border }]} onPress={() => takeManualPhoto("front")}>
                 {manualFrontPhoto ? (
                   <Image source={{ uri: manualFrontPhoto.uri }} style={styles.photoPreview} />
                 ) : (
                   <View style={styles.photoPlaceholder}>
-                    <Feather name="camera" size={28} color={Colors.textSecondary} />
-                    <Text style={styles.photoBtnLabel}>Fronte</Text>
+                    <Feather name="camera" size={28} color={theme.textSecondary} />
+                    <Text style={[styles.photoBtnLabel, { color: theme.textSecondary }]}>Fronte</Text>
                   </View>
                 )}
                 {manualFrontPhoto && (
-                  <View style={styles.photoCheckBadge}>
+                  <View style={[styles.photoCheckBadge, { backgroundColor: theme.leaf }]}>
                     <Feather name="check" size={12} color="#fff" />
                   </View>
                 )}
               </Pressable>
-              <Pressable style={styles.photoBtn} onPress={() => takeManualPhoto("back")}>
+              <Pressable style={[styles.photoBtn, { backgroundColor: theme.cardAlt, borderColor: theme.border }]} onPress={() => takeManualPhoto("back")}>
                 {manualBackPhoto ? (
                   <Image source={{ uri: manualBackPhoto.uri }} style={styles.photoPreview} />
                 ) : (
                   <View style={styles.photoPlaceholder}>
-                    <Feather name="camera" size={28} color={Colors.textSecondary} />
-                    <Text style={styles.photoBtnLabel}>Retro</Text>
-                    <Text style={styles.photoBtnSublabel}>con barcode</Text>
+                    <Feather name="camera" size={28} color={theme.textSecondary} />
+                    <Text style={[styles.photoBtnLabel, { color: theme.textSecondary }]}>Retro</Text>
+                    <Text style={[styles.photoBtnSublabel, { color: theme.textMuted }]}>con barcode</Text>
                   </View>
                 )}
                 {manualBackPhoto && (
-                  <View style={styles.photoCheckBadge}>
+                  <View style={[styles.photoCheckBadge, { backgroundColor: theme.leaf }]}>
                     <Feather name="check" size={12} color="#fff" />
                   </View>
                 )}
@@ -659,7 +662,7 @@ export default function BarcodeScannerScreen() {
           </View>
 
           <Pressable
-            style={[styles.manualSubmitBtn, !canSubmit && styles.manualSubmitBtnDisabled]}
+            style={[styles.manualSubmitBtn, { backgroundColor: theme.leaf }, !canSubmit && styles.manualSubmitBtnDisabled]}
             onPress={submitManualEntry}
             disabled={!canSubmit}
           >
@@ -668,7 +671,7 @@ export default function BarcodeScannerScreen() {
           </Pressable>
 
           <Pressable style={styles.manualCancelScan} onPress={() => setPhase("scanning")}>
-            <Text style={styles.manualCancelScanText}>← Torna alla scansione</Text>
+            <Text style={[styles.manualCancelScanText, { color: theme.textSecondary }]}>← Torna alla scansione</Text>
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -677,25 +680,25 @@ export default function BarcodeScannerScreen() {
 
   if (Platform.OS === "web") {
     return (
-      <View style={[styles.container, { paddingTop: topPadding }]}>
-        <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.border }}>
+      <View style={[styles.container, { paddingTop: topPadding, backgroundColor: theme.background }]}>
+        <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: theme.border }}>
           <Pressable onPress={finish} style={{ padding: 8 }}>
-            <Feather name="x" size={24} color={Colors.text} />
+            <Feather name="x" size={24} color={theme.text} />
           </Pressable>
-          <Text style={[styles.cameraTitle, { color: Colors.text, flex: 1, textAlign: "center" }]}>Scansiona prodotto</Text>
+          <Text style={[styles.cameraTitle, { color: theme.text, flex: 1, textAlign: "center" }]}>Scansiona prodotto</Text>
           <View style={{ width: 40 }} />
         </View>
         <View style={[styles.centered, { flex: 1, paddingHorizontal: 32 }]}>
-          <MaterialCommunityIcons name="barcode-scan" size={64} color={Colors.leaf} />
-          <Text style={styles.permTitle}>Inserisci codice a barre</Text>
-          <Text style={styles.permSub}>La fotocamera non è disponibile su web. Inserisci il codice del prodotto manualmente.</Text>
+          <MaterialCommunityIcons name="barcode-scan" size={64} color={theme.leaf} />
+          <Text style={[styles.permTitle, { color: theme.text }]}>Inserisci codice a barre</Text>
+          <Text style={[styles.permSub, { color: theme.textSecondary }]}>La fotocamera non è disponibile su web. Inserisci il codice del prodotto manualmente.</Text>
           <TextInput
-            style={[styles.manualInput, { marginTop: 24 }]}
+            style={[styles.manualInput, { marginTop: 24, backgroundColor: theme.cardAlt, color: theme.text, borderColor: theme.border }]}
             value={manualCode}
             onChangeText={setManualCode}
             keyboardType="number-pad"
             placeholder="Es. 8712345678900"
-            placeholderTextColor={Colors.textSecondary}
+            placeholderTextColor={theme.textSecondary}
             maxLength={14}
             autoFocus
             returnKeyType="search"
@@ -754,7 +757,7 @@ export default function BarcodeScannerScreen() {
         <View style={[styles.cameraFooter, { paddingBottom: insets.bottom + 16 }]}>
           {targetProductName ? (
             <View style={styles.targetProductBanner}>
-              <MaterialCommunityIcons name="barcode-scan" size={16} color={Colors.leaf} />
+              <MaterialCommunityIcons name="barcode-scan" size={16} color={theme.leaf} />
               <Text style={styles.targetProductText} numberOfLines={1}>
                 Stai verificando: {targetProductName}
               </Text>
@@ -764,7 +767,7 @@ export default function BarcodeScannerScreen() {
           )}
           {scannedProducts.length > 0 && (
             <View style={styles.summaryRow}>
-              <MaterialCommunityIcons name="leaf" size={16} color={Colors.leaf} />
+              <MaterialCommunityIcons name="leaf" size={16} color={theme.leaf} />
               <Text style={styles.summaryText}>
                 {scannedProducts.length} prodotti | +{totalPointsEarned} punti
               </Text>
@@ -787,26 +790,26 @@ export default function BarcodeScannerScreen() {
           behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowManualInput(false)} />
-          <View style={styles.manualPanel}>
-            <Text style={styles.manualTitle}>Inserisci codice a barre</Text>
+          <View style={[styles.manualPanel, { backgroundColor: theme.modalBackground }]}>
+            <Text style={[styles.manualTitle, { color: theme.text }]}>Inserisci codice a barre</Text>
             <TextInput
-              style={styles.manualInput}
+              style={[styles.manualInput, { backgroundColor: theme.cardAlt, color: theme.text, borderColor: theme.border }]}
               value={manualCode}
               onChangeText={setManualCode}
               keyboardType="number-pad"
               placeholder="Es. 8712345678900"
-              placeholderTextColor={Colors.textSecondary}
+              placeholderTextColor={theme.textSecondary}
               maxLength={14}
               autoFocus
               returnKeyType="search"
               onSubmitEditing={handleManualSearch}
             />
             <View style={styles.manualBtns}>
-              <Pressable style={styles.manualCancelBtn} onPress={() => setShowManualInput(false)}>
-                <Text style={styles.manualCancelText}>Annulla</Text>
+              <Pressable style={[styles.manualCancelBtn, { backgroundColor: theme.cardAlt }]} onPress={() => setShowManualInput(false)}>
+                <Text style={[styles.manualCancelText, { color: theme.textSecondary }]}>Annulla</Text>
               </Pressable>
               <Pressable
-                style={[styles.manualSearchBtn, manualCode.trim().length < 8 && styles.manualSearchBtnDisabled]}
+                style={[styles.manualSearchBtn, { backgroundColor: theme.leaf }, manualCode.trim().length < 8 && styles.manualSearchBtnDisabled]}
                 onPress={handleManualSearch}
                 disabled={manualCode.trim().length < 8}
               >

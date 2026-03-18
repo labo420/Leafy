@@ -23,6 +23,7 @@ import { Fonts } from "@/constants/typography";
 import { getProductEmoji } from "@/constants/emojis";
 import { apiFetch, apiBase } from "@/lib/api";
 import { useAuth } from "@/context/auth";
+import { useTheme } from "@/context/theme";
 import { router, useLocalSearchParams } from "expo-router";
 
 interface Receipt {
@@ -108,9 +109,10 @@ function formatProductName(name: string): string {
 
 
 function EcoScoreBadge({ score }: { score: string | null }) {
+  const { theme } = useTheme();
   if (!score) return null;
   const letter = score.toLowerCase();
-  const bg = ECO_COLORS[letter] ?? Colors.textSecondary;
+  const bg = ECO_COLORS[letter] ?? theme.textSecondary;
   return (
     <View style={[styles.ecoBadge, { backgroundColor: bg }]}>
       <Text style={styles.ecoBadgeText}>{letter.toUpperCase()}</Text>
@@ -138,6 +140,7 @@ function useReceiptImage(id: number, hasImage: boolean) {
 
 function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }) {
   const queryClient = useQueryClient();
+  const { theme } = useTheme();
   const { data, isLoading } = useQuery<ReceiptDetailData>({
     queryKey: ["receipt", id],
     queryFn: () => apiFetch(`/receipts/${id}`),
@@ -207,25 +210,25 @@ function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }
 
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <View style={[styles.sheetContainer, { paddingBottom: insets.bottom + 24 }]}>
-        <View style={styles.sheetHandle} />
-        <View style={styles.sheetHeader}>
-          <Text style={styles.sheetTitle}>Dettagli scontrino</Text>
+      <View style={[styles.sheetContainer, { paddingBottom: insets.bottom + 24, backgroundColor: theme.background }]}>
+        <View style={[styles.sheetHandle, { backgroundColor: theme.border }]} />
+        <View style={[styles.sheetHeader, { borderBottomColor: theme.border }]}>
+          <Text style={[styles.sheetTitle, { color: theme.text }]}>Dettagli scontrino</Text>
           <Pressable onPress={onClose}>
-            <Feather name="x" size={24} color={Colors.textSecondary} />
+            <Feather name="x" size={24} color={theme.textSecondary} />
           </Pressable>
         </View>
 
         {isLoading ? (
-          <ActivityIndicator size="large" color={Colors.leaf} style={{ marginTop: 40 }} />
+          <ActivityIndicator size="large" color={theme.leaf} style={{ marginTop: 40 }} />
         ) : data ? (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 20 }}>
 
             {data.isPending && (
               <View style={styles.pendingBanner}>
                 <View style={styles.pendingBannerTop}>
-                  <Feather name="clock" size={18} color={Colors.amber} />
-                  <Text style={styles.pendingBannerTitle}>Verifica in sospeso</Text>
+                  <Feather name="clock" size={18} color={theme.amber} />
+                  <Text style={[styles.pendingBannerTitle, { color: theme.amber }]}>Verifica in sospeso</Text>
                 </View>
                 <Text style={styles.pendingBannerSub}>
                   Hai ancora {data.remainingHours} ore per scansionare i barcode dei prodotti green
@@ -243,34 +246,34 @@ function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }
               </View>
             )}
 
-            <View style={styles.detailHeader}>
+            <View style={[styles.detailHeader, { backgroundColor: theme.card }]}>
               <View style={styles.detailPoints}>
-                <MaterialCommunityIcons name="leaf" size={20} color={Colors.leaf} />
-                <Text style={styles.detailPointsText}>+{data.pointsEarned} punti</Text>
+                <MaterialCommunityIcons name="leaf" size={20} color={theme.leaf} />
+                <Text style={[styles.detailPointsText, { color: theme.leaf }]}>+{data.pointsEarned} punti</Text>
               </View>
-              {data.storeName && <Text style={styles.detailStore}>{data.storeName}</Text>}
+              {data.storeName && <Text style={[styles.detailStore, { color: theme.text }]}>{data.storeName}</Text>}
               <View style={styles.detailMetaRow}>
-                {data.scannedAt && <Text style={styles.detailDate}>{formatDate(data.scannedAt)}</Text>}
+                {data.scannedAt && <Text style={[styles.detailDate, { color: theme.textSecondary }]}>{formatDate(data.scannedAt)}</Text>}
                 {data.province && (
                   <View style={styles.detailProvince}>
-                    <Feather name="map-pin" size={12} color={Colors.textSecondary} />
-                    <Text style={styles.detailProvinceText}>{data.province}</Text>
+                    <Feather name="map-pin" size={12} color={theme.textSecondary} />
+                    <Text style={[styles.detailProvinceText, { color: theme.textSecondary }]}>{data.province}</Text>
                   </View>
                 )}
               </View>
             </View>
 
             {data.hasImage && imageData && (
-              <View style={styles.imageSection}>
+              <View style={[styles.imageSection, { backgroundColor: theme.card }]}>
                 <Image
                   source={{ uri: imageData }}
-                  style={styles.receiptImage}
+                  style={[styles.receiptImage, { backgroundColor: theme.background }]}
                   resizeMode="contain"
                 />
                 {data.imageExpiresAt && (
                   <View style={styles.imageExpiry}>
-                    <Feather name="clock" size={12} color={Colors.textSecondary} />
-                    <Text style={styles.imageExpiryText}>
+                    <Feather name="clock" size={12} color={theme.textSecondary} />
+                    <Text style={[styles.imageExpiryText, { color: theme.textSecondary }]}>
                       Foto disponibile fino al {formatDate(data.imageExpiresAt)}
                     </Text>
                   </View>
@@ -280,21 +283,21 @@ function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }
 
             {data.barcodeScans && data.barcodeScans.length > 0 && (
               <>
-                <Text style={styles.itemsTitle}>
+                <Text style={[styles.itemsTitle, { color: theme.text }]}>
                   Prodotti scansionati ({data.barcodeScans.length})
                 </Text>
                 {data.barcodeScans.map((scan) => (
-                  <View key={scan.id} style={styles.barcodeRow}>
+                  <View key={scan.id} style={[styles.barcodeRow, { backgroundColor: theme.card }]}>
                     <View style={styles.barcodeLeft}>
                       <Text style={styles.categoryEmoji}>{getProductEmoji(scan.productName, scan.category, scan.emoji)}</Text>
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.barcodeName} numberOfLines={1}>
+                        <Text style={[styles.barcodeName, { color: theme.text }]} numberOfLines={1}>
                           {scan.productName}
                         </Text>
                         <View style={styles.barcodeMeta}>
-                          <Text style={styles.barcodeCat}>{scan.category}</Text>
+                          <Text style={[styles.barcodeCat, { color: theme.textSecondary }]}>{scan.category}</Text>
                           {scan.reasoning ? (
-                            <Text style={styles.barcodeReason} numberOfLines={1}>
+                            <Text style={[styles.barcodeReason, { color: theme.textMuted }]} numberOfLines={1}>
                               {scan.reasoning}
                             </Text>
                           ) : null}
@@ -303,7 +306,7 @@ function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }
                     </View>
                     <View style={styles.barcodeRight}>
                       <EcoScoreBadge score={scan.ecoScore} />
-                      <Text style={styles.barcodePts}>+{scan.pointsEarned}</Text>
+                      <Text style={[styles.barcodePts, { color: theme.leaf }]}>+{scan.pointsEarned}</Text>
                     </View>
                   </View>
                 ))}
@@ -319,19 +322,19 @@ function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }
                   {acceptedItems.length > 0 && (
                     <>
                       <View style={styles.itemsTitleRow}>
-                        <Text style={[styles.itemsTitle, { marginTop: 16 }]}>
+                        <Text style={[styles.itemsTitle, { marginTop: 16, color: theme.text }]}>
                           Prodotti idonei ({acceptedItems.length})
                         </Text>
                         {!data.isPending && (
                           <View style={styles.itemsHintRow}>
-                            <Feather name="edit-2" size={11} color={Colors.textSecondary} />
-                            <Text style={styles.itemsHint}>Tocca per correggere</Text>
+                            <Feather name="edit-2" size={11} color={theme.textSecondary} />
+                            <Text style={[styles.itemsHint, { color: theme.textMuted }]}>Tocca per correggere</Text>
                           </View>
                         )}
                       </View>
                       {data.isPending && unmatchedCount > 0 && (
                         <Pressable
-                          style={styles.scanAllCta}
+                          style={[styles.scanAllCta, { backgroundColor: theme.leaf }]}
                           onPress={() => {
                             onClose();
                             router.push({ pathname: "/barcode-scanner", params: { receiptId: String(data.id) } });
@@ -345,21 +348,21 @@ function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }
                         const isUnmatched = data.isPending && item.matched === false;
                         const isMatched = data.isPending && item.matched === true;
                         return (
-                          <View key={i} style={[styles.itemRow, isMatched && styles.itemRowMatched]}>
+                          <View key={i} style={[styles.itemRow, isMatched && styles.itemRowMatched, { backgroundColor: theme.card }]}>
                             <Text style={styles.categoryEmoji}>{getProductEmoji(item.name, item.category, item.emoji)}</Text>
                             <View style={{ flex: 1 }}>
-                              <Text style={styles.itemName}>{formatProductName(item.name)}</Text>
-                              <Text style={styles.itemCat}>{item.category ?? ""}</Text>
+                              <Text style={[styles.itemName, { color: theme.text }]}>{formatProductName(item.name)}</Text>
+                              <Text style={[styles.itemCat, { color: theme.textSecondary }]}>{item.category ?? ""}</Text>
                             </View>
                             {isMatched && (
-                              <View style={styles.verifiedBadge}>
-                                <Feather name="check" size={12} color={Colors.leaf} />
-                                <Text style={styles.verifiedBadgeText}>+{item.points} pt</Text>
+                              <View style={[styles.verifiedBadge, { backgroundColor: theme.primaryLight }]}>
+                                <Feather name="check" size={12} color={theme.leaf} />
+                                <Text style={[styles.verifiedBadgeText, { color: theme.leaf }]}>+{item.points} pt</Text>
                               </View>
                             )}
                             {isUnmatched && (
                               <Pressable
-                                style={styles.scanItemBtn}
+                                style={[styles.scanItemBtn, { backgroundColor: theme.leaf }]}
                                 onPress={() => {
                                   onClose();
                                   router.push({ pathname: "/barcode-scanner", params: { receiptId: String(data.id), productName: item.name } });
@@ -371,13 +374,13 @@ function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }
                             )}
                             {!data.isPending && (
                               <>
-                                <Text style={styles.itemPts}>+{item.points} pt</Text>
+                                <Text style={[styles.itemPts, { color: theme.leaf }]}>+{item.points} pt</Text>
                                 <Pressable
-                                  style={styles.editBtn}
+                                  style={[styles.editBtn, { backgroundColor: theme.background }]}
                                   onPress={() => openEdit(item)}
                                   hitSlop={8}
                                 >
-                                  <Feather name="edit-2" size={14} color={Colors.textSecondary} />
+                                  <Feather name="edit-2" size={14} color={theme.textSecondary} />
                                 </Pressable>
                               </>
                             )}
@@ -388,14 +391,14 @@ function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }
                   )}
                   {nonAcceptedItems.length > 0 && (
                     <>
-                      <Text style={[styles.itemsTitle, { marginTop: 16, color: Colors.textSecondary }]}>
+                      <Text style={[styles.itemsTitle, { marginTop: 16, color: theme.textSecondary }]}>
                         Prodotti non idonei ({nonAcceptedItems.length})
                       </Text>
                       {nonAcceptedItems.map((item, i) => (
-                        <View key={`na-${i}`} style={[styles.itemRow, styles.nonAcceptedRow]}>
+                        <View key={`na-${i}`} style={[styles.itemRow, styles.nonAcceptedRow, { backgroundColor: theme.card }]}>
                           <Text style={styles.categoryEmoji}>{getProductEmoji(item.name, item.category, item.emoji)}</Text>
                           <View style={{ flex: 1 }}>
-                            <Text style={[styles.itemName, { color: Colors.textSecondary }]}>{formatProductName(item.name)}</Text>
+                            <Text style={[styles.itemName, { color: theme.textSecondary }]}>{formatProductName(item.name)}</Text>
                           </View>
                         </View>
                       ))}
@@ -407,9 +410,9 @@ function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }
 
             {(!data.barcodeScans || data.barcodeScans.length === 0) &&
              (!data.greenItems || data.greenItems.length === 0) && (
-              <View style={styles.noProductsMsg}>
-                <Feather name="info" size={20} color={Colors.textSecondary} />
-                <Text style={styles.noProductsText}>
+              <View style={[styles.noProductsMsg, { backgroundColor: theme.card }]}>
+                <Feather name="info" size={20} color={theme.textSecondary} />
+                <Text style={[styles.noProductsText, { color: theme.textSecondary }]}>
                   Nessun prodotto scansionato per questo scontrino
                 </Text>
               </View>
@@ -421,31 +424,32 @@ function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }
       {editingItem && (
         <Modal visible animationType="fade" transparent onRequestClose={() => setEditingItem(null)}>
           <View style={styles.correctionOverlay}>
-            <View style={styles.correctionSheet}>
-              <Text style={styles.correctionTitle}>Correggi il nome</Text>
-              <Text style={styles.correctionSub}>
+            <View style={[styles.correctionSheet, { backgroundColor: theme.modalBackground }]}>
+              <Text style={[styles.correctionTitle, { color: theme.text }]}>Correggi il nome</Text>
+              <Text style={[styles.correctionSub, { color: theme.textSecondary }]}>
                 Il sistema imparerà per le prossime scansioni.
               </Text>
               <TextInput
-                style={styles.correctionInput}
+                style={[styles.correctionInput, { backgroundColor: theme.card, borderColor: theme.border, color: theme.text }]}
                 value={correctionText}
                 onChangeText={setCorrectionText}
                 autoFocus
                 returnKeyType="done"
                 onSubmitEditing={confirmCorrection}
                 placeholder="Nome corretto del prodotto"
-                placeholderTextColor={Colors.textMuted}
+                placeholderTextColor={theme.textMuted}
               />
               <View style={styles.correctionActions}>
                 <Pressable
-                  style={styles.correctionCancel}
+                  style={[styles.correctionCancel, { backgroundColor: theme.card, borderColor: theme.border }]}
                   onPress={() => setEditingItem(null)}
                 >
-                  <Text style={styles.correctionCancelText}>Annulla</Text>
+                  <Text style={[styles.correctionCancelText, { color: theme.textSecondary }]}>Annulla</Text>
                 </Pressable>
                 <Pressable
                   style={[
                     styles.correctionConfirm,
+                    { backgroundColor: theme.leaf },
                     (!correctionText.trim() || correctMutation.isPending) && { opacity: 0.5 },
                   ]}
                   onPress={confirmCorrection}
@@ -467,30 +471,31 @@ function ReceiptDetailSheet({ id, onClose }: { id: number; onClose: () => void }
 }
 
 function ReceiptCard({ receipt, onPress }: { receipt: Receipt; onPress: () => void }) {
+  const { theme } = useTheme();
   return (
     <Animated.View entering={FadeInDown.delay(50).springify()}>
       <Pressable
-        style={({ pressed }) => [styles.receiptCard, pressed && { opacity: 0.85 }]}
+        style={({ pressed }) => [styles.receiptCard, { backgroundColor: theme.card }, pressed && { opacity: 0.85 }]}
         onPress={onPress}
       >
         <View style={styles.receiptTop}>
           <View style={styles.receiptLeft}>
-            <View style={[styles.receiptIcon, receipt.isPending && styles.receiptIconPending]}>
+            <View style={[styles.receiptIcon, { backgroundColor: theme.primaryLight }, receipt.isPending && styles.receiptIconPending]}>
               {receipt.isPending
-                ? <Feather name="clock" size={20} color={Colors.amber} />
-                : <Feather name="shopping-bag" size={20} color={Colors.leaf} />
+                ? <Feather name="clock" size={20} color={theme.amber} />
+                : <Feather name="shopping-bag" size={20} color={theme.leaf} />
               }
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.receiptStore}>
+              <Text style={[styles.receiptStore, { color: theme.text }]}>
                 {receipt.storeName ?? "Negozio sconosciuto"}
               </Text>
               <View style={styles.receiptMetaRow}>
-                <Text style={styles.receiptDate}>{formatDate(receipt.scannedAt)}</Text>
+                <Text style={[styles.receiptDate, { color: theme.textSecondary }]}>{formatDate(receipt.scannedAt)}</Text>
                 {receipt.province && (
                   <View style={styles.provinceBadge}>
-                    <Feather name="map-pin" size={10} color={Colors.textSecondary} />
-                    <Text style={styles.provinceText}>{receipt.province}</Text>
+                    <Feather name="map-pin" size={10} color={theme.textSecondary} />
+                    <Text style={[styles.provinceText, { color: theme.textSecondary }]}>{receipt.province}</Text>
                   </View>
                 )}
               </View>
@@ -498,29 +503,29 @@ function ReceiptCard({ receipt, onPress }: { receipt: Receipt; onPress: () => vo
           </View>
           {receipt.isPending ? (
             <View style={styles.pendingBadge}>
-              <Text style={styles.pendingBadgeText}>⏳ {receipt.remainingHours}h</Text>
+              <Text style={[styles.pendingBadgeText, { color: theme.amber }]}>⏳ {receipt.remainingHours}h</Text>
             </View>
           ) : (
-            <View style={styles.receiptPointsBadge}>
-              <Text style={styles.receiptPointsBadgeText}>+{receipt.pointsEarned} pts</Text>
+            <View style={[styles.receiptPointsBadge, { backgroundColor: theme.primaryLight }]}>
+              <Text style={[styles.receiptPointsBadgeText, { color: theme.leaf }]}>+{receipt.pointsEarned} pts</Text>
             </View>
           )}
         </View>
 
         {receipt.isPending && receipt.pendingProductsCount > 0 && (
-          <View style={styles.pendingInfoRow}>
-            <MaterialCommunityIcons name="barcode-scan" size={13} color={Colors.amber} />
-            <Text style={styles.pendingInfoText}>
+          <View style={[styles.pendingInfoRow, { borderTopColor: theme.border }]}>
+            <MaterialCommunityIcons name="barcode-scan" size={13} color={theme.amber} />
+            <Text style={[styles.pendingInfoText, { color: theme.amber }]}>
               {receipt.pendingProductsCount} prodott{receipt.pendingProductsCount === 1 ? "o" : "i"} da verificare
             </Text>
           </View>
         )}
 
         {!receipt.isPending && receipt.categories && receipt.categories.length > 0 && (
-          <View style={styles.catRow}>
-            <Text style={styles.catCountText}>{receipt.greenItemsCount} prodotti:</Text>
+          <View style={[styles.catRow, { borderTopColor: theme.border }]}>
+            <Text style={[styles.catCountText, { color: theme.textSecondary }]}>{receipt.greenItemsCount} prodotti:</Text>
             {receipt.categories.map((cat, idx) => {
-              const color = CATEGORY_COLORS[cat] || { bg: Colors.cardAlt, text: Colors.textSecondary };
+              const color = CATEGORY_COLORS[cat] || { bg: theme.cardAlt, text: theme.textSecondary };
               return (
                 <View key={idx} style={[styles.catBadge, { backgroundColor: color.bg }]}>
                   <Text style={[styles.catText, { color: color.text }]}>{cat}</Text>
@@ -537,6 +542,7 @@ function ReceiptCard({ receipt, onPress }: { receipt: Receipt; onPress: () => vo
 export default function StoricoScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const { openReceiptId } = useLocalSearchParams<{ openReceiptId?: string }>();
 
@@ -558,10 +564,10 @@ export default function StoricoScreen() {
 
   if (!user) {
     return (
-      <View style={[styles.centered, { paddingTop: topPadding }]}>
-        <Feather name="list" size={48} color={Colors.primaryMuted} />
-        <Text style={styles.emptyTitle}>Accedi per vedere lo storico</Text>
-        <Pressable style={styles.loginBtn} onPress={() => router.push("/(tabs)")}>
+      <View style={[styles.centered, { paddingTop: topPadding, backgroundColor: theme.background }]}>
+        <Feather name="list" size={48} color={theme.primaryMuted} />
+        <Text style={[styles.emptyTitle, { color: theme.text }]}>Accedi per vedere lo storico</Text>
+        <Pressable style={[styles.loginBtn, { backgroundColor: theme.leaf }]} onPress={() => router.push("/(tabs)")}>
           <Text style={styles.loginBtnText}>Accedi</Text>
         </Pressable>
       </View>
@@ -569,22 +575,22 @@ export default function StoricoScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: topPadding }]}>
+    <View style={[styles.container, { paddingTop: topPadding, backgroundColor: theme.background }]}>
       <View style={styles.header}>
-        <Text style={styles.title}>Storico</Text>
-        <Text style={styles.subtitle}>
+        <Text style={[styles.title, { color: theme.text }]}>Storico</Text>
+        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
           {receipts?.length ?? 0} scontrini scansionati
         </Text>
       </View>
 
       {isLoading ? (
-        <ActivityIndicator size="large" color={Colors.leaf} style={{ marginTop: 40 }} />
+        <ActivityIndicator size="large" color={theme.leaf} style={{ marginTop: 40 }} />
       ) : !receipts || receipts.length === 0 ? (
         <View style={styles.emptyState}>
-          <Feather name="inbox" size={56} color={Colors.textMuted} />
-          <Text style={styles.emptyTitle}>Nessuno scontrino ancora</Text>
-          <Text style={styles.emptySub}>Il tuo primo scontrino vale punti green!</Text>
-          <Pressable style={styles.scanBtn} onPress={() => router.push("/(tabs)/scan")}>
+          <Feather name="inbox" size={56} color={theme.textMuted} />
+          <Text style={[styles.emptyTitle, { color: theme.text }]}>Nessuno scontrino ancora</Text>
+          <Text style={[styles.emptySub, { color: theme.textSecondary }]}>Il tuo primo scontrino vale punti green!</Text>
+          <Pressable style={[styles.scanBtn, { backgroundColor: theme.leaf }]} onPress={() => router.push("/(tabs)/scan")}>
             <Feather name="camera" size={16} color="#fff" />
             <Text style={styles.scanBtnText}>Scansiona ora</Text>
           </Pressable>
@@ -610,16 +616,16 @@ export default function StoricoScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
   centered: {
     flex: 1, alignItems: "center", justifyContent: "center",
-    backgroundColor: Colors.background, padding: 32,
+    padding: 32,
   },
   header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
-  title: { fontSize: 32, fontFamily: "DMSans_700Bold", color: Colors.text, marginBottom: 4 },
-  subtitle: { fontSize: 14, fontFamily: "Inter_400Regular", color: Colors.textSecondary },
+  title: { fontSize: 32, fontFamily: "DMSans_700Bold", marginBottom: 4 },
+  subtitle: { fontSize: 14, fontFamily: "Inter_400Regular" },
   receiptCard: {
-    backgroundColor: Colors.card, borderRadius: 24, padding: 16, marginBottom: 10,
+    borderRadius: 24, padding: 16, marginBottom: 10,
     shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
   },
   receiptTop: {
@@ -627,66 +633,66 @@ const styles = StyleSheet.create({
   },
   receiptLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
   receiptIcon: {
-    width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.primaryLight,
+    width: 44, height: 44, borderRadius: 22,
     alignItems: "center", justifyContent: "center",
   },
-  receiptStore: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: Colors.text, marginBottom: 2 },
-  receiptDate: { fontSize: 12, fontFamily: "Inter_400Regular", color: Colors.textSecondary },
+  receiptStore: { fontSize: 15, fontFamily: "Inter_600SemiBold", marginBottom: 2 },
+  receiptDate: { fontSize: 12, fontFamily: "Inter_400Regular" },
   receiptMetaRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 },
   provinceBadge: { flexDirection: "row", alignItems: "center", gap: 3 },
-  provinceText: { fontSize: 11, fontFamily: "Inter_400Regular", color: Colors.textSecondary },
+  provinceText: { fontSize: 11, fontFamily: "Inter_400Regular" },
   receiptPointsBadge: {
-    backgroundColor: Colors.primaryLight, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7,
+    borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7,
   },
   receiptPointsBadgeText: {
-    fontSize: 15, fontFamily: "DMSans_700Bold", color: Colors.leaf,
+    fontSize: 15, fontFamily: "DMSans_700Bold",
   },
   catRow: {
     flexDirection: "row", gap: 6, flexWrap: "wrap", alignItems: "center",
-    paddingTop: 12, borderTopWidth: 1, borderTopColor: Colors.border,
+    paddingTop: 12, borderTopWidth: 1,
   },
   catCountText: {
-    fontSize: 11, fontFamily: "Inter_500Medium", color: Colors.textSecondary, marginRight: 2,
+    fontSize: 11, fontFamily: "Inter_500Medium", marginRight: 2,
   },
   catBadge: {
     borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3,
   },
   catText: { fontSize: 10, fontFamily: "Inter_600SemiBold" },
   emptyState: { flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12 },
-  emptyTitle: { fontSize: 20, fontFamily: "DMSans_700Bold", color: Colors.text, textAlign: "center" },
-  emptySub: { fontSize: 14, fontFamily: "Inter_400Regular", color: Colors.textSecondary, textAlign: "center", lineHeight: 22 },
+  emptyTitle: { fontSize: 20, fontFamily: "DMSans_700Bold", textAlign: "center" },
+  emptySub: { fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 22 },
   scanBtn: {
     flexDirection: "row", alignItems: "center", gap: 8,
-    backgroundColor: Colors.leaf, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 24, marginTop: 8,
+    borderRadius: 14, paddingVertical: 14, paddingHorizontal: 24, marginTop: 8,
   },
   scanBtnText: { fontSize: 15, fontFamily: "Inter_700Bold", color: "#fff" },
-  loginBtn: { marginTop: 20, backgroundColor: Colors.leaf, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 40 },
+  loginBtn: { marginTop: 20, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 40 },
   loginBtnText: { fontSize: 16, fontFamily: "Inter_700Bold", color: "#fff" },
-  sheetContainer: { flex: 1, backgroundColor: Colors.background },
-  sheetHandle: { width: 36, height: 4, backgroundColor: Colors.border, borderRadius: 2, alignSelf: "center", marginTop: 12, marginBottom: 8 },
+  sheetContainer: { flex: 1 },
+  sheetHandle: { width: 36, height: 4, borderRadius: 2, alignSelf: "center", marginTop: 12, marginBottom: 8 },
   sheetHeader: {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: Colors.border,
+    paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1,
   },
-  sheetTitle: { fontSize: 18, fontFamily: "DMSans_600SemiBold", color: Colors.text },
+  sheetTitle: { fontSize: 18, fontFamily: "DMSans_600SemiBold" },
   detailHeader: {
-    backgroundColor: Colors.card, borderRadius: 24, padding: 20,
+    borderRadius: 24, padding: 20,
     alignItems: "center", marginBottom: 20, gap: 6,
   },
   detailPoints: {
     flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8,
     backgroundColor: "rgba(76, 175, 80, 0.12)", borderRadius: 20, paddingHorizontal: 18, paddingVertical: 10,
   },
-  detailPointsText: { fontSize: 32, fontFamily: "DMSans_700Bold", color: Colors.leaf },
-  detailStore: { fontSize: 16, fontFamily: "DMSans_600SemiBold", color: Colors.text },
+  detailPointsText: { fontSize: 32, fontFamily: "DMSans_700Bold" },
+  detailStore: { fontSize: 16, fontFamily: "DMSans_600SemiBold" },
   detailMetaRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  detailDate: { fontSize: 13, fontFamily: "Inter_400Regular", color: Colors.textSecondary },
+  detailDate: { fontSize: 13, fontFamily: "Inter_400Regular" },
   detailProvince: { flexDirection: "row", alignItems: "center", gap: 4 },
-  detailProvinceText: { fontSize: 13, fontFamily: "Inter_400Regular", color: Colors.textSecondary },
-  itemsTitle: { fontSize: 16, fontFamily: "DMSans_700Bold", color: Colors.text, marginBottom: 12 },
+  detailProvinceText: { fontSize: 13, fontFamily: "Inter_400Regular" },
+  itemsTitle: { fontSize: 16, fontFamily: "DMSans_700Bold", marginBottom: 12 },
   barcodeRow: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    backgroundColor: Colors.card, borderRadius: 14, padding: 14, marginBottom: 8,
+    borderRadius: 14, padding: 14, marginBottom: 8,
   },
   barcodeLeft: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
   categoryEmoji: {
@@ -694,34 +700,34 @@ const styles = StyleSheet.create({
     width: 32,
     textAlign: "center",
   },
-  barcodeName: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: Colors.text },
+  barcodeName: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
   barcodeMeta: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 },
-  barcodeCat: { fontSize: 11, fontFamily: "Inter_500Medium", color: Colors.textSecondary },
-  barcodeReason: { fontSize: 10, fontFamily: "Inter_400Regular", color: Colors.textMuted, flex: 1 },
+  barcodeCat: { fontSize: 11, fontFamily: "Inter_500Medium" },
+  barcodeReason: { fontSize: 10, fontFamily: "Inter_400Regular", flex: 1 },
   barcodeRight: { flexDirection: "row", alignItems: "center", gap: 8 },
-  barcodePts: { fontSize: 17, fontFamily: "DMSans_700Bold", color: Colors.leaf },
+  barcodePts: { fontSize: 17, fontFamily: "DMSans_700Bold" },
   ecoBadge: { width: 26, height: 26, borderRadius: 6, alignItems: "center", justifyContent: "center" },
   ecoBadgeText: { fontSize: 14, fontFamily: "Inter_700Bold", color: "#fff" },
   noProductsMsg: {
-    flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: Colors.card,
+    flexDirection: "row", alignItems: "center", gap: 10,
     borderRadius: 12, padding: 16,
   },
-  noProductsText: { fontSize: 14, fontFamily: "Inter_400Regular", color: Colors.textSecondary, flex: 1 },
+  noProductsText: { fontSize: 14, fontFamily: "Inter_400Regular", flex: 1 },
   itemsTitleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   itemsHintRow: { flexDirection: "row", alignItems: "center", gap: 4 },
-  itemsHint: { fontSize: 11, fontFamily: "Inter_400Regular", color: Colors.textMuted },
+  itemsHint: { fontSize: 11, fontFamily: "Inter_400Regular" },
   itemRow: {
     flexDirection: "row", alignItems: "center", gap: 10,
-    backgroundColor: Colors.card, borderRadius: 12, padding: 14, marginBottom: 8,
+    borderRadius: 12, padding: 14, marginBottom: 8,
   },
   nonAcceptedRow: {
     opacity: 0.65,
   },
-  itemName: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: Colors.text },
-  itemCat: { fontSize: 11, fontFamily: "Inter_400Regular", color: Colors.textSecondary, marginTop: 1 },
-  itemPts: { fontSize: 14, fontFamily: "Inter_700Bold", color: Colors.leaf },
+  itemName: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  itemCat: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 1 },
+  itemPts: { fontSize: 14, fontFamily: "Inter_700Bold" },
   editBtn: {
-    width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.background,
+    width: 28, height: 28, borderRadius: 14,
     alignItems: "center", justifyContent: "center", marginLeft: 2,
   },
   correctionOverlay: {
@@ -729,42 +735,41 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   correctionSheet: {
-    backgroundColor: Colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    borderTopLeftRadius: 24, borderTopRightRadius: 24,
     padding: 24, gap: 12,
   },
-  correctionTitle: { fontSize: 18, fontFamily: "DMSans_700Bold", color: Colors.text },
-  correctionSub: { fontSize: 13, fontFamily: "Inter_400Regular", color: Colors.textSecondary, marginTop: -4 },
+  correctionTitle: { fontSize: 18, fontFamily: "DMSans_700Bold" },
+  correctionSub: { fontSize: 13, fontFamily: "Inter_400Regular", marginTop: -4 },
   correctionInput: {
-    backgroundColor: Colors.card, borderWidth: 1.5, borderColor: Colors.border,
+    borderWidth: 1.5,
     borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14,
-    fontSize: 15, fontFamily: "Inter_400Regular", color: Colors.text, marginTop: 4,
+    fontSize: 15, fontFamily: "Inter_400Regular", marginTop: 4,
   },
   correctionActions: { flexDirection: "row", gap: 12, marginTop: 4, paddingBottom: 8 },
   correctionCancel: {
     flex: 1, alignItems: "center", justifyContent: "center",
-    backgroundColor: Colors.card, borderRadius: 14, paddingVertical: 14,
-    borderWidth: 1, borderColor: Colors.border,
+    borderRadius: 14, paddingVertical: 14,
+    borderWidth: 1,
   },
-  correctionCancelText: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: Colors.textSecondary },
+  correctionCancelText: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
   correctionConfirm: {
     flex: 1, alignItems: "center", justifyContent: "center",
-    backgroundColor: Colors.leaf, borderRadius: 14, paddingVertical: 14,
+    borderRadius: 14, paddingVertical: 14,
   },
   correctionConfirmText: { fontSize: 15, fontFamily: "Inter_700Bold", color: "#fff" },
   imageSection: {
-    backgroundColor: Colors.card, borderRadius: 24, padding: 12,
+    borderRadius: 24, padding: 12,
     marginBottom: 16, gap: 8,
   },
   receiptImage: {
     width: "100%", height: 200, borderRadius: 12,
-    backgroundColor: Colors.background,
   },
   imageExpiry: {
     flexDirection: "row", alignItems: "center", gap: 6,
     paddingHorizontal: 4,
   },
   imageExpiryText: {
-    fontSize: 11, fontFamily: "Inter_400Regular", color: Colors.textSecondary,
+    fontSize: 11, fontFamily: "Inter_400Regular",
   },
   receiptIconPending: {
     backgroundColor: "#FEF3C7",
@@ -773,14 +778,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#FEF3C7", borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6,
   },
   pendingBadgeText: {
-    fontSize: 13, fontFamily: "Inter_700Bold", color: Colors.amber,
+    fontSize: 13, fontFamily: "Inter_700Bold",
   },
   pendingInfoRow: {
     flexDirection: "row", alignItems: "center", gap: 6,
-    paddingTop: 10, borderTopWidth: 1, borderTopColor: Colors.border,
+    paddingTop: 10, borderTopWidth: 1,
   },
   pendingInfoText: {
-    fontSize: 12, fontFamily: "Inter_500Medium", color: Colors.amber,
+    fontSize: 12, fontFamily: "Inter_500Medium",
   },
   pendingBanner: {
     backgroundColor: "#FEF3C7", borderRadius: 16, padding: 16,
@@ -801,21 +806,21 @@ const styles = StyleSheet.create({
   },
   verifiedBadge: {
     flexDirection: "row", alignItems: "center", gap: 4,
-    backgroundColor: Colors.primaryLight, borderRadius: 10,
+    borderRadius: 10,
     paddingHorizontal: 8, paddingVertical: 4,
   },
   verifiedBadgeText: {
-    fontSize: 12, fontFamily: "Inter_700Bold", color: Colors.leaf,
+    fontSize: 12, fontFamily: "Inter_700Bold",
   },
   scanAllCta: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: Colors.leaf, borderRadius: 14,
+    borderRadius: 14,
     paddingVertical: 12, paddingHorizontal: 16, marginBottom: 12,
   },
   scanAllCtaText: { fontSize: 14, fontFamily: "Inter_700Bold", color: "#fff" },
   scanItemBtn: {
     flexDirection: "row", alignItems: "center", gap: 5,
-    backgroundColor: Colors.leaf, borderRadius: 10,
+    borderRadius: 10,
     paddingHorizontal: 10, paddingVertical: 7,
   },
   scanItemBtnText: {

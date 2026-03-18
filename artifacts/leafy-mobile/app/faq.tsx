@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Colors from "@/constants/colors";
+import { useTheme } from "@/context/theme";
 
 const FAQ_ITEMS = [
   {
@@ -48,17 +48,20 @@ const FAQ_ITEMS = [
   },
 ];
 
-function FaqItem({ item, index }: { item: typeof FAQ_ITEMS[0]; index: number }) {
+function FaqItem({ item, index, theme }: { item: typeof FAQ_ITEMS[0]; index: number; theme: import("@/constants/theme").ThemeColors }) {
   const [open, setOpen] = useState(false);
   return (
     <Animated.View entering={FadeInDown.delay(index * 40).springify()}>
-      <Pressable style={[styles.item, open && styles.itemOpen]} onPress={() => setOpen(!open)}>
+      <Pressable
+        style={[styles.item, { backgroundColor: theme.card, borderColor: open ? "rgba(46,107,80,0.2)" : theme.border }]}
+        onPress={() => setOpen(!open)}
+      >
         <View style={styles.itemHeader}>
-          <Text style={styles.question}>{item.q}</Text>
-          <Feather name={open ? "chevron-up" : "chevron-down"} size={18} color={Colors.textSecondary} />
+          <Text style={[styles.question, { color: theme.text }]}>{item.q}</Text>
+          <Feather name={open ? "chevron-up" : "chevron-down"} size={18} color={theme.textSecondary} />
         </View>
         {open && (
-          <Text style={styles.answer}>{item.a}</Text>
+          <Text style={[styles.answer, { color: theme.textSecondary }]}>{item.a}</Text>
         )}
       </Pressable>
     </Animated.View>
@@ -68,14 +71,15 @@ function FaqItem({ item, index }: { item: typeof FAQ_ITEMS[0]; index: number }) 
 export default function FaqScreen() {
   const insets = useSafeAreaInsets();
   const topPadding = Platform.OS === "web" ? 67 : insets.top;
+  const { theme } = useTheme();
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.background }]}
       contentContainerStyle={{ paddingBottom: 40 }}
       showsVerticalScrollIndicator={false}
     >
-      <View style={[styles.header, { paddingTop: topPadding + 16 }]}>
+      <View style={[styles.header, { paddingTop: topPadding + 16, backgroundColor: theme.leaf }]}>
         <Pressable style={styles.backBtn} onPress={() => router.back()}>
           <Feather name="arrow-left" size={22} color="#fff" />
         </Pressable>
@@ -84,25 +88,25 @@ export default function FaqScreen() {
       </View>
 
       <View style={styles.content}>
-        <View style={styles.introCard}>
-          <Feather name="help-circle" size={28} color={Colors.leaf} />
-          <Text style={styles.introTitle}>Come possiamo aiutarti?</Text>
-          <Text style={styles.introSub}>
+        <View style={[styles.introCard, { backgroundColor: theme.primaryLight }]}>
+          <Feather name="help-circle" size={28} color={theme.leaf} />
+          <Text style={[styles.introTitle, { color: theme.text }]}>Come possiamo aiutarti?</Text>
+          <Text style={[styles.introSub, { color: theme.textSecondary }]}>
             Trova le risposte alle domande più frequenti su Leafy.
           </Text>
         </View>
 
         <View style={styles.list}>
           {FAQ_ITEMS.map((item, i) => (
-            <FaqItem key={i} item={item} index={i} />
+            <FaqItem key={i} item={item} index={i} theme={theme} />
           ))}
         </View>
 
-        <View style={styles.contactCard}>
-          <Feather name="mail" size={20} color={Colors.leaf} />
+        <View style={[styles.contactCard, { backgroundColor: theme.primaryLight }]}>
+          <Feather name="mail" size={20} color={theme.leaf} />
           <View style={{ flex: 1 }}>
-            <Text style={styles.contactTitle}>Hai altre domande?</Text>
-            <Text style={styles.contactSub}>supporto@leafy.app</Text>
+            <Text style={[styles.contactTitle, { color: theme.text }]}>Hai altre domande?</Text>
+            <Text style={[styles.contactSub, { color: theme.leaf }]}>supporto@leafy.app</Text>
           </View>
         </View>
       </View>
@@ -111,9 +115,8 @@ export default function FaqScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
   header: {
-    backgroundColor: Colors.leaf,
     paddingHorizontal: 20,
     paddingBottom: 24,
     flexDirection: "row",
@@ -137,7 +140,6 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   introCard: {
-    backgroundColor: Colors.primaryLight,
     borderRadius: 20,
     padding: 20,
     alignItems: "center",
@@ -147,13 +149,11 @@ const styles = StyleSheet.create({
   introTitle: {
     fontSize: 18,
     fontFamily: "DMSans_700Bold",
-    color: Colors.text,
     textAlign: "center",
   },
   introSub: {
     fontSize: 14,
     fontFamily: "Inter_400Regular",
-    color: Colors.textSecondary,
     textAlign: "center",
     lineHeight: 20,
   },
@@ -162,14 +162,9 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   item: {
-    backgroundColor: Colors.card,
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  itemOpen: {
-    borderColor: "rgba(46,107,80,0.2)",
   },
   itemHeader: {
     flexDirection: "row",
@@ -180,14 +175,12 @@ const styles = StyleSheet.create({
   question: {
     fontSize: 15,
     fontFamily: "Inter_600SemiBold",
-    color: Colors.text,
     flex: 1,
     lineHeight: 22,
   },
   answer: {
     fontSize: 14,
     fontFamily: "Inter_400Regular",
-    color: Colors.textSecondary,
     lineHeight: 22,
     marginTop: 12,
   },
@@ -195,19 +188,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
-    backgroundColor: Colors.primaryLight,
     borderRadius: 16,
     padding: 16,
   },
   contactTitle: {
     fontSize: 15,
     fontFamily: "Inter_600SemiBold",
-    color: Colors.text,
   },
   contactSub: {
     fontSize: 13,
     fontFamily: "Inter_400Regular",
-    color: Colors.leaf,
     marginTop: 2,
   },
 });

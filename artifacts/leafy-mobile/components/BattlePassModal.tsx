@@ -10,7 +10,7 @@ import {
   View,
 } from "react-native";
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
-import Colors from "@/constants/colors";
+import { useTheme } from "@/context/theme";
 import { useAuth } from "@/context/auth";
 
 interface BattlePassModalProps {
@@ -20,6 +20,7 @@ interface BattlePassModalProps {
 
 export default function BattlePassModal({ visible, onClose }: BattlePassModalProps) {
   const { activateBattlePass, hasBattlePass } = useAuth();
+  const { theme, mode } = useTheme();
   const [loading, setLoading] = useState(false);
   const [activated, setActivated] = useState(false);
 
@@ -44,9 +45,9 @@ export default function BattlePassModal({ visible, onClose }: BattlePassModalPro
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.overlay} onPress={onClose}>
-        <Pressable style={styles.card} onPress={() => {}}>
+        <Pressable style={[styles.card, { backgroundColor: theme.modalBackground }]} onPress={() => {}}>
           <LinearGradient
-            colors={["#0f2a1e", "#1a4a2e", "#0f2a1e"]}
+            colors={mode === "dark" ? ["#0f2a1e", "#1a4a2e", "#0f2a1e"] : ["#1E3328", "#2E6B50", "#1E3328"]}
             style={StyleSheet.absoluteFill}
           />
 
