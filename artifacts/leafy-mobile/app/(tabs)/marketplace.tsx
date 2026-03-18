@@ -68,6 +68,31 @@ export default function WalletScreen() {
 
             <Text style={[styles.balanceEuro, { color: theme.textSecondary }]}>≈ {formattedEuro} €</Text>
 
+            <View style={styles.actionRow}>
+              <Pressable style={styles.actionBtn} onPress={() => {}}>
+                <View style={[styles.actionCircle, { backgroundColor: theme.primary }]}>
+                  <Feather name="arrow-down" size={20} color="#fff" />
+                </View>
+                <Text style={[styles.actionLabel, { color: theme.primary }]}>Ricevi</Text>
+              </Pressable>
+
+              <Pressable
+                style={styles.actionBtn}
+                onPress={() => {
+                  if (hasBattlePass) {
+                    console.log("Prelievo avviato");
+                  } else {
+                    setShowBattlePass(true);
+                  }
+                }}
+              >
+                <View style={[styles.actionCircle, { backgroundColor: hasBattlePass ? theme.primary : theme.textSecondary }]}>
+                  <Feather name="arrow-up" size={20} color="#fff" />
+                </View>
+                <Text style={[styles.actionLabel, { color: hasBattlePass ? theme.primary : theme.textSecondary }]}>Ritira</Text>
+              </Pressable>
+            </View>
+
             {hasBattlePass && (
               <View style={styles.bpActiveBadge}>
                 <Feather name="star" size={12} color="#1a4a2e" />
@@ -203,6 +228,28 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     marginTop: 2,
   },
+  actionRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 20,
+    marginBottom: 4,
+  },
+  actionBtn: {
+    alignItems: "center",
+    gap: 6,
+  },
+  actionCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  actionLabel: {
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+  },
+
   bpActiveBadge: {
     flexDirection: "row",
     alignItems: "center",
