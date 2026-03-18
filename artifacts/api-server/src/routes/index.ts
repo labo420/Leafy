@@ -10,6 +10,7 @@ import leaderboardRouter from "./leaderboard";
 import productsRouter from "./products";
 import adminRouter from "./admin";
 import badgesRouter from "./badges";
+import walletRouter from "./wallet";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use(challengesRouter);
 router.use(leaderboardRouter);
 router.use(productsRouter);
 router.use(adminRouter);
+router.use(walletRouter);
 
 export default router;
