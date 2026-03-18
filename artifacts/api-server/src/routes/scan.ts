@@ -663,15 +663,11 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
     contextImageBase64.length <= MAX_IMAGE_B64_LEN &&
     BASE64_RE.test(contextImageBase64.slice(0, 64));
 
-  if (trustLevel === "strict" && !hasImage) {
-    // Strict users must provide a context frame captured by the mobile app.
-    // Absence of the image on a strict account indicates a scripted/non-app call.
-    console.log(JSON.stringify({ event: "env_check", outcome: "blocked_no_image", userId: user.id, trustLevel }));
-    res.status(400).json({ error: "Impossibile convalidare questa scansione. Assicurati di usare l'app aggiornata." });
-    return;
-  }
-
-  if (hasImage) {
+  if (!hasImage) {
+    // No valid context frame provided — fail open silently (captures may fail on older clients
+    // or manual-entry flows; other anti-fraud layers still protect).
+    console.log(JSON.stringify({ event: "env_check", outcome: "no_image_skipped", userId: user.id, trustLevel }));
+  } else {
     const shouldCheck =
       trustLevel === "strict" ||
       (trustLevel === "moderate" && Math.random() < 0.3);
@@ -692,9 +688,6 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
         console.log(JSON.stringify({ event: "env_check", outcome: "ai_error_fail_open", userId: user.id, trustLevel, error: String(err) }));
       }
     }
-  } else {
-    // trusted or moderate without image — no check needed
-    console.log(JSON.stringify({ event: "env_check", outcome: "no_image_skipped", userId: user.id, trustLevel }));
   }
 
   const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
