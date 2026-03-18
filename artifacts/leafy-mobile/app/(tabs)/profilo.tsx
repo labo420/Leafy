@@ -653,7 +653,7 @@ export default function ProfiloScreen() {
         </View>
         <Text style={[styles.username, { color: theme.text }]}>{username}</Text>
         <View style={[styles.levelPill, { backgroundColor: theme.cardAlt }]}>
-          <Feather name="leaf" size={14} color={theme.leaf} />
+          <MaterialCommunityIcons name="leaf" size={14} color={theme.leaf} />
           <Text style={[styles.levelPillText, { color: theme.text }]}>Livello {level}</Text>
         </View>
       </Animated.View>
