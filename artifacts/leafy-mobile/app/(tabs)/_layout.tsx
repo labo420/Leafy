@@ -4,6 +4,7 @@ import { Feather, Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
+import { StatusBar } from "expo-status-bar";
 import Animated, {
   useAnimatedStyle,
   withSpring,
@@ -52,12 +53,11 @@ function FloatingScanButton({ focused }: { focused: boolean }) {
 
 function BalanceBar() {
   const { user, xp, leaBalance } = useAuth();
-  const insets = useSafeAreaInsets();
 
   if (!user) return null;
 
   return (
-    <View style={[styles.balanceBar, { paddingTop: insets.top + 4 }]}>
+    <View style={[styles.balanceBar, { paddingTop: 4 }]}>
       <View style={styles.balanceInner}>
         <View style={styles.balanceChip}>
           <Ionicons name="leaf" size={12} color="rgba(255,255,255,0.7)" />
@@ -84,7 +84,10 @@ export default function TabLayout() {
 
   return (
     <View style={{ flex: 1 }}>
-      <BalanceBar />
+      <StatusBar style="light" />
+      <View style={{ backgroundColor: user ? "#2E6B50" : undefined, paddingTop: insets.top }}>
+        <BalanceBar />
+      </View>
     <Tabs
       screenOptions={{
         headerShown: false,

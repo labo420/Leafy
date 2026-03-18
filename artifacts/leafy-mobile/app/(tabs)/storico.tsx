@@ -562,7 +562,7 @@ export default function StoricoScreen() {
     setRefreshing(false);
   }, [queryClient]);
 
-  const topPadding = Platform.OS === "web" ? 67 : insets.top;
+  const topPadding = Platform.OS === "web" ? 67 : 0;
   const bottomPad = Platform.OS === "web" ? 34 + 84 : 100 + insets.bottom;
 
   const { data: receipts, isLoading } = useQuery<Receipt[]>({

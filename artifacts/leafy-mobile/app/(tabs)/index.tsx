@@ -394,7 +394,7 @@ function GuestAuthScreen() {
   );
 
   return (
-    <View style={[authStyles.screen, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+    <View style={[authStyles.screen, { paddingTop: 0, paddingBottom: insets.bottom }]}>
       <View style={authStyles.decoCircle1} />
       <View style={authStyles.decoCircle2} />
 
@@ -518,7 +518,7 @@ export default function HomeScreen() {
     router.push("/(tabs)/scan");
   };
 
-  const topPadding = Platform.OS === "web" ? 67 : insets.top;
+  const topPadding = Platform.OS === "web" ? 67 : 0;
   const bottomPad = Platform.OS === "web" ? 34 + 84 : 100 + insets.bottom;
 
   if (!user) {

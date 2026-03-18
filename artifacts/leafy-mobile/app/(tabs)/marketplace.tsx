@@ -74,7 +74,7 @@ export default function WalletScreen() {
     setRefreshing(false);
   }, [refreshBalances, queryClient]);
 
-  const topPadding = Platform.OS === "web" ? 67 : insets.top;
+  const topPadding = Platform.OS === "web" ? 67 : 0;
   const bottomPad = Platform.OS === "web" ? 34 + 84 : 100 + insets.bottom;
 
   const leaAmount = parseFloat(leaInput.replace(",", ".")) || 0;
