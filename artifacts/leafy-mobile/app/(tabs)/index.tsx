@@ -9,13 +9,11 @@ import {
   ActivityIndicator,
   Dimensions,
   Image,
-  ImageSourcePropType,
   KeyboardAvoidingView,
   LayoutAnimation,
   Platform,
   Pressable,
   RefreshControl,
-  TouchableOpacity,
   ScrollView,
   StyleSheet,
   Text,
@@ -24,14 +22,12 @@ import {
   View,
 } from "react-native";
 import Animated, {
-  useAnimatedProps,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-  withTiming,
   FadeInDown,
 } from "react-native-reanimated";
-import Svg, { Circle, Path, Defs, ClipPath, Rect, LinearGradient as SvgLinearGradient, Stop } from "react-native-svg";
+import Svg, { Circle, Path } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 
@@ -40,8 +36,6 @@ import { Fonts } from "@/constants/typography";
 import { useAuth } from "@/context/auth";
 import { apiFetch } from "@/lib/api";
 import type { Profile } from "@workspace/api-client-react";
-
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 const LEVEL_LABELS: Record<string, string> = {
   Germoglio: "Germoglio",
@@ -59,238 +53,6 @@ const LEVEL_CONFIG = [
   { name: "Foresta", emoji: "🌲", minPts: 25000, color: "#1B5E20", fruitColor: "#E74C3C", nodeSize: 78, imgSize: 78 },
 ];
 
-const SEGMENT_COLORS = [
-  "#AADF2A",
-  "#FFD600",
-  "#FF6D00",
-  "#F53B3B",
-];
-
-const LEVEL_BADGE_IMAGES: Record<string, ImageSourcePropType> = {
-  Germoglio: require("@/assets/badges/level-germoglio.png"),
-  Ramoscello: require("@/assets/badges/level-ramoscello.png"),
-  Arbusto: require("@/assets/badges/level-arbusto.png"),
-  Albero: require("@/assets/badges/level-albero.png"),
-  Foresta: require("@/assets/badges/level-foresta.png"),
-};
-
-const BAR_PADDING_H = 16;
-const LABEL_HEIGHT = 16;
-const BAR_TOP_FACTOR = 1.6;
-const BAR_EXTRA = 10;
-const MAX_RADIUS = Math.max(...LEVEL_CONFIG.map(l => l.nodeSize / 2));
-const BASELINE_Y = MAX_RADIUS * 2;
-const BAR_TOTAL_H = BASELINE_Y + LABEL_HEIGHT + 10;
-
-function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; points: number }) {
-  const [expandedBadge, setExpandedBadge] = useState<number | null>(null);
-  const currentIdx = LEVEL_CONFIG.findIndex((l) => l.name === currentLevel);
-  const safeIdx = currentIdx >= 0 ? currentIdx : 0;
-  const screenW = Dimensions.get("window").width;
-  const barWidth = screenW - BAR_PADDING_H * 2;
-
-  const r0 = LEVEL_CONFIG[0].nodeSize / 2;
-  const rLast = LEVEL_CONFIG[LEVEL_CONFIG.length - 1].nodeSize / 2;
-
-  const nodes = LEVEL_CONFIG.map((lvl, i) => {
-    const r = lvl.nodeSize / 2;
-    const cx = r0 + (barWidth - r0 - rLast) * i / (LEVEL_CONFIG.length - 1);
-    const cy = BASELINE_Y - r;
-    return { cx, cy, r, lvl };
-  });
-
-  const xStart = -BAR_EXTRA;
-  const xEnd = barWidth + BAR_EXTRA;
-  const topYStart = BASELINE_Y - nodes[0].r * BAR_TOP_FACTOR;
-  const topYEnd = BASELINE_Y - nodes[nodes.length - 1].r * BAR_TOP_FACTOR;
-  const bWidth = xEnd - xStart;
-  const cp1x = xStart + bWidth * 0.80;
-  const cp2x = xEnd - bWidth * 0.05;
-  const fullBarPath = `M ${xStart},${topYStart} C ${cp1x},${topYStart} ${cp2x},${topYEnd} ${xEnd},${topYEnd} L ${xEnd},${BASELINE_Y} L ${xStart},${BASELINE_Y} Z`;
-  const topCurvePath = `M ${xStart},${topYStart} C ${cp1x},${topYStart} ${cp2x},${topYEnd} ${xEnd},${topYEnd}`;
-
-  const isMaxLevel = safeIdx >= LEVEL_CONFIG.length - 1;
-  let fillPct = 0;
-  let progressX = xStart;
-  if (isMaxLevel) {
-    fillPct = 1;
-    progressX = xEnd;
-  } else {
-    const curr = LEVEL_CONFIG[safeIdx];
-    const next = LEVEL_CONFIG[safeIdx + 1];
-    const range = next.minPts - curr.minPts;
-    fillPct = Math.min(1, Math.max(0, (points - curr.minPts) / range));
-    progressX = nodes[safeIdx].cx + (nodes[safeIdx + 1].cx - nodes[safeIdx].cx) * fillPct;
-  }
-  const pointsRemaining = isMaxLevel ? 0 : Math.max(0, LEVEL_CONFIG[safeIdx + 1].minPts - points);
-
-  const gradientStops = [
-    { offset: "0%", color: SEGMENT_COLORS[0] },
-    { offset: `${(nodes[1].cx / barWidth) * 100}%`, color: SEGMENT_COLORS[1] },
-    { offset: `${(nodes[2].cx / barWidth) * 100}%`, color: SEGMENT_COLORS[2] },
-    { offset: `${(nodes[3].cx / barWidth) * 100}%`, color: SEGMENT_COLORS[3] },
-    { offset: "100%", color: SEGMENT_COLORS[3] },
-  ];
-
-  return (
-    <View style={milestoneStyles.container}>
-      <View style={{ width: barWidth, height: BAR_TOTAL_H, position: "relative", overflow: "visible", elevation: 0, zIndex: 0 }}>
-        <Svg width={barWidth + BAR_EXTRA * 2} height={BAR_TOTAL_H} style={{ position: "absolute", top: 0, left: -BAR_EXTRA }}>
-          <Defs>
-            <SvgLinearGradient id="barGrad" x1={0} y1={0} x2={barWidth} y2={0} gradientUnits="userSpaceOnUse">
-              {gradientStops.map((s, i) => (
-                <Stop key={i} offset={s.offset} stopColor={s.color} />
-              ))}
-            </SvgLinearGradient>
-            <ClipPath id="progressClip">
-              <Rect x={xStart} y={0} width={progressX - xStart} height={BAR_TOTAL_H} />
-            </ClipPath>
-          </Defs>
-          <Path d={fullBarPath} fill="rgba(255,255,255,0.28)" />
-          <Path d={fullBarPath} fill="url(#barGrad)" clipPath="url(#progressClip)" />
-          {progressX > nodes[0].cx && safeIdx < LEVEL_CONFIG.length - 1 && (
-            <Circle cx={progressX} cy={BASELINE_Y} r={5} fill="rgba(255,255,255,0.85)" />
-          )}
-        </Svg>
-      </View>
-
-      <View style={{ position: "absolute", top: 4, left: BAR_PADDING_H, width: barWidth, height: BAR_TOTAL_H, zIndex: 100, overflow: "visible", elevation: 50 }}>
-        {nodes.map(({ cx, cy, r, lvl }, i) => {
-          const reached = safeIdx >= i;
-          const isCurrent = i === safeIdx;
-          const isLast = i === LEVEL_CONFIG.length - 1;
-          const sz = lvl.nodeSize;
-          const segColor = SEGMENT_COLORS[Math.min(i, SEGMENT_COLORS.length - 1)];
-          const labelW = 80;
-          const rawLeft = cx - labelW / 2;
-          const clampedLeft = Math.max(0, Math.min(rawLeft, barWidth - labelW));
-          const chevronH = isCurrent ? 10 : 0;
-          const ringGap = 4;
-          const ringR = sz / 2 + ringGap;
-          const ringSize = sz + ringGap * 2;
-          const circumference = 2 * Math.PI * ringR;
-
-          const toggleExpand = () => {
-            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-            setExpandedBadge(expandedBadge === i ? null : i);
-          };
-
-          return (
-            <TouchableOpacity key={i} onPress={toggleExpand} activeOpacity={0.7} style={{ position: "absolute", left: clampedLeft, top: cy - r - chevronH, width: labelW, alignItems: "center" }}>
-              {isCurrent && (
-                <Svg width={10} height={6} style={{ marginBottom: 4 }}>
-                  <Path d="M 0,0 L 5,6 L 10,0 Z" fill="white" />
-                </Svg>
-              )}
-
-              <View style={{ position: "relative", width: ringSize, height: ringSize, alignItems: "center", justifyContent: "center" }}>
-                <View
-                  style={{
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: reached ? 7 : 2 },
-                    shadowOpacity: reached ? 0.72 : 0.15,
-                    shadowRadius: reached ? 14 : 3,
-                    elevation: reached ? 20 : 3,
-                  }}
-                >
-                  <Image
-                    source={LEVEL_BADGE_IMAGES[lvl.name]}
-                    style={{ width: sz, height: sz, opacity: reached ? 1 : 0.55 }}
-                    resizeMode="contain"
-                  />
-                </View>
-
-                {(isCurrent && !isLast) && (
-                  <Svg width={ringSize} height={ringSize} overflow="visible" style={{ position: "absolute", top: 0, left: 0 }}>
-                    <Circle cx={ringSize / 2} cy={ringSize / 2} r={ringR} stroke="rgba(255,255,255,0.15)" strokeWidth={3} fill="none" />
-                    <Circle
-                      cx={ringSize / 2} cy={ringSize / 2} r={ringR}
-                      stroke={segColor} strokeWidth={3} fill="none"
-                      strokeDasharray={`${circumference}`}
-                      strokeDashoffset={`${circumference * (1 - fillPct)}`}
-                      strokeLinecap="round"
-                      transform={`rotate(-90, ${ringSize / 2}, ${ringSize / 2})`}
-                    />
-                  </Svg>
-                )}
-                {!reached && (
-                  <Svg width={ringSize} height={ringSize} overflow="visible" style={{ position: "absolute", top: 0, left: 0 }}>
-                    <Circle
-                      cx={ringSize / 2} cy={ringSize / 2} r={ringR}
-                      stroke="rgba(255,255,255,0.25)"
-                      strokeWidth={1.5}
-                      strokeDasharray="4 4"
-                      fill="none"
-                    />
-                  </Svg>
-                )}
-                {reached && !isCurrent && (
-                  <Svg width={ringSize} height={ringSize} overflow="visible" style={{ position: "absolute", top: 0, left: 0 }}>
-                    <Circle
-                      cx={ringSize / 2} cy={ringSize / 2} r={ringR}
-                      stroke={segColor}
-                      strokeWidth={2}
-                      fill="none"
-                    />
-                  </Svg>
-                )}
-
-                {!reached && (
-                  <Feather name="lock" size={Math.round(sz * 0.45)} color="rgba(255,255,255,0.7)" style={{ position: "absolute" }} />
-                )}
-              </View>
-
-              <View style={{ width: sz * 0.8, height: 5, borderRadius: 3, backgroundColor: reached ? segColor : "rgba(255,255,255,0.18)", marginTop: 2 }} />
-
-              <Text style={{ fontSize: 8, fontFamily: "Inter_500Medium", color: reached ? "#fff" : "rgba(255,255,255,0.45)", marginTop: 2 }} numberOfLines={1}>
-                {lvl.minPts.toLocaleString("it-IT")} xp
-              </Text>
-
-              {isCurrent && !isLast && (
-                <Text style={{ fontSize: 7, fontFamily: "Inter_500Medium", color: segColor, marginTop: 1 }} numberOfLines={1}>
-                  – {pointsRemaining.toLocaleString("it-IT")} xp
-                </Text>
-              )}
-
-              <Text
-                style={[milestoneStyles.nodeLabel, reached && { color: "#fff" }]}
-                numberOfLines={1}
-              >
-                {lvl.name}
-              </Text>
-
-              {expandedBadge === i && (
-                <View style={{ backgroundColor: "rgba(0,0,0,0.7)", borderRadius: 8, padding: 8, marginTop: 4, width: labelW }}>
-                  <Text style={{ color: "#fff", fontFamily: "Inter_700Bold", fontSize: 11, textAlign: "center" }}>{lvl.name}</Text>
-                  <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 9, textAlign: "center", marginTop: 2 }}>{lvl.minPts.toLocaleString("it-IT")} xp</Text>
-                  <Text style={{ color: reached ? "#AADF2A" : "rgba(255,255,255,0.5)", fontSize: 9, textAlign: "center", marginTop: 2, fontFamily: "Inter_500Medium" }}>
-                    {reached ? "✓ Sbloccato" : `Mancano ${Math.max(0, lvl.minPts - points).toLocaleString("it-IT")} xp`}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-    </View>
-  );
-}
-
-const milestoneStyles = StyleSheet.create({
-  container: {
-    paddingHorizontal: BAR_PADDING_H,
-    paddingTop: 4,
-    paddingBottom: 4,
-    overflow: "visible",
-  },
-  nodeLabel: {
-    fontSize: 9,
-    fontFamily: "Inter_500Medium",
-    color: "rgba(255,255,255,0.4)",
-    textAlign: "center",
-    marginTop: 2,
-  },
-});
 
 const MOTIVATIONAL_MESSAGES = [
   (name: string) => `Oggi sei già un passo avanti, ${name}!`,
@@ -302,90 +64,143 @@ const MOTIVATIONAL_MESSAGES = [
   () => `Ogni scelta conta. La tua fa la differenza!`,
 ];
 
-const RING_SIZE = 220;
-const RING_STROKE = 14;
+const RING_SIZE = 240;
+const RING_STROKE = 16;
 const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2;
-const RING_CIRCUMFERENCE = RING_RADIUS * 2 * Math.PI;
+const RING_CX = RING_SIZE / 2;
+const RING_CY = RING_SIZE / 2;
+const N_SEGS = 60;
+
+const SWEEP_STOPS: { t: number; r: number; g: number; b: number }[] = [
+  { t: 0,    r: 170, g: 223, b: 42  },
+  { t: 0.33, r: 255, g: 214, b: 0   },
+  { t: 0.67, r: 255, g: 107, b: 0   },
+  { t: 1,    r: 245, g: 59,  b: 59  },
+];
+
+function sweepColor(t: number): string {
+  t = Math.max(0, Math.min(1, t));
+  let lo = SWEEP_STOPS[0];
+  let hi = SWEEP_STOPS[SWEEP_STOPS.length - 1];
+  for (let i = 0; i < SWEEP_STOPS.length - 1; i++) {
+    if (t <= SWEEP_STOPS[i + 1].t) {
+      lo = SWEEP_STOPS[i];
+      hi = SWEEP_STOPS[i + 1];
+      break;
+    }
+  }
+  const f = hi.t > lo.t ? (t - lo.t) / (hi.t - lo.t) : 0;
+  return `rgb(${Math.round(lo.r + f * (hi.r - lo.r))},${Math.round(lo.g + f * (hi.g - lo.g))},${Math.round(lo.b + f * (hi.b - lo.b))})`;
+}
+
+function arcSegPath(a1: number, a2: number): string {
+  const x1 = (RING_CX + RING_RADIUS * Math.cos(a1)).toFixed(3);
+  const y1 = (RING_CY + RING_RADIUS * Math.sin(a1)).toFixed(3);
+  const x2 = (RING_CX + RING_RADIUS * Math.cos(a2)).toFixed(3);
+  const y2 = (RING_CY + RING_RADIUS * Math.sin(a2)).toFixed(3);
+  return `M ${x1} ${y1} A ${RING_RADIUS} ${RING_RADIUS} 0 0 1 ${x2} ${y2}`;
+}
+
+const LEVEL_MCI_ICONS: Record<string, React.ComponentProps<typeof MaterialCommunityIcons>["name"]> = {
+  Germoglio: "sprout",
+  Ramoscello: "leaf",
+  Arbusto: "leaf-maple",
+  Albero: "tree",
+  Foresta: "forest",
+};
 
 function LevelProgressRing({
   progress,
   level,
   points,
-  heroMode = false,
 }: {
   progress: number;
   level: string;
   points: number;
-  heroMode?: boolean;
 }) {
-  const animatedProgress = useSharedValue(0);
   const scale = useSharedValue(0.82);
 
   useEffect(() => {
-    animatedProgress.value = withTiming(progress, { duration: 1600 });
     scale.value = withSpring(1, { damping: 14, stiffness: 90 });
   }, [progress]);
-
-  const animatedProps = useAnimatedProps(() => {
-    const offset = RING_CIRCUMFERENCE - (animatedProgress.value / 100) * RING_CIRCUMFERENCE;
-    return { strokeDashoffset: offset };
-  });
 
   const containerAnimStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
-  const trackColor = heroMode ? "rgba(255,255,255,0.22)" : Colors.border;
-  const fillColor = heroMode ? "#ffffff" : Colors.leaf;
-  const labelColor = heroMode ? "rgba(255,255,255,0.7)" : Colors.textSecondary;
-  const valueColor = heroMode ? "#ffffff" : Colors.leaf;
+  const currentIdx = LEVEL_CONFIG.findIndex(l => l.name === level);
+  const safeIdx = currentIdx >= 0 ? currentIdx : 0;
+  const isMaxLevel = safeIdx >= LEVEL_CONFIG.length - 1;
+  const nextLevel = isMaxLevel ? null : LEVEL_CONFIG[safeIdx + 1];
+  const pointsRemaining = isMaxLevel ? 0 : Math.max(0, nextLevel!.minPts - points);
+  const targetPts = isMaxLevel ? LEVEL_CONFIG[safeIdx].minPts : nextLevel!.minPts;
+
+  const totalAngle = (progress / 100) * 2 * Math.PI;
+  const segAngle = N_SEGS > 0 ? totalAngle / N_SEGS : 0;
+
+  const endCapX = RING_CX + RING_RADIUS * Math.cos(totalAngle);
+  const endCapY = RING_CY + RING_RADIUS * Math.sin(totalAngle);
+
+  const levelIcon = LEVEL_MCI_ICONS[level] ?? "sprout";
 
   return (
-    <Animated.View style={[ringStyles.container, containerAnimStyle]}>
-      <Svg
-        width={RING_SIZE}
-        height={RING_SIZE}
-        style={{ transform: [{ rotate: "-90deg" }] }}
-      >
-        <Circle
-          cx={RING_SIZE / 2}
-          cy={RING_SIZE / 2}
-          r={RING_RADIUS}
-          stroke={trackColor}
-          strokeWidth={RING_STROKE}
-          fill="transparent"
-        />
-        <AnimatedCircle
-          cx={RING_SIZE / 2}
-          cy={RING_SIZE / 2}
-          r={RING_RADIUS}
-          stroke={fillColor}
-          strokeWidth={RING_STROKE}
-          fill="transparent"
-          strokeDasharray={RING_CIRCUMFERENCE}
-          animatedProps={animatedProps}
-          strokeLinecap="round"
-        />
-      </Svg>
-      <View style={ringStyles.innerContent}>
-        <Text style={[ringStyles.levelLabel, { color: labelColor }]}>
-          {(LEVEL_LABELS[level] ?? level).toUpperCase()}
-        </Text>
-        <Image
-          source={LEVEL_BADGE_IMAGES[level] ?? LEVEL_BADGE_IMAGES.Germoglio}
-          style={{ width: 64, height: 64, marginVertical: 4 }}
-          resizeMode="contain"
-        />
-        <Text style={[ringStyles.pointsValue, { color: valueColor }]}>
-          {new Intl.NumberFormat("it-IT").format(points)}
-        </Text>
-        <Text style={[ringStyles.pointsLabel, { color: labelColor }]}>XP</Text>
+    <Animated.View style={[ringStyles.outerContainer, containerAnimStyle]}>
+      <View style={ringStyles.container}>
+        <Svg width={RING_SIZE} height={RING_SIZE} style={{ transform: [{ rotate: "-90deg" }] }}>
+          <Circle
+            cx={RING_CX}
+            cy={RING_CY}
+            r={RING_RADIUS}
+            stroke="rgba(255,255,255,0.15)"
+            strokeWidth={RING_STROKE}
+            fill="none"
+          />
+          {progress > 0 && Array.from({ length: N_SEGS }, (_, i) => {
+            const a1 = i * segAngle;
+            const a2 = (i + 1) * segAngle;
+            const t = (i + 0.5) / N_SEGS;
+            return (
+              <Path
+                key={i}
+                d={arcSegPath(a1, a2)}
+                stroke={sweepColor(t)}
+                strokeWidth={RING_STROKE}
+                fill="none"
+                strokeLinecap="butt"
+              />
+            );
+          })}
+          {progress > 0 && progress < 100 && (
+            <Circle
+              cx={endCapX}
+              cy={endCapY}
+              r={RING_STROKE / 2}
+              fill={sweepColor(1)}
+            />
+          )}
+        </Svg>
+        <View style={ringStyles.innerContent}>
+          <MaterialCommunityIcons name={levelIcon} size={34} color="rgba(255,255,255,0.95)" />
+          <Text style={ringStyles.levelName}>{LEVEL_LABELS[level] ?? level}</Text>
+          <Text style={ringStyles.xpProgress}>
+            {new Intl.NumberFormat("it-IT").format(points)} / {new Intl.NumberFormat("it-IT").format(targetPts)} XP
+          </Text>
+        </View>
       </View>
+      <Text style={ringStyles.nextLevelText} numberOfLines={3}>
+        {isMaxLevel
+          ? "Hai raggiunto il massimo livello!"
+          : `Ti mancano solo ${new Intl.NumberFormat("it-IT").format(pointsRemaining)} XP per sbloccare ${nextLevel!.name} e ottenere i nuovi vantaggi.`}
+      </Text>
     </Animated.View>
   );
 }
 
 const ringStyles = StyleSheet.create({
+  outerContainer: {
+    alignItems: "center",
+    paddingBottom: 4,
+  },
   container: {
     width: RING_SIZE,
     height: RING_SIZE,
@@ -396,25 +211,29 @@ const ringStyles = StyleSheet.create({
     position: "absolute",
     alignItems: "center",
     justifyContent: "center",
+    gap: 4,
   },
-  levelLabel: {
-    fontSize: 12,
+  levelName: {
+    fontSize: 15,
     fontFamily: "DMSans_600SemiBold",
-    color: Colors.textSecondary,
-    letterSpacing: 1.5,
-    marginBottom: 4,
-  },
-  pointsValue: {
-    fontSize: 34,
-    fontFamily: "DMSans_700Bold",
-    color: Colors.leaf,
-    letterSpacing: -1,
-  },
-  pointsLabel: {
-    fontSize: 11,
-    fontFamily: "Inter_500Medium",
-    color: Colors.textSecondary,
+    color: "rgba(255,255,255,0.88)",
+    letterSpacing: 0.4,
     marginTop: 2,
+  },
+  xpProgress: {
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+    color: "rgba(255,255,255,0.55)",
+    letterSpacing: 0.2,
+  },
+  nextLevelText: {
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+    color: "rgba(255,255,255,0.7)",
+    textAlign: "center",
+    lineHeight: 19,
+    paddingHorizontal: 28,
+    marginTop: 8,
   },
 });
 
@@ -781,10 +600,7 @@ export default function HomeScreen() {
             progress={levelProgress}
             level={level}
             points={points}
-            heroMode
           />
-
-          <LevelMilestoneBar currentLevel={level} points={points} />
         </Animated.View>
       </LinearGradient>
 
@@ -1000,32 +816,6 @@ const styles = StyleSheet.create({
   progressSection: {
     alignItems: "center",
     paddingVertical: 8,
-  },
-  progressBarSection: {
-    width: "100%",
-    maxWidth: 280,
-    marginTop: 20,
-  },
-  progressBarLabels: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  progressBarLabelHero: {
-    fontSize: 12,
-    fontFamily: "Inter_500Medium",
-    color: "rgba(255,255,255,0.7)",
-  },
-  progressBarTrackHero: {
-    height: 8,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    borderRadius: 4,
-    overflow: "hidden",
-  },
-  progressBarFillHero: {
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#ffffff",
   },
 
   streakCard: {
