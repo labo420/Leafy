@@ -4,7 +4,7 @@
 
 Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti scansionano scontrini come prova d'acquisto, poi inquadrano i codici a barre dei prodotti per guadagnare punti basati sull'**Eco-Score** di Open Food Facts. Salgono di livello (🌱 Germoglio → 🌿 Ramoscello → 🍃 Arbusto → 🌳 Albero → 🌲 Foresta), completano sfide mensili e riscattano voucher nel marketplace.
 
-**Stato attuale**: App Expo React Native funzionante (SDK 54) + backend Express/PostgreSQL + admin panel web + frontend web con sistema badge a due livelli (lifetime + temporali) + whitelist 51 supermercati italiani con validazione AI di catena e provincia. **Economia duale XP + $LEA**: ogni azione assegna XP (esperienza, usati per livelli e progressione) e $LEA (cashback monetario, 1 XP = 0.01€). I campi `xp` e `lea_balance` sono su `usersTable`; `totalPoints` mantenuto per retrocompatibilità. Config rate in `economy.ts`. Catena barcode multiAPI (OFF + Nutritionix + USDA + GS1 brand hints). Inserimento manuale prodotti con apprendimento AI. Sistema livelli a 5 stadi naturali (Germoglio→Foresta) con badge 3D, milestone bar e celebrazione level-up animata. Sessione utente persistente via AsyncStorage (l'utente rimane loggato anche dopo chiusura/aggiornamento app). **Branding**: logo e icona in due varianti — light (white bg, green text) e dark (dark green bg, white text). 
+**Stato attuale**: App Expo React Native funzionante (SDK 54) + backend Express/PostgreSQL + admin panel web + frontend web con sistema badge a due livelli (lifetime + temporali) + whitelist 51 supermercati italiani con validazione AI di catena e provincia. **Economia duale XP + $LEA**: ogni azione assegna XP (esperienza, usati per livelli e progressione) e $LEA (cashback monetario, 1 XP = 0.01€). I campi `xp` e `lea_balance` sono su `usersTable`; `totalPoints` mantenuto per retrocompatibilità. Config rate in `economy.ts`. Catena barcode multiAPI (OFF + Nutritionix + USDA + GS1 brand hints). Inserimento manuale prodotti con apprendimento AI. Sistema livelli a 5 stadi naturali (Germoglio→Foresta) con badge 3D, milestone bar e celebrazione level-up animata. **Login persistente tra sessioni Expo Go** (iOS + Android) tramite Bearer token salvato in AsyncStorage — nessun re-login alla riapertura dell'app. **Branding**: logo e icona in due varianti — light (white bg, green text) e dark (dark green bg, white text). 
 - **Icone app**: `leafy-icon-final.png` (light) e `leafy-icon-dark-variant.png` (dark — verde scuro su trasparente)
 - **Logo completo**: `leafy-logo-final.png` (light) e `leafy-logo-full-dark-variant.png` (dark — testo bianco su fondo verde scuro)
 - App icon mobile (`artifacts/leafy-mobile/assets/images/icon.png`) attualmente usa la variante dark.
@@ -27,6 +27,12 @@ Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti 
 - **Emoji prodotti unificata** (`constants/emojis.ts`): funzione `getProductEmoji(name, category?, aiEmoji?)` con priorità aiEmoji → keyword sul nome → keyword sulla categoria → 🛒 default. Usata coerentemente in scan.tsx e storico.tsx.
 - **Storico**: sezioni rinominate da "Prodotti accettati"/"Altri prodotti" a "Prodotti idonei"/"Prodotti non idonei". Aggiunto CTA "Scansiona prodotti mancanti (N)" quando lo scontrino è in pending e ci sono prodotti non ancora verificati. Apertura automatica del dettaglio scontrino tramite param di navigazione `openReceiptId`.
 - **Cancellazione scontrino** (`DELETE /api/receipts/:id`): lo scontrino viene marcato `cancelled` (non cancellato fisicamente), filtrato da GET /receipts, escluso dai controlli duplicati. Pulsante "Cancella scontrino" rosso con dialog di conferma nello storico.
+- **LevelProgressRing** (`components/LevelProgressRing.tsx`): anello circolare di progressione livello. 60 segmenti SVG `<Path>` con sweep gradient (dal verde `#2E6B50` all'amber `#F4A462`), interpolazione `sweepColor` per transizione di colore fluida. Icone livello `LEVEL_MCI_ICONS` (`MaterialCommunityIcons`). Testo motivazionale dinamico basato sul livello successivo. Ring completamente theme-aware: `trackColor`, `iconColor`, `nameColor`, `xpSubColor`, `nextLvlColor` derivati da `useTheme()`.
+- **Hero Home theme-aware** (`app/(tabs)/index.tsx`): gradiente hero `LinearGradient` mode-aware — light: `["#F2F9F5","#E3F2EA"]` (sage white), dark: `["#142A20","#0D1F16"]` (premium deep forest). Testo, badge XP/LEA, cerchio avatar: stile inline basato su `mode`. Cerchi decorativi: `rgba(46,107,80,…)` su light, `rgba(255,255,255,…)` su dark.
+- **Profilo header theme-aware** (`app/(tabs)/profilo.tsx`): `backgroundColor`, cerchi decorativi, `headerTitle`, icona settings — tutti mode-aware (light: `#F2F9F5`, dark: `Colors.leaf`).
+- **XP Animation al risultato scan** (`app/(tabs)/scan.tsx`): quando compare il risultato scontrino — (1) il numero XP parte da 0 e conta fino al valore reale (~750ms, 30 step via `setInterval`); (2) barra orizzontale `xpBarFill` si riempie con spring animation; (3) colore barra: verde per <50 XP, **oro** (`Colors.amber`) per ≥50 XP (momento bonus). Label `N / 100 XP` allineata a destra.
+- **Tutorial di benvenuto** (`components/WelcomeTutorial.tsx` + `hooks/useOnboardingTutorial.ts`): Modal fullscreen che appare al 1°, 2° e 3° avvio dell'app (dopo login). 4 slide: Benvenuto 🌱, Scansiona & Guadagna, Sali di Livello, Wallet $LEA. Transizione slide via `FadeInDown` + spring `translateX`. Dot indicator animati (larghezza spring: attivo=28px, inattivo=8px). "Salta" ai primi 3 step, "Inizia a guadagnare! 🌱" all'ultimo. Completamente theme-aware. Chiave AsyncStorage: `leafy_tutorial_count`. `TutorialGate` in `_layout.tsx`.
+- **Saldo LEA senza €**: il simbolo `€` compare **solo** nella sezione Wallet (`marketplace.tsx`). Badge LEA nell'header Home e chip LEA nella nav bar mostrano solo il numero (es. `$LEA 100.00` senza €).
 - **Battle Pass** (`hasBattlePass: boolean`, `battlePassExpiry: timestamp` in DB): abbonamento premium mock a 0,89€/mese (TODO: integrare Stripe/IAP). Attivazione via `POST /api/profile/battle-pass/activate`. Effetti: x2 moltiplicatore su tutti i $LEA guadagnati (scan scontrino + barcode), sblocco prelievo PayPal nel Wallet. `hasBattlePass` esposto nell'auth context (`context/auth.tsx`). UI: `BattlePassModal` (componente modale con gradiente oro/verde scuro), badge "x2" nella scan result card, card promo nel Wallet se non attivo, riga status in Profilo (Supporto section).
 - **Wallet tab** (ex Marketplace): Tab rinominata "Wallet" con icona credit-card. Schermata (`marketplace.tsx`) completamente riscritta: saldo $LEA grande + equivalente €, pulsante "Ritira su PayPal" (sbloccato con Battle Pass, locked senza), card promo Battle Pass se non attivo, sezione informativa "Come funziona $LEA".
 - **FAQ screen** (`app/faq.tsx`): 8 domande frequenti accordion (collapse/expand animato con Animated.View), card contatto supporto, raggiungibile da Profilo > Supporto > Aiuto e FAQ.
@@ -303,9 +309,18 @@ workspace/
 │   │   │   ├── login.tsx
 │   │   │   └── _layout.tsx
 │   │   ├── assets/badges/            # 15 PNG badge 3D clay/glossy con sfondo trasparente
-│   │   └── components/
-│   │       ├── BadgeIcon3D.tsx       # Badge 3D: Image-based, emoji→PNG map, locked state con opacity + lucchetto
-│   │       └── BadgeIcon.tsx         # Badge SVG esagonale (legacy, non più usato in profilo)
+│   │   ├── components/
+│   │   │   ├── BadgeIcon3D.tsx       # Badge 3D: Image-based, emoji→PNG map, locked state con opacity + lucchetto
+│   │   │   ├── BadgeIcon.tsx         # Badge SVG esagonale (legacy, non più usato in profilo)
+│   │   │   ├── LevelProgressRing.tsx # Anello progressione livello: 60 segmenti SVG, sweep gradient, theme-aware
+│   │   │   ├── WelcomeTutorial.tsx   # Tutorial onboarding 4 slide (mostra 3 volte al login)
+│   │   │   └── LevelUpModal.tsx      # Celebrazione animata level-up
+│   │   ├── hooks/
+│   │   │   └── useOnboardingTutorial.ts  # Hook tutorial: AsyncStorage "leafy_tutorial_count"
+│   │   └── context/
+│   │       ├── auth.tsx              # AuthProvider: login persistente con apiFetch + Bearer token + AsyncStorage
+│   │       ├── level-up.tsx          # LevelUpProvider: celebrazione level-up
+│   │       └── scan-reset.tsx        # ScanResetProvider: reset tab scan a idle
 │   ├── leafy/               # Frontend React/Vite (web principale)
 │   │   └── src/
 │   │       ├── pages/
@@ -555,6 +570,7 @@ Base URL: `/api`
 | `GET /api/login` | Replit OIDC |
 | `GET /api/logout` | Termina sessione |
 | `GET /api/auth/user` | Utente corrente |
+| `GET /api/auth/token` | **Mobile**: restituisce il session ID corrente (`{ token: sid }`) per Bearer auth persistente |
 
 ### Profilo
 | Endpoint | Descrizione |
@@ -761,15 +777,31 @@ Mappa di 40+ prefissi GS1 italiani (7 cifre) → brand produttore. Usata come hi
 - **Mobile UI**: Bottone "Cancella e ricomincia" nella schermata di successo post-scansione scontrino
 
 ### Sessione Cookie
-- `express-session`-like custom store in-memory
-- Cookie `session_id` con `httpOnly`, `secure` (in produzione), `sameSite: none`
-- SHA-256 session token
-- Max-age: 30 giorni
+- Custom session store su PostgreSQL (`sessionsTable`)
+- Cookie `sid` con `httpOnly: true`, `secure: true`, `sameSite: "none"`, `path: "/"`
+- Session ID: `crypto.randomBytes(32).toString("hex")`
+- TTL: **7 giorni** (`SESSION_TTL = 7 * 24 * 60 * 60 * 1000`)
+- Il server accetta l'autenticazione sia via **Cookie** (`sid=...`) che via **Bearer token** (`Authorization: Bearer <sid>`) — vedi `getSessionId()` in `lib/auth.ts`
 
-### Persistenza Sessione Mobile (AsyncStorage)
-- `context/auth.tsx` salva i dati utente in AsyncStorage (`auth_user`) ad ogni login/fetch riuscito
-- All'avvio dell'app: carica immediatamente l'utente da AsyncStorage (UX istantanea senza flash)
-- Parallelamente verifica con il server via `/api/auth/me` che la sessione sia ancora valida
-- Al logout: cancella sia la sessione server che i dati in AsyncStorage
-- Se la sessione server è scaduta: i dati locali vengono rimossi automaticamente
-- Risultato: l'utente rimane loggato anche dopo chiusura, aggiornamento o riavvio dell'app
+### Persistenza Sessione Mobile (Bearer Token + AsyncStorage)
+`context/auth.tsx` implementa login persistente tra sessioni Expo Go (iOS + Android):
+
+**Chiavi AsyncStorage:**
+| Chiave | Contenuto |
+|--------|-----------|
+| `auth_user` | Oggetto utente serializzato |
+| `auth_session_token` | Session ID (SID) per Bearer auth |
+| `auth_xp` | XP corrente |
+| `auth_lea` | Saldo LEA |
+| `auth_bp` | Stato Battle Pass (0/1) |
+
+**Flusso:**
+1. **All'avvio**: carica immediatamente `auth_user`, `auth_session_token` e bilanciamenti da AsyncStorage (UX istantanea senza flash)
+2. **apiFetch helper**: tutte le chiamate API iniettano automaticamente `Authorization: Bearer <sid>` se il token è presente
+3. **Dopo login**: chiama `GET /api/auth/token` per ottenere il SID e salvarlo in `auth_session_token`
+4. **Alla riapertura Expo Go**: il SID viene caricato da AsyncStorage → le chiamate API usano Bearer token → il server riconosce la sessione → l'utente rimane loggato
+5. **Su 401 esplicito** (sessione scaduta dopo 7 giorni): pulisce user + token + bilanciamenti → redirect a login
+6. **Su errore di rete** (nessuna connessione): mantiene i dati locali → l'utente rimane "loggato" con dati cached
+7. **Al logout**: cancella tutto sia lato server che in AsyncStorage
+
+**Nota**: il server già supporta Bearer auth via `Authorization: Bearer <sid>` grazie a `getSessionId()` in `lib/auth.ts`.
