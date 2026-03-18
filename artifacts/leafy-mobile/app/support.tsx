@@ -66,8 +66,8 @@ export default function SupportScreen() {
               <Feather name="help-circle" size={20} color={Colors.leaf} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.faqRowTitle}>Domande frequenti</Text>
-              <Text style={styles.faqRowSub}>Trova le risposte alle domande più comuni</Text>
+              <Text style={styles.faqRowTitle}>Vai alle FAQ</Text>
+              <Text style={styles.faqRowSub}>Domande frequenti su Leafy</Text>
             </View>
             <Feather name="chevron-right" size={18} color={Colors.textSecondary} />
           </Pressable>
