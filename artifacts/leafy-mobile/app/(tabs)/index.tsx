@@ -170,6 +170,29 @@ function LevelProgressRing({
   const prevPointsRef = useRef<number | null>(null);
   const mountedRef = useRef(false);
 
+  // ── Animated progress bar ──
+  const [displayProgress, setDisplayProgress] = useState(progress);
+  const displayProgressRef = useRef(progress);
+  const rafRef = useRef<number | null>(null);
+  const progTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hapticTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const animateProgress = React.useCallback((from: number, to: number) => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    const duration = 700;
+    const start = Date.now();
+    const step = () => {
+      const elapsed = Date.now() - start;
+      const t = Math.min(1, elapsed / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      const val = from + eased * (to - from);
+      displayProgressRef.current = val;
+      setDisplayProgress(val);
+      if (t < 1) rafRef.current = requestAnimationFrame(step);
+    };
+    rafRef.current = requestAnimationFrame(step);
+  }, []);
+
   const canOpacity = useSharedValue(0);
   const canRotate = useSharedValue(0);
   const dropOpacity = useSharedValue(0);
@@ -208,6 +231,8 @@ function LevelProgressRing({
 
     // Level evolution animation
     if (prevLev !== level) {
+      displayProgressRef.current = progress;
+      setDisplayProgress(progress);
       badgeOpacity.value = withSequence(
         withTiming(0, { duration: 220, easing: Easing.out(Easing.quad) }),
         withDelay(60, withTiming(1, { duration: 380, easing: Easing.out(Easing.quad) })),
@@ -222,6 +247,14 @@ function LevelProgressRing({
 
     // XP gain: watering animation
     if (points > prev && prev > 0) {
+      // Cancel any in-flight animations
+      if (progTimeoutRef.current) clearTimeout(progTimeoutRef.current);
+      if (hapticTimeoutRef.current) clearTimeout(hapticTimeoutRef.current);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+
+      const oldP = displayProgressRef.current;
+      const newP = progress;
+
       // Can fades in (450ms), holds (1750ms), fades out (500ms) → total 2700ms
       canOpacity.value = withSequence(
         withTiming(1, { duration: 450 }),
@@ -247,14 +280,46 @@ function LevelProgressRing({
         withTiming(DROP_TRAVEL, { duration: 1020, easing: Easing.in(Easing.quad) }),
         withTiming(0, { duration: 0 }),
       );
-      // Badge springs when drop lands (950 + 1020 = 1970ms)
+
+      // ── AT DROP LANDING (950 + 1020 = 1970ms) ──
+
+      // 1. Badge shimmer just before spring (1920ms)
+      badgeOpacity.value = withDelay(1920, withSequence(
+        withTiming(0.5, { duration: 90, easing: Easing.out(Easing.quad) }),
+        withTiming(1, { duration: 200, easing: Easing.out(Easing.quad) }),
+      ));
+
+      // 2. Badge springs when drop lands
       iconScale.value = withDelay(
         1970,
         withSpring(newIconScale, { damping: 6, stiffness: 130, mass: 0.8 }),
       );
+
+      // 3. Ring pulse at landing
+      ringScale.value = withDelay(1970, withSequence(
+        withTiming(1.04, { duration: 130, easing: Easing.out(Easing.quad) }),
+        withSpring(1, { damping: 8, stiffness: 150 }),
+      ));
+
+      // 4. Haptic tick at landing
+      hapticTimeoutRef.current = setTimeout(() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }, 1970);
+
+      // 5. Progress bar fills at landing
+      progTimeoutRef.current = setTimeout(() => animateProgress(oldP, newP), 1970);
+
     } else {
+      displayProgressRef.current = progress;
+      setDisplayProgress(progress);
       iconScale.value = withSpring(newIconScale, { damping: 12, stiffness: 80 });
     }
+
+    return () => {
+      if (progTimeoutRef.current) clearTimeout(progTimeoutRef.current);
+      if (hapticTimeoutRef.current) clearTimeout(hapticTimeoutRef.current);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
   }, [points, progress, level]);
 
   const currentIdx = LEVEL_CONFIG.findIndex(l => l.name === level);
@@ -264,7 +329,7 @@ function LevelProgressRing({
   const pointsRemaining = isMaxLevel ? 0 : Math.max(0, nextLevel!.minPts - points);
   const targetPts = isMaxLevel ? LEVEL_CONFIG[safeIdx].minPts : nextLevel!.minPts;
 
-  const totalAngle = (progress / 100) * 2 * Math.PI;
+  const totalAngle = (displayProgress / 100) * 2 * Math.PI;
   const segAngle = N_SEGS > 0 ? totalAngle / N_SEGS : 0;
   const endCapX = RING_CX + RING_RADIUS * Math.cos(totalAngle);
   const endCapY = RING_CY + RING_RADIUS * Math.sin(totalAngle);
@@ -283,10 +348,10 @@ function LevelProgressRing({
             strokeWidth={RING_STROKE}
             fill="none"
           />
-          {progress > 0 && Array.from({ length: N_SEGS }, (_, i) => {
+          {displayProgress > 0 && Array.from({ length: N_SEGS }, (_, i) => {
             const a1 = i * segAngle;
             const a2 = (i + 1) * segAngle;
-            const t = (i + 0.5) * progress / (100 * N_SEGS);
+            const t = (i + 0.5) * displayProgress / (100 * N_SEGS);
             return (
               <Path
                 key={i}
@@ -298,12 +363,12 @@ function LevelProgressRing({
               />
             );
           })}
-          {progress > 0 && progress < 100 && (
+          {displayProgress > 0 && displayProgress < 100 && (
             <Circle
               cx={endCapX}
               cy={endCapY}
               r={RING_STROKE / 2}
-              fill={sweepColor(progress / 100)}
+              fill={sweepColor(displayProgress / 100)}
             />
           )}
         </Svg>
