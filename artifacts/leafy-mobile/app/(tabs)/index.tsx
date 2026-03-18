@@ -117,12 +117,12 @@ const LEVEL_MCI_ICONS: Record<string, React.ComponentProps<typeof MaterialCommun
 const ICON_BASE_SIZE = 44;
 const ICON_MIN_SCALE = 0.52;
 const ICON_MAX_SCALE = 1.4;
-const CAN_TOP = 8;
-const CAN_LEFT = RING_SIZE / 2 + 16;
+const CAN_TOP = 10;
+const CAN_LEFT = RING_SIZE / 2 - 17;
 const CAN_PIVOT = 17;
-const DROP_TOP = 48;
-const DROP_LEFT = RING_SIZE / 2 - 2;
-const DROP_TRAVEL = 56;
+const DROP_TOP = 45;
+const DROP_LEFT = RING_SIZE / 2 - 6;
+const DROP_TRAVEL = 54;
 
 function LevelProgressRing({
   progress,
@@ -183,6 +183,7 @@ function LevelProgressRing({
       { rotate: `${canRotate.value}deg` },
       { translateX: -CAN_PIVOT },
       { translateY: -CAN_PIVOT },
+      { scaleX: -1 },
     ],
   }));
   const dropAnimStyle = useAnimatedStyle(() => ({
