@@ -235,6 +235,7 @@ export default function BarcodeScannerScreen() {
       if (phase !== "scanning" || cooldown) return;
       setPhase("looking-up");
       lastBarcodeRef.current = data;
+      setCapturedContextImage(undefined);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
       let imageBase64: string | undefined;

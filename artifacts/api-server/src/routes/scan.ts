@@ -652,7 +652,13 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
   // ── AI Environment Background Check (silent, risk-based) ─────────────────
   const { contextImageBase64 } = req.body;
   const trustLevel = await getUserTrustLevel(user);
-  const hasImage = typeof contextImageBase64 === "string" && contextImageBase64.length > 100;
+  const MAX_IMAGE_B64_LEN = 2_800_000; // ~2 MB
+  const BASE64_RE = /^[A-Za-z0-9+/]+=*$/;
+  const hasImage =
+    typeof contextImageBase64 === "string" &&
+    contextImageBase64.length > 100 &&
+    contextImageBase64.length <= MAX_IMAGE_B64_LEN &&
+    BASE64_RE.test(contextImageBase64.slice(0, 64));
 
   if (trustLevel === "strict" && !hasImage) {
     // Strict users must provide a context frame captured by the mobile app.
