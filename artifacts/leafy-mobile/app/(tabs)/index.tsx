@@ -286,7 +286,7 @@ function LevelProgressRing({
           {progress > 0 && Array.from({ length: N_SEGS }, (_, i) => {
             const a1 = i * segAngle;
             const a2 = (i + 1) * segAngle;
-            const t = (i + 0.5) / N_SEGS;
+            const t = (i + 0.5) * progress / (100 * N_SEGS);
             return (
               <Path
                 key={i}
@@ -303,7 +303,7 @@ function LevelProgressRing({
               cx={endCapX}
               cy={endCapY}
               r={RING_STROKE / 2}
-              fill={sweepColor(1)}
+              fill={sweepColor(progress / 100)}
             />
           )}
         </Svg>
