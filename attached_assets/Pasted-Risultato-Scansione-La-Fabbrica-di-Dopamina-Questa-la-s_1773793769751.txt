@@ -1,0 +1,40 @@
+Risultato Scansione (La Fabbrica di Dopamina).
+
+Questa è la schermata più importante di tutta l'app. È qui che l'utente decide se tornare a usare Leafy domani o disinstallarla. Dobbiamo istruire l'AI a costruire un'interfaccia che faccia sentire l'utente un vincitore, anche quando ha comprato solo junk food e ha guadagnato zero soldi.
+
+Copia e incolla questo blocco nell'agente di Replit:
+
+Prompt (Fase 7 di 8): Refactoring UI Risultato Scansione (Rinforzo Positivo)
+
+"Fase 7. L'obiettivo è riprogettare il modal/schermata di riepilogo post-scansione per massimizzare la gratificazione psicologica (focus su XP) e inserire un suggerimento di upselling comportamentale.
+
+Istruzioni operative:
+
+Gerarchia Visiva (I Numeri): Individua il componente che mostra l'esito della scansione. Ristruttura l'intestazione in modo che il valore degli XP guadagnati sia l'elemento visivo dominante (font molto grande, colore primario acceso). Sotto, in un font più piccolo e di colore testuale neutro (es. grigio scuro, MAI rosso), mostra i $LEA guadagnati.
+
+Messaggio di Esito: Aggiungi un testo di rinforzo positivo dinamico (es. 'Ottimo! Hai guadagnato gli XP base per l'operazione.').
+
+Lista Prodotti Neutrale: Sotto i punteggi, mantieni o crea una lista semplice dei prodotti scansionati. Rimuovi qualsiasi indicatore visivo negativo (es. icone rosse o di allerta) per i prodotti non ecologici. Usa un'icona vettoriale neutra per i prodotti standard e una verde brillante per quelli eco.
+
+Box 'Consiglio del Radar': In fondo al modal, prima del bottone di chiusura, crea un nuovo contenitore (box) con uno stile in evidenza (es. bordo colorato o sfondo leggermente diverso).
+
+Testo del Radar (Mock): All'interno del box, inserisci un'icona a forma di lampadina o radar e un testo segnaposto: '💡 Consiglio del Radar: Sapevi che scegliendo un'alternativa Eco per [Prodotto X] avresti guadagnato +15 $LEA? Tienilo a mente!'.
+
+Fai attenzione all'overflow su schermi piccoli. Conferma quando il nuovo layout è testabile con dati di mock (es. 50 XP e 0 $LEA), poi attendi il via libera per l'ultima e decisiva Fase 8."
+
+⚠️ Brutal Check proattivo (La Trappola del "Senza Uscita")
+Nel prompt ho inserito un avvertimento per l'AI: "Fai attenzione all'overflow su schermi piccoli".
+
+Ecco cosa succede il 90% delle volte quando chiedi a un'AI di aggiungere "roba" dentro una finestrella o un modal a comparsa:
+
+L'AI aggiunge i punteggi grandi.
+
+Aggiunge la lista della spesa.
+
+Aggiunge il tuo bellissimo box "Consiglio del Radar".
+
+Il Risultato: Su uno schermo normale (come quello del tuo computer o di un iPhone Pro Max) si vede tutto. Su un telefono più piccolo, tutta questa roba spinge il bottone "Chiudi" o "Torna alla Home" fuori dallo schermo.
+
+Se il modal non è stato impostato come "scorrevole" (scrollable), l'utente rimane letteralmente intrappolato in quella schermata e l'unico modo per uscirne è chiudere (killare) l'app. È un disastro per l'esperienza utente.
+
+Cosa fare: Appena Replit finisce, fai una finta scansione. Quando si apre la schermata dei risultati, prova a scorrere col dito (o col mouse) verso il basso. Se non riesci ad arrivare in fondo e non vedi il bottone per chiudere, ferma subito Replit e digli: "Il modal del risultato scansione non scorre e il bottone di chiusura è nascosto. Avvolgi il contenuto in una ScrollView o imposta overflow-y auto".
