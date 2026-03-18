@@ -295,11 +295,6 @@ function LevelProgressRing({
         withSpring(newIconScale, { damping: 6, stiffness: 130, mass: 0.8 }),
       );
 
-      // 3. Ring pulse at landing
-      ringScale.value = withDelay(1970, withSequence(
-        withTiming(1.04, { duration: 130, easing: Easing.out(Easing.quad) }),
-        withSpring(1, { damping: 8, stiffness: 150 }),
-      ));
 
       // 4. Haptic tick at landing
       hapticTimeoutRef.current = setTimeout(() => {
