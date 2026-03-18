@@ -4,7 +4,7 @@ import { FacebookIcon } from "../../components/FacebookIcon";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -25,6 +25,10 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
+  withTiming,
+  withSequence,
+  withDelay,
+  Easing,
   FadeInDown,
 } from "react-native-reanimated";
 import Svg, { Circle, Path } from "react-native-svg";
@@ -110,6 +114,15 @@ const LEVEL_MCI_ICONS: Record<string, React.ComponentProps<typeof MaterialCommun
   Foresta: "forest",
 };
 
+const ICON_BASE_SIZE = 44;
+const ICON_MIN_SCALE = 0.52;
+const ICON_MAX_SCALE = 1.4;
+const CAN_TOP = 18;
+const CAN_LEFT = RING_SIZE / 2 + 12;
+const DROP_TOP = 58;
+const DROP_LEFT = RING_SIZE / 2 - 4;
+const DROP_TRAVEL = 44;
+
 function LevelProgressRing({
   progress,
   level,
@@ -127,15 +140,120 @@ function LevelProgressRing({
   const xpSubColor = onDark ? "rgba(255,255,255,0.55)" : "rgba(26,48,40,0.55)";
   const nextLvlColor = onDark ? "rgba(255,255,255,0.70)" : "rgba(26,48,40,0.60)";
 
-  const scale = useSharedValue(0.82);
+  // ── Ring entry spring ──
+  const ringScale = useSharedValue(0.82);
+  useEffect(() => {
+    ringScale.value = withSpring(1, { damping: 14, stiffness: 90 });
+  }, [progress]);
+  const containerAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: ringScale.value }],
+  }));
+
+  // ── Badge icon size scales with progress ──
+  const targetIconScale = ICON_MIN_SCALE + (progress / 100) * (ICON_MAX_SCALE - ICON_MIN_SCALE);
+  const iconScale = useSharedValue(targetIconScale);
+  const iconAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: iconScale.value }],
+  }));
+
+  // ── Badge level cross-fade ──
+  const prevLevelRef = useRef(level);
+  const badgeOpacity = useSharedValue(1);
+  const badgeVScale = useSharedValue(1);
+  const badgeAnimStyle = useAnimatedStyle(() => ({
+    opacity: badgeOpacity.value,
+    transform: [{ scale: badgeVScale.value }],
+  }));
+
+  // ── Watering can animation ──
+  const prevPointsRef = useRef<number | null>(null);
+  const mountedRef = useRef(false);
+
+  const canOpacity = useSharedValue(0);
+  const canRotate = useSharedValue(0);
+  const dropOpacity = useSharedValue(0);
+  const dropY = useSharedValue(0);
+
+  const canAnimStyle = useAnimatedStyle(() => ({
+    opacity: canOpacity.value,
+    transform: [
+      { translateX: 14 },
+      { translateY: 14 },
+      { rotate: `${canRotate.value}deg` },
+      { translateX: -14 },
+      { translateY: -14 },
+    ],
+  }));
+  const dropAnimStyle = useAnimatedStyle(() => ({
+    opacity: dropOpacity.value,
+    transform: [{ translateY: dropY.value }],
+  }));
 
   useEffect(() => {
-    scale.value = withSpring(1, { damping: 14, stiffness: 90 });
-  }, [progress]);
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      prevPointsRef.current = points;
+      prevLevelRef.current = level;
+      return;
+    }
 
-  const containerAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
+    const prev = prevPointsRef.current ?? points;
+    const prevLev = prevLevelRef.current;
+    prevPointsRef.current = points;
+    prevLevelRef.current = level;
+
+    const newIconScale = ICON_MIN_SCALE + (progress / 100) * (ICON_MAX_SCALE - ICON_MIN_SCALE);
+
+    // Level evolution animation
+    if (prevLev !== level) {
+      badgeOpacity.value = withSequence(
+        withTiming(0, { duration: 220, easing: Easing.out(Easing.quad) }),
+        withDelay(60, withTiming(1, { duration: 380, easing: Easing.out(Easing.quad) })),
+      );
+      badgeVScale.value = withSequence(
+        withTiming(0.45, { duration: 220, easing: Easing.out(Easing.quad) }),
+        withDelay(60, withSpring(1, { damping: 9, stiffness: 130 })),
+      );
+      iconScale.value = withDelay(280, withSpring(newIconScale, { damping: 10, stiffness: 90 }));
+      return;
+    }
+
+    // XP gain: watering animation
+    if (points > prev && prev > 0) {
+      // Can fades in, holds, fades out
+      canOpacity.value = withSequence(
+        withTiming(1, { duration: 220 }),
+        withTiming(1, { duration: 880 }),
+        withTiming(0, { duration: 300 }),
+      );
+      // Can tilts to pour then returns
+      canRotate.value = withSequence(
+        withTiming(0, { duration: 80 }),
+        withTiming(26, { duration: 420, easing: Easing.out(Easing.quad) }),
+        withTiming(26, { duration: 300 }),
+        withTiming(0, { duration: 340, easing: Easing.inOut(Easing.quad) }),
+      );
+      // Droplet appears and falls
+      dropOpacity.value = withSequence(
+        withTiming(0, { duration: 380 }),
+        withTiming(1, { duration: 90 }),
+        withTiming(1, { duration: 330 }),
+        withTiming(0, { duration: 200 }),
+      );
+      dropY.value = withSequence(
+        withTiming(0, { duration: 380 }),
+        withTiming(DROP_TRAVEL, { duration: 420, easing: Easing.in(Easing.quad) }),
+        withTiming(0, { duration: 0 }),
+      );
+      // Badge springs to new size when drop lands
+      iconScale.value = withDelay(
+        780,
+        withSpring(newIconScale, { damping: 6, stiffness: 130, mass: 0.8 }),
+      );
+    } else {
+      iconScale.value = withSpring(newIconScale, { damping: 12, stiffness: 80 });
+    }
+  }, [points, progress, level]);
 
   const currentIdx = LEVEL_CONFIG.findIndex(l => l.name === level);
   const safeIdx = currentIdx >= 0 ? currentIdx : 0;
@@ -146,7 +264,6 @@ function LevelProgressRing({
 
   const totalAngle = (progress / 100) * 2 * Math.PI;
   const segAngle = N_SEGS > 0 ? totalAngle / N_SEGS : 0;
-
   const endCapX = RING_CX + RING_RADIUS * Math.cos(totalAngle);
   const endCapY = RING_CY + RING_RADIUS * Math.sin(totalAngle);
 
@@ -188,14 +305,29 @@ function LevelProgressRing({
             />
           )}
         </Svg>
+
+        {/* Center: badge icon + text */}
         <View style={ringStyles.innerContent}>
-          <MaterialCommunityIcons name={levelIcon} size={32} color={iconColor} />
+          <Animated.View style={badgeAnimStyle}>
+            <Animated.View style={iconAnimStyle}>
+              <MaterialCommunityIcons name={levelIcon} size={ICON_BASE_SIZE} color={iconColor} />
+            </Animated.View>
+          </Animated.View>
           <Text style={[ringStyles.levelName, { color: nameColor }]}>{LEVEL_LABELS[level] ?? level}</Text>
           <Text style={[ringStyles.xpProgress, { color: xpSubColor }]}>
             {new Intl.NumberFormat("it-IT").format(points)} / {new Intl.NumberFormat("it-IT").format(targetPts)} XP
           </Text>
         </View>
+
+        {/* Watering can overlay */}
+        <Animated.View style={[ringStyles.wateringCan, canAnimStyle]}>
+          <MaterialCommunityIcons name="watering-can" size={34} color={iconColor} />
+        </Animated.View>
+
+        {/* Droplet */}
+        <Animated.View style={[ringStyles.droplet, dropAnimStyle]} />
       </View>
+
       <Text style={[ringStyles.nextLevelText, { color: nextLvlColor }]} numberOfLines={3}>
         {isMaxLevel
           ? "Hai raggiunto il massimo livello!"
@@ -243,6 +375,22 @@ const ringStyles = StyleSheet.create({
     lineHeight: 19,
     paddingHorizontal: 28,
     marginTop: 8,
+  },
+  wateringCan: {
+    position: "absolute",
+    top: CAN_TOP,
+    left: CAN_LEFT,
+    zIndex: 10,
+  },
+  droplet: {
+    position: "absolute",
+    top: DROP_TOP,
+    left: DROP_LEFT,
+    width: 8,
+    height: 13,
+    borderRadius: 4,
+    backgroundColor: "#81D4FA",
+    zIndex: 10,
   },
 });
 
