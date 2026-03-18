@@ -136,7 +136,9 @@ router.post("/scan", async (req, res): Promise<void> => {
 
   // ── Document number cross-user watermark check ────────────────────────────
   const normalizedDocNumber = validation.documentNumber ? normalizeDocumentNumber(validation.documentNumber) : null;
-  if (normalizedDocNumber) {
+  // Require at least 5 chars after normalization to avoid accidental collision
+  // on short/common OCR tokens (e.g. "1", "N/A", "42")
+  if (normalizedDocNumber && normalizedDocNumber.length >= 5) {
     const [docDuplicate] = await db
       .select({ id: receiptsTable.id, userId: receiptsTable.userId })
       .from(receiptsTable)
@@ -664,7 +666,7 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
   if (trustLevel === "strict" && !hasImage) {
     // Strict users must provide a context frame captured by the mobile app.
     // Absence of the image on a strict account indicates a scripted/non-app call.
-    console.log(`[antiFraud] Strict user ${user.id} submitted barcode confirm without context image — blocked`);
+    console.log(JSON.stringify({ event: "env_check", outcome: "blocked_no_image", userId: user.id, trustLevel }));
     res.status(400).json({ error: "Impossibile convalidare questa scansione. Assicurati di usare l'app aggiornata." });
     return;
   }
@@ -674,19 +676,25 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
       trustLevel === "strict" ||
       (trustLevel === "moderate" && Math.random() < 0.3);
 
-    if (shouldCheck) {
+    if (!shouldCheck) {
+      console.log(JSON.stringify({ event: "env_check", outcome: "skipped", userId: user.id, trustLevel }));
+    } else {
       try {
         const envResult = await analyzeEnvironmentContext(contextImageBase64!);
         if (envResult.environment === "store" && envResult.confidence > 0.75) {
-          console.log(`[antiFraud] Environment check blocked scan — user=${user.id} trustLevel=${trustLevel} env=${envResult.environment} conf=${envResult.confidence}`);
+          console.log(JSON.stringify({ event: "env_check", outcome: "blocked_store", userId: user.id, trustLevel, env: envResult.environment, confidence: envResult.confidence }));
           res.status(400).json({ error: "Impossibile convalidare questa scansione. Assicurati di essere in un ambiente idoneo." });
           return;
         }
-        console.log(`[antiFraud] Environment check passed — user=${user.id} trustLevel=${trustLevel} env=${envResult.environment} conf=${envResult.confidence}`);
-      } catch {
+        console.log(JSON.stringify({ event: "env_check", outcome: "passed", userId: user.id, trustLevel, env: envResult.environment, confidence: envResult.confidence }));
+      } catch (err) {
         // Never block on AI error — fail open
+        console.log(JSON.stringify({ event: "env_check", outcome: "ai_error_fail_open", userId: user.id, trustLevel, error: String(err) }));
       }
     }
+  } else {
+    // trusted or moderate without image — no check needed
+    console.log(JSON.stringify({ event: "env_check", outcome: "no_image_skipped", userId: user.id, trustLevel }));
   }
 
   const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
