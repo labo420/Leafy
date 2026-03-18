@@ -3,7 +3,7 @@ import { GoogleIcon } from "../../components/GoogleIcon";
 import { FacebookIcon } from "../../components/FacebookIcon";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -648,12 +648,19 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = React.useState(false);
   const [streakToast, setStreakToast] = React.useState<{ streak: number; bonusAwarded: boolean; xpBonus: number } | null>(null);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      if (user) refetchProfile();
+    }, [user?.id])
+  );
+
   useEffect(() => {
     if (!user) return;
     apiFetch("/profile/daily-checkin", { method: "POST" }).then((data: any) => {
       if (!data.alreadyCheckedIn) {
         setStreakToast({ streak: data.loginStreak, bonusAwarded: data.bonusAwarded, xpBonus: data.xpBonus });
         setTimeout(() => setStreakToast(null), 4000);
+        refetchProfile();
       }
     }).catch(() => {});
   }, [user?.id]);
