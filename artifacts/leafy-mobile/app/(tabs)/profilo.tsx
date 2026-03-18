@@ -452,7 +452,7 @@ const badgeStyles = StyleSheet.create({
 
 export default function ProfiloScreen() {
   const insets = useSafeAreaInsets();
-  const { user, refetch, hasBattlePass } = useAuth();
+  const { user, refetch, hasBattlePass, logout } = useAuth();
   const { theme, mode, toggleTheme } = useTheme();
   const queryClient = useQueryClient();
   const params = useLocalSearchParams<{ tab?: string }>();
@@ -521,16 +521,10 @@ export default function ProfiloScreen() {
         onPress: async () => {
           setLoggingOut(true);
           try {
-            const domain = process.env.EXPO_PUBLIC_DOMAIN;
-            const base = domain ? `https://${domain}` : "";
-            await fetch(`${base}/api/auth/logout`, {
-              method: "POST",
-              credentials: "include",
-            });
-          } finally {
+            await logout();
             queryClient.clear();
-            await refetch();
             router.replace("/(tabs)");
+          } finally {
             setLoggingOut(false);
           }
         },
