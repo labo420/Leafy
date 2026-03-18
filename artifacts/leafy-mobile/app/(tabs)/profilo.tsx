@@ -839,11 +839,11 @@ export default function ProfiloScreen() {
       <Animated.View entering={FadeInDown.delay(320).springify()} style={styles.section}>
         <Text style={styles.sectionTitle}>Supporto</Text>
 
-        <Pressable style={styles.menuRow} onPress={() => router.push("/faq")}>
+        <Pressable style={styles.menuRow} onPress={() => router.push("/support")}>
           <View style={[styles.menuRowIcon, { backgroundColor: Colors.primaryLight }]}>
             <Feather name="help-circle" size={18} color={Colors.leaf} />
           </View>
-          <Text style={styles.menuRowText}>Aiuto e FAQ</Text>
+          <Text style={styles.menuRowText}>Aiuto e Supporto / FAQ</Text>
           <Feather name="chevron-right" size={16} color={Colors.textSecondary} />
         </Pressable>
 
