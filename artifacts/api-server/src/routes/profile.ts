@@ -9,7 +9,7 @@ import {
   ApplyReferralResponse,
 } from "@workspace/api-zod";
 import { calculateLevel } from "../lib/scanner";
-import { leaToEur, xpToLea } from "../lib/economy";
+import { leaToEur } from "../lib/economy";
 
 const router: IRouter = Router();
 
@@ -160,7 +160,13 @@ router.get("/profile", async (req, res): Promise<void> => {
       };
     });
 
-  res.json({ ...data, pendingValidations, hasBattlePass: user.hasBattlePass ?? false });
+  res.json({
+    ...data,
+    pendingValidations,
+    hasBattlePass: user.hasBattlePass ?? false,
+    loginStreak: user.loginStreak ?? 0,
+    referralXpMultiplierRemaining: user.referralXpMultiplierRemaining ?? 0,
+  });
 });
 
 router.get("/profile/impact", async (req, res): Promise<void> => {
@@ -270,21 +276,86 @@ router.post("/profile/referral/apply", async (req, res): Promise<void> => {
     return;
   }
 
-  const REFERRAL_BONUS = 50;
-  const referralLeaDelta = xpToLea(REFERRAL_BONUS);
+  const [referrer] = await db.select().from(usersTable)
+    .where(eq(usersTable.referralCode, parsed.data.code));
+
+  if (!referrer) {
+    res.status(400).json({ error: "Codice referral non valido." });
+    return;
+  }
+
+  const REFERRAL_BONUS_XP = 50;
+  const MULTIPLIER_RECEIPTS = 3;
+
   await db.update(usersTable)
     .set({
-      totalPoints: user.totalPoints + REFERRAL_BONUS,
-      xp: sql`xp + ${REFERRAL_BONUS}`,
-      leaBalance: sql`lea_balance + ${referralLeaDelta}`,
+      totalPoints: sql`total_points + ${REFERRAL_BONUS_XP}`,
+      xp: sql`xp + ${REFERRAL_BONUS_XP}`,
+      referralPointsEarned: sql`referral_points_earned + ${REFERRAL_BONUS_XP}`,
+      referralXpMultiplierRemaining: MULTIPLIER_RECEIPTS,
     })
     .where(eq(usersTable.id, user.id));
 
+  await db.update(usersTable)
+    .set({
+      referralCount: sql`referral_count + 1`,
+      referralXpMultiplierRemaining: MULTIPLIER_RECEIPTS,
+    })
+    .where(eq(usersTable.id, referrer.id));
+
   res.json(ApplyReferralResponse.parse({
     success: true,
-    pointsAwarded: REFERRAL_BONUS,
-    message: `Referral applicato! Hai guadagnato ${REFERRAL_BONUS} XP bonus. 🎉`,
+    pointsAwarded: REFERRAL_BONUS_XP,
+    message: `Referral applicato! Hai guadagnato ${REFERRAL_BONUS_XP} XP bonus e un moltiplicatore +20% XP sui prossimi ${MULTIPLIER_RECEIPTS} scontrini! 🎉`,
   }));
+});
+
+router.post("/profile/daily-checkin", async (req, res): Promise<void> => {
+  const user = await requireUser(req, res);
+  if (!user) return;
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const lastStr = user.lastLoginDate ? new Date(user.lastLoginDate).toISOString().slice(0, 10) : null;
+
+  if (lastStr === todayStr) {
+    res.json({
+      alreadyCheckedIn: true,
+      loginStreak: user.loginStreak ?? 0,
+      bonusAwarded: false,
+      xpBonus: 0,
+    });
+    return;
+  }
+
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().slice(0, 10);
+  const newStreak = lastStr === yesterdayStr ? (user.loginStreak ?? 0) + 1 : 1;
+
+  const STREAK_CYCLE = 7;
+  const STREAK_BONUS_XP = 50;
+  const bonusAwarded = newStreak % STREAK_CYCLE === 0;
+
+  if (bonusAwarded) {
+    await db.update(usersTable).set({
+      loginStreak: newStreak,
+      lastLoginDate: new Date(),
+      xp: sql`xp + ${STREAK_BONUS_XP}`,
+      totalPoints: sql`total_points + ${STREAK_BONUS_XP}`,
+    }).where(eq(usersTable.id, user.id));
+  } else {
+    await db.update(usersTable).set({
+      loginStreak: newStreak,
+      lastLoginDate: new Date(),
+    }).where(eq(usersTable.id, user.id));
+  }
+
+  res.json({
+    alreadyCheckedIn: false,
+    loginStreak: newStreak,
+    bonusAwarded,
+    xpBonus: bonusAwarded ? STREAK_BONUS_XP : 0,
+  });
 });
 
 export default router;

@@ -20,6 +20,9 @@ export const usersTable = pgTable("users", {
   referralCode: text("referral_code").notNull().unique(),
   referralCount: integer("referral_count").notNull().default(0),
   referralPointsEarned: integer("referral_points_earned").notNull().default(0),
+  referralXpMultiplierRemaining: integer("referral_xp_multiplier_remaining").notNull().default(0),
+  loginStreak: integer("login_streak").notNull().default(0),
+  lastLoginDate: timestamp("last_login_date", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

@@ -498,6 +498,17 @@ export default function HomeScreen() {
   });
 
   const [refreshing, setRefreshing] = React.useState(false);
+  const [streakToast, setStreakToast] = React.useState<{ streak: number; bonusAwarded: boolean; xpBonus: number } | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    apiFetch("/profile/daily-checkin", { method: "POST" }).then((data: any) => {
+      if (!data.alreadyCheckedIn) {
+        setStreakToast({ streak: data.loginStreak, bonusAwarded: data.bonusAwarded, xpBonus: data.xpBonus });
+        setTimeout(() => setStreakToast(null), 4000);
+      }
+    }).catch(() => {});
+  }, [user?.id]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -550,6 +561,25 @@ export default function HomeScreen() {
   const motivationalMessage = msgFn(username, points);
 
   return (
+    <View style={{ flex: 1 }}>
+    {streakToast && (
+      <Animated.View
+        entering={FadeInDown.springify()}
+        style={[streakStyles.toast, { top: topPadding + 12, backgroundColor: "#1A3028" }]}
+      >
+        <MaterialCommunityIcons name="fire" size={22} color="#F97316" />
+        <View style={{ flex: 1 }}>
+          <Text style={streakStyles.toastTitle}>
+            {streakToast.bonusAwarded ? "🎉 Streak Bonus!" : `🔥 Streak: ${streakToast.streak} giorni`}
+          </Text>
+          <Text style={streakStyles.toastSub}>
+            {streakToast.bonusAwarded
+              ? `Hai completato ${streakToast.streak} giorni! +${streakToast.xpBonus} XP bonus`
+              : streakToast.streak === 1 ? "Ottimo inizio! Torna domani." : `Continua così! ${7 - (streakToast.streak % 7)} giorni al bonus.`}
+          </Text>
+        </View>
+      </Animated.View>
+    )}
     <ScrollView
       style={[styles.container, { backgroundColor: theme.background }]}
       contentContainerStyle={{ paddingBottom: bottomPad }}
@@ -694,8 +724,39 @@ export default function HomeScreen() {
       </Animated.View>
 
     </ScrollView>
+    </View>
   );
 }
+
+const streakStyles = StyleSheet.create({
+  toast: {
+    position: "absolute",
+    left: 16,
+    right: 16,
+    zIndex: 999,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 14,
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  toastTitle: {
+    fontSize: 14,
+    fontFamily: "DMSans_700Bold",
+    color: "#fff",
+  },
+  toastSub: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    color: "rgba(255,255,255,0.75)",
+    marginTop: 2,
+  },
+});
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },

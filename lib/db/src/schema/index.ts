@@ -10,3 +10,4 @@ export * from "./barcode-scans";
 export * from "./badges";
 export * from "./user-product-submissions";
 export * from "./withdrawals";
+export * from "./kits";

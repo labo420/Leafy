@@ -9,6 +9,7 @@ import { lookupBarcode, validateReceiptWithAI, classifyProductsBatch, validateBa
 import { uploadReceiptImage } from "../lib/receiptImages";
 import { matchChain, isAcceptedStore } from "../lib/supermarketWhitelist";
 import { requireUser } from "./profile";
+import { checkKitProgress } from "./kits";
 
 const router: IRouter = Router();
 
@@ -166,6 +167,8 @@ router.post("/scan", async (req, res): Promise<void> => {
   let receipt: typeof receiptsTable.$inferSelect;
   let welcomeBonus = false;
   let receiptBonusAwarded = false;
+  let referralXpBonus = 0;
+  let referralMultiplierRemaining = user.referralXpMultiplierRemaining ?? 0;
 
   if (selfDuplicate) {
     const [existing] = await db
@@ -235,12 +238,23 @@ router.post("/scan", async (req, res): Promise<void> => {
     const bonusTotal = RECEIPT_SCAN_BONUS + (welcomeBonus ? WELCOME_BONUS : 0);
     const leaMultiplier = user.hasBattlePass ? 2 : 1;
     const bonusLeaDelta = Math.round(bonusTotal * XP_TO_LEA_RATE * leaMultiplier * 100) / 100;
+
+    const referralMultiplierActive = referralMultiplierRemaining > 0;
+    referralXpBonus = referralMultiplierActive ? Math.floor(bonusTotal * 0.2) : 0;
+    const totalXpDelta = bonusTotal + referralXpBonus;
+    if (referralMultiplierActive) referralMultiplierRemaining--;
+
+    const referralUpdate = referralMultiplierActive
+      ? { referralXpMultiplierRemaining: sql`referral_xp_multiplier_remaining - 1` }
+      : {};
+
     await db
       .update(usersTable)
       .set({
-        totalPoints: sql`total_points + ${bonusTotal}`,
-        xp: sql`xp + ${bonusTotal}`,
+        totalPoints: sql`total_points + ${totalXpDelta}`,
+        xp: sql`xp + ${totalXpDelta}`,
         leaBalance: sql`lea_balance + ${bonusLeaDelta}`,
+        ...referralUpdate,
       })
       .where(eq(usersTable.id, user.id));
     await db
@@ -296,9 +310,10 @@ router.post("/scan", async (req, res): Promise<void> => {
 
   const [refreshedUser] = await db.select({ xp: usersTable.xp, leaBalance: usersTable.leaBalance }).from(usersTable).where(eq(usersTable.id, user.id));
 
-  const totalXpEarned = receiptBonusAwarded ? (RECEIPT_SCAN_BONUS + (welcomeBonus ? WELCOME_BONUS : 0)) : 0;
+  const baseXpEarned = receiptBonusAwarded ? (RECEIPT_SCAN_BONUS + (welcomeBonus ? WELCOME_BONUS : 0)) : 0;
+  const totalXpEarned = baseXpEarned + referralXpBonus;
   const leaMultiplierResp = user.hasBattlePass ? 2 : 1;
-  const totalLeaEarned = Math.round(totalXpEarned * XP_TO_LEA_RATE * leaMultiplierResp * 100) / 100;
+  const totalLeaEarned = Math.round(baseXpEarned * XP_TO_LEA_RATE * leaMultiplierResp * 100) / 100;
 
   res.json({
     receiptId: receipt.id,
@@ -312,6 +327,7 @@ router.post("/scan", async (req, res): Promise<void> => {
     welcomeBonusPts: welcomeBonus ? WELCOME_BONUS : 0,
     xpEarned: totalXpEarned,
     leaEarned: totalLeaEarned,
+    referralBonus: referralXpBonus > 0 ? { active: true, xpBonus: referralXpBonus, remaining: referralMultiplierRemaining } : null,
     xp: refreshedUser?.xp ?? 0,
     leaBalance: parseFloat(String(refreshedUser?.leaBalance ?? "0")),
     greenItemsFound: pendingProducts.map((p) => ({
@@ -868,6 +884,8 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
   const userLeaBalance = parseFloat(String(updatedUser?.leaBalance ?? "0"));
   const level = calculateLevel(userXp);
 
+  const kitResult = await checkKitProgress(user.id, product.category).catch(() => null);
+
   res.json({
     scanId: scan.id,
     productName: product.productName,
@@ -887,6 +905,9 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
     dailyCapPts: MAX_DAILY_POINTS,
     bonusVirtuoso: bonusVirtuosoPoints > 0,
     bonusVirtuosoPts: bonusVirtuosoPoints,
+    kitCompleted: kitResult?.kitCompleted ?? false,
+    kitName: kitResult?.kitName ?? null,
+    kitRewardXp: kitResult?.rewardXp ?? null,
   });
 });
 
