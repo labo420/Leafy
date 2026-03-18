@@ -75,8 +75,31 @@ export default function WalletScreen() {
             )}
           </Animated.View>
 
+          <Animated.View entering={FadeInDown.delay(140).springify()}>
+            <Pressable
+              style={[styles.withdrawBtn, !hasBattlePass && styles.withdrawBtnLocked]}
+              onPress={() => {
+                if (hasBattlePass) {
+                  console.log("Prelievo avviato");
+                } else {
+                  setShowBattlePass(true);
+                }
+              }}
+            >
+              {!hasBattlePass && (
+                <Feather name="lock" size={18} color={Colors.textSecondary} />
+              )}
+              <Text style={[styles.withdrawBtnText, !hasBattlePass && styles.withdrawBtnTextLocked]}>
+                Ritira su PayPal
+              </Text>
+              {hasBattlePass && (
+                <Feather name="arrow-right" size={18} color="#fff" />
+              )}
+            </Pressable>
+          </Animated.View>
+
           {!hasBattlePass && (
-            <Animated.View entering={FadeInDown.delay(160).springify()}>
+            <Animated.View entering={FadeInDown.delay(200).springify()}>
               <Pressable style={styles.bpPromoCard} onPress={() => setShowBattlePass(true)}>
                 <LinearGradient
                   colors={["#0f2a1e", "#1a4a2e"]}
@@ -98,7 +121,7 @@ export default function WalletScreen() {
             </Animated.View>
           )}
 
-          <Animated.View entering={FadeInDown.delay(240).springify()} style={styles.infoSection}>
+          <Animated.View entering={FadeInDown.delay(280).springify()} style={styles.infoSection}>
             <Text style={styles.infoSectionTitle}>Come funziona $LEA</Text>
             {[
               { icon: "camera" as const, text: "Scansiona uno scontrino e guadagna XP" },
@@ -203,6 +226,28 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: "Inter_700Bold",
     color: "#1a4a2e",
+  },
+
+  withdrawBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    backgroundColor: Colors.primary,
+    borderRadius: 18,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+  },
+  withdrawBtnLocked: {
+    backgroundColor: Colors.cardAlt,
+  },
+  withdrawBtnText: {
+    fontSize: 17,
+    fontFamily: "Inter_700Bold",
+    color: "#fff",
+  },
+  withdrawBtnTextLocked: {
+    color: Colors.textSecondary,
   },
 
   bpPromoCard: {
