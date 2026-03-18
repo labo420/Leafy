@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
@@ -26,7 +26,9 @@ export const receiptsTable = pgTable("receipts", {
   storeChain: text("store_chain"),
   province: text("province"),
   documentNumber: text("document_number"),
-});
+}, (t) => [
+  index("idx_receipts_document_number").on(t.documentNumber),
+]);
 
 export const insertReceiptSchema = createInsertSchema(receiptsTable).omit({ id: true, scannedAt: true });
 export type InsertReceipt = z.infer<typeof insertReceiptSchema>;
