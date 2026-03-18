@@ -25,7 +25,7 @@ export default function BattlePassModal({ visible, onClose }: BattlePassModalPro
 
   const handleActivate = async () => {
     setLoading(true);
-    // TODO: Integrare gateway di pagamento Stripe/IAP qui
+    // TODO: Integrare qui il gateway di pagamento (es. Stripe o RevenueCat) per l'abbonamento reale.
     await activateBattlePass();
     setLoading(false);
     setActivated(true);
@@ -105,7 +105,7 @@ export default function BattlePassModal({ visible, onClose }: BattlePassModalPro
                 ) : (
                   <>
                     <Feather name="zap" size={18} color="#1a4a2e" />
-                    <Text style={styles.ctaText}>Attiva a 0,89€/mese</Text>
+                    <Text style={styles.ctaText}>Attiva Battle Pass</Text>
                   </>
                 )}
               </LinearGradient>

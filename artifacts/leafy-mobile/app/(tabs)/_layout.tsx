@@ -78,7 +78,7 @@ export default function TabLayout() {
   const isIOS = Platform.OS === "ios";
   const isWeb = Platform.OS === "web";
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
+  const { user, hasBattlePass } = useAuth();
   const { triggerReset, triggerCamera } = useScanReset();
 
   return (
@@ -183,7 +183,14 @@ export default function TabLayout() {
           title: "Profilo",
           tabBarIcon: ({ color, focused }) => (
             <TabIcon focused={focused}>
-              <Feather name="user" size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
+              <View>
+                <Feather name="user" size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
+                {hasBattlePass && (
+                  <View style={styles.proBadge}>
+                    <Text style={styles.proBadgeText}>PRO</Text>
+                  </View>
+                )}
+              </View>
             </TabIcon>
           ),
         }}
@@ -264,5 +271,20 @@ const styles = StyleSheet.create({
     borderRadius: 42.5,
     borderWidth: 3,
     borderColor: "rgba(46,107,80,0.20)",
+  },
+  proBadge: {
+    position: "absolute",
+    bottom: -4,
+    right: -7,
+    backgroundColor: "#FFD700",
+    borderRadius: 4,
+    paddingHorizontal: 3,
+    paddingVertical: 1,
+  },
+  proBadgeText: {
+    fontSize: 7,
+    fontFamily: Fonts.bodyBold,
+    color: "#1a4a2e",
+    letterSpacing: 0.5,
   },
 });
