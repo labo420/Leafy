@@ -461,7 +461,7 @@ export default function BarcodeScannerScreen() {
 
             {lastConfirmed.bonusVirtuoso && (
               <View style={styles.virtuosoChip}>
-                <Text style={styles.virtuosoChipIcon}>⭐</Text>
+                <Feather name="star" size={22} color={Colors.amber} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.virtuosoChipTitle}>Scontrino Virtuoso!</Text>
                   <Text style={styles.virtuosoChipSub}>3+ prodotti green +{lastConfirmed.bonusVirtuosoPts} pt bonus</Text>
@@ -1039,7 +1039,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.25)", borderRadius: 14,
     paddingHorizontal: 14, paddingVertical: 10, marginTop: 12,
   },
-  virtuosoChipIcon: { fontSize: 22 },
   virtuosoChipTitle: { fontSize: 14, fontFamily: "Inter_700Bold", color: "#fff" },
   virtuosoChipSub: { fontSize: 12, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.85)" },
   capsInfoBar: {

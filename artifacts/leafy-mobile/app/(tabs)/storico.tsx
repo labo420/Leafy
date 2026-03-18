@@ -581,9 +581,9 @@ export default function StoricoScreen() {
         <ActivityIndicator size="large" color={Colors.leaf} style={{ marginTop: 40 }} />
       ) : !receipts || receipts.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={{ fontSize: 56 }}>📭</Text>
+          <Feather name="inbox" size={56} color={Colors.textMuted} />
           <Text style={styles.emptyTitle}>Nessuno scontrino ancora</Text>
-          <Text style={styles.emptySub}>Il tuo primo scontrino vale punti green! 🎯</Text>
+          <Text style={styles.emptySub}>Il tuo primo scontrino vale punti green!</Text>
           <Pressable style={styles.scanBtn} onPress={() => router.push("/(tabs)/scan")}>
             <Feather name="camera" size={16} color="#fff" />
             <Text style={styles.scanBtnText}>Scansiona ora</Text>

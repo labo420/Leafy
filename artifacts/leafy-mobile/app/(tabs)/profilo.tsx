@@ -71,13 +71,14 @@ function periodLabel(badgeType: string): string {
 }
 
 type ImpactMetric = {
-  emoji: string;
+  icon: string;
   value: number;
   unit: string;
   label: string;
   equiv: string;
   bg: string;
   iconBg: string;
+  iconColor: string;
   decimals: number;
 };
 
@@ -111,7 +112,7 @@ function ImpactMetricCard({ m, animate }: { m: ImpactMetric; animate: boolean })
   return (
     <View style={[impactStyles.card, { backgroundColor: m.bg }]}>
       <View style={[impactStyles.iconCircle, { backgroundColor: m.iconBg }]}>
-        <Text style={{ fontSize: 18 }}>{m.emoji}</Text>
+        <Feather name={m.icon as any} size={18} color={m.iconColor} />
       </View>
       <Text style={impactStyles.value}>
         {display}
@@ -644,9 +645,7 @@ export default function ProfiloScreen() {
         </View>
         <Text style={styles.username}>{username}</Text>
         <View style={styles.levelPill}>
-          <Text style={{ fontSize: 14 }}>
-            {level === "Germoglio" ? "🌱" : level === "Ramoscello" ? "🌿" : level === "Arbusto" ? "🍃" : level === "Albero" ? "🌳" : "🌲"}
-          </Text>
+          <Feather name="leaf" size={14} color={Colors.leaf} />
           <Text style={styles.levelPillText}>Livello {level}</Text>
         </View>
       </Animated.View>
@@ -657,7 +656,7 @@ export default function ProfiloScreen() {
         onLayout={() => { if (!impactVisible) setImpactVisible(true); }}
       >
         <View style={styles.sectionHeader}>
-          <Text style={{ fontSize: 18 }}>📊</Text>
+          <Feather name="bar-chart-2" size={18} color={Colors.leaf} />
           <Text style={styles.sectionTitle}>Il tuo impatto verde</Text>
         </View>
         <ScrollView
@@ -666,11 +665,11 @@ export default function ProfiloScreen() {
           contentContainerStyle={{ paddingRight: 20 }}
         >
           {[
-            { emoji: "🌍", value: impact?.co2SavedKg ?? 0, unit: "kg", label: "CO₂ risparmiata", equiv: `≈ ${Math.round((impact?.co2SavedKg ?? 0) * 5)} km in auto`, bg: "#EFF6FF", iconBg: "#DBEAFE", decimals: 1 },
-            { emoji: "💧", value: impact?.waterSavedLiters ?? 0, unit: "L", label: "Acqua salvata", equiv: `≈ ${Math.round((impact?.waterSavedLiters ?? 0) / 40)} docce`, bg: "#F0FDFA", iconBg: "#CCFBF1", decimals: 0 },
-            { emoji: "♻️", value: impact?.plasticAvoidedKg ?? 0, unit: "kg", label: "Plastica evitata", equiv: `≈ ${Math.round((impact?.plasticAvoidedKg ?? 0) / 0.025)} bottiglie`, bg: "#FFF7ED", iconBg: "#FFEDD5", decimals: 2 },
-            { emoji: "🌿", value: impact?.greenProductsCount ?? 0, unit: "", label: "Prodotti green", equiv: `${impact?.greenProductsCount ?? 0} articoli eco`, bg: "#F0FDF4", iconBg: "#DCFCE7", decimals: 0 },
-            { emoji: "🧾", value: impact?.receiptsScanned ?? 0, unit: "", label: "Scontrini", equiv: `${impact?.receiptsScanned ?? 0} analizzati`, bg: "#FAF5FF", iconBg: "#F3E8FF", decimals: 0 },
+            { icon: "globe", iconColor: "#2563EB", value: impact?.co2SavedKg ?? 0, unit: "kg", label: "CO₂ risparmiata", equiv: `≈ ${Math.round((impact?.co2SavedKg ?? 0) * 5)} km in auto`, bg: "#EFF6FF", iconBg: "#DBEAFE", decimals: 1 },
+            { icon: "droplet", iconColor: "#0D9488", value: impact?.waterSavedLiters ?? 0, unit: "L", label: "Acqua salvata", equiv: `≈ ${Math.round((impact?.waterSavedLiters ?? 0) / 40)} docce`, bg: "#F0FDFA", iconBg: "#CCFBF1", decimals: 0 },
+            { icon: "refresh-cw", iconColor: "#D97706", value: impact?.plasticAvoidedKg ?? 0, unit: "kg", label: "Plastica evitata", equiv: `≈ ${Math.round((impact?.plasticAvoidedKg ?? 0) / 0.025)} bottiglie`, bg: "#FFF7ED", iconBg: "#FFEDD5", decimals: 2 },
+            { icon: "feather", iconColor: Colors.leaf, value: impact?.greenProductsCount ?? 0, unit: "", label: "Prodotti green", equiv: `${impact?.greenProductsCount ?? 0} articoli eco`, bg: "#F0FDF4", iconBg: "#DCFCE7", decimals: 0 },
+            { icon: "file-text", iconColor: "#7C3AED", value: impact?.receiptsScanned ?? 0, unit: "", label: "Scontrini", equiv: `${impact?.receiptsScanned ?? 0} analizzati`, bg: "#FAF5FF", iconBg: "#F3E8FF", decimals: 0 },
           ].map((m, i) => (
             <ImpactMetricCard key={i} m={m} animate={impactVisible} />
           ))}

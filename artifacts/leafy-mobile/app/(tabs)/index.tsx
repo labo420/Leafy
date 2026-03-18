@@ -236,7 +236,7 @@ function LevelMilestoneBar({ currentLevel, points }: { currentLevel: string; poi
                 )}
 
                 {!reached && (
-                  <Text style={{ position: "absolute", fontSize: sz * 0.45 }}>🔒</Text>
+                  <Feather name="lock" size={Math.round(sz * 0.45)} color="rgba(255,255,255,0.7)" style={{ position: "absolute" }} />
                 )}
               </View>
 
@@ -585,9 +585,10 @@ function GuestAuthScreen() {
               style={expanded ? authStyles.logoSmall : authStyles.logo}
               resizeMode="contain"
             />
-            <Text style={authStyles.tagline}>
-              🎁 La tua spesa di ogni giorno,{"\n"}premiata.
-            </Text>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              <Feather name="gift" size={16} color={Colors.primary} />
+              <Text style={authStyles.tagline}>La tua spesa di ogni giorno,{"\n"}premiata.</Text>
+            </View>
           </View>
 
           <View style={authStyles.actions}>
@@ -849,17 +850,17 @@ export default function HomeScreen() {
         <Text style={styles.impactTitle}>Il tuo impatto</Text>
         <View style={styles.impactRow}>
           <View style={styles.impactCard}>
-            <Text style={styles.impactEmoji}>🧾</Text>
+            <Feather name="file-text" size={24} color={Colors.leaf} />
             <Text style={styles.impactCardValue}>{impact?.receiptsScanned ?? 0}</Text>
             <Text style={styles.impactCardLabel}>Scontrini</Text>
           </View>
           <View style={styles.impactCard}>
-            <Text style={styles.impactEmoji}>🌿</Text>
+            <Feather name="feather" size={24} color={Colors.leaf} />
             <Text style={styles.impactCardValue}>{impact?.greenProductsCount ?? 0}</Text>
             <Text style={styles.impactCardLabel}>Prodotti green</Text>
           </View>
           <View style={styles.impactCard}>
-            <Text style={styles.impactEmoji}>🌍</Text>
+            <Feather name="globe" size={24} color={Colors.leaf} />
             <Text style={styles.impactCardValue}>{(impact?.co2SavedKg ?? 0).toFixed(1)}</Text>
             <Text style={styles.impactCardLabel}>kg CO₂</Text>
           </View>
@@ -1115,9 +1116,6 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     color: Colors.textSecondary,
     textAlign: "center",
-  },
-  impactEmoji: {
-    fontSize: 24,
   },
   progressBarTrack: {
     height: 8,

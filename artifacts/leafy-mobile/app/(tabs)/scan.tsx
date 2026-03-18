@@ -327,7 +327,7 @@ export default function ScanScreen() {
           <Modal visible={showWelcomeOverlay} transparent animationType="fade">
             <View style={styles.welcomeOverlayBg}>
               <Animated.View entering={FadeIn} style={styles.welcomeOverlayCard}>
-                <Text style={styles.welcomeOverlayEmoji}>🎉</Text>
+                <Feather name="star" size={64} color={Colors.amber} style={{ marginBottom: 16 }} />
                 <Text style={styles.welcomeOverlayTitle}>Benvenuto su Leafy!</Text>
                 <Text style={styles.welcomeOverlayText}>Hai ricevuto +{scanResult.welcomeBonusPts} punti per il tuo primo scontrino eco-friendly</Text>
               </Animated.View>
@@ -340,7 +340,7 @@ export default function ScanScreen() {
             >
               <Animated.View entering={FadeIn.delay(100)}>
                 <View style={styles.resultIconWrap}>
-                  <Text style={styles.resultBigEmoji}>✅</Text>
+                  <Feather name="check-circle" size={64} color="#fff" />
                 </View>
                 <Text style={styles.resultTitle}>Scontrino verificato!</Text>
                 <Text style={styles.resultSub}>{scanResult.message}</Text>
@@ -536,7 +536,7 @@ export default function ScanScreen() {
                 </View>
               </View>
               <View style={styles.activePointsBadge}>
-                <Text style={{ fontSize: 14 }}>🌿</Text>
+                <Feather name="feather" size={14} color={Colors.leaf} />
                 <Text style={styles.activePointsText}>{r.pointsEarned} pt</Text>
               </View>
             </View>
@@ -620,7 +620,7 @@ export default function ScanScreen() {
       <View style={styles.idleHeader}>
         <Text style={styles.idleTitle}>Scansiona</Text>
         <View style={styles.idleSubRow}>
-          <Text style={{ fontSize: 14 }}>🌿</Text>
+          <Feather name="feather" size={14} color={Colors.leaf} />
           <Text style={styles.idleSub}>Guadagna punti per ogni acquisto sostenibile</Text>
         </View>
       </View>
@@ -835,7 +835,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24, paddingBottom: 32,
     borderBottomLeftRadius: 28, borderBottomRightRadius: 28, alignItems: "center",
   },
-  resultBigEmoji: { fontSize: 64, textAlign: "center" },
   resultIconWrap: { alignItems: "center", marginBottom: 12 },
   resultTitle: { fontSize: 28, fontFamily: "DMSans_700Bold", color: "#fff", textAlign: "center", marginBottom: 4 },
   resultSub: {
@@ -871,7 +870,6 @@ const styles = StyleSheet.create({
   welcomeOverlayCard: {
     backgroundColor: "#fff", borderRadius: 28, padding: 32, alignItems: "center", width: "80%",
   },
-  welcomeOverlayEmoji: { fontSize: 64, marginBottom: 16 },
   welcomeOverlayTitle: { fontSize: 28, fontFamily: "DMSans_700Bold", color: Colors.forest, marginBottom: 12, textAlign: "center" },
   welcomeOverlayText: { fontSize: 15, fontFamily: "Inter_400Regular", color: Colors.text, textAlign: "center", lineHeight: 22 },
   productEmoji: { fontSize: 18, marginRight: 4, width: 24 },
