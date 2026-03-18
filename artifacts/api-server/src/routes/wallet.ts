@@ -42,20 +42,24 @@ router.post("/wallet/withdraw", async (req, res): Promise<void> => {
 
   const euroAmount = amount * LEA_TO_EUR;
 
-  await db
-    .update(usersTable)
-    .set({ leaBalance: sql`lea_balance - ${amount.toFixed(2)}::numeric` })
-    .where(eq(usersTable.id, user.id));
+  const withdrawal = await db.transaction(async (tx) => {
+    await tx
+      .update(usersTable)
+      .set({ leaBalance: sql`lea_balance - ${amount.toFixed(2)}::numeric` })
+      .where(eq(usersTable.id, user.id));
 
-  const [withdrawal] = await db
-    .insert(leaWithdrawalsTable)
-    .values({
-      userId: user.id,
-      leaAmount: amount.toFixed(2),
-      euroAmount: euroAmount.toFixed(2),
-      status: "pending",
-    })
-    .returning();
+    const [record] = await tx
+      .insert(leaWithdrawalsTable)
+      .values({
+        userId: user.id,
+        leaAmount: amount.toFixed(2),
+        euroAmount: euroAmount.toFixed(2),
+        status: "pending",
+      })
+      .returning();
+
+    return record;
+  });
 
   res.json({
     id: withdrawal.id,
