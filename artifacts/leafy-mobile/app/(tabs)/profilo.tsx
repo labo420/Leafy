@@ -71,7 +71,7 @@ function periodLabel(badgeType: string): string {
 }
 
 type ImpactMetric = {
-  icon: string;
+  icon: React.ComponentProps<typeof Feather>["name"];
   value: number;
   unit: string;
   label: string;
@@ -112,7 +112,7 @@ function ImpactMetricCard({ m, animate }: { m: ImpactMetric; animate: boolean })
   return (
     <View style={[impactStyles.card, { backgroundColor: m.bg }]}>
       <View style={[impactStyles.iconCircle, { backgroundColor: m.iconBg }]}>
-        <Feather name={m.icon as any} size={18} color={m.iconColor} />
+        <Feather name={m.icon} size={18} color={m.iconColor} />
       </View>
       <Text style={impactStyles.value}>
         {display}

@@ -327,7 +327,7 @@ export default function ScanScreen() {
           <Modal visible={showWelcomeOverlay} transparent animationType="fade">
             <View style={styles.welcomeOverlayBg}>
               <Animated.View entering={FadeIn} style={styles.welcomeOverlayCard}>
-                <Feather name="star" size={64} color={Colors.amber} style={{ marginBottom: 16 }} />
+                <Feather name="star" size={48} color={Colors.amber} style={{ marginBottom: 16 }} />
                 <Text style={styles.welcomeOverlayTitle}>Benvenuto su Leafy!</Text>
                 <Text style={styles.welcomeOverlayText}>Hai ricevuto +{scanResult.welcomeBonusPts} punti per il tuo primo scontrino eco-friendly</Text>
               </Animated.View>
@@ -340,7 +340,7 @@ export default function ScanScreen() {
             >
               <Animated.View entering={FadeIn.delay(100)}>
                 <View style={styles.resultIconWrap}>
-                  <Feather name="check-circle" size={64} color="#fff" />
+                  <Feather name="check-circle" size={48} color="#fff" />
                 </View>
                 <Text style={styles.resultTitle}>Scontrino verificato!</Text>
                 <Text style={styles.resultSub}>{scanResult.message}</Text>

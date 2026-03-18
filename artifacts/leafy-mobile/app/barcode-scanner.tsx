@@ -461,7 +461,7 @@ export default function BarcodeScannerScreen() {
 
             {lastConfirmed.bonusVirtuoso && (
               <View style={styles.virtuosoChip}>
-                <Feather name="star" size={22} color={Colors.amber} />
+                <Feather name="star" size={14} color={Colors.amber} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.virtuosoChipTitle}>Scontrino Virtuoso!</Text>
                   <Text style={styles.virtuosoChipSub}>3+ prodotti green +{lastConfirmed.bonusVirtuosoPts} pt bonus</Text>
