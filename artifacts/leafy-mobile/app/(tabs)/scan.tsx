@@ -95,6 +95,13 @@ function formatTimeRemaining(minutes: number): string {
   return `${minutes} min`;
 }
 
+function getMotivationMessage(xp: number): string {
+  if (xp === 0) return "Ottimo! Hai guadagnato i punti base per questo scontrino.";
+  if (xp < 20) return `Bel colpo! Hai accumulato ${xp} XP con questo scontrino.`;
+  if (xp < 50) return `Ottimo lavoro! ${xp} XP aggiunti al tuo profilo.`;
+  if (xp < 100) return `Fantastico! ${xp} XP — stai diventando un campione del verde!`;
+  return `Incredibile! ${xp} XP in un solo scontrino. Sei un eroe della sostenibilità!`;
+}
 
 function AcceptedStoresSection() {
   const [open, setOpen] = useState(false);
@@ -365,26 +372,21 @@ export default function ScanScreen() {
               </Animated.View>
             </LinearGradient>
 
-            {((scanResult.xpEarned ?? 0) > 0 || (scanResult.leaEarned ?? 0) > 0) && (
-              <Animated.View entering={FadeInDown.delay(220)} style={styles.earnedRow}>
-                <View style={styles.earnedItem}>
-                  <Feather name="star" size={20} color={Colors.leaf} />
-                  <Text style={styles.earnedLabel}>XP guadagnati</Text>
-                  <Text style={styles.earnedValue}>+{scanResult.xpEarned ?? 0} XP</Text>
-                </View>
-                <View style={styles.earnedDivider} />
-                <View style={styles.earnedItem}>
-                  <Feather name="dollar-sign" size={20} color="#FFD700" />
-                  <Text style={styles.earnedLabel}>$LEA guadagnati</Text>
-                  <Text style={[styles.earnedValue, { color: "#FFD700" }]}>+{(scanResult.leaEarned ?? 0).toFixed(2)} $LEA</Text>
-                  {hasBattlePass && (
-                    <View style={styles.x2Badge}>
-                      <Text style={styles.x2BadgeText}>x2</Text>
-                    </View>
-                  )}
-                </View>
-              </Animated.View>
-            )}
+            <Animated.View entering={FadeInDown.delay(220)} style={styles.xpHeroCard}>
+              <Text style={styles.xpBigValue}>+{scanResult.xpEarned ?? 0} XP</Text>
+              <Text style={styles.xpMotivation}>{getMotivationMessage(scanResult.xpEarned ?? 0)}</Text>
+              <View style={styles.leaSecondaryRow}>
+                <Feather name="dollar-sign" size={14} color={Colors.textSecondary} />
+                <Text style={styles.leaSecondaryText}>
+                  +{(scanResult.leaEarned ?? 0).toFixed(2)} $LEA guadagnati
+                </Text>
+                {hasBattlePass && (
+                  <View style={styles.x2Badge}>
+                    <Text style={styles.x2BadgeText}>x2</Text>
+                  </View>
+                )}
+              </View>
+            </Animated.View>
 
             {totalIdonei > 0 && (
               <Animated.View entering={FadeInDown.delay(300)} style={styles.section}>
@@ -416,7 +418,10 @@ export default function ScanScreen() {
 
             {nonIdonei.length > 0 && (
               <Animated.View entering={FadeInDown.delay(350)} style={[styles.section, styles.nonGreenSection]}>
-                <Text style={styles.nonGreenTitle}>Prodotti non idonei ({nonIdonei.length})</Text>
+                <View style={styles.nonGreenTitleRow}>
+                  <Feather name="shopping-bag" size={13} color={Colors.textSecondary} />
+                  <Text style={styles.nonGreenTitle}>Altri prodotti ({nonIdonei.length})</Text>
+                </View>
                 {nonIdonei.map((product, i) => (
                   <View key={`ni-${i}`} style={styles.nonGreenRow}>
                     <Text style={styles.productEmoji}>{getProductEmoji(product.name, product.category, product.emoji)}</Text>
@@ -428,17 +433,20 @@ export default function ScanScreen() {
 
             <Animated.View entering={FadeInDown.delay(400)} style={styles.radarTipCard}>
               <View style={styles.radarTipHeader}>
-                <Feather name="radio" size={16} color={Colors.leaf} />
+                <MaterialCommunityIcons name="lightbulb-on-outline" size={18} color={Colors.amber} />
                 <Text style={styles.radarTipTitle}>Consiglio del Radar</Text>
               </View>
               <Text style={styles.radarTipText}>
-                {[
-                  "Scansiona i barcode dei prodotti idonei per guadagnare ancora più $LEA.",
-                  "Prodotti con Eco-Score A o B valgono il doppio in punti.",
-                  "Con il Battle Pass ogni $LEA guadagnato viene raddoppiato automaticamente.",
-                  "Più scansioni fai ogni mese, più sali di livello e sblocchi badge esclusivi.",
-                  "I prodotti bio e a km0 ottengono un bonus punti aggiuntivo.",
-                ][scanResult.receiptId % 5]}
+                {nonIdonei.length > 0
+                  ? `Sapevi che scegliendo un'alternativa Eco per ${nonIdonei[0].name} avresti guadagnato +15 $LEA? Tienilo a mente!`
+                  : [
+                      "Scansiona i barcode dei prodotti idonei per guadagnare ancora più $LEA.",
+                      "Prodotti con Eco-Score A o B valgono il doppio in punti.",
+                      "Con il Battle Pass ogni $LEA guadagnato viene raddoppiato automaticamente.",
+                      "Più scansioni fai ogni mese, più sali di livello e sblocchi badge esclusivi.",
+                      "I prodotti bio e a km0 ottengono un bonus punti aggiuntivo.",
+                    ][scanResult.receiptId % 5]
+                }
               </Text>
             </Animated.View>
 
@@ -874,7 +882,8 @@ const styles = StyleSheet.create({
   welcomeOverlayText: { fontSize: 15, fontFamily: "Inter_400Regular", color: Colors.text, textAlign: "center", lineHeight: 22 },
   productEmoji: { fontSize: 18, marginRight: 4, width: 24 },
   nonGreenSection: { backgroundColor: Colors.background, borderRadius: 12, paddingVertical: 12 },
-  nonGreenTitle: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: Colors.textSecondary, marginBottom: 8, paddingHorizontal: 4 },
+  nonGreenTitleRow: { flexDirection: "row", alignItems: "center", gap: 5, marginBottom: 8, paddingHorizontal: 4 },
+  nonGreenTitle: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: Colors.textSecondary },
   nonGreenRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingVertical: 8 },
   nonGreenName: { fontSize: 13, fontFamily: "Inter_400Regular", color: Colors.textSecondary, flex: 1 },
   timerText: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: "#fff" },
@@ -959,39 +968,41 @@ const styles = StyleSheet.create({
   storesCatTitle: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: Colors.text },
   storesCatList: { fontSize: 12, fontFamily: "Inter_400Regular", color: Colors.textSecondary, lineHeight: 18 },
 
-  earnedRow: {
-    flexDirection: "row",
+  xpHeroCard: {
     marginHorizontal: 20,
     marginTop: 16,
     backgroundColor: Colors.card,
     borderRadius: 20,
     borderWidth: 1,
     borderColor: Colors.border,
-    overflow: "hidden",
-  },
-  earnedItem: {
-    flex: 1,
+    padding: 24,
     alignItems: "center",
-    paddingVertical: 18,
-    paddingHorizontal: 12,
-    gap: 4,
+    gap: 6,
   },
-  earnedLabel: {
-    fontSize: 11,
-    fontFamily: "Inter_500Medium",
-    color: Colors.textSecondary,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  earnedValue: {
-    fontSize: 20,
+  xpBigValue: {
+    fontSize: 56,
     fontFamily: "DMSans_700Bold",
     color: Colors.leaf,
+    lineHeight: 64,
+    textAlign: "center",
   },
-  earnedDivider: {
-    width: 1,
-    backgroundColor: Colors.border,
-    marginVertical: 12,
+  xpMotivation: {
+    fontSize: 15,
+    fontFamily: "Inter_500Medium",
+    color: Colors.text,
+    textAlign: "center",
+    lineHeight: 22,
+  },
+  leaSecondaryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 4,
+  },
+  leaSecondaryText: {
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+    color: Colors.textSecondary,
   },
   x2Badge: {
     backgroundColor: "#FFD700",
@@ -1009,12 +1020,12 @@ const styles = StyleSheet.create({
   radarTipCard: {
     marginHorizontal: 20,
     marginTop: 16,
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: "#FFF8EC",
     borderRadius: 20,
     padding: 16,
     gap: 8,
-    borderWidth: 1,
-    borderColor: "rgba(46,107,80,0.15)",
+    borderWidth: 1.5,
+    borderColor: Colors.amber,
   },
   radarTipHeader: {
     flexDirection: "row",
@@ -1024,7 +1035,7 @@ const styles = StyleSheet.create({
   radarTipTitle: {
     fontSize: 13,
     fontFamily: "Inter_700Bold",
-    color: Colors.leaf,
+    color: Colors.amber,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
