@@ -117,12 +117,12 @@ const LEVEL_MCI_ICONS: Record<string, React.ComponentProps<typeof MaterialCommun
 const ICON_BASE_SIZE = 44;
 const ICON_MIN_SCALE = 0.52;
 const ICON_MAX_SCALE = 1.4;
-const CAN_TOP = 28;
-const CAN_LEFT = RING_SIZE / 2 + 6;
+const CAN_TOP = 32;
+const CAN_LEFT = RING_SIZE / 2 + 12;
 const CAN_PIVOT = 17;
-const DROP_TOP = 58;
-const DROP_LEFT = RING_SIZE / 2 + 8;
-const DROP_TRAVEL = 52;
+const DROP_TOP = 62;
+const DROP_LEFT = RING_SIZE / 2 + 14;
+const DROP_TRAVEL = 50;
 
 function LevelProgressRing({
   progress,
