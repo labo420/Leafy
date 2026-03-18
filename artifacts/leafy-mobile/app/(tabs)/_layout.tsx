@@ -68,7 +68,7 @@ function BalanceBar() {
         <View style={styles.balanceChip}>
           <Feather name="dollar-sign" size={12} color="#AADF2A" />
           <Text style={styles.balanceChipLeaLabel}>LEA</Text>
-          <Text style={styles.balanceChipValue}>{leaBalance.toFixed(2)}€</Text>
+          <Text style={styles.balanceChipValue}>{leaBalance.toFixed(2)}</Text>
         </View>
       </View>
     </View>
