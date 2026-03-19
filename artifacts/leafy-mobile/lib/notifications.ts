@@ -19,32 +19,57 @@ export async function requestNotificationPermission(): Promise<boolean> {
   return status === "granted";
 }
 
+export async function registerPushToken(): Promise<string | null> {
+  if (Platform.OS === "web") return null;
+  try {
+    const granted = await requestNotificationPermission();
+    if (!granted) return null;
+    const tokenData = await Notifications.getExpoPushTokenAsync();
+    return tokenData.data;
+  } catch {
+    return null;
+  }
+}
+
 export async function scheduleLocalNotification(
   title: string,
   body: string,
   delaySeconds = 0,
 ): Promise<void> {
   try {
+    if (Platform.OS === "web") return;
     const granted = await requestNotificationPermission();
     if (!granted) return;
     await Notifications.scheduleNotificationAsync({
       content: { title, body, sound: true },
-      trigger: delaySeconds > 0 ? { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: delaySeconds } : null,
+      trigger:
+        delaySeconds > 0
+          ? {
+              type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+              seconds: delaySeconds,
+            }
+          : null,
     });
   } catch {
   }
 }
 
-export async function sendWalkinRewardNotification(locationName: string, xp: number): Promise<void> {
+export async function sendWalkinRewardNotification(
+  locationName: string,
+  xp: number,
+): Promise<void> {
   await scheduleLocalNotification(
-    "🏪 Walk-in completato!",
+    "Walk-in completato!",
     `Hai guadagnato ${xp} XP visitando ${locationName}. Continua così!`,
   );
 }
 
-export async function sendDiscoveryRewardNotification(productName: string, xp: number): Promise<void> {
+export async function sendDiscoveryRewardNotification(
+  productName: string,
+  xp: number,
+): Promise<void> {
   await scheduleLocalNotification(
-    "🔍 Scoperta completata!",
+    "Scoperta completata!",
     `Hai guadagnato ${xp} XP scansionando "${productName}"!`,
   );
 }

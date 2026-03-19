@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import * as Location from "expo-location";
 import { apiFetch } from "@/lib/api";
 
@@ -65,16 +65,34 @@ function mapLocation(raw: RawLocation): NearbyLocation {
   };
 }
 
-const POLL_INTERVAL_MS = 30_000;
 const DEFAULT_RADIUS_M = 300;
+const MOVEMENT_THRESHOLD_M = 500;
+
+function haversineDistanceM(
+  lat1: number, lon1: number,
+  lat2: number, lon2: number,
+): number {
+  const R = 6371000;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 export function useNearbyLocations(enabled: boolean) {
   const [locations, setLocations] = useState<NearbyLocation[]>([]);
   const [permissionStatus, setPermissionStatus] = useState<"undetermined" | "granted" | "denied">("undetermined");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const mountedRef = useRef(true);
+  const lastFetchPosRef = useRef<{ lat: number; lng: number } | null>(null);
+  const locationSubRef = useRef<Location.LocationSubscription | null>(null);
+  const fetchingRef = useRef(false);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -83,56 +101,105 @@ export function useNearbyLocations(enabled: boolean) {
     };
   }, []);
 
-  const fetchLocations = async () => {
-    if (!mountedRef.current) return;
+  const fetchLocations = useCallback(async (lat: number, lng: number) => {
+    if (!mountedRef.current || fetchingRef.current) return;
+    fetchingRef.current = true;
     setLoading(true);
     setError(null);
+    try {
+      const data = await apiFetch<{ locations: RawLocation[]; count: number }>(
+        `/locations/nearby?lat=${lat}&lng=${lng}&radius=${DEFAULT_RADIUS_M}`,
+      );
+      if (!mountedRef.current) return;
+      lastFetchPosRef.current = { lat, lng };
+      setLocations((data.locations ?? []).map(mapLocation));
+    } catch (e: unknown) {
+      if (!mountedRef.current) return;
+      setError(e instanceof Error ? e.message : "Errore di posizione");
+    } finally {
+      fetchingRef.current = false;
+      if (mountedRef.current) setLoading(false);
+    }
+  }, []);
+
+  const manualRefresh = useCallback(async () => {
     try {
       const pos = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
       });
       if (!mountedRef.current) return;
       const { latitude, longitude } = pos.coords;
-      const data = await apiFetch<{ locations: RawLocation[]; count: number }>(
-        `/locations/nearby?lat=${latitude}&lng=${longitude}&radius=${DEFAULT_RADIUS_M}`,
-      );
-      if (!mountedRef.current) return;
-      setLocations((data.locations ?? []).map(mapLocation));
-    } catch (e: unknown) {
-      if (!mountedRef.current) return;
-      setError(e instanceof Error ? e.message : "Errore di posizione");
-    } finally {
-      if (mountedRef.current) setLoading(false);
+      lastFetchPosRef.current = null;
+      await fetchLocations(latitude, longitude);
+    } catch {
+      if (mountedRef.current) setError("Impossibile ottenere la posizione");
     }
-  };
-
-  const requestAndFetch = async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (!mountedRef.current) return;
-    if (status !== "granted") {
-      setPermissionStatus("denied");
-      return;
-    }
-    setPermissionStatus("granted");
-    await fetchLocations();
-  };
+  }, [fetchLocations]);
 
   useEffect(() => {
     if (!enabled) {
       setLocations([]);
-      if (timerRef.current) clearInterval(timerRef.current);
+      setError(null);
+      lastFetchPosRef.current = null;
+      if (locationSubRef.current) {
+        locationSubRef.current.remove();
+        locationSubRef.current = null;
+      }
       return;
     }
 
-    requestAndFetch();
-    timerRef.current = setInterval(() => {
-      fetchLocations();
-    }, POLL_INTERVAL_MS);
+    let cancelled = false;
+
+    async function startWatching() {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (cancelled || !mountedRef.current) return;
+      if (status !== "granted") {
+        setPermissionStatus("denied");
+        return;
+      }
+      setPermissionStatus("granted");
+
+      const pos = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      if (cancelled || !mountedRef.current) return;
+      const { latitude, longitude } = pos.coords;
+      await fetchLocations(latitude, longitude);
+
+      if (cancelled || !mountedRef.current) return;
+
+      locationSubRef.current = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.Balanced,
+          distanceInterval: MOVEMENT_THRESHOLD_M,
+          timeInterval: 30_000,
+        },
+        (newPos) => {
+          if (!mountedRef.current) return;
+          const { latitude: newLat, longitude: newLng } = newPos.coords;
+          const last = lastFetchPosRef.current;
+          if (!last) {
+            fetchLocations(newLat, newLng);
+            return;
+          }
+          const dist = haversineDistanceM(last.lat, last.lng, newLat, newLng);
+          if (dist >= MOVEMENT_THRESHOLD_M) {
+            fetchLocations(newLat, newLng);
+          }
+        },
+      );
+    }
+
+    startWatching();
 
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      cancelled = true;
+      if (locationSubRef.current) {
+        locationSubRef.current.remove();
+        locationSubRef.current = null;
+      }
     };
-  }, [enabled]);
+  }, [enabled, fetchLocations]);
 
-  return { locations, permissionStatus, loading, error, refresh: fetchLocations };
+  return { locations, permissionStatus, loading, error, refresh: manualRefresh };
 }

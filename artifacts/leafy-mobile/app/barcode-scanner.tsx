@@ -27,6 +27,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import Colors from "@/constants/colors";
 import { useLevelUp } from "@/context/level-up";
+import { useNotifications } from "@/context/notifications";
 import { useTheme } from "@/context/theme";
 import { sendDiscoveryRewardNotification } from "@/lib/notifications";
 
@@ -147,6 +148,7 @@ export default function BarcodeScannerScreen() {
   const [manualBackPhoto, setManualBackPhoto] = useState<{ uri: string; base64: string } | null>(null);
   const [cameFromReject, setCameFromReject] = useState(false);
   const { checkForLevelUp } = useLevelUp();
+  const { pushEnabled } = useNotifications();
 
   const topPadding = Platform.OS === "web" ? 20 : insets.top;
 
@@ -176,7 +178,9 @@ export default function BarcodeScannerScreen() {
       setDiscoveryResult(data);
       setPhase("confirmed");
       if (!data.alreadyCompleted && data.success) {
-        await sendDiscoveryRewardNotification(data.productName ?? targetProductName ?? "", data.xpAwarded ?? 0);
+        if (pushEnabled) {
+          await sendDiscoveryRewardNotification(data.productName ?? targetProductName ?? "", data.xpAwarded ?? 0);
+        }
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         queryClient.invalidateQueries({ queryKey: ["profile"] });
         checkForLevelUp();

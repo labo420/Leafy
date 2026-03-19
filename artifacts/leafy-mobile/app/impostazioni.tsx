@@ -16,6 +16,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import Colors from "@/constants/colors";
 import { useAuth } from "@/context/auth";
+import { useNotifications } from "@/context/notifications";
 import { useTheme } from "@/context/theme";
 import { apiFetch } from "@/lib/api";
 
@@ -89,7 +90,7 @@ export default function ImpostazioniScreen() {
   const { theme } = useTheme();
   const queryClient = useQueryClient();
 
-  const [pushNotifications, setPushNotifications] = useState(true);
+  const { pushEnabled, setPushEnabled } = useNotifications();
   const [emailNotifications, setEmailNotifications] = useState(false);
   const [weeklyReport, setWeeklyReport] = useState(true);
   const [challengeAlerts, setChallengeAlerts] = useState(true);
@@ -143,9 +144,9 @@ export default function ImpostazioniScreen() {
             <ToggleRow
               icon="bell"
               label="Notifiche push"
-              description="Avvisi su punti e sfide"
-              value={pushNotifications}
-              onChange={setPushNotifications}
+              description="Avvisi su punti, sfide e walk-in"
+              value={pushEnabled}
+              onChange={setPushEnabled}
               theme={theme}
             />
             <View style={[styles.divider, { backgroundColor: theme.border }]} />

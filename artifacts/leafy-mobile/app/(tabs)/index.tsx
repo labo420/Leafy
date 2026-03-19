@@ -38,11 +38,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Colors from "@/constants/colors";
 import { Fonts } from "@/constants/typography";
 import { useAuth } from "@/context/auth";
+import { useNotifications } from "@/context/notifications";
 import { useTheme } from "@/context/theme";
 import { apiFetch } from "@/lib/api";
 import { useNearbyLocations, type NearbyLocation } from "@/hooks/useNearbyLocations";
 import { useWalkin } from "@/hooks/useWalkin";
-import { sendWalkinRewardNotification } from "@/lib/notifications";
 import type { Profile, DailyCheckinResponse } from "@workspace/api-client-react";
 
 const LEVEL_LABELS: Record<string, string> = {
@@ -731,15 +731,21 @@ export default function HomeScreen() {
 
   const [inStoreModeActive, setInStoreModeActive] = useState(false);
   const [walkinToast, setWalkinToast] = useState<{ msg: string; xp: number } | null>(null);
+  const { pushEnabled } = useNotifications();
 
   const { locations, permissionStatus, loading: locationsLoading, refresh: refreshLocations } =
     useNearbyLocations(inStoreModeActive && !!user);
 
-  const walkin = useWalkin();
+  const walkin = useWalkin(locations, pushEnabled);
+
+  useEffect(() => {
+    if (inStoreModeActive && !!user) {
+      walkin.startGeofenceWatch();
+    }
+  }, [inStoreModeActive, user?.id]);
 
   useEffect(() => {
     if (walkin.phase === "rewarded" && walkin.result) {
-      sendWalkinRewardNotification(walkin.result.locationName, walkin.result.xpAwarded);
       setWalkinToast({ msg: `+${walkin.result.xpAwarded} XP da ${walkin.result.locationName}!`, xp: walkin.result.xpAwarded });
       setTimeout(() => setWalkinToast(null), 4000);
       queryClient.invalidateQueries({ queryKey: ["profile"] });
@@ -1181,9 +1187,14 @@ function InStoreLocationCard({
             <Text style={[inStoreStyles.locationName, { color: theme.text }]}>{location.name}</Text>
           </View>
           <Text style={[inStoreStyles.locationDist, { color: theme.textMuted }]}>
-            {location.distanceM < 1000
+            {location.distanceM < 50
+              ? "Sei qui!"
+              : location.distanceM < 1000
               ? `${Math.round(location.distanceM)} m di distanza`
               : `${(location.distanceM / 1000).toFixed(1)} km di distanza`}
+          </Text>
+          <Text style={[inStoreStyles.locationCap, { color: theme.textMuted }]}>
+            {`Max ${location.walkinMaxPerDay}x al giorno · ${location.walkinXp} XP`}
           </Text>
         </View>
         <View style={[inStoreStyles.xpBubble, { backgroundColor: isOasi ? "rgba(167,139,250,0.12)" : theme.primaryLight }]}>
@@ -1259,7 +1270,7 @@ function InStoreLocationCard({
           onPress={() => walkin.enterStore(location)}
         >
           <MaterialCommunityIcons name="store-check" size={16} color="#fff" />
-          <Text style={inStoreStyles.enterBtnText}>Sono qui — inizia dwell timer</Text>
+          <Text style={inStoreStyles.enterBtnText}>Sono qui — inizia rilevamento</Text>
         </Pressable>
       )}
 
@@ -1435,6 +1446,12 @@ const inStoreStyles = StyleSheet.create({
     fontSize: 12,
     fontFamily: "Inter_400Regular",
     marginTop: 2,
+  },
+  locationCap: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    marginTop: 2,
+    opacity: 0.65,
   },
   xpBubble: {
     borderRadius: 10,

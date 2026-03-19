@@ -1,9 +1,28 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as Haptics from "expo-haptics";
+import * as Location from "expo-location";
 import { apiFetch } from "@/lib/api";
+import { scheduleLocalNotification, sendWalkinRewardNotification } from "@/lib/notifications";
 import type { NearbyLocation } from "./useNearbyLocations";
 
 const DWELL_SECONDS = 120;
+const ENTER_RADIUS_M = 50;
+const NEAR_MISS_MIN_SECONDS = 90;
+
+function haversineDistanceM(
+  lat1: number, lon1: number,
+  lat2: number, lon2: number,
+): number {
+  const R = 6371000;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 export type WalkinPhase =
   | "idle"
@@ -20,7 +39,10 @@ export interface WalkinResult {
   locationId: number;
 }
 
-export function useWalkin() {
+export function useWalkin(
+  locations: NearbyLocation[],
+  notificationsEnabled: boolean,
+) {
   const [phase, setPhase] = useState<WalkinPhase>("idle");
   const [activeLocation, setActiveLocation] = useState<NearbyLocation | null>(null);
   const [dwellRemaining, setDwellRemaining] = useState(DWELL_SECONDS);
@@ -30,14 +52,31 @@ export function useWalkin() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sessionIdRef = useRef<number | null>(null);
   const activeLocationRef = useRef<NearbyLocation | null>(null);
+  const phaseRef = useRef<WalkinPhase>("idle");
+  const dwellStartRef = useRef<number | null>(null);
   const mountedRef = useRef(true);
+  const locationSubRef = useRef<Location.LocationSubscription | null>(null);
+  const locationsRef = useRef<NearbyLocation[]>([]);
+  const notificationsEnabledRef = useRef(notificationsEnabled);
+
+  useEffect(() => { locationsRef.current = locations; }, [locations]);
+  useEffect(() => { notificationsEnabledRef.current = notificationsEnabled; }, [notificationsEnabled]);
 
   useEffect(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
       if (timerRef.current) clearInterval(timerRef.current);
+      if (locationSubRef.current) {
+        locationSubRef.current.remove();
+        locationSubRef.current = null;
+      }
     };
+  }, []);
+
+  const setPhaseSync = useCallback((p: WalkinPhase) => {
+    phaseRef.current = p;
+    setPhase(p);
   }, []);
 
   const submitWalkin = useCallback(async () => {
@@ -45,11 +84,11 @@ export function useWalkin() {
     const sessionId = sessionIdRef.current;
     const location = activeLocationRef.current;
     if (!sessionId) {
-      setPhase("error");
+      setPhaseSync("error");
       setErrorMsg("Sessione non trovata.");
       return;
     }
-    setPhase("submitting");
+    setPhaseSync("submitting");
     try {
       const data = await apiFetch<{
         success?: boolean;
@@ -63,47 +102,120 @@ export function useWalkin() {
       });
       if (!mountedRef.current) return;
       if (data.alreadyCompleted) {
-        setPhase("already_done");
+        setPhaseSync("already_done");
         setResult({ xpAwarded: 0, locationName: location?.name ?? "", locationId: location?.id ?? 0 });
       } else {
-        setPhase("rewarded");
-        setResult({
-          xpAwarded: data.xpAwarded ?? 0,
-          locationName: data.locationName ?? location?.name ?? "",
-          locationId: location?.id ?? 0,
-        });
+        setPhaseSync("rewarded");
+        const xp = data.xpAwarded ?? 0;
+        const name = data.locationName ?? location?.name ?? "";
+        setResult({ xpAwarded: xp, locationName: name, locationId: location?.id ?? 0 });
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        if (notificationsEnabledRef.current) {
+          await sendWalkinRewardNotification(name, xp);
+        }
       }
     } catch (e: unknown) {
       if (!mountedRef.current) return;
-      setPhase("error");
+      setPhaseSync("error");
       setErrorMsg(e instanceof Error ? e.message : "Errore walk-in");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
-  }, []);
+  }, [setPhaseSync]);
 
   const startDwellTimer = useCallback((location: NearbyLocation) => {
     if (timerRef.current) clearInterval(timerRef.current);
-    const startedAt = Date.now();
+    dwellStartRef.current = Date.now();
     setDwellRemaining(DWELL_SECONDS);
-    setPhase("dwelling");
+    setPhaseSync("dwelling");
 
     timerRef.current = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - startedAt) / 1000);
-      const remaining = Math.max(0, DWELL_SECONDS - elapsed);
       if (!mountedRef.current) return;
+      const elapsed = Math.floor((Date.now() - (dwellStartRef.current ?? Date.now())) / 1000);
+      const remaining = Math.max(0, DWELL_SECONDS - elapsed);
       setDwellRemaining(remaining);
       if (remaining === 0) {
         if (timerRef.current) clearInterval(timerRef.current);
         submitWalkin();
       }
     }, 500);
-  }, [submitWalkin]);
+  }, [setPhaseSync, submitWalkin]);
 
-  const enterStore = useCallback(async (location: NearbyLocation) => {
-    if (phase !== "idle") return;
+  const handleGeofenceExit = useCallback(async () => {
+    if (!mountedRef.current) return;
+    const currentPhase = phaseRef.current;
+    if (currentPhase !== "dwelling") return;
+
+    const elapsed = dwellStartRef.current
+      ? Math.floor((Date.now() - dwellStartRef.current) / 1000)
+      : 0;
+
+    if (timerRef.current) clearInterval(timerRef.current);
+    sessionIdRef.current = null;
+
+    const locationName = activeLocationRef.current?.name ?? "";
+    activeLocationRef.current = null;
+    setPhaseSync("idle");
+    setActiveLocation(null);
+    setDwellRemaining(DWELL_SECONDS);
+    dwellStartRef.current = null;
+
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+
+    if (elapsed >= NEAR_MISS_MIN_SECONDS && notificationsEnabledRef.current) {
+      await scheduleLocalNotification(
+        "Quasi completato!",
+        `Ti mancavano solo ${DWELL_SECONDS - elapsed}s per guadagnare XP in ${locationName}. Riprova!`,
+      );
+    }
+  }, [setPhaseSync]);
+
+  const startGeofenceWatch = useCallback(async () => {
+    if (locationSubRef.current) {
+      locationSubRef.current.remove();
+      locationSubRef.current = null;
+    }
+
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== "granted" || !mountedRef.current) return;
+
+    locationSubRef.current = await Location.watchPositionAsync(
+      {
+        accuracy: Location.Accuracy.High,
+        distanceInterval: 10,
+        timeInterval: 5_000,
+      },
+      (pos) => {
+        if (!mountedRef.current) return;
+        const { latitude, longitude } = pos.coords;
+        const currentPhase = phaseRef.current;
+        const activeStore = activeLocationRef.current;
+        const allLocations = locationsRef.current;
+
+        if (currentPhase === "dwelling" && activeStore) {
+          const dist = haversineDistanceM(latitude, longitude, activeStore.lat, activeStore.lng);
+          if (dist > ENTER_RADIUS_M * 2) {
+            handleGeofenceExit();
+          }
+          return;
+        }
+
+        if (currentPhase === "idle" && allLocations.length > 0) {
+          for (const loc of allLocations) {
+            const dist = haversineDistanceM(latitude, longitude, loc.lat, loc.lng);
+            if (dist <= ENTER_RADIUS_M) {
+              autoEnterStore(loc);
+              break;
+            }
+          }
+        }
+      },
+    );
+  }, [handleGeofenceExit]);
+
+  const autoEnterStore = useCallback(async (location: NearbyLocation) => {
+    if (phaseRef.current !== "idle") return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setPhase("starting");
+    setPhaseSync("starting");
     setActiveLocation(location);
     activeLocationRef.current = location;
     try {
@@ -117,7 +229,7 @@ export function useWalkin() {
       });
       if (!mountedRef.current) return;
       if (data.alreadyCompleted || !data.sessionId) {
-        setPhase("already_done");
+        setPhaseSync("already_done");
         setResult({ xpAwarded: 0, locationName: location.name, locationId: location.id });
         return;
       }
@@ -125,31 +237,37 @@ export function useWalkin() {
       startDwellTimer(location);
     } catch (e: unknown) {
       if (!mountedRef.current) return;
-      setPhase("error");
+      setPhaseSync("error");
       setErrorMsg(e instanceof Error ? e.message : "Impossibile avviare il walk-in");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
-  }, [phase, startDwellTimer]);
+  }, [setPhaseSync, startDwellTimer]);
+
+  const enterStore = useCallback(async (location: NearbyLocation) => {
+    await autoEnterStore(location);
+  }, [autoEnterStore]);
 
   const cancelDwell = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
     sessionIdRef.current = null;
     activeLocationRef.current = null;
-    setPhase("idle");
+    dwellStartRef.current = null;
+    setPhaseSync("idle");
     setActiveLocation(null);
     setDwellRemaining(DWELL_SECONDS);
-  }, []);
+  }, [setPhaseSync]);
 
   const reset = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
     sessionIdRef.current = null;
     activeLocationRef.current = null;
-    setPhase("idle");
+    dwellStartRef.current = null;
+    setPhaseSync("idle");
     setActiveLocation(null);
     setDwellRemaining(DWELL_SECONDS);
     setResult(null);
     setErrorMsg(null);
-  }, []);
+  }, [setPhaseSync]);
 
   return {
     phase,
@@ -161,5 +279,6 @@ export function useWalkin() {
     enterStore,
     cancelDwell,
     reset,
+    startGeofenceWatch,
   };
 }

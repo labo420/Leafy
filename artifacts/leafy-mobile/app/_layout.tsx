@@ -24,6 +24,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { WelcomeTutorial } from "@/components/WelcomeTutorial";
 import { AuthProvider, useAuth } from "@/context/auth";
 import { LevelUpProvider } from "@/context/level-up";
+import { NotificationsProvider } from "@/context/notifications";
 import { ScanResetProvider } from "@/context/scan-reset";
 import { ThemeProvider } from "@/context/theme";
 import { useOnboardingTutorial } from "@/hooks/useOnboardingTutorial";
@@ -85,12 +86,14 @@ export default function RootLayout() {
             <KeyboardProvider>
               <ThemeProvider>
               <AuthProvider>
-                <LevelUpProvider>
-                  <ScanResetProvider>
-                    <RootLayoutNav />
-                    <DevConnect />
-                  </ScanResetProvider>
-                </LevelUpProvider>
+                <NotificationsProvider>
+                  <LevelUpProvider>
+                    <ScanResetProvider>
+                      <RootLayoutNav />
+                      <DevConnect />
+                    </ScanResetProvider>
+                  </LevelUpProvider>
+                </NotificationsProvider>
               </AuthProvider>
               </ThemeProvider>
             </KeyboardProvider>
