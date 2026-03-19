@@ -739,8 +739,12 @@ export default function HomeScreen() {
   const walkin = useWalkin(locations, pushEnabled);
 
   useEffect(() => {
-    if (inStoreModeActive && !!user) {
+    if (!user) return;
+    if (inStoreModeActive) {
       walkin.startGeofenceWatch();
+    } else {
+      walkin.stopGeofenceWatch();
+      walkin.reset();
     }
   }, [inStoreModeActive, user?.id]);
 
@@ -1150,6 +1154,63 @@ export default function HomeScreen() {
   );
 }
 
+const DWELL_RING_SIZE = 96;
+const DWELL_RING_STROKE = 8;
+const DWELL_RING_RADIUS = (DWELL_RING_SIZE - DWELL_RING_STROKE) / 2;
+const DWELL_RING_CX = DWELL_RING_SIZE / 2;
+const DWELL_RING_CY = DWELL_RING_SIZE / 2;
+const DWELL_CIRCUMFERENCE = 2 * Math.PI * DWELL_RING_RADIUS;
+
+function DwellRing({
+  remaining,
+  total,
+  color,
+  onCancel,
+  theme,
+}: {
+  remaining: number;
+  total: number;
+  color: string;
+  onCancel: () => void;
+  theme: import("@/constants/theme").ThemeColors;
+}) {
+  const fraction = remaining / total;
+  const dashOffset = DWELL_CIRCUMFERENCE * fraction;
+  return (
+    <View style={inStoreStyles.dwellRingContainer}>
+      <Svg width={DWELL_RING_SIZE} height={DWELL_RING_SIZE}>
+        <Circle
+          cx={DWELL_RING_CX}
+          cy={DWELL_RING_CY}
+          r={DWELL_RING_RADIUS}
+          stroke={theme.border}
+          strokeWidth={DWELL_RING_STROKE}
+          fill="none"
+        />
+        <Circle
+          cx={DWELL_RING_CX}
+          cy={DWELL_RING_CY}
+          r={DWELL_RING_RADIUS}
+          stroke={color}
+          strokeWidth={DWELL_RING_STROKE}
+          fill="none"
+          strokeDasharray={`${DWELL_CIRCUMFERENCE} ${DWELL_CIRCUMFERENCE}`}
+          strokeDashoffset={DWELL_CIRCUMFERENCE - dashOffset}
+          strokeLinecap="round"
+          transform={`rotate(-90 ${DWELL_RING_CX} ${DWELL_RING_CY})`}
+        />
+      </Svg>
+      <View style={inStoreStyles.dwellRingCenter}>
+        <Text style={[inStoreStyles.dwellRingSeconds, { color }]}>{remaining}</Text>
+        <Text style={[inStoreStyles.dwellRingLabel, { color: theme.textMuted }]}>sec</Text>
+      </View>
+      <Pressable style={[inStoreStyles.cancelBtn, { borderColor: theme.border, marginTop: 8, alignSelf: "center" }]} onPress={onCancel}>
+        <Text style={[inStoreStyles.cancelBtnText, { color: theme.textMuted }]}>Annulla</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 function InStoreLocationCard({
   location,
   walkin,
@@ -1212,12 +1273,13 @@ function InStoreLocationCard({
       </View>
 
       {isDwelling && (
-        <View style={inStoreStyles.dwellRow}>
-          <View style={[inStoreStyles.dwellBar, { backgroundColor: theme.border }]}>
-            <View style={[inStoreStyles.dwellFill, { width: `${Math.round(progressFraction * 100)}%`, backgroundColor: isOasi ? "#7C3AED" : theme.leaf }]} />
-          </View>
-          <Text style={[inStoreStyles.dwellTimer, { color: theme.textSecondary }]}>{walkin.dwellRemaining}s</Text>
-        </View>
+        <DwellRing
+          remaining={walkin.dwellRemaining}
+          total={walkin.dwellTotal}
+          color={isOasi ? "#7C3AED" : theme.leaf}
+          onCancel={walkin.cancelDwell}
+          theme={theme}
+        />
       )}
 
       {(isRewarded || isDone) && (
@@ -1233,9 +1295,9 @@ function InStoreLocationCard({
         </View>
       )}
 
-      {location.challenges.length > 0 && (
+      {isActive && location.challenges.length > 0 && isDwelling && (
         <View style={inStoreStyles.challengesSection}>
-          <Text style={[inStoreStyles.challengesTitle, { color: theme.textSecondary }]}>Sfide di scoperta</Text>
+          <Text style={[inStoreStyles.challengesTitle, { color: theme.textSecondary }]}>Sfide in negozio</Text>
           {location.challenges.map((ch) => (
             <Pressable
               key={ch.id}
@@ -1261,6 +1323,22 @@ function InStoreLocationCard({
         </View>
       )}
 
+      {!isDwelling && !isActive && location.challenges.length > 0 && (
+        <View style={inStoreStyles.challengesSection}>
+          <Text style={[inStoreStyles.challengesTitle, { color: theme.textSecondary }]}>Sfide disponibili</Text>
+          {location.challenges.map((ch) => (
+            <View key={ch.id} style={[inStoreStyles.challengeRow, { backgroundColor: theme.primaryLight, opacity: 0.55 }]}>
+              <MaterialCommunityIcons name="barcode-scan" size={16} color={theme.textMuted} />
+              <View style={{ flex: 1 }}>
+                <Text style={[inStoreStyles.challengeName, { color: theme.textMuted }]}>{ch.name}</Text>
+              </View>
+              <Text style={[inStoreStyles.challengeXp, { color: theme.textMuted }]}>+{ch.xpReward} XP</Text>
+            </View>
+          ))}
+          <Text style={[inStoreStyles.challengeHint, { color: theme.textMuted }]}>Entra nel negozio per sbloccare le sfide</Text>
+        </View>
+      )}
+
       {isError && (
         <View style={inStoreStyles.submittingRow}>
           <Feather name="alert-circle" size={14} color={theme.amber} />
@@ -1278,12 +1356,6 @@ function InStoreLocationCard({
         >
           <MaterialCommunityIcons name="store-check" size={16} color="#fff" />
           <Text style={inStoreStyles.enterBtnText}>Sono qui — inizia rilevamento</Text>
-        </Pressable>
-      )}
-
-      {isDwelling && (
-        <Pressable style={[inStoreStyles.cancelBtn, { borderColor: theme.border }]} onPress={walkin.cancelDwell}>
-          <Text style={[inStoreStyles.cancelBtnText, { color: theme.textMuted }]}>Annulla</Text>
         </Pressable>
       )}
 
@@ -1489,6 +1561,35 @@ const inStoreStyles = StyleSheet.create({
     fontFamily: "DMSans_700Bold",
     minWidth: 32,
     textAlign: "right",
+  },
+  dwellRingContainer: {
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  dwellRingCenter: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: DWELL_RING_SIZE,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dwellRingSeconds: {
+    fontSize: 22,
+    fontFamily: "DMSans_700Bold",
+  },
+  dwellRingLabel: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    marginTop: -2,
+  },
+  challengeHint: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    textAlign: "center",
+    marginTop: 6,
+    opacity: 0.7,
   },
   rewardRow: {
     flexDirection: "row",

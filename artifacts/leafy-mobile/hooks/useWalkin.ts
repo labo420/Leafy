@@ -196,11 +196,15 @@ export function useWalkin(
     }
   }, [setPhaseSync]);
 
-  const startGeofenceWatch = useCallback(async () => {
+  const stopGeofenceWatch = useCallback(() => {
     if (locationSubRef.current) {
       locationSubRef.current.remove();
       locationSubRef.current = null;
     }
+  }, []);
+
+  const startGeofenceWatch = useCallback(async () => {
+    stopGeofenceWatch();
 
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== "granted" || !mountedRef.current) return;
@@ -237,7 +241,7 @@ export function useWalkin(
         }
       },
     );
-  }, [handleGeofenceExit]);
+  }, [handleGeofenceExit, stopGeofenceWatch]);
 
   const autoEnterStore = useCallback(async (location: NearbyLocation) => {
     if (phaseRef.current !== "idle") return;
@@ -323,6 +327,7 @@ export function useWalkin(
     cancelDwell,
     reset,
     startGeofenceWatch,
+    stopGeofenceWatch,
     checkDailyCapForLocation,
   };
 }
