@@ -17,10 +17,12 @@ const WALKIN_XP: Record<"oasi" | "standard", number> = {
   standard: 5,
 };
 
-const WALKIN_DAILY_LIMIT: Record<"oasi" | "standard", number> = {
+const WALKIN_DAILY_LIMIT_PER_TYPE: Record<"oasi" | "standard", number> = {
   oasi: 2,
   standard: 1,
 };
+
+const WALKIN_REQUIRED_SECONDS = 120;
 
 function startOfTodayUTC(): Date {
   const d = new Date();
@@ -50,9 +52,10 @@ router.post("/walkin/start", async (req, res): Promise<void> => {
   }
 
   const todayStart = startOfTodayUTC();
-  const limit = WALKIN_DAILY_LIMIT[location.type];
+  const typeLimit = WALKIN_DAILY_LIMIT_PER_TYPE[location.type];
 
-  const completedToday = await db
+  // Check 1: has this specific location already been completed today? (max 1 per location/day)
+  const [completedThisLocation] = await db
     .select({ id: walkinSessionsTable.id })
     .from(walkinSessionsTable)
     .where(
@@ -62,13 +65,40 @@ router.post("/walkin/start", async (req, res): Promise<void> => {
         eq(walkinSessionsTable.status, "completed"),
         gte(walkinSessionsTable.completedAt, todayStart),
       ),
-    );
+    )
+    .limit(1);
 
-  if (completedToday.length >= limit) {
+  if (completedThisLocation) {
     res.json({
       sessionId: null,
       alreadyCompleted: true,
-      message: `Hai già completato il walk-in per questo negozio oggi (limite: ${limit}).`,
+      reason: "location",
+      message: "Hai già completato il walk-in in questo negozio oggi.",
+    });
+    return;
+  }
+
+  // Check 2: has the type-level daily limit been reached?
+  // Join with locations to filter by type
+  const completedTodayOfType = await db
+    .select({ id: walkinSessionsTable.id })
+    .from(walkinSessionsTable)
+    .innerJoin(locationsTable, eq(walkinSessionsTable.locationId, locationsTable.id))
+    .where(
+      and(
+        eq(walkinSessionsTable.userId, user.id),
+        eq(walkinSessionsTable.status, "completed"),
+        eq(locationsTable.type, location.type),
+        gte(walkinSessionsTable.completedAt, todayStart),
+      ),
+    );
+
+  if (completedTodayOfType.length >= typeLimit) {
+    res.json({
+      sessionId: null,
+      alreadyCompleted: true,
+      reason: "type_limit",
+      message: `Hai raggiunto il limite giornaliero di ${typeLimit} walk-in per negozi di tipo "${location.type}".`,
     });
     return;
   }
@@ -91,6 +121,7 @@ router.post("/walkin/start", async (req, res): Promise<void> => {
       chain: location.chain,
       type: location.type,
     },
+    requiredSeconds: WALKIN_REQUIRED_SECONDS,
   });
 });
 
@@ -104,9 +135,11 @@ router.post("/walkin/complete", async (req, res): Promise<void> => {
     return;
   }
 
-  const [session] = await db
-    .select()
-    .from(walkinSessionsTable)
+  // Atomic update: only transition from 'pending' to 'completed'.
+  // This prevents race conditions — only one concurrent request can update a pending session.
+  const updated = await db
+    .update(walkinSessionsTable)
+    .set({ status: "completed", completedAt: new Date() })
     .where(
       and(
         eq(walkinSessionsTable.id, sessionId),
@@ -114,10 +147,30 @@ router.post("/walkin/complete", async (req, res): Promise<void> => {
         eq(walkinSessionsTable.status, "pending"),
       ),
     )
-    .limit(1);
+    .returning();
 
-  if (!session) {
+  if (updated.length === 0) {
     res.status(404).json({ error: "Sessione walk-in non trovata o già completata." });
+    return;
+  }
+
+  const session = updated[0];
+
+  // Enforce 120-second minimum dwell time
+  const dwellSeconds = (session.completedAt!.getTime() - session.startedAt.getTime()) / 1000;
+  if (dwellSeconds < WALKIN_REQUIRED_SECONDS) {
+    // Revert to pending so the user can try again
+    await db
+      .update(walkinSessionsTable)
+      .set({ status: "pending", completedAt: null })
+      .where(eq(walkinSessionsTable.id, sessionId));
+
+    res.status(400).json({
+      error: "Non hai trascorso abbastanza tempo nel negozio.",
+      dwellSeconds: Math.round(dwellSeconds),
+      requiredSeconds: WALKIN_REQUIRED_SECONDS,
+      remainingSeconds: Math.ceil(WALKIN_REQUIRED_SECONDS - dwellSeconds),
+    });
     return;
   }
 
@@ -128,14 +181,19 @@ router.post("/walkin/complete", async (req, res): Promise<void> => {
     .limit(1);
 
   if (!location) {
+    // Roll back the status change
+    await db
+      .update(walkinSessionsTable)
+      .set({ status: "failed" })
+      .where(eq(walkinSessionsTable.id, sessionId));
     res.status(404).json({ error: "Negozio non trovato." });
     return;
   }
 
   const todayStart = startOfTodayUTC();
-  const limit = WALKIN_DAILY_LIMIT[location.type];
 
-  const completedToday = await db
+  // Double-check: per-location cap (max 1 completion per location per day)
+  const completedSameLocation = await db
     .select({ id: walkinSessionsTable.id })
     .from(walkinSessionsTable)
     .where(
@@ -144,30 +202,63 @@ router.post("/walkin/complete", async (req, res): Promise<void> => {
         eq(walkinSessionsTable.locationId, location.id),
         eq(walkinSessionsTable.status, "completed"),
         gte(walkinSessionsTable.completedAt, todayStart),
+        sql`${walkinSessionsTable.id} != ${sessionId}`,
       ),
     );
 
-  if (completedToday.length >= limit) {
+  if (completedSameLocation.length > 0) {
     await db
       .update(walkinSessionsTable)
-      .set({ status: "failed" })
+      .set({ status: "failed", xpAwarded: 0 })
       .where(eq(walkinSessionsTable.id, sessionId));
-
     res.json({
       success: false,
       alreadyCompleted: true,
-      message: `Limite giornaliero già raggiunto per questo negozio.`,
+      reason: "location",
+      message: "Hai già completato il walk-in in questo negozio oggi.",
+    });
+    return;
+  }
+
+  // Double-check: per-type daily cap
+  const typeLimit = WALKIN_DAILY_LIMIT_PER_TYPE[location.type];
+  const completedTodayOfType = await db
+    .select({ id: walkinSessionsTable.id })
+    .from(walkinSessionsTable)
+    .innerJoin(locationsTable, eq(walkinSessionsTable.locationId, locationsTable.id))
+    .where(
+      and(
+        eq(walkinSessionsTable.userId, user.id),
+        eq(walkinSessionsTable.status, "completed"),
+        eq(locationsTable.type, location.type),
+        gte(walkinSessionsTable.completedAt, todayStart),
+        sql`${walkinSessionsTable.id} != ${sessionId}`,
+      ),
+    );
+
+  if (completedTodayOfType.length >= typeLimit) {
+    await db
+      .update(walkinSessionsTable)
+      .set({ status: "failed", xpAwarded: 0 })
+      .where(eq(walkinSessionsTable.id, sessionId));
+    res.json({
+      success: false,
+      alreadyCompleted: true,
+      reason: "type_limit",
+      message: `Limite giornaliero raggiunto per negozi di tipo "${location.type}".`,
     });
     return;
   }
 
   const xpToAward = WALKIN_XP[location.type];
 
+  // Finalize XP on the session record
   await db
     .update(walkinSessionsTable)
-    .set({ status: "completed", completedAt: new Date(), xpAwarded: xpToAward })
+    .set({ xpAwarded: xpToAward })
     .where(eq(walkinSessionsTable.id, sessionId));
 
+  // Award XP to user
   await db
     .update(usersTable)
     .set({ xp: sql`${usersTable.xp} + ${xpToAward}` })
@@ -183,6 +274,7 @@ router.post("/walkin/complete", async (req, res): Promise<void> => {
     xpAwarded: xpToAward,
     locationType: location.type,
     locationName: location.name,
+    dwellSeconds: Math.round(dwellSeconds),
     newXp: updatedUser?.xp ?? user.xp + xpToAward,
     message:
       location.type === "oasi"
@@ -227,6 +319,7 @@ router.post("/discovery/scan", async (req, res): Promise<void> => {
 
   const todayStart = startOfTodayUTC();
 
+  // Atomic insert + check: prevent duplicate completions for the same challenge today
   const [alreadyCompleted] = await db
     .select({ id: discoveryCompletionsTable.id })
     .from(discoveryCompletionsTable)
