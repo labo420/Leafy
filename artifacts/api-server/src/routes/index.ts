@@ -12,6 +12,8 @@ import adminRouter from "./admin";
 import badgesRouter from "./badges";
 import walletRouter from "./wallet";
 import kitsRouter from "./kits";
+import locationsRouter from "./locations";
+import walkinRouter from "./walkin";
 
 const router: IRouter = Router();
 
@@ -28,5 +30,7 @@ router.use(productsRouter);
 router.use(adminRouter);
 router.use(walletRouter);
 router.use(kitsRouter);
+router.use(locationsRouter);
+router.use(walkinRouter);
 
 export default router;

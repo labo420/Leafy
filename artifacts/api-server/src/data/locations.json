@@ -1,0 +1,691 @@
+[
+  {
+    "name": "NaturaSì Milano Centro",
+    "chain": "NaturaSì",
+    "type": "oasi",
+    "address": "Corso Buenos Aires 12",
+    "city": "Milano",
+    "province": "MI",
+    "lat": 45.4738,
+    "lng": 9.2061,
+    "challenges": [
+      { "barcode": "8000400158441", "productName": "Yogurt Biologico NaturaSì", "productDescription": "Yogurt intero biologico alla fragola, senza additivi", "emoji": "🍓", "xpReward": 20 },
+      { "barcode": "8001120956002", "productName": "Pasta Integrale Bio", "productDescription": "Spaghetti integrali da grano duro biologico italiano", "emoji": "🌾", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "NaturaSì Roma Prati",
+    "chain": "NaturaSì",
+    "type": "oasi",
+    "address": "Via Cola di Rienzo 65",
+    "city": "Roma",
+    "province": "RM",
+    "lat": 41.9091,
+    "lng": 12.4617,
+    "challenges": [
+      { "barcode": "8000400158441", "productName": "Yogurt Biologico NaturaSì", "productDescription": "Yogurt intero biologico alla fragola, senza additivi", "emoji": "🍓", "xpReward": 20 },
+      { "barcode": "8001506005014", "productName": "Olio EVO Biologico", "productDescription": "Olio extravergine di oliva biologico italiano", "emoji": "🫒", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "NaturaSì Torino",
+    "chain": "NaturaSì",
+    "type": "oasi",
+    "address": "Via Maria Vittoria 30",
+    "city": "Torino",
+    "province": "TO",
+    "lat": 45.0628,
+    "lng": 7.6879,
+    "challenges": [
+      { "barcode": "8000400158441", "productName": "Yogurt Biologico NaturaSì", "productDescription": "Yogurt intero biologico alla fragola, senza additivi", "emoji": "🍓", "xpReward": 20 },
+      { "barcode": "8001120956002", "productName": "Pasta Integrale Bio", "productDescription": "Spaghetti integrali da grano duro biologico italiano", "emoji": "🌾", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "NaturaSì Firenze",
+    "chain": "NaturaSì",
+    "type": "oasi",
+    "address": "Via de' Servi 14",
+    "city": "Firenze",
+    "province": "FI",
+    "lat": 43.7749,
+    "lng": 11.2560,
+    "challenges": [
+      { "barcode": "8001506005014", "productName": "Olio EVO Biologico", "productDescription": "Olio extravergine di oliva biologico italiano", "emoji": "🫒", "xpReward": 20 },
+      { "barcode": "8000991000168", "productName": "Latte Vegetale di Avena Bio", "productDescription": "Bevanda di avena biologica senza zuccheri aggiunti", "emoji": "🌾", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "NaturaSì Bologna",
+    "chain": "NaturaSì",
+    "type": "oasi",
+    "address": "Via Ugo Bassi 12",
+    "city": "Bologna",
+    "province": "BO",
+    "lat": 44.4940,
+    "lng": 11.3399,
+    "challenges": [
+      { "barcode": "8000400158441", "productName": "Yogurt Biologico NaturaSì", "productDescription": "Yogurt intero biologico alla fragola, senza additivi", "emoji": "🍓", "xpReward": 20 },
+      { "barcode": "8001120956002", "productName": "Pasta Integrale Bio", "productDescription": "Spaghetti integrali da grano duro biologico italiano", "emoji": "🌾", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "NaturaSì Napoli",
+    "chain": "NaturaSì",
+    "type": "oasi",
+    "address": "Via Toledo 220",
+    "city": "Napoli",
+    "province": "NA",
+    "lat": 40.8480,
+    "lng": 14.2519,
+    "challenges": [
+      { "barcode": "8001506005014", "productName": "Olio EVO Biologico", "productDescription": "Olio extravergine di oliva biologico italiano", "emoji": "🫒", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Bioessepiù Milano Navigli",
+    "chain": "Bioessepiù",
+    "type": "oasi",
+    "address": "Via Vigevano 35",
+    "city": "Milano",
+    "province": "MI",
+    "lat": 45.4535,
+    "lng": 9.1755,
+    "challenges": [
+      { "barcode": "8000991000168", "productName": "Latte Vegetale di Avena Bio", "productDescription": "Bevanda di avena biologica senza zuccheri aggiunti", "emoji": "🌾", "xpReward": 20 },
+      { "barcode": "8001001004101", "productName": "Quinoa Biologica", "productDescription": "Quinoa biologica certificata fair trade", "emoji": "🌱", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Bioessepiù Roma Trastevere",
+    "chain": "Bioessepiù",
+    "type": "oasi",
+    "address": "Via della Lungaretta 78",
+    "city": "Roma",
+    "province": "RM",
+    "lat": 41.8895,
+    "lng": 12.4701,
+    "challenges": [
+      { "barcode": "8001001004101", "productName": "Quinoa Biologica", "productDescription": "Quinoa biologica certificata fair trade", "emoji": "🌱", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Mercato Biologico Isola Milano",
+    "chain": "Mercato Bio",
+    "type": "oasi",
+    "address": "Piazza Minniti",
+    "city": "Milano",
+    "province": "MI",
+    "lat": 45.4864,
+    "lng": 9.1877,
+    "challenges": [
+      { "barcode": "8000991000168", "productName": "Latte Vegetale di Avena Bio", "productDescription": "Bevanda di avena biologica senza zuccheri aggiunti", "emoji": "🌾", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Sfuso & Bio Milano",
+    "chain": "Sfuso Bio",
+    "type": "oasi",
+    "address": "Via Piero della Francesca 54",
+    "city": "Milano",
+    "province": "MI",
+    "lat": 45.4804,
+    "lng": 9.1630,
+    "challenges": [
+      { "barcode": "8001001004101", "productName": "Quinoa Biologica", "productDescription": "Quinoa biologica certificata fair trade", "emoji": "🌱", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Esselunga Milano Viale Certosa",
+    "chain": "Esselunga",
+    "type": "standard",
+    "address": "Viale Certosa 130",
+    "city": "Milano",
+    "province": "MI",
+    "lat": 45.4980,
+    "lng": 9.1540,
+    "challenges": [
+      { "barcode": "8001002010106", "productName": "Yogurt Bio Esselunga", "productDescription": "Yogurt biologico a marchio Esselunga, senza coloranti", "emoji": "🥛", "xpReward": 20 },
+      { "barcode": "8001002009438", "productName": "Pasta Bio Esselunga", "productDescription": "Pasta integrale biologica Esselunga da grano italiano", "emoji": "🌾", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Esselunga Roma Parioli",
+    "chain": "Esselunga",
+    "type": "standard",
+    "address": "Viale dei Parioli 61",
+    "city": "Roma",
+    "province": "RM",
+    "lat": 41.9221,
+    "lng": 12.4847,
+    "challenges": [
+      { "barcode": "8001002010106", "productName": "Yogurt Bio Esselunga", "productDescription": "Yogurt biologico a marchio Esselunga, senza coloranti", "emoji": "🥛", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Esselunga Torino Corso Regina",
+    "chain": "Esselunga",
+    "type": "standard",
+    "address": "Corso Regina Margherita 258",
+    "city": "Torino",
+    "province": "TO",
+    "lat": 45.0786,
+    "lng": 7.6940,
+    "challenges": [
+      { "barcode": "8001002010106", "productName": "Yogurt Bio Esselunga", "productDescription": "Yogurt biologico a marchio Esselunga, senza coloranti", "emoji": "🥛", "xpReward": 20 },
+      { "barcode": "8001002009438", "productName": "Pasta Bio Esselunga", "productDescription": "Pasta integrale biologica Esselunga da grano italiano", "emoji": "🌾", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Esselunga Firenze",
+    "chain": "Esselunga",
+    "type": "standard",
+    "address": "Via Masaccio 272",
+    "city": "Firenze",
+    "province": "FI",
+    "lat": 43.7834,
+    "lng": 11.2745,
+    "challenges": [
+      { "barcode": "8001002010106", "productName": "Yogurt Bio Esselunga", "productDescription": "Yogurt biologico a marchio Esselunga, senza coloranti", "emoji": "🥛", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Coop Milano Corso Buenos Aires",
+    "chain": "Coop",
+    "type": "standard",
+    "address": "Corso Buenos Aires 54",
+    "city": "Milano",
+    "province": "MI",
+    "lat": 45.4773,
+    "lng": 9.2095,
+    "challenges": [
+      { "barcode": "8001800002123", "productName": "Lenticchie Bio Coop", "productDescription": "Lenticchie biologiche certificate Coop, origine italiana", "emoji": "🌱", "xpReward": 20 },
+      { "barcode": "8001800003021", "productName": "Pomodori Bio Coop", "productDescription": "Pomodori pelati biologici Coop, senza conservanti", "emoji": "🍅", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Coop Roma Piazza Vittorio",
+    "chain": "Coop",
+    "type": "standard",
+    "address": "Piazza Vittorio Emanuele II 11",
+    "city": "Roma",
+    "province": "RM",
+    "lat": 41.8929,
+    "lng": 12.5045,
+    "challenges": [
+      { "barcode": "8001800002123", "productName": "Lenticchie Bio Coop", "productDescription": "Lenticchie biologiche certificate Coop, origine italiana", "emoji": "🌱", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Coop Torino Via Nizza",
+    "chain": "Coop",
+    "type": "standard",
+    "address": "Via Nizza 47",
+    "city": "Torino",
+    "province": "TO",
+    "lat": 45.0490,
+    "lng": 7.6742,
+    "challenges": [
+      { "barcode": "8001800003021", "productName": "Pomodori Bio Coop", "productDescription": "Pomodori pelati biologici Coop, senza conservanti", "emoji": "🍅", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Coop Firenze Via Pisana",
+    "chain": "Coop",
+    "type": "standard",
+    "address": "Via Pisana 45",
+    "city": "Firenze",
+    "province": "FI",
+    "lat": 43.7625,
+    "lng": 11.2195,
+    "challenges": [
+      { "barcode": "8001800002123", "productName": "Lenticchie Bio Coop", "productDescription": "Lenticchie biologiche certificate Coop, origine italiana", "emoji": "🌱", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Coop Bologna Via Indipendenza",
+    "chain": "Coop",
+    "type": "standard",
+    "address": "Via Indipendenza 62",
+    "city": "Bologna",
+    "province": "BO",
+    "lat": 44.4978,
+    "lng": 11.3438,
+    "challenges": [
+      { "barcode": "8001800003021", "productName": "Pomodori Bio Coop", "productDescription": "Pomodori pelati biologici Coop, senza conservanti", "emoji": "🍅", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Conad Milano Corvetto",
+    "chain": "Conad",
+    "type": "standard",
+    "address": "Via Mompiani 12",
+    "city": "Milano",
+    "province": "MI",
+    "lat": 45.4422,
+    "lng": 9.2278,
+    "challenges": [
+      { "barcode": "8001790002213", "productName": "Riso Bio Conad", "productDescription": "Riso biologico Carnaroli, origine Vercelli", "emoji": "🍚", "xpReward": 20 },
+      { "barcode": "8001790005014", "productName": "Olio Bio Conad", "productDescription": "Olio extravergine di oliva biologico Conad", "emoji": "🫒", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Conad Roma Testaccio",
+    "chain": "Conad",
+    "type": "standard",
+    "address": "Via Marmorata 45",
+    "city": "Roma",
+    "province": "RM",
+    "lat": 41.8784,
+    "lng": 12.4742,
+    "challenges": [
+      { "barcode": "8001790002213", "productName": "Riso Bio Conad", "productDescription": "Riso biologico Carnaroli, origine Vercelli", "emoji": "🍚", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Conad Napoli Chiaia",
+    "chain": "Conad",
+    "type": "standard",
+    "address": "Via dei Mille 28",
+    "city": "Napoli",
+    "province": "NA",
+    "lat": 40.8374,
+    "lng": 14.2354,
+    "challenges": [
+      { "barcode": "8001790005014", "productName": "Olio Bio Conad", "productDescription": "Olio extravergine di oliva biologico Conad", "emoji": "🫒", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Lidl Milano Isola",
+    "chain": "Lidl",
+    "type": "standard",
+    "address": "Via Volturno 28",
+    "city": "Milano",
+    "province": "MI",
+    "lat": 45.4851,
+    "lng": 9.1892,
+    "challenges": [
+      { "barcode": "20346102", "productName": "Yogurt Bio Lidl Bioness", "productDescription": "Yogurt biologico linea Bioness Lidl, senza aromi artificiali", "emoji": "🥛", "xpReward": 20 },
+      { "barcode": "20346201", "productName": "Pasta Bio Lidl Bioness", "productDescription": "Pasta integrale biologica linea Bioness Lidl", "emoji": "🌾", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Lidl Roma EUR",
+    "chain": "Lidl",
+    "type": "standard",
+    "address": "Viale Europa 130",
+    "city": "Roma",
+    "province": "RM",
+    "lat": 41.8336,
+    "lng": 12.4681,
+    "challenges": [
+      { "barcode": "20346102", "productName": "Yogurt Bio Lidl Bioness", "productDescription": "Yogurt biologico linea Bioness Lidl, senza aromi artificiali", "emoji": "🥛", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Lidl Torino Mirafiori",
+    "chain": "Lidl",
+    "type": "standard",
+    "address": "Via Morandi 3",
+    "city": "Torino",
+    "province": "TO",
+    "lat": 44.9960,
+    "lng": 7.6453,
+    "challenges": [
+      { "barcode": "20346201", "productName": "Pasta Bio Lidl Bioness", "productDescription": "Pasta integrale biologica linea Bioness Lidl", "emoji": "🌾", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Lidl Firenze Rifredi",
+    "chain": "Lidl",
+    "type": "standard",
+    "address": "Via dello Statuto 18",
+    "city": "Firenze",
+    "province": "FI",
+    "lat": 43.7949,
+    "lng": 11.2379,
+    "challenges": [
+      { "barcode": "20346102", "productName": "Yogurt Bio Lidl Bioness", "productDescription": "Yogurt biologico linea Bioness Lidl, senza aromi artificiali", "emoji": "🥛", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Carrefour Milano Loreto",
+    "chain": "Carrefour",
+    "type": "standard",
+    "address": "Viale Monza 10",
+    "city": "Milano",
+    "province": "MI",
+    "lat": 45.4905,
+    "lng": 9.2201,
+    "challenges": [
+      { "barcode": "3560070976003", "productName": "Olio Bio Carrefour Bio", "productDescription": "Olio extravergine di oliva biologico linea Carrefour Bio", "emoji": "🫒", "xpReward": 20 },
+      { "barcode": "3560070169008", "productName": "Quinoa Bio Carrefour", "productDescription": "Quinoa biologica Carrefour Bio, ricca di proteine vegetali", "emoji": "🌱", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Carrefour Roma Termini",
+    "chain": "Carrefour",
+    "type": "standard",
+    "address": "Via Giolitti 12",
+    "city": "Roma",
+    "province": "RM",
+    "lat": 41.8985,
+    "lng": 12.5074,
+    "challenges": [
+      { "barcode": "3560070976003", "productName": "Olio Bio Carrefour Bio", "productDescription": "Olio extravergine di oliva biologico linea Carrefour Bio", "emoji": "🫒", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Carrefour Napoli Fuorigrotta",
+    "chain": "Carrefour",
+    "type": "standard",
+    "address": "Via Terracina 130",
+    "city": "Napoli",
+    "province": "NA",
+    "lat": 40.8286,
+    "lng": 14.2000,
+    "challenges": [
+      { "barcode": "3560070169008", "productName": "Quinoa Bio Carrefour", "productDescription": "Quinoa biologica Carrefour Bio, ricca di proteine vegetali", "emoji": "🌱", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Penny Market Milano Affori",
+    "chain": "Penny",
+    "type": "standard",
+    "address": "Via Pellegrino Rossi 40",
+    "city": "Milano",
+    "province": "MI",
+    "lat": 45.5132,
+    "lng": 9.1776,
+    "challenges": [
+      { "barcode": "8007735002412", "productName": "Latte Bio Penny", "productDescription": "Latte biologico intero a marchio Penny Market", "emoji": "🥛", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Penny Market Roma Tuscolana",
+    "chain": "Penny",
+    "type": "standard",
+    "address": "Via Tuscolana 341",
+    "city": "Roma",
+    "province": "RM",
+    "lat": 41.8679,
+    "lng": 12.5367,
+    "challenges": [
+      { "barcode": "8007735002412", "productName": "Latte Bio Penny", "productDescription": "Latte biologico intero a marchio Penny Market", "emoji": "🥛", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Carrefour Express Milano Brera",
+    "chain": "Carrefour Express",
+    "type": "standard",
+    "address": "Via della Moscova 30",
+    "city": "Milano",
+    "province": "MI",
+    "lat": 45.4785,
+    "lng": 9.1917,
+    "challenges": [
+      { "barcode": "3560070976003", "productName": "Olio Bio Carrefour Bio", "productDescription": "Olio extravergine di oliva biologico linea Carrefour Bio", "emoji": "🫒", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Pam Local Milano Centrale",
+    "chain": "Pam Local",
+    "type": "standard",
+    "address": "Piazza Duca d'Aosta 2",
+    "city": "Milano",
+    "province": "MI",
+    "lat": 45.4845,
+    "lng": 9.2046,
+    "challenges": [
+      { "barcode": "8001002010106", "productName": "Yogurt Bio Biologico", "productDescription": "Yogurt biologico da latte italiano, senza coloranti", "emoji": "🥛", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Sigma Roma Appio",
+    "chain": "Sigma",
+    "type": "standard",
+    "address": "Via Appia Nuova 350",
+    "city": "Roma",
+    "province": "RM",
+    "lat": 41.8766,
+    "lng": 12.5250,
+    "challenges": [
+      { "barcode": "8001800002123", "productName": "Lenticchie Bio", "productDescription": "Lenticchie biologiche certificate, origine italiana", "emoji": "🌱", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Despar Palermo Centro",
+    "chain": "Despar",
+    "type": "standard",
+    "address": "Via Maqueda 100",
+    "city": "Palermo",
+    "province": "PA",
+    "lat": 38.1180,
+    "lng": 13.3617,
+    "challenges": [
+      { "barcode": "8001506005014", "productName": "Olio EVO Biologico", "productDescription": "Olio extravergine di oliva biologico siciliano", "emoji": "🫒", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Coop Genova Via XX Settembre",
+    "chain": "Coop",
+    "type": "standard",
+    "address": "Via XX Settembre 48",
+    "city": "Genova",
+    "province": "GE",
+    "lat": 44.4071,
+    "lng": 8.9394,
+    "challenges": [
+      { "barcode": "8001800002123", "productName": "Lenticchie Bio Coop", "productDescription": "Lenticchie biologiche certificate Coop, origine italiana", "emoji": "🌱", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Lidl Genova Sampierdarena",
+    "chain": "Lidl",
+    "type": "standard",
+    "address": "Via Buranello 43",
+    "city": "Genova",
+    "province": "GE",
+    "lat": 44.4173,
+    "lng": 8.8990,
+    "challenges": [
+      { "barcode": "20346102", "productName": "Yogurt Bio Lidl Bioness", "productDescription": "Yogurt biologico linea Bioness Lidl", "emoji": "🥛", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "NaturaSì Genova",
+    "chain": "NaturaSì",
+    "type": "oasi",
+    "address": "Via Roma 8",
+    "city": "Genova",
+    "province": "GE",
+    "lat": 44.4068,
+    "lng": 8.9330,
+    "challenges": [
+      { "barcode": "8000400158441", "productName": "Yogurt Biologico NaturaSì", "productDescription": "Yogurt intero biologico alla fragola, senza additivi", "emoji": "🍓", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Esselunga Bergamo",
+    "chain": "Esselunga",
+    "type": "standard",
+    "address": "Via Corridoni 24",
+    "city": "Bergamo",
+    "province": "BG",
+    "lat": 45.6951,
+    "lng": 9.6697,
+    "challenges": [
+      { "barcode": "8001002010106", "productName": "Yogurt Bio Esselunga", "productDescription": "Yogurt biologico a marchio Esselunga", "emoji": "🥛", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Esselunga Brescia",
+    "chain": "Esselunga",
+    "type": "standard",
+    "address": "Via San Faustino 54",
+    "city": "Brescia",
+    "province": "BS",
+    "lat": 45.5392,
+    "lng": 10.2276,
+    "challenges": [
+      { "barcode": "8001002009438", "productName": "Pasta Bio Esselunga", "productDescription": "Pasta integrale biologica Esselunga da grano italiano", "emoji": "🌾", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "NaturaSì Venezia",
+    "chain": "NaturaSì",
+    "type": "oasi",
+    "address": "Campo San Luca 4614",
+    "city": "Venezia",
+    "province": "VE",
+    "lat": 45.4342,
+    "lng": 12.3365,
+    "challenges": [
+      { "barcode": "8000400158441", "productName": "Yogurt Biologico NaturaSì", "productDescription": "Yogurt intero biologico alla fragola", "emoji": "🍓", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Conad Venezia Mestre",
+    "chain": "Conad",
+    "type": "standard",
+    "address": "Via Piave 57",
+    "city": "Venezia",
+    "province": "VE",
+    "lat": 45.4910,
+    "lng": 12.2427,
+    "challenges": [
+      { "barcode": "8001790002213", "productName": "Riso Bio Conad", "productDescription": "Riso biologico Carnaroli, origine Vercelli", "emoji": "🍚", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "NaturaSì Verona",
+    "chain": "NaturaSì",
+    "type": "oasi",
+    "address": "Via Mazzini 30",
+    "city": "Verona",
+    "province": "VR",
+    "lat": 45.4384,
+    "lng": 10.9918,
+    "challenges": [
+      { "barcode": "8001506005014", "productName": "Olio EVO Biologico", "productDescription": "Olio extravergine di oliva biologico italiano", "emoji": "🫒", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Lidl Palermo",
+    "chain": "Lidl",
+    "type": "standard",
+    "address": "Via Oreto 12",
+    "city": "Palermo",
+    "province": "PA",
+    "lat": 38.1114,
+    "lng": 13.3534,
+    "challenges": [
+      { "barcode": "20346102", "productName": "Yogurt Bio Lidl Bioness", "productDescription": "Yogurt biologico linea Bioness Lidl", "emoji": "🥛", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Carrefour Market Bari",
+    "chain": "Carrefour Market",
+    "type": "standard",
+    "address": "Via Sparano da Bari 93",
+    "city": "Bari",
+    "province": "BA",
+    "lat": 41.1253,
+    "lng": 16.8634,
+    "challenges": [
+      { "barcode": "3560070976003", "productName": "Olio Bio Carrefour Bio", "productDescription": "Olio extravergine di oliva biologico Carrefour Bio", "emoji": "🫒", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Conad Bari Centro",
+    "chain": "Conad",
+    "type": "standard",
+    "address": "Via Capruzzi 240",
+    "city": "Bari",
+    "province": "BA",
+    "lat": 41.1247,
+    "lng": 16.8701,
+    "challenges": [
+      { "barcode": "8001790005014", "productName": "Olio Bio Conad", "productDescription": "Olio extravergine di oliva biologico Conad", "emoji": "🫒", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "NaturaSì Catania",
+    "chain": "NaturaSì",
+    "type": "oasi",
+    "address": "Via Etnea 140",
+    "city": "Catania",
+    "province": "CT",
+    "lat": 37.5079,
+    "lng": 15.0873,
+    "challenges": [
+      { "barcode": "8001001004101", "productName": "Quinoa Biologica", "productDescription": "Quinoa biologica certificata fair trade", "emoji": "🌱", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Eurospin Torino Moncalieri",
+    "chain": "Eurospin",
+    "type": "standard",
+    "address": "Strada Carignano 12",
+    "city": "Torino",
+    "province": "TO",
+    "lat": 45.0180,
+    "lng": 7.6794,
+    "challenges": [
+      { "barcode": "8001800002123", "productName": "Lenticchie Bio", "productDescription": "Lenticchie biologiche certificate, origine italiana", "emoji": "🌱", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Lidl Bologna San Vitale",
+    "chain": "Lidl",
+    "type": "standard",
+    "address": "Via San Vitale 78",
+    "city": "Bologna",
+    "province": "BO",
+    "lat": 44.4963,
+    "lng": 11.3679,
+    "challenges": [
+      { "barcode": "20346201", "productName": "Pasta Bio Lidl Bioness", "productDescription": "Pasta integrale biologica linea Bioness Lidl", "emoji": "🌾", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Coop Venezia Via Piave",
+    "chain": "Coop",
+    "type": "standard",
+    "address": "Via Piave 3",
+    "city": "Venezia",
+    "province": "VE",
+    "lat": 45.4927,
+    "lng": 12.2472,
+    "challenges": [
+      { "barcode": "8001800003021", "productName": "Pomodori Bio Coop", "productDescription": "Pomodori pelati biologici Coop, senza conservanti", "emoji": "🍅", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "Esselunga Parma",
+    "chain": "Esselunga",
+    "type": "standard",
+    "address": "Via Trento 12",
+    "city": "Parma",
+    "province": "PR",
+    "lat": 44.8021,
+    "lng": 10.3280,
+    "challenges": [
+      { "barcode": "8001002010106", "productName": "Yogurt Bio Esselunga", "productDescription": "Yogurt biologico a marchio Esselunga", "emoji": "🥛", "xpReward": 20 }
+    ]
+  },
+  {
+    "name": "NaturaSì Padova",
+    "chain": "NaturaSì",
+    "type": "oasi",
+    "address": "Via Roma 15",
+    "city": "Padova",
+    "province": "PD",
+    "lat": 45.4064,
+    "lng": 11.8768,
+    "challenges": [
+      { "barcode": "8000400158441", "productName": "Yogurt Biologico NaturaSì", "productDescription": "Yogurt intero biologico alla fragola", "emoji": "🍓", "xpReward": 20 },
+      { "barcode": "8001001004101", "productName": "Quinoa Biologica", "productDescription": "Quinoa biologica certificata fair trade", "emoji": "🌱", "xpReward": 20 }
+    ]
+  }
+]
