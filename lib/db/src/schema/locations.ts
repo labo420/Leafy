@@ -33,6 +33,29 @@ export const walkinSessionsTable = pgTable("walkin_sessions", {
   status: walkinStatusEnum("status").notNull().default("pending"),
 });
 
+/**
+ * walkin_completions: one record per successful walk-in (user, location, day).
+ * The DB-level unique index on (userId, locationId, dayBucket) is the authoritative
+ * anti-cheat gate: even concurrent requests that both pass application-layer checks
+ * will fail at insert time if a completion already exists for the same day.
+ * Race-safe via INSERT ON CONFLICT DO NOTHING inside a transaction.
+ */
+export const walkinCompletionsTable = pgTable(
+  "walkin_completions",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id").notNull().references(() => usersTable.id),
+    locationId: integer("location_id").notNull().references(() => locationsTable.id),
+    sessionId: integer("session_id").notNull().references(() => walkinSessionsTable.id),
+    dayBucket: text("day_bucket").notNull(),
+    xpAwarded: integer("xp_awarded").notNull().default(0),
+    completedAt: timestamp("completed_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("uniq_walkin_completion_per_day").on(t.userId, t.locationId, t.dayBucket),
+  ],
+);
+
 export const discoveryChallengesTable = pgTable("discovery_challenges", {
   id: serial("id").primaryKey(),
   locationId: integer("location_id").notNull().references(() => locationsTable.id),
@@ -46,9 +69,9 @@ export const discoveryChallengesTable = pgTable("discovery_challenges", {
 });
 
 /**
- * day_bucket stores the UTC date string (YYYY-MM-DD) for the completion day.
- * The unique index on (userId, challengeId, day_bucket) prevents double-awards
- * for the same challenge on the same calendar day, even under concurrent requests.
+ * discovery_completions: tracks per-user per-challenge per-day completions.
+ * Unique index on (userId, challengeId, dayBucket) is the DB-level anti-cheat gate.
+ * dayBucket = UTC date (YYYY-MM-DD) ensures per-calendar-day uniqueness.
  */
 export const discoveryCompletionsTable = pgTable(
   "discovery_completions",

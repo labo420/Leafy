@@ -2,13 +2,14 @@ import { Router, type IRouter } from "express";
 import { eq, and, gte, sql } from "drizzle-orm";
 import {
   db,
-  usersTable,
   locationsTable,
   walkinSessionsTable,
+  walkinCompletionsTable,
   discoveryChallengesTable,
   discoveryCompletionsTable,
 } from "@workspace/db";
 import { requireUser } from "./profile";
+import { addXp } from "../lib/economy";
 
 const router: IRouter = Router();
 
@@ -23,7 +24,7 @@ const WALKIN_DAILY_LIMIT_PER_TYPE: Record<"oasi" | "standard", number> = {
 };
 
 const WALKIN_REQUIRED_SECONDS = 120;
-const WALKIN_SESSION_MAX_AGE_SECONDS = 7200; // 2 hours: sessions older than this cannot be completed
+const WALKIN_SESSION_MAX_AGE_SECONDS = 7200; // 2 hours max before session is stale
 
 function startOfTodayUTC(): Date {
   const d = new Date();
@@ -33,22 +34,6 @@ function startOfTodayUTC(): Date {
 
 function todayBucket(): string {
   return new Date().toISOString().slice(0, 10);
-}
-
-/**
- * Centralized XP award helper: adds XP to the user's balance and returns the new XP total.
- * All walk-in and discovery XP awards go through here for consistency.
- */
-async function awardXp(userId: number, xpAmount: number): Promise<number> {
-  await db
-    .update(usersTable)
-    .set({ xp: sql`${usersTable.xp} + ${xpAmount}` })
-    .where(eq(usersTable.id, userId));
-  const [updated] = await db
-    .select({ xp: usersTable.xp })
-    .from(usersTable)
-    .where(eq(usersTable.id, userId));
-  return updated?.xp ?? 0;
 }
 
 router.post("/walkin/start", async (req, res): Promise<void> => {
@@ -72,19 +57,17 @@ router.post("/walkin/start", async (req, res): Promise<void> => {
     return;
   }
 
-  const todayStart = startOfTodayUTC();
-  const typeLimit = WALKIN_DAILY_LIMIT_PER_TYPE[location.type];
+  const bucket = todayBucket();
 
-  // Guard 1: max 1 completion per specific location per day
+  // Guard 1: max 1 completion per specific location per day (via walkin_completions)
   const [completedThisLocation] = await db
-    .select({ id: walkinSessionsTable.id })
-    .from(walkinSessionsTable)
+    .select({ id: walkinCompletionsTable.id })
+    .from(walkinCompletionsTable)
     .where(
       and(
-        eq(walkinSessionsTable.userId, user.id),
-        eq(walkinSessionsTable.locationId, locationId),
-        eq(walkinSessionsTable.status, "completed"),
-        gte(walkinSessionsTable.completedAt, todayStart),
+        eq(walkinCompletionsTable.userId, user.id),
+        eq(walkinCompletionsTable.locationId, locationId),
+        eq(walkinCompletionsTable.dayBucket, bucket),
       ),
     )
     .limit(1);
@@ -99,17 +82,17 @@ router.post("/walkin/start", async (req, res): Promise<void> => {
     return;
   }
 
-  // Guard 2: type-level daily cap (across all stores of that type)
+  // Guard 2: per-type daily cap across all locations of that type
+  const typeLimit = WALKIN_DAILY_LIMIT_PER_TYPE[location.type];
   const completedTodayOfType = await db
-    .select({ id: walkinSessionsTable.id })
-    .from(walkinSessionsTable)
-    .innerJoin(locationsTable, eq(walkinSessionsTable.locationId, locationsTable.id))
+    .select({ id: walkinCompletionsTable.id })
+    .from(walkinCompletionsTable)
+    .innerJoin(locationsTable, eq(walkinCompletionsTable.locationId, locationsTable.id))
     .where(
       and(
-        eq(walkinSessionsTable.userId, user.id),
-        eq(walkinSessionsTable.status, "completed"),
+        eq(walkinCompletionsTable.userId, user.id),
+        eq(walkinCompletionsTable.dayBucket, bucket),
         eq(locationsTable.type, location.type),
-        gte(walkinSessionsTable.completedAt, todayStart),
       ),
     );
 
@@ -155,12 +138,12 @@ router.post("/walkin/complete", async (req, res): Promise<void> => {
     return;
   }
 
-  // Wrap the entire completion in a transaction to prevent concurrent double-awards
   const result = await db.transaction(async (tx) => {
-    // Atomic transition: pending → completed. Simultaneous requests will fail here.
+    // Step 1: Atomic pending→completed transition. Concurrent requests will conflict here.
+    const now = new Date();
     const updated = await tx
       .update(walkinSessionsTable)
-      .set({ status: "completed", completedAt: new Date() })
+      .set({ status: "completed", completedAt: now })
       .where(
         and(
           eq(walkinSessionsTable.id, sessionId),
@@ -175,36 +158,32 @@ router.post("/walkin/complete", async (req, res): Promise<void> => {
     }
 
     const session = updated[0];
-    const nowMs = session.completedAt!.getTime();
-    const startMs = session.startedAt.getTime();
+    const ageSeconds = (now.getTime() - session.startedAt.getTime()) / 1000;
 
-    // Check session max age (anti-cheat: cannot complete a session started too long ago)
-    const ageSeconds = (nowMs - startMs) / 1000;
+    // Step 2: Session max-age check (stale session anti-cheat)
     if (ageSeconds > WALKIN_SESSION_MAX_AGE_SECONDS) {
       await tx
         .update(walkinSessionsTable)
         .set({ status: "failed" })
         .where(eq(walkinSessionsTable.id, sessionId));
       return {
-        error: `La sessione è scaduta (${Math.round(ageSeconds / 60)} minuti). Avvia un nuovo walk-in.`,
+        error: `Sessione scaduta (${Math.round(ageSeconds / 60)} min). Avvia un nuovo walk-in.`,
         status: 400,
       };
     }
 
-    // Enforce 120-second minimum dwell time
-    const dwellSeconds = ageSeconds;
-    if (dwellSeconds < WALKIN_REQUIRED_SECONDS) {
-      // Revert to pending so the user can try again
+    // Step 3: Minimum dwell time check
+    if (ageSeconds < WALKIN_REQUIRED_SECONDS) {
       await tx
         .update(walkinSessionsTable)
         .set({ status: "pending", completedAt: null })
         .where(eq(walkinSessionsTable.id, sessionId));
       return {
-        status: 400,
         error: "Non hai trascorso abbastanza tempo nel negozio.",
-        dwellSeconds: Math.round(dwellSeconds),
+        status: 400,
+        dwellSeconds: Math.round(ageSeconds),
         requiredSeconds: WALKIN_REQUIRED_SECONDS,
-        remainingSeconds: Math.ceil(WALKIN_REQUIRED_SECONDS - dwellSeconds),
+        remainingSeconds: Math.ceil(WALKIN_REQUIRED_SECONDS - ageSeconds),
       };
     }
 
@@ -222,53 +201,24 @@ router.post("/walkin/complete", async (req, res): Promise<void> => {
       return { error: "Negozio non trovato.", status: 404 };
     }
 
-    const todayStart = startOfTodayUTC();
-
-    // Double-check: per-location cap (max 1 per location per day, excluding this session)
-    const [otherCompletedSameLocation] = await tx
-      .select({ id: walkinSessionsTable.id })
-      .from(walkinSessionsTable)
-      .where(
-        and(
-          eq(walkinSessionsTable.userId, user.id),
-          eq(walkinSessionsTable.locationId, location.id),
-          eq(walkinSessionsTable.status, "completed"),
-          gte(walkinSessionsTable.completedAt, todayStart),
-          sql`${walkinSessionsTable.id} != ${sessionId}`,
-        ),
-      )
-      .limit(1);
-
-    if (otherCompletedSameLocation) {
-      await tx
-        .update(walkinSessionsTable)
-        .set({ status: "failed", xpAwarded: 0 })
-        .where(eq(walkinSessionsTable.id, sessionId));
-      return {
-        success: false,
-        alreadyCompleted: true,
-        reason: "location",
-        message: "Hai già completato il walk-in in questo negozio oggi.",
-      };
-    }
-
-    // Double-check: per-type daily cap (excluding this session)
+    const bucket = todayBucket();
+    const xpToAward = WALKIN_XP[location.type];
     const typeLimit = WALKIN_DAILY_LIMIT_PER_TYPE[location.type];
-    const completedTodayOfType = await tx
-      .select({ id: walkinSessionsTable.id })
-      .from(walkinSessionsTable)
-      .innerJoin(locationsTable, eq(walkinSessionsTable.locationId, locationsTable.id))
+
+    // Step 4: Check per-type daily cap inside the transaction
+    const completedOfType = await tx
+      .select({ id: walkinCompletionsTable.id })
+      .from(walkinCompletionsTable)
+      .innerJoin(locationsTable, eq(walkinCompletionsTable.locationId, locationsTable.id))
       .where(
         and(
-          eq(walkinSessionsTable.userId, user.id),
-          eq(walkinSessionsTable.status, "completed"),
+          eq(walkinCompletionsTable.userId, user.id),
+          eq(walkinCompletionsTable.dayBucket, bucket),
           eq(locationsTable.type, location.type),
-          gte(walkinSessionsTable.completedAt, todayStart),
-          sql`${walkinSessionsTable.id} != ${sessionId}`,
         ),
       );
 
-    if (completedTodayOfType.length >= typeLimit) {
+    if (completedOfType.length >= typeLimit) {
       await tx
         .update(walkinSessionsTable)
         .set({ status: "failed", xpAwarded: 0 })
@@ -281,32 +231,52 @@ router.post("/walkin/complete", async (req, res): Promise<void> => {
       };
     }
 
-    const xpToAward = WALKIN_XP[location.type];
-
-    // Persist XP amount on session record
+    // Step 5: Persist XP amount on session record
     await tx
       .update(walkinSessionsTable)
       .set({ xpAwarded: xpToAward })
       .where(eq(walkinSessionsTable.id, sessionId));
 
-    // Award XP via centralized helper (within the transaction)
-    await tx
-      .update(usersTable)
-      .set({ xp: sql`${usersTable.xp} + ${xpToAward}` })
-      .where(eq(usersTable.id, user.id));
+    // Step 6: DB-level unique gate — INSERT ON CONFLICT DO NOTHING.
+    // The unique index on (userId, locationId, dayBucket) is the authoritative anti-cheat guard.
+    // If two concurrent transactions both reach here for the same user/location/day, only one
+    // insert will succeed; the other will silently be dropped (idempotent, race-safe).
+    const inserted = await tx
+      .insert(walkinCompletionsTable)
+      .values({
+        userId: user.id,
+        locationId: location.id,
+        sessionId: session.id,
+        dayBucket: bucket,
+        xpAwarded: xpToAward,
+      })
+      .onConflictDoNothing()
+      .returning({ id: walkinCompletionsTable.id });
 
-    const [updatedUser] = await tx
-      .select({ xp: usersTable.xp })
-      .from(usersTable)
-      .where(eq(usersTable.id, user.id));
+    if (inserted.length === 0) {
+      // Another concurrent request already claimed this slot
+      await tx
+        .update(walkinSessionsTable)
+        .set({ status: "failed", xpAwarded: 0 })
+        .where(eq(walkinSessionsTable.id, sessionId));
+      return {
+        success: false,
+        alreadyCompleted: true,
+        reason: "location",
+        message: "Hai già completato il walk-in in questo negozio oggi.",
+      };
+    }
+
+    // Step 7: Award XP via centralized economy helper (inside the same transaction)
+    const newXp = await addXp(tx, user.id, xpToAward);
 
     return {
       success: true,
       xpAwarded: xpToAward,
       locationType: location.type,
       locationName: location.name,
-      dwellSeconds: Math.round(dwellSeconds),
-      newXp: updatedUser?.xp ?? user.xp + xpToAward,
+      dwellSeconds: Math.round(ageSeconds),
+      newXp,
       message:
         location.type === "oasi"
           ? `Benvenuto in un'Oasi Green! +${xpToAward} XP per te.`
@@ -315,8 +285,7 @@ router.post("/walkin/complete", async (req, res): Promise<void> => {
   });
 
   if ("error" in result && result.error) {
-    const status = (result as { status?: number }).status ?? 400;
-    res.status(status).json(result);
+    res.status((result as { status?: number }).status ?? 400).json(result);
     return;
   }
 
@@ -359,9 +328,7 @@ router.post("/discovery/scan", async (req, res): Promise<void> => {
 
   const bucket = todayBucket();
 
-  // Atomic insert: the unique index (userId, challengeId, dayBucket) prevents
-  // duplicate completions for the same challenge on the same day, even under concurrency.
-  // ON CONFLICT DO NOTHING means the insert is silently ignored if the record already exists.
+  // Atomic insert: unique index (userId, challengeId, dayBucket) prevents concurrent double-awards.
   const inserted = await db
     .insert(discoveryCompletionsTable)
     .values({
@@ -382,8 +349,8 @@ router.post("/discovery/scan", async (req, res): Promise<void> => {
     return;
   }
 
-  // Award XP via centralized helper
-  const newXp = await awardXp(user.id, challenge.xpReward);
+  // Award XP via centralized economy helper
+  const newXp = await addXp(db, user.id, challenge.xpReward);
 
   res.json({
     success: true,
