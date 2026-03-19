@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as Haptics from "expo-haptics";
 import * as Location from "expo-location";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { apiFetch } from "@/lib/api";
 import { scheduleLocalNotification, sendWalkinRewardNotification } from "@/lib/notifications";
 import type { NearbyLocation } from "./useNearbyLocations";
@@ -8,6 +9,28 @@ import type { NearbyLocation } from "./useNearbyLocations";
 const DWELL_SECONDS = 120;
 const ENTER_RADIUS_M = 50;
 const NEAR_MISS_MIN_SECONDS = 90;
+
+function todayKey(locationId: number): string {
+  const d = new Date();
+  const ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return `leafy_walkin_cap_${locationId}_${ymd}`;
+}
+
+async function getDailyCompletionCount(locationId: number): Promise<number> {
+  try {
+    const val = await AsyncStorage.getItem(todayKey(locationId));
+    return val ? parseInt(val, 10) : 0;
+  } catch {
+    return 0;
+  }
+}
+
+async function incrementDailyCompletionCount(locationId: number): Promise<void> {
+  try {
+    const current = await getDailyCompletionCount(locationId);
+    await AsyncStorage.setItem(todayKey(locationId), String(current + 1));
+  } catch {}
+}
 
 function haversineDistanceM(
   lat1: number, lon1: number,
@@ -109,6 +132,9 @@ export function useWalkin(
         const xp = data.xpAwarded ?? 0;
         const name = data.locationName ?? location?.name ?? "";
         setResult({ xpAwarded: xp, locationName: name, locationId: location?.id ?? 0 });
+        if (location?.id) {
+          await incrementDailyCompletionCount(location.id);
+        }
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         if (notificationsEnabledRef.current) {
           await sendWalkinRewardNotification(name, xp);
@@ -163,8 +189,9 @@ export function useWalkin(
 
     if (elapsed >= NEAR_MISS_MIN_SECONDS && notificationsEnabledRef.current) {
       await scheduleLocalNotification(
-        "Quasi completato!",
-        `Ti mancavano solo ${DWELL_SECONDS - elapsed}s per guadagnare XP in ${locationName}. Riprova!`,
+        "Ti mancava pochissimo!",
+        `Eri in negozio da ${elapsed}s su ${DWELL_SECONDS}. Riprova la prossima volta per guadagnare XP in ${locationName}!`,
+        { silent: true },
       );
     }
   }, [setPhaseSync]);
@@ -193,7 +220,7 @@ export function useWalkin(
 
         if (currentPhase === "dwelling" && activeStore) {
           const dist = haversineDistanceM(latitude, longitude, activeStore.lat, activeStore.lng);
-          if (dist > ENTER_RADIUS_M * 2) {
+          if (dist > ENTER_RADIUS_M) {
             handleGeofenceExit();
           }
           return;
@@ -214,6 +241,17 @@ export function useWalkin(
 
   const autoEnterStore = useCallback(async (location: NearbyLocation) => {
     if (phaseRef.current !== "idle") return;
+
+    const completedToday = await getDailyCompletionCount(location.id);
+    if (!mountedRef.current) return;
+    if (completedToday >= location.walkinMaxPerDay) {
+      setPhaseSync("already_done");
+      setActiveLocation(location);
+      activeLocationRef.current = location;
+      setResult({ xpAwarded: 0, locationName: location.name, locationId: location.id });
+      return;
+    }
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setPhaseSync("starting");
     setActiveLocation(location);
@@ -269,6 +307,11 @@ export function useWalkin(
     setErrorMsg(null);
   }, [setPhaseSync]);
 
+  const checkDailyCapForLocation = useCallback(async (locationId: number, maxPerDay: number): Promise<boolean> => {
+    const count = await getDailyCompletionCount(locationId);
+    return count >= maxPerDay;
+  }, []);
+
   return {
     phase,
     activeLocation,
@@ -280,5 +323,6 @@ export function useWalkin(
     cancelDwell,
     reset,
     startGeofenceWatch,
+    checkDailyCapForLocation,
   };
 }

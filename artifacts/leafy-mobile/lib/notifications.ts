@@ -34,14 +34,15 @@ export async function registerPushToken(): Promise<string | null> {
 export async function scheduleLocalNotification(
   title: string,
   body: string,
-  delaySeconds = 0,
+  options: { delaySeconds?: number; silent?: boolean } = {},
 ): Promise<void> {
   try {
     if (Platform.OS === "web") return;
     const granted = await requestNotificationPermission();
     if (!granted) return;
+    const { delaySeconds = 0, silent = false } = options;
     await Notifications.scheduleNotificationAsync({
-      content: { title, body, sound: true },
+      content: { title, body, sound: !silent },
       trigger:
         delaySeconds > 0
           ? {

@@ -1159,12 +1159,19 @@ function InStoreLocationCard({
   walkin: ReturnType<typeof useWalkin>;
   theme: import("@/constants/theme").ThemeColors;
 }) {
+  const [clientCapReached, setClientCapReached] = useState(false);
+  const checkDailyCapForLocation = walkin.checkDailyCapForLocation;
+
+  useEffect(() => {
+    checkDailyCapForLocation(location.id, location.walkinMaxPerDay).then(setClientCapReached).catch(() => {});
+  }, [location.id, location.walkinMaxPerDay, walkin.phase, checkDailyCapForLocation]);
+
   const isActive = walkin.activeLocation?.id === location.id;
   const isStarting = isActive && walkin.phase === "starting";
   const isDwelling = isActive && walkin.phase === "dwelling";
   const isSubmitting = isActive && walkin.phase === "submitting";
   const isRewarded = isActive && walkin.phase === "rewarded";
-  const isDone = isActive && walkin.phase === "already_done";
+  const isDone = (isActive && walkin.phase === "already_done") || (!isActive && clientCapReached);
   const isError = isActive && walkin.phase === "error";
   const isOasi = location.type === "oasi";
 

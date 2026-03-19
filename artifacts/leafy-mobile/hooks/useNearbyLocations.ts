@@ -65,7 +65,7 @@ function mapLocation(raw: RawLocation): NearbyLocation {
   };
 }
 
-const DEFAULT_RADIUS_M = 300;
+const DEFAULT_RADIUS_KM = 0.3;
 const MOVEMENT_THRESHOLD_M = 500;
 
 function haversineDistanceM(
@@ -108,7 +108,7 @@ export function useNearbyLocations(enabled: boolean) {
     setError(null);
     try {
       const data = await apiFetch<{ locations: RawLocation[]; count: number }>(
-        `/locations/nearby?lat=${lat}&lng=${lng}&radius=${DEFAULT_RADIUS_M}`,
+        `/locations/nearby?lat=${lat}&lng=${lng}&radius=${DEFAULT_RADIUS_KM}`,
       );
       if (!mountedRef.current) return;
       lastFetchPosRef.current = { lat, lng };
