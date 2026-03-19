@@ -10,34 +10,22 @@ const DEFAULT_RADIUS_KM = 20;
 router.get("/locations/nearby", async (req, res): Promise<void> => {
   const lat = parseFloat(req.query.lat as string);
   const lng = parseFloat(req.query.lng as string);
-  const radius = Math.min(
-    parseFloat((req.query.radius as string) ?? String(DEFAULT_RADIUS_KM)),
-    MAX_RADIUS_KM,
-  );
+  const rawRadius = parseFloat((req.query.radius as string) ?? String(DEFAULT_RADIUS_KM));
+  const radius = Math.min(rawRadius, MAX_RADIUS_KM);
 
   if (!isFinite(lat) || !isFinite(lng)) {
     res.status(400).json({ error: "Parametri lat e lng richiesti (valori numerici validi)." });
     return;
   }
-
-  if (!isFinite(radius) || radius <= 0) {
+  if (!isFinite(rawRadius) || rawRadius <= 0) {
     res.status(400).json({ error: "Il parametro radius deve essere un numero positivo." });
     return;
   }
 
-  /**
-   * Single query: Haversine distance computed fully in SQL, plus all active discovery
-   * challenges aggregated via json_agg (no N+1 per-location queries).
-   *
-   * Filtering strategy:
-   *   1. Bounding-box on lat/lng (cheap index scan, eliminates most rows).
-   *   2. Exact Haversine HAVING clause (accurate great-circle distance in km).
-   *
-   * Results are sorted by distance ascending in SQL.
-   */
   const approxLatDelta = radius / 111;
   const approxLngDelta = radius / (111 * Math.cos((lat * Math.PI) / 180));
 
+  // Haversine distance in SQL + challenges via json_agg — single query, no N+1
   const rows = await db.execute(sql`
     SELECT
       l.id,

@@ -33,13 +33,7 @@ export const walkinSessionsTable = pgTable("walkin_sessions", {
   status: walkinStatusEnum("status").notNull().default("pending"),
 });
 
-/**
- * walkin_completions: one record per successful walk-in (user, location, day).
- * The DB-level unique index on (userId, locationId, dayBucket) is the authoritative
- * anti-cheat gate: even concurrent requests that both pass application-layer checks
- * will fail at insert time if a completion already exists for the same day.
- * Race-safe via INSERT ON CONFLICT DO NOTHING inside a transaction.
- */
+// One completion per (user, location, day) enforced at DB level via unique index
 export const walkinCompletionsTable = pgTable(
   "walkin_completions",
   {
@@ -68,11 +62,7 @@ export const discoveryChallengesTable = pgTable("discovery_challenges", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-/**
- * discovery_completions: tracks per-user per-challenge per-day completions.
- * Unique index on (userId, challengeId, dayBucket) is the DB-level anti-cheat gate.
- * dayBucket = UTC date (YYYY-MM-DD) ensures per-calendar-day uniqueness.
- */
+// One completion per (user, challenge, day) enforced at DB level via unique index
 export const discoveryCompletionsTable = pgTable(
   "discovery_completions",
   {

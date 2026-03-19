@@ -12,23 +12,31 @@ export function leaToEur(lea: number): number {
   return Math.round(lea * LEA_TO_EUR_RATE * 100) / 100;
 }
 
-/**
- * Centralized XP award helper for all XP-earning actions (receipts, discovery, etc.).
- * Uses the global db connection. For callers inside a Drizzle transaction, use the
- * transaction-local SQL pattern directly (see addXpInTx) to keep the award atomic.
- *
- * Returns the user's updated XP total.
- */
-export async function addXp(userId: number, amount: number): Promise<number> {
-  await db
+// Extract the Drizzle transaction type from db.transaction without using `any`
+type DbTransaction = Parameters<Parameters<(typeof db)["transaction"]>[0]>[0];
+
+async function _addXpImpl(
+  dbOrTx: typeof db | DbTransaction,
+  userId: number,
+  amount: number,
+): Promise<number> {
+  await dbOrTx
     .update(usersTable)
     .set({ xp: sql`${usersTable.xp} + ${amount}` })
     .where(eq(usersTable.id, userId));
-
-  const [updated] = await db
+  const [updated] = await dbOrTx
     .select({ xp: usersTable.xp })
     .from(usersTable)
     .where(eq(usersTable.id, userId));
-
   return updated?.xp ?? 0;
+}
+
+/** Award XP outside a transaction (e.g. standalone reward actions). */
+export function addXp(userId: number, amount: number): Promise<number> {
+  return _addXpImpl(db, userId, amount);
+}
+
+/** Award XP inside an existing Drizzle transaction to keep award atomic. */
+export function addXpInTx(tx: DbTransaction, userId: number, amount: number): Promise<number> {
+  return _addXpImpl(tx, userId, amount);
 }
