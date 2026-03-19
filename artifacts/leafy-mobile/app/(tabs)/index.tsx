@@ -33,13 +33,16 @@ import Animated, {
 } from "react-native-reanimated";
 import Svg, { Circle, Path } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import Colors from "@/constants/colors";
 import { Fonts } from "@/constants/typography";
 import { useAuth } from "@/context/auth";
 import { useTheme } from "@/context/theme";
 import { apiFetch } from "@/lib/api";
+import { useNearbyLocations, type NearbyLocation } from "@/hooks/useNearbyLocations";
+import { useWalkin } from "@/hooks/useWalkin";
+import { sendWalkinRewardNotification } from "@/lib/notifications";
 import type { Profile, DailyCheckinResponse } from "@workspace/api-client-react";
 
 const LEVEL_LABELS: Record<string, string> = {
@@ -696,6 +699,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { theme, mode } = useTheme();
+  const queryClient = useQueryClient();
 
   const {
     data: profile,
@@ -724,6 +728,24 @@ export default function HomeScreen() {
     xpBonus: number;
     bpPrize: { xp: number; lea: number } | null;
   } | null>(null);
+
+  const [inStoreModeActive, setInStoreModeActive] = useState(false);
+  const [walkinToast, setWalkinToast] = useState<{ msg: string; xp: number } | null>(null);
+
+  const { locations, permissionStatus, loading: locationsLoading, refresh: refreshLocations } =
+    useNearbyLocations(inStoreModeActive && !!user);
+
+  const walkin = useWalkin();
+
+  useEffect(() => {
+    if (walkin.phase === "rewarded" && walkin.result) {
+      sendWalkinRewardNotification(walkin.result.locationName, walkin.result.xpAwarded);
+      setWalkinToast({ msg: `+${walkin.result.xpAwarded} XP da ${walkin.result.locationName}!`, xp: walkin.result.xpAwarded });
+      setTimeout(() => setWalkinToast(null), 4000);
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      refetchProfile();
+    }
+  }, [walkin.phase]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -1025,6 +1047,76 @@ export default function HomeScreen() {
         </Pressable>
       </View>
 
+      {/* ── WALK-IN TOAST ── */}
+      {walkinToast && (
+        <Animated.View entering={FadeInDown.springify()} style={[inStoreStyles.walkinToast, { backgroundColor: "#1A3028" }]}>
+          <MaterialCommunityIcons name="store-check" size={22} color="#51B888" />
+          <View style={{ flex: 1 }}>
+            <Text style={inStoreStyles.walkinToastTitle}>Walk-in completato!</Text>
+            <Text style={inStoreStyles.walkinToastSub}>{walkinToast.msg}</Text>
+          </View>
+        </Animated.View>
+      )}
+
+      {/* ── IN-STORE MODE ── */}
+      <Animated.View entering={FadeInDown.delay(300).springify()} style={{ marginHorizontal: 20, marginTop: 16, marginBottom: 0 }}>
+        <Pressable
+          style={[inStoreStyles.toggleRow, { backgroundColor: theme.card }]}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            const next = !inStoreModeActive;
+            setInStoreModeActive(next);
+            if (!next) walkin.reset();
+          }}
+        >
+          <MaterialCommunityIcons name="store-marker" size={20} color={inStoreModeActive ? theme.leaf : theme.textMuted} />
+          <Text style={[inStoreStyles.toggleLabel, { color: inStoreModeActive ? theme.leaf : theme.text }]}>Modalità In-Store</Text>
+          <View style={[inStoreStyles.togglePill, { backgroundColor: inStoreModeActive ? theme.leaf : theme.border }]}>
+            <View style={[inStoreStyles.toggleKnob, { transform: [{ translateX: inStoreModeActive ? 18 : 2 }] }]} />
+          </View>
+        </Pressable>
+
+        {inStoreModeActive && (
+          <View style={[inStoreStyles.panel, { backgroundColor: theme.card }]}>
+            {permissionStatus === "denied" && (
+              <View style={inStoreStyles.permRow}>
+                <Feather name="map-pin" size={16} color={theme.amber} />
+                <Text style={[inStoreStyles.permText, { color: theme.textSecondary }]}>
+                  Posizione non autorizzata. Abilita la posizione nelle impostazioni.
+                </Text>
+              </View>
+            )}
+
+            {permissionStatus === "granted" && locationsLoading && locations.length === 0 && (
+              <View style={inStoreStyles.loadingRow}>
+                <ActivityIndicator size="small" color={theme.leaf} />
+                <Text style={[inStoreStyles.loadingText, { color: theme.textSecondary }]}>Ricerca negozi nelle vicinanze…</Text>
+              </View>
+            )}
+
+            {permissionStatus === "granted" && !locationsLoading && locations.length === 0 && (
+              <View style={inStoreStyles.emptyRow}>
+                <MaterialCommunityIcons name="store-off" size={28} color={theme.textMuted} />
+                <Text style={[inStoreStyles.emptyText, { color: theme.textSecondary }]}>Nessun negozio partner nelle vicinanze (300 m)</Text>
+                <Pressable onPress={refreshLocations} style={[inStoreStyles.refreshBtn, { borderColor: theme.border }]}>
+                  <Feather name="refresh-cw" size={13} color={theme.leaf} />
+                  <Text style={[inStoreStyles.refreshBtnText, { color: theme.leaf }]}>Riprova</Text>
+                </Pressable>
+              </View>
+            )}
+
+            {permissionStatus === "granted" && locations.map((loc) => (
+              <InStoreLocationCard
+                key={loc.id}
+                location={loc}
+                walkin={walkin}
+                theme={theme}
+              />
+            ))}
+          </View>
+        )}
+      </Animated.View>
+
       {/* ── IMPACT CARDS ── */}
       <Animated.View entering={FadeInDown.delay(340).springify()} style={styles.impactSection}>
         <Text style={[styles.impactTitle, { color: theme.text }]}>Il tuo impatto</Text>
@@ -1051,6 +1143,404 @@ export default function HomeScreen() {
     </View>
   );
 }
+
+function InStoreLocationCard({
+  location,
+  walkin,
+  theme,
+}: {
+  location: NearbyLocation;
+  walkin: ReturnType<typeof useWalkin>;
+  theme: import("@/constants/theme").ThemeColors;
+}) {
+  const isActive = walkin.activeLocation?.id === location.id;
+  const isStarting = isActive && walkin.phase === "starting";
+  const isDwelling = isActive && walkin.phase === "dwelling";
+  const isSubmitting = isActive && walkin.phase === "submitting";
+  const isRewarded = isActive && walkin.phase === "rewarded";
+  const isDone = isActive && walkin.phase === "already_done";
+  const isError = isActive && walkin.phase === "error";
+  const isOasi = location.type === "oasi";
+
+  const progressFraction = isDwelling
+    ? 1 - walkin.dwellRemaining / walkin.dwellTotal
+    : isRewarded || isDone
+    ? 1
+    : 0;
+
+  return (
+    <View style={[inStoreStyles.locationCard, { borderColor: isOasi ? "#A78BFA" : theme.border, borderWidth: isOasi ? 1.5 : 1 }]}>
+      <View style={inStoreStyles.locationHeader}>
+        <View style={{ flex: 1 }}>
+          <View style={inStoreStyles.locationNameRow}>
+            {isOasi && (
+              <View style={inStoreStyles.oasiBadge}>
+                <Text style={inStoreStyles.oasiBadgeText}>OASI</Text>
+              </View>
+            )}
+            <Text style={[inStoreStyles.locationName, { color: theme.text }]}>{location.name}</Text>
+          </View>
+          <Text style={[inStoreStyles.locationDist, { color: theme.textMuted }]}>
+            {location.distanceM < 1000
+              ? `${Math.round(location.distanceM)} m di distanza`
+              : `${(location.distanceM / 1000).toFixed(1)} km di distanza`}
+          </Text>
+        </View>
+        <View style={[inStoreStyles.xpBubble, { backgroundColor: isOasi ? "rgba(167,139,250,0.12)" : theme.primaryLight }]}>
+          <Text style={[inStoreStyles.xpBubbleText, { color: isOasi ? "#7C3AED" : theme.leaf }]}>
+            +{location.walkinXp} XP
+          </Text>
+        </View>
+      </View>
+
+      {isDwelling && (
+        <View style={inStoreStyles.dwellRow}>
+          <View style={[inStoreStyles.dwellBar, { backgroundColor: theme.border }]}>
+            <View style={[inStoreStyles.dwellFill, { width: `${Math.round(progressFraction * 100)}%`, backgroundColor: isOasi ? "#7C3AED" : theme.leaf }]} />
+          </View>
+          <Text style={[inStoreStyles.dwellTimer, { color: theme.textSecondary }]}>{walkin.dwellRemaining}s</Text>
+        </View>
+      )}
+
+      {(isRewarded || isDone) && (
+        <View style={[inStoreStyles.rewardRow, { backgroundColor: isRewarded ? "rgba(81,184,136,0.12)" : theme.primaryLight }]}>
+          <MaterialCommunityIcons
+            name={isRewarded ? "check-circle" : "clock-check-outline"}
+            size={16}
+            color={isRewarded ? "#51B888" : theme.textMuted}
+          />
+          <Text style={[inStoreStyles.rewardText, { color: isRewarded ? "#51B888" : theme.textMuted }]}>
+            {isRewarded ? `+${walkin.result?.xpAwarded} XP guadagnati!` : "Già completato oggi"}
+          </Text>
+        </View>
+      )}
+
+      {location.challenges.length > 0 && (
+        <View style={inStoreStyles.challengesSection}>
+          <Text style={[inStoreStyles.challengesTitle, { color: theme.textSecondary }]}>Sfide di scoperta</Text>
+          {location.challenges.map((ch) => (
+            <Pressable
+              key={ch.id}
+              style={[inStoreStyles.challengeRow, { backgroundColor: theme.primaryLight }]}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push({
+                  pathname: "/barcode-scanner",
+                  params: { mode: "discovery", locationId: String(location.id), challengeId: String(ch.id), productName: ch.name },
+                });
+              }}
+            >
+              <MaterialCommunityIcons name="barcode-scan" size={16} color={theme.leaf} />
+              <View style={{ flex: 1 }}>
+                <Text style={[inStoreStyles.challengeName, { color: theme.text }]}>{ch.name}</Text>
+                {ch.description && (
+                  <Text style={[inStoreStyles.challengeDesc, { color: theme.textMuted }]}>{ch.description}</Text>
+                )}
+              </View>
+              <Text style={[inStoreStyles.challengeXp, { color: theme.leaf }]}>+{ch.xpReward} XP</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
+
+      {isError && (
+        <View style={inStoreStyles.submittingRow}>
+          <Feather name="alert-circle" size={14} color={theme.amber} />
+          <Text style={[inStoreStyles.submittingText, { color: theme.amber }]}>{walkin.errorMsg ?? "Errore"}</Text>
+          <Pressable onPress={walkin.reset}>
+            <Text style={{ color: theme.leaf, fontSize: 12, fontFamily: "Inter_600SemiBold" }}>Riprova</Text>
+          </Pressable>
+        </View>
+      )}
+
+      {!isStarting && !isDwelling && !isSubmitting && !isRewarded && !isDone && !isError && (
+        <Pressable
+          style={[inStoreStyles.enterBtn, { backgroundColor: isOasi ? "#7C3AED" : theme.leaf }]}
+          onPress={() => walkin.enterStore(location)}
+        >
+          <MaterialCommunityIcons name="store-check" size={16} color="#fff" />
+          <Text style={inStoreStyles.enterBtnText}>Sono qui — inizia dwell timer</Text>
+        </Pressable>
+      )}
+
+      {isDwelling && (
+        <Pressable style={[inStoreStyles.cancelBtn, { borderColor: theme.border }]} onPress={walkin.cancelDwell}>
+          <Text style={[inStoreStyles.cancelBtnText, { color: theme.textMuted }]}>Annulla</Text>
+        </Pressable>
+      )}
+
+      {(isStarting || isSubmitting) && (
+        <View style={inStoreStyles.submittingRow}>
+          <ActivityIndicator size="small" color={theme.leaf} />
+          <Text style={[inStoreStyles.submittingText, { color: theme.textSecondary }]}>
+            {isStarting ? "Avvio sessione…" : "Registrazione walk-in…"}
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+}
+
+const inStoreStyles = StyleSheet.create({
+  walkinToast: {
+    marginHorizontal: 20,
+    marginTop: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 14,
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  walkinToastTitle: {
+    fontSize: 14,
+    fontFamily: "DMSans_700Bold",
+    color: "#fff",
+  },
+  walkinToastSub: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    color: "rgba(255,255,255,0.75)",
+    marginTop: 2,
+  },
+  toggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    padding: 14,
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  toggleLabel: {
+    flex: 1,
+    fontSize: 15,
+    fontFamily: "DMSans_600SemiBold",
+  },
+  togglePill: {
+    width: 42,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: "center",
+  },
+  toggleKnob: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "#fff",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  panel: {
+    marginTop: 10,
+    borderRadius: 16,
+    padding: 12,
+    gap: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  permRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    padding: 8,
+  },
+  permText: {
+    flex: 1,
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+    lineHeight: 18,
+  },
+  loadingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    padding: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+    fontFamily: "Inter_400Regular",
+  },
+  emptyRow: {
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 16,
+  },
+  emptyText: {
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+    textAlign: "center",
+  },
+  refreshBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginTop: 4,
+  },
+  refreshBtnText: {
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+  },
+  locationCard: {
+    borderRadius: 14,
+    padding: 14,
+    gap: 10,
+    backgroundColor: "transparent",
+  },
+  locationHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+  },
+  locationNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    flexWrap: "wrap",
+  },
+  oasiBadge: {
+    backgroundColor: "#7C3AED",
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  oasiBadgeText: {
+    fontSize: 9,
+    fontFamily: "DMSans_700Bold",
+    color: "#fff",
+    letterSpacing: 0.5,
+  },
+  locationName: {
+    fontSize: 15,
+    fontFamily: "DMSans_600SemiBold",
+  },
+  locationDist: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    marginTop: 2,
+  },
+  xpBubble: {
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  xpBubbleText: {
+    fontSize: 13,
+    fontFamily: "DMSans_700Bold",
+  },
+  dwellRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  dwellBar: {
+    flex: 1,
+    height: 6,
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  dwellFill: {
+    height: 6,
+    borderRadius: 3,
+  },
+  dwellTimer: {
+    fontSize: 13,
+    fontFamily: "DMSans_700Bold",
+    minWidth: 32,
+    textAlign: "right",
+  },
+  rewardRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    padding: 10,
+    borderRadius: 10,
+  },
+  rewardText: {
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+  },
+  challengesSection: {
+    gap: 6,
+  },
+  challengesTitle: {
+    fontSize: 12,
+    fontFamily: "Inter_500Medium",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  challengeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    padding: 10,
+    borderRadius: 10,
+  },
+  challengeName: {
+    fontSize: 13,
+    fontFamily: "Inter_500Medium",
+  },
+  challengeDesc: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    marginTop: 1,
+  },
+  challengeXp: {
+    fontSize: 12,
+    fontFamily: "DMSans_700Bold",
+  },
+  enterBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  enterBtnText: {
+    fontSize: 14,
+    fontFamily: "DMSans_600SemiBold",
+    color: "#fff",
+  },
+  cancelBtn: {
+    alignItems: "center",
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  cancelBtnText: {
+    fontSize: 13,
+    fontFamily: "Inter_500Medium",
+  },
+  submittingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    justifyContent: "center",
+    paddingVertical: 8,
+  },
+  submittingText: {
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+  },
+});
 
 const streakStyles = StyleSheet.create({
   toast: {

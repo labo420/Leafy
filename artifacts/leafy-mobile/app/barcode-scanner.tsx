@@ -28,6 +28,7 @@ import { apiFetch } from "@/lib/api";
 import Colors from "@/constants/colors";
 import { useLevelUp } from "@/context/level-up";
 import { useTheme } from "@/context/theme";
+import { sendDiscoveryRewardNotification } from "@/lib/notifications";
 
 interface LookupResult {
   barcode: string;
@@ -94,12 +95,37 @@ function EcoScoreBadge({ score }: { score: string | null }) {
   );
 }
 
+interface DiscoveryResult {
+  xpAwarded?: number;
+  alreadyCompleted?: boolean;
+  productName?: string;
+  barcode?: string;
+  success?: boolean;
+  message?: string;
+}
+
 export default function BarcodeScannerScreen() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
-  const { receiptId: receiptIdStr, productName: productNameParam } = useLocalSearchParams<{ receiptId: string; productName?: string }>();
+  const {
+    receiptId: receiptIdStr,
+    productName: productNameParam,
+    mode,
+    locationId: locationIdStr,
+    challengeId: challengeIdStr,
+  } = useLocalSearchParams<{
+    receiptId?: string;
+    productName?: string;
+    mode?: string;
+    locationId?: string;
+    challengeId?: string;
+  }>();
+
+  const isDiscoveryMode = mode === "discovery";
   const receiptId = parseInt(receiptIdStr ?? "0", 10);
+  const locationId = parseInt(locationIdStr ?? "0", 10);
+  const challengeId = parseInt(challengeIdStr ?? "0", 10);
   const targetProductName = productNameParam ?? null;
   const cameraRef = useRef<CameraView>(null);
 
@@ -108,6 +134,7 @@ export default function BarcodeScannerScreen() {
   const [phase, setPhase] = useState<ScanPhase>("scanning");
   const [lookupData, setLookupData] = useState<LookupResult | null>(null);
   const [lastConfirmed, setLastConfirmed] = useState<ConfirmResult | null>(null);
+  const [discoveryResult, setDiscoveryResult] = useState<DiscoveryResult | null>(null);
   const [cooldown, setCooldown] = useState(false);
   const [capturedContextImage, setCapturedContextImage] = useState<string | undefined>(undefined);
   const [showManualInput, setShowManualInput] = useState(false);
@@ -123,7 +150,7 @@ export default function BarcodeScannerScreen() {
 
   const topPadding = Platform.OS === "web" ? 20 : insets.top;
 
-  if (!receiptId || receiptId === 0) {
+  if (!isDiscoveryMode && (!receiptId || receiptId === 0)) {
     return (
       <View style={[styles.centered, { paddingTop: topPadding, backgroundColor: theme.background }]}>
         <Feather name="alert-circle" size={56} color={theme.amber} />
@@ -138,6 +165,33 @@ export default function BarcodeScannerScreen() {
       </View>
     );
   }
+
+  const discoveryMutation = useMutation({
+    mutationFn: (barcode: string) =>
+      apiFetch<DiscoveryResult>("/discovery/scan", {
+        method: "POST",
+        body: JSON.stringify({ barcode, locationId }),
+      }),
+    onSuccess: async (data) => {
+      setDiscoveryResult(data);
+      setPhase("confirmed");
+      if (!data.alreadyCompleted && data.success) {
+        await sendDiscoveryRewardNotification(data.productName ?? targetProductName ?? "", data.xpAwarded ?? 0);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        queryClient.invalidateQueries({ queryKey: ["profile"] });
+        checkForLevelUp();
+      } else {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      }
+    },
+    onError: (err: Error) => {
+      setPhase("scanning");
+      setCooldown(true);
+      setTimeout(() => setCooldown(false), 2000);
+      Alert.alert("Errore scoperta", err.message ?? "Impossibile registrare la scansione");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    },
+  });
 
   const lookupMutation = useMutation({
     mutationFn: (params: { barcode: string; imageBase64?: string }) =>
@@ -238,6 +292,11 @@ export default function BarcodeScannerScreen() {
       setCapturedContextImage(undefined);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
+      if (isDiscoveryMode) {
+        discoveryMutation.mutate(data);
+        return;
+      }
+
       let imageBase64: string | undefined;
       try {
         if (cameraRef.current) {
@@ -255,7 +314,7 @@ export default function BarcodeScannerScreen() {
 
       lookupMutation.mutate({ barcode: data, imageBase64 });
     },
-    [phase, cooldown],
+    [phase, cooldown, isDiscoveryMode],
   );
 
   const takeManualPhoto = async (side: "front" | "back") => {
@@ -453,6 +512,56 @@ export default function BarcodeScannerScreen() {
       <View style={[styles.centered, { paddingTop: topPadding, backgroundColor: theme.background }]}>
         <ActivityIndicator size="large" color={theme.leaf} />
         <Text style={[styles.processingFullText, { color: theme.text }]}>Conferma in corso...</Text>
+      </View>
+    );
+  }
+
+  if (phase === "looking-up" && isDiscoveryMode) {
+    return (
+      <View style={[styles.centered, { paddingTop: topPadding, backgroundColor: theme.background }]}>
+        <ActivityIndicator size="large" color={theme.leaf} />
+        <Text style={[styles.processingFullText, { color: theme.text }]}>Verifica scoperta...</Text>
+      </View>
+    );
+  }
+
+  if (phase === "confirmed" && isDiscoveryMode && discoveryResult) {
+    const rewarded = !discoveryResult.alreadyCompleted && discoveryResult.success;
+    const displayName = discoveryResult.productName ?? targetProductName ?? "Prodotto";
+    return (
+      <View style={[styles.container, { paddingTop: topPadding, backgroundColor: theme.background }]}>
+        <LinearGradient
+          colors={rewarded ? [theme.forest, theme.leaf] : ["#374151", "#6B7280"]}
+          style={styles.resultBanner}
+        >
+          <Animated.View entering={FadeIn.delay(100)} style={styles.resultContent}>
+            <MaterialCommunityIcons
+              name={rewarded ? "barcode-scan" : "clock-check-outline"}
+              size={40}
+              color="#fff"
+            />
+            <Text style={styles.resultName}>{displayName}</Text>
+            {rewarded ? (
+              <View style={styles.resultPointsBox}>
+                <Text style={styles.resultPointsLabel}>XP guadagnati</Text>
+                <Text style={styles.resultPointsValue}>+{discoveryResult.xpAwarded ?? 0} XP</Text>
+              </View>
+            ) : (
+              <Text style={[styles.resultPointsLabel, { color: "rgba(255,255,255,0.8)", marginTop: 8 }]}>
+                Sfida già completata oggi
+              </Text>
+            )}
+          </Animated.View>
+        </LinearGradient>
+        <Animated.View entering={FadeInDown.delay(200)} style={[styles.resultActions, { paddingHorizontal: 24 }]}>
+          <Pressable
+            style={[styles.confirmBtn, { backgroundColor: theme.leaf }]}
+            onPress={() => router.back()}
+          >
+            <Feather name="arrow-left" size={18} color="#fff" />
+            <Text style={styles.confirmBtnText}>Torna al negozio</Text>
+          </Pressable>
+        </Animated.View>
       </View>
     );
   }
@@ -745,10 +854,10 @@ export default function BarcodeScannerScreen() {
 
       <View style={[styles.cameraOverlay, { paddingTop: topPadding + 16 }]}>
         <View style={styles.cameraHeader}>
-          <Pressable onPress={finish} style={styles.closeBtn}>
+          <Pressable onPress={isDiscoveryMode ? () => router.back() : finish} style={styles.closeBtn}>
             <Feather name="x" size={24} color="#fff" />
           </Pressable>
-          <Text style={styles.cameraTitle}>Scansiona prodotto</Text>
+          <Text style={styles.cameraTitle}>{isDiscoveryMode ? "Sfida Scoperta" : "Scansiona prodotto"}</Text>
           <View style={{ width: 40 }} />
         </View>
 
@@ -771,13 +880,13 @@ export default function BarcodeScannerScreen() {
             <View style={styles.targetProductBanner}>
               <MaterialCommunityIcons name="barcode-scan" size={16} color={theme.leaf} />
               <Text style={styles.targetProductText} numberOfLines={1}>
-                Stai verificando: {targetProductName}
+                {isDiscoveryMode ? "Trova: " : "Stai verificando: "}{targetProductName}
               </Text>
             </View>
           ) : (
             <Text style={styles.cameraHint}>Inquadra il codice a barre del prodotto</Text>
           )}
-          {scannedProducts.length > 0 && (
+          {!isDiscoveryMode && scannedProducts.length > 0 && (
             <View style={styles.summaryRow}>
               <MaterialCommunityIcons name="leaf" size={16} color={theme.leaf} />
               <Text style={styles.summaryText}>
@@ -785,9 +894,11 @@ export default function BarcodeScannerScreen() {
               </Text>
             </View>
           )}
-          <Pressable onPress={() => { setManualCode(""); setShowManualInput(true); }}>
-            <Text style={styles.manualLink}>Non riesci a scansionare? Inserisci il codice</Text>
-          </Pressable>
+          {!isDiscoveryMode && (
+            <Pressable onPress={() => { setManualCode(""); setShowManualInput(true); }}>
+              <Text style={styles.manualLink}>Non riesci a scansionare? Inserisci il codice</Text>
+            </Pressable>
+          )}
         </View>
       </View>
 

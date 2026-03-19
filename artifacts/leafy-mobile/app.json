@@ -13,16 +13,42 @@
       "backgroundColor": "#F8FAF5"
     },
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Leafy usa la tua posizione per rilevare quando sei in un negozio partner e assegnarti i punti walk-in.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Leafy usa la tua posizione per rilevare automaticamente i negozi partner nelle vicinanze.",
+        "NSLocationAlwaysUsageDescription": "Leafy usa la tua posizione per rilevare automaticamente i negozi partner nelle vicinanze."
+      }
     },
-    "android": {},
+    "android": {
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
+      ]
+    },
     "web": {
       "favicon": "./assets/images/icon.png"
     },
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Leafy usa la tua posizione per rilevare quando sei in un negozio partner e assegnarti i punti walk-in.",
+          "locationWhenInUsePermission": "Leafy usa la tua posizione per rilevare i negozi partner nelle vicinanze."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#2E6B50"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

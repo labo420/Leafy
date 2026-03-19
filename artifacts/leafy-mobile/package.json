@@ -58,6 +58,7 @@
   },
   "dependencies": {
     "expo-camera": "^17.0.10",
+    "expo-notifications": "^0.32.16",
     "react-native-confetti-cannon": "^1.5.2"
   }
 }
