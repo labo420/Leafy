@@ -752,13 +752,12 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (!user || !inStoreModeEnabled) return;
-    const isNearby = locations.some((loc) => loc.distanceM <= 50);
-    if (isNearby && !inStoreModeActive) {
+    if (walkin.isInsideStore) {
       setInStoreModeActive(true);
-    } else if (!isNearby && inStoreModeActive && walkin.phase === "idle") {
+    } else if (!walkin.isInsideStore && walkin.phase === "idle") {
       setInStoreModeActive(false);
     }
-  }, [locations, inStoreModeEnabled, user?.id]);
+  }, [walkin.isInsideStore, walkin.phase, inStoreModeEnabled, user?.id]);
 
   useEffect(() => {
     if (walkin.phase === "rewarded" && walkin.result) {

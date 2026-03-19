@@ -67,6 +67,8 @@ export interface WalkinResult {
   locationId: number;
 }
 
+const RESET_DELAY_MS = 4_000;
+
 export function useWalkin(
   locations: NearbyLocation[],
   notificationsEnabled: boolean,
@@ -76,8 +78,11 @@ export function useWalkin(
   const [dwellRemaining, setDwellRemaining] = useState(DWELL_SECONDS);
   const [result, setResult] = useState<WalkinResult | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isInsideStore, setIsInsideStore] = useState(false);
+  const [currentStore, setCurrentStore] = useState<NearbyLocation | null>(null);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sessionIdRef = useRef<number | null>(null);
   const activeLocationRef = useRef<NearbyLocation | null>(null);
   const phaseRef = useRef<WalkinPhase>("idle");
@@ -95,6 +100,7 @@ export function useWalkin(
     return () => {
       mountedRef.current = false;
       if (timerRef.current) clearInterval(timerRef.current);
+      if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
       if (locationSubRef.current) {
         locationSubRef.current.remove();
         locationSubRef.current = null;
@@ -105,6 +111,21 @@ export function useWalkin(
   const setPhaseSync = useCallback((p: WalkinPhase) => {
     phaseRef.current = p;
     setPhase(p);
+  }, []);
+
+  const scheduleAutoReset = useCallback(() => {
+    if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
+    resetTimerRef.current = setTimeout(() => {
+      if (!mountedRef.current) return;
+      phaseRef.current = "idle";
+      setPhase("idle");
+      setActiveLocation(null);
+      activeLocationRef.current = null;
+      setIsInsideStore(false);
+      setCurrentStore(null);
+      setResult(null);
+      setErrorMsg(null);
+    }, RESET_DELAY_MS);
   }, []);
 
   const submitWalkin = useCallback(async () => {
@@ -132,6 +153,7 @@ export function useWalkin(
       if (data.alreadyCompleted) {
         setPhaseSync("already_done");
         setResult({ xpAwarded: 0, locationName: location?.name ?? "", locationId: location?.id ?? 0 });
+        scheduleAutoReset();
       } else {
         setPhaseSync("rewarded");
         const xp = data.xpAwarded ?? 0;
@@ -144,14 +166,16 @@ export function useWalkin(
         if (notificationsEnabledRef.current) {
           await sendWalkinRewardNotification(name, xp);
         }
+        scheduleAutoReset();
       }
     } catch (e: unknown) {
       if (!mountedRef.current) return;
       setPhaseSync("error");
       setErrorMsg(e instanceof Error ? e.message : "Errore walk-in");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      scheduleAutoReset();
     }
-  }, [setPhaseSync]);
+  }, [setPhaseSync, scheduleAutoReset]);
 
   const startDwellTimer = useCallback((location: NearbyLocation) => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -187,6 +211,8 @@ export function useWalkin(
     activeLocationRef.current = null;
     setPhaseSync("idle");
     setActiveLocation(null);
+    setIsInsideStore(false);
+    setCurrentStore(null);
     setDwellRemaining(DWELL_SECONDS);
     dwellStartRef.current = null;
 
@@ -235,14 +261,18 @@ export function useWalkin(
           return;
         }
 
-        if (currentPhase === "idle" && allLocations.length > 0) {
-          for (const loc of allLocations) {
-            const dist = haversineDistanceM(latitude, longitude, loc.lat, loc.lng);
-            if (dist <= ENTER_RADIUS_M) {
-              autoEnterStore(loc);
-              break;
-            }
+        const nearestInside = allLocations.find((loc) =>
+          haversineDistanceM(latitude, longitude, loc.lat, loc.lng) <= ENTER_RADIUS_M
+        );
+        if (nearestInside) {
+          setIsInsideStore(true);
+          setCurrentStore(nearestInside);
+          if (currentPhase === "idle") {
+            autoEnterStore(nearestInside);
           }
+        } else {
+          setIsInsideStore(false);
+          setCurrentStore(null);
         }
       },
     );
@@ -327,6 +357,8 @@ export function useWalkin(
     dwellTotal: DWELL_SECONDS,
     result,
     errorMsg,
+    isInsideStore,
+    currentStore,
     enterStore,
     cancelDwell,
     reset,

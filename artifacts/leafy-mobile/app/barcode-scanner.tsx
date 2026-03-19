@@ -21,7 +21,10 @@ import {
   TextInput,
   View,
 } from "react-native";
-import Animated, { FadeIn, FadeInDown, SlideInUp } from "react-native-reanimated";
+import Animated, {
+  FadeIn, FadeInDown, SlideInUp,
+  useSharedValue, useAnimatedStyle, withSequence, withTiming, withDelay,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
@@ -103,6 +106,92 @@ interface DiscoveryResult {
   barcode?: string;
   success?: boolean;
   message?: string;
+}
+
+function DiscoverySuccessView({
+  rewarded,
+  displayName,
+  xpAwarded,
+  topPadding,
+  onBack,
+}: {
+  rewarded: boolean;
+  displayName: string;
+  xpAwarded: number;
+  topPadding: number;
+  onBack: () => void;
+}) {
+  const { theme } = useTheme();
+  const canOpacity = useSharedValue(0);
+  const canRotate = useSharedValue(0);
+  const xpBadgeScale = useSharedValue(0);
+
+  React.useEffect(() => {
+    if (!rewarded) return;
+    canOpacity.value = withSequence(
+      withTiming(1, { duration: 350 }),
+      withTiming(1, { duration: 1600 }),
+      withTiming(0, { duration: 400 }),
+    );
+    canRotate.value = withSequence(
+      withTiming(0, { duration: 80 }),
+      withTiming(32, { duration: 600 }),
+      withTiming(32, { duration: 700 }),
+      withTiming(0, { duration: 550 }),
+    );
+    xpBadgeScale.value = withDelay(1400, withSequence(
+      withTiming(1.2, { duration: 250 }),
+      withTiming(1, { duration: 150 }),
+    ));
+  }, []);
+
+  const canStyle = useAnimatedStyle(() => ({
+    opacity: canOpacity.value,
+    transform: [{ rotate: `${canRotate.value}deg` }],
+  }));
+  const xpBadgeStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: xpBadgeScale.value }],
+    opacity: xpBadgeScale.value,
+  }));
+
+  return (
+    <View style={[styles.container, { paddingTop: topPadding, backgroundColor: theme.background }]}>
+      <LinearGradient
+        colors={rewarded ? [theme.forest, theme.leaf] : ["#374151", "#6B7280"]}
+        style={styles.resultBanner}
+      >
+        <Animated.View entering={FadeIn.delay(100)} style={styles.resultContent}>
+          {rewarded ? (
+            <Animated.View style={canStyle}>
+              <MaterialCommunityIcons name="watering-can" size={48} color="#fff" />
+            </Animated.View>
+          ) : (
+            <MaterialCommunityIcons name="clock-check-outline" size={40} color="#fff" />
+          )}
+          <Text style={styles.resultName}>{displayName}</Text>
+          {rewarded ? (
+            <Animated.View style={[styles.resultPointsBox, xpBadgeStyle]}>
+              <Text style={styles.resultPointsLabel}>XP guadagnati</Text>
+              <Text style={styles.resultPointsValue}>+{xpAwarded} XP</Text>
+            </Animated.View>
+          ) : (
+            <Text style={[styles.resultPointsLabel, { color: "rgba(255,255,255,0.8)", marginTop: 8 }]}>
+              Sfida già completata oggi
+            </Text>
+          )}
+        </Animated.View>
+      </LinearGradient>
+      <Animated.View entering={FadeInDown.delay(200)} style={[styles.resultActions, { paddingHorizontal: 24 }]}>
+        <Pressable
+          style={[styles.confirmBtn, { backgroundColor: theme.leaf }]}
+          onPress={onBack}
+        >
+          <Feather name="arrow-left" size={18} color="#fff" />
+          <Text style={styles.confirmBtnText}>Torna al negozio</Text>
+        </Pressable>
+      </Animated.View>
+    </View>
+  );
 }
 
 export default function BarcodeScannerScreen() {
@@ -533,40 +622,13 @@ export default function BarcodeScannerScreen() {
     const rewarded = !discoveryResult.alreadyCompleted && discoveryResult.success;
     const displayName = discoveryResult.productName ?? targetProductName ?? "Prodotto";
     return (
-      <View style={[styles.container, { paddingTop: topPadding, backgroundColor: theme.background }]}>
-        <LinearGradient
-          colors={rewarded ? [theme.forest, theme.leaf] : ["#374151", "#6B7280"]}
-          style={styles.resultBanner}
-        >
-          <Animated.View entering={FadeIn.delay(100)} style={styles.resultContent}>
-            <MaterialCommunityIcons
-              name={rewarded ? "barcode-scan" : "clock-check-outline"}
-              size={40}
-              color="#fff"
-            />
-            <Text style={styles.resultName}>{displayName}</Text>
-            {rewarded ? (
-              <View style={styles.resultPointsBox}>
-                <Text style={styles.resultPointsLabel}>XP guadagnati</Text>
-                <Text style={styles.resultPointsValue}>+{discoveryResult.xpAwarded ?? 0} XP</Text>
-              </View>
-            ) : (
-              <Text style={[styles.resultPointsLabel, { color: "rgba(255,255,255,0.8)", marginTop: 8 }]}>
-                Sfida già completata oggi
-              </Text>
-            )}
-          </Animated.View>
-        </LinearGradient>
-        <Animated.View entering={FadeInDown.delay(200)} style={[styles.resultActions, { paddingHorizontal: 24 }]}>
-          <Pressable
-            style={[styles.confirmBtn, { backgroundColor: theme.leaf }]}
-            onPress={() => router.back()}
-          >
-            <Feather name="arrow-left" size={18} color="#fff" />
-            <Text style={styles.confirmBtnText}>Torna al negozio</Text>
-          </Pressable>
-        </Animated.View>
-      </View>
+      <DiscoverySuccessView
+        rewarded={rewarded}
+        displayName={displayName}
+        xpAwarded={discoveryResult.xpAwarded ?? 0}
+        topPadding={topPadding}
+        onBack={() => router.back()}
+      />
     );
   }
 

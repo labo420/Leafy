@@ -60,8 +60,8 @@ export async function sendWalkinRewardNotification(
   xp: number,
 ): Promise<void> {
   await scheduleLocalNotification(
-    "Walk-in completato!",
-    `Hai guadagnato ${xp} XP visitando ${locationName}. Continua così!`,
+    `Benvenuto in ${locationName}!`,
+    `+${xp} XP`,
   );
 }
 
