@@ -41,8 +41,12 @@ function findNgrokBin() {
 const args = process.argv.slice(2);
 const portFlag = args.indexOf("--port");
 const cliPort = portFlag !== -1 && args[portFlag + 1] ? args[portFlag + 1] : null;
+const tunnelFlag = args.indexOf("--tunnel");
 
-// Keep --tunnel flag so Expo manages ngrok internally
+// Remove --tunnel flag to avoid ngrok tunnel failures, allow local dev only
+if (tunnelFlag !== -1) {
+  args.splice(tunnelFlag, 1);
+}
 
 const expoPort = ARTIFACT_PORT || (cliPort ? Number(cliPort) : 8081);
 const workflowPort = cliPort ? Number(cliPort) : null;
