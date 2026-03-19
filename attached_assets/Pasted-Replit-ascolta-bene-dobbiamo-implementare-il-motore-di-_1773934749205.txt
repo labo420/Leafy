@@ -1,0 +1,72 @@
+Replit, ascolta bene: dobbiamo implementare il motore di 'Discovery & Walk-in' di Leafy. È il cuore della nostra gamification."
+Vogliamo che l'app sia attiva sia nei negozi bio che nei grandi supermercati, ma con pesi etici diversi. Ecco la logica completa da codificare:
+
+1. Il Motore Walk-in (GPS & Geofencing):
+
+Database Luoghi: Crea una struttura (es. locations.json) che distingua tra:
+
+Oasi Green (NaturaSì, Bio, Sfuso, Mercati).
+
+Supermercati Standard (Esselunga, Coop, Conad, Lidl, ecc.).
+
+Logica Geofence: Usa expo-location. Imposta un raggio di 50 metri dalle coordinate.
+
+Regola Anti-Cheat (Timer): Non dare i punti al semplice passaggio. Avvia un timer di 120 secondi. Se l'utente esce prima, il Walk-in fallisce. Se resta dentro, è validato.
+
+Premi & Limiti:
+
+Oasi Green: 15 XP (Max 2 al giorno).
+
+Standard: 5 XP (Max 1 al giorno). Note: Il Walk-in dà solo XP, mai $LEA.
+
+2. Il Funnel di 'Discovery Scan' (Barcode):
+Vogliamo che l'utente trovi prodotti green anche nei grandi supermercati.
+
+Azione 'Trova' (Senza Acquisto): Quando l'utente è in un raggio di Walk-in, attiva una 'Sfida Discovery' (es. "Trova lo Yogurt Bio Esselunga").
+
+Validazione Barcode: Usa expo-barcode-scanner. Se l'utente scansiona il barcode corretto, riceve 20 XP immediati.
+
+Importante: Non serve che lo compri per avere questi XP. L'obiettivo è fargli toccare il prodotto.
+
+3. La Conversione finale (Scontrino):
+
+Se l'utente decide di comprare il prodotto scansionato, caricherà lo scontrino a casa.
+
+Premio $LEA: Solo qui scattano i $LEA (soldi reali) e il bonus XP pesante.
+
+Logica: La foto dello scontrino analizzata da Gemini convalida l'acquisto reale.
+
+4. UI e Notifiche:
+
+In-Store Mode: Quando l'app rileva un Walk-in, la Home deve cambiare leggermente, mostrando le 'Sfide Discovery' disponibili in quel raggio d'azione.
+
+Notifiche Push: Invia un messaggio quando il Walk-in viene validato: "Benvenuto in un'Oasi Green! +15 XP per te. Trova i prodotti suggeriti per scalare il Battle Pass!".
+
+5. Sicurezza della Batteria:
+
+Usa il monitoraggio della posizione a bassa potenza fornito dal sistema operativo. Non vogliamo che Leafy prosciughi la batteria dell'utente.
+
+Il Timer dei 120 secondi: Reset o Annullamento?
+La parola d'ordine qui è "Reset Immediato". Non vogliamo punire l'utente se esce per sbaglio o se deve rispondere a una chiamata fuori dal negozio.
+
+Come funziona: Se l'utente esce dal raggio d'azione dopo 90 secondi, la sfida non si "brucia". Semplicemente il timer si ferma e si resetta a zero.
+
+UX (User Experience): Sulla Home, dentro l'Anello di Crescita (o in un piccolo widget dedicato), l'utente vede una barra di caricamento circolare che si riempie. Se esce, la barra sparisce. Se rientra, ricomincia da capo.
+
+La notifica "Ops": Se l'utente esce a pochi secondi dalla fine, possiamo inviare una notifica silenziosa: "Ti mancava pochissimo! Torna dentro per sbloccare i tuoi XP da [Nome Negozio]".
+
+Sicurezza: Solo una volta raggiunti i 120 secondi, il Walk-in viene segnato come "Completato" nel database per quel giorno. A quel punto, anche se rientra, non prenderà altri punti fino a domani.
+
+. Gestire l'Italia: GPS Dinamico vs Zona Profilo
+Scegliamo senza dubbio il GPS Dinamico. Far scegliere una "zona" nel profilo è un metodo vecchio che limita l'utente (pensa a chi lavora in una città e vive in un'altra, o a chi viaggia).
+
+Come gestiamo tutta Italia senza far esplodere il telefono?
+Non carichiamo mai l'intera mappa dell'Italia sul telefono. Usiamo la tecnica del "Chunking" (a blocchi):
+
+Rilevamento Posizione: Quando l'utente apre l'app, il telefono invia le sue coordinate (Lat/Long) al server.
+
+Query di Prossimità: Il server interroga il database e dice: "Dammi tutti i negozi (Oasi e Standard) che si trovano in un raggio di 20km da queste coordinate".
+
+Cache Locale: L'app scarica solo quei 20-50 negozi vicini. Se l'utente si sposta di molto (es. cambia città), l'app rileva il salto di posizione e scarica il nuovo "blocco" di negozi.
+
+Sfide su Misura: Le sfide che l'utente vede nella Home sono solo quelle dei negozi che ha scaricato in quel momento. Se sono a Milano, vedo la sfida "Scansiona Bio da Esselunga Milano"; se vado a Roma, vedrò quella di "NaturaSì Roma"
