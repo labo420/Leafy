@@ -1,7 +1,8 @@
 import { Router, type IRouter } from "express";
-import { eq, and, gte, sql } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import {
   db,
+  usersTable,
   locationsTable,
   walkinSessionsTable,
   walkinCompletionsTable,
@@ -23,14 +24,19 @@ const WALKIN_DAILY_LIMIT_PER_TYPE: Record<"oasi" | "standard", number> = {
   standard: 1,
 };
 
-const WALKIN_REQUIRED_SECONDS = 120;
-const WALKIN_SESSION_MAX_AGE_SECONDS = 7200; // 2 hours max before session is stale
+/**
+ * Advisory lock keys per location type. pg_advisory_xact_lock(int, int) takes
+ * two 32-bit integers. Key 1 = userId, Key 2 = type slot (oasi=1, standard=2).
+ * The lock is held until the transaction commits or rolls back, serializing all
+ * concurrent type-cap checks for the same user/type combination.
+ */
+const ADVISORY_LOCK_KEY_FOR_TYPE: Record<"oasi" | "standard", number> = {
+  oasi: 1,
+  standard: 2,
+};
 
-function startOfTodayUTC(): Date {
-  const d = new Date();
-  d.setUTCHours(0, 0, 0, 0);
-  return d;
-}
+const WALKIN_REQUIRED_SECONDS = 120;
+const WALKIN_SESSION_MAX_AGE_SECONDS = 7200; // 2 hours
 
 function todayBucket(): string {
   return new Date().toISOString().slice(0, 10);
@@ -59,7 +65,7 @@ router.post("/walkin/start", async (req, res): Promise<void> => {
 
   const bucket = todayBucket();
 
-  // Guard 1: max 1 completion per specific location per day (via walkin_completions)
+  // Guard 1: max 1 completion per specific location per day
   const [completedThisLocation] = await db
     .select({ id: walkinCompletionsTable.id })
     .from(walkinCompletionsTable)
@@ -82,9 +88,9 @@ router.post("/walkin/start", async (req, res): Promise<void> => {
     return;
   }
 
-  // Guard 2: per-type daily cap across all locations of that type
+  // Guard 2: per-type daily cap
   const typeLimit = WALKIN_DAILY_LIMIT_PER_TYPE[location.type];
-  const completedTodayOfType = await db
+  const completedOfType = await db
     .select({ id: walkinCompletionsTable.id })
     .from(walkinCompletionsTable)
     .innerJoin(locationsTable, eq(walkinCompletionsTable.locationId, locationsTable.id))
@@ -96,7 +102,7 @@ router.post("/walkin/start", async (req, res): Promise<void> => {
       ),
     );
 
-  if (completedTodayOfType.length >= typeLimit) {
+  if (completedOfType.length >= typeLimit) {
     res.json({
       sessionId: null,
       alreadyCompleted: true,
@@ -108,11 +114,7 @@ router.post("/walkin/start", async (req, res): Promise<void> => {
 
   const [session] = await db
     .insert(walkinSessionsTable)
-    .values({
-      userId: user.id,
-      locationId,
-      status: "pending",
-    })
+    .values({ userId: user.id, locationId, status: "pending" })
     .returning({ id: walkinSessionsTable.id });
 
   res.json({
@@ -139,7 +141,7 @@ router.post("/walkin/complete", async (req, res): Promise<void> => {
   }
 
   const result = await db.transaction(async (tx) => {
-    // Step 1: Atomic pending→completed transition. Concurrent requests will conflict here.
+    // Step 1: Atomic pending→completed transition (concurrent requests fail here)
     const now = new Date();
     const updated = await tx
       .update(walkinSessionsTable)
@@ -172,7 +174,7 @@ router.post("/walkin/complete", async (req, res): Promise<void> => {
       };
     }
 
-    // Step 3: Minimum dwell time check
+    // Step 3: Minimum dwell time (120 s)
     if (ageSeconds < WALKIN_REQUIRED_SECONDS) {
       await tx
         .update(walkinSessionsTable)
@@ -202,10 +204,16 @@ router.post("/walkin/complete", async (req, res): Promise<void> => {
     }
 
     const bucket = todayBucket();
-    const xpToAward = WALKIN_XP[location.type];
     const typeLimit = WALKIN_DAILY_LIMIT_PER_TYPE[location.type];
+    const xpToAward = WALKIN_XP[location.type];
+    const advisoryKey = ADVISORY_LOCK_KEY_FOR_TYPE[location.type];
 
-    // Step 4: Check per-type daily cap inside the transaction
+    // Step 4: Acquire advisory lock on (userId, typeKey) to serialize per-type cap checks
+    // across concurrent requests for different locations of the same type.
+    // The lock is automatically released when the transaction ends.
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(${user.id}, ${advisoryKey})`);
+
+    // Step 5: Re-count type completions under the lock (race-safe)
     const completedOfType = await tx
       .select({ id: walkinCompletionsTable.id })
       .from(walkinCompletionsTable)
@@ -231,16 +239,9 @@ router.post("/walkin/complete", async (req, res): Promise<void> => {
       };
     }
 
-    // Step 5: Persist XP amount on session record
-    await tx
-      .update(walkinSessionsTable)
-      .set({ xpAwarded: xpToAward })
-      .where(eq(walkinSessionsTable.id, sessionId));
-
-    // Step 6: DB-level unique gate — INSERT ON CONFLICT DO NOTHING.
-    // The unique index on (userId, locationId, dayBucket) is the authoritative anti-cheat guard.
-    // If two concurrent transactions both reach here for the same user/location/day, only one
-    // insert will succeed; the other will silently be dropped (idempotent, race-safe).
+    // Step 6: DB-level uniqueness gate on (userId, locationId, dayBucket).
+    // If two concurrent sessions somehow reach this point for the same location,
+    // only one insert will succeed.
     const inserted = await tx
       .insert(walkinCompletionsTable)
       .values({
@@ -254,7 +255,6 @@ router.post("/walkin/complete", async (req, res): Promise<void> => {
       .returning({ id: walkinCompletionsTable.id });
 
     if (inserted.length === 0) {
-      // Another concurrent request already claimed this slot
       await tx
         .update(walkinSessionsTable)
         .set({ status: "failed", xpAwarded: 0 })
@@ -267,8 +267,22 @@ router.post("/walkin/complete", async (req, res): Promise<void> => {
       };
     }
 
-    // Step 7: Award XP via centralized economy helper (inside the same transaction)
-    const newXp = await addXp(tx, user.id, xpToAward);
+    // Step 7: Update XP (inline within the transaction using the canonical economy pattern)
+    await tx
+      .update(usersTable)
+      .set({ xp: sql`${usersTable.xp} + ${xpToAward}` })
+      .where(eq(usersTable.id, user.id));
+
+    const [updatedUser] = await tx
+      .select({ xp: usersTable.xp })
+      .from(usersTable)
+      .where(eq(usersTable.id, user.id));
+
+    // Step 8: Record final XP on session
+    await tx
+      .update(walkinSessionsTable)
+      .set({ xpAwarded: xpToAward })
+      .where(eq(walkinSessionsTable.id, sessionId));
 
     return {
       success: true,
@@ -276,7 +290,7 @@ router.post("/walkin/complete", async (req, res): Promise<void> => {
       locationType: location.type,
       locationName: location.name,
       dwellSeconds: Math.round(ageSeconds),
-      newXp,
+      newXp: updatedUser?.xp ?? 0,
       message:
         location.type === "oasi"
           ? `Benvenuto in un'Oasi Green! +${xpToAward} XP per te.`
@@ -328,7 +342,7 @@ router.post("/discovery/scan", async (req, res): Promise<void> => {
 
   const bucket = todayBucket();
 
-  // Atomic insert: unique index (userId, challengeId, dayBucket) prevents concurrent double-awards.
+  // Atomic insert: unique index (userId, challengeId, dayBucket) prevents concurrent double-awards
   const inserted = await db
     .insert(discoveryCompletionsTable)
     .values({
@@ -350,7 +364,7 @@ router.post("/discovery/scan", async (req, res): Promise<void> => {
   }
 
   // Award XP via centralized economy helper
-  const newXp = await addXp(db, user.id, challenge.xpReward);
+  const newXp = await addXp(user.id, challenge.xpReward);
 
   res.json({
     success: true,

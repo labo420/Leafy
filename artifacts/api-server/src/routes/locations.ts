@@ -15,8 +15,13 @@ router.get("/locations/nearby", async (req, res): Promise<void> => {
     MAX_RADIUS_KM,
   );
 
-  if (isNaN(lat) || isNaN(lng)) {
-    res.status(400).json({ error: "Parametri lat e lng richiesti." });
+  if (!isFinite(lat) || !isFinite(lng)) {
+    res.status(400).json({ error: "Parametri lat e lng richiesti (valori numerici validi)." });
+    return;
+  }
+
+  if (!isFinite(radius) || radius <= 0) {
+    res.status(400).json({ error: "Il parametro radius deve essere un numero positivo." });
     return;
   }
 
