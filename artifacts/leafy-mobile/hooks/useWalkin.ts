@@ -10,26 +10,31 @@ const DWELL_SECONDS = 120;
 const ENTER_RADIUS_M = 50;
 const NEAR_MISS_MIN_SECONDS = 90;
 
-function todayKey(locationId: number): string {
+function todayTypeKey(type: "oasi" | "standard"): string {
   const d = new Date();
   const ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  return `leafy_walkin_cap_${locationId}_${ymd}`;
+  return `leafy_walkin_type_cap_${type}_${ymd}`;
 }
 
-async function getDailyCompletionCount(locationId: number): Promise<number> {
+async function getDailyTypeCompletionCount(type: "oasi" | "standard"): Promise<number> {
   try {
-    const val = await AsyncStorage.getItem(todayKey(locationId));
+    const val = await AsyncStorage.getItem(todayTypeKey(type));
     return val ? parseInt(val, 10) : 0;
   } catch {
     return 0;
   }
 }
 
-async function incrementDailyCompletionCount(locationId: number): Promise<void> {
+async function incrementDailyTypeCompletionCount(type: "oasi" | "standard"): Promise<void> {
   try {
-    const current = await getDailyCompletionCount(locationId);
-    await AsyncStorage.setItem(todayKey(locationId), String(current + 1));
+    const current = await getDailyTypeCompletionCount(type);
+    await AsyncStorage.setItem(todayTypeKey(type), String(current + 1));
   } catch {}
+}
+
+async function isDailyTypeCapReached(type: "oasi" | "standard", maxPerDay: number): Promise<boolean> {
+  const count = await getDailyTypeCompletionCount(type);
+  return count >= maxPerDay;
 }
 
 function haversineDistanceM(
@@ -132,8 +137,8 @@ export function useWalkin(
         const xp = data.xpAwarded ?? 0;
         const name = data.locationName ?? location?.name ?? "";
         setResult({ xpAwarded: xp, locationName: name, locationId: location?.id ?? 0 });
-        if (location?.id) {
-          await incrementDailyCompletionCount(location.id);
+        if (location?.type) {
+          await incrementDailyTypeCompletionCount(location.type);
         }
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         if (notificationsEnabledRef.current) {
@@ -187,7 +192,7 @@ export function useWalkin(
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
 
-    if (elapsed >= NEAR_MISS_MIN_SECONDS && notificationsEnabledRef.current) {
+    if (elapsed >= NEAR_MISS_MIN_SECONDS && elapsed < DWELL_SECONDS && notificationsEnabledRef.current) {
       await scheduleLocalNotification(
         "Ti mancava pochissimo!",
         `Eri in negozio da ${elapsed}s su ${DWELL_SECONDS}. Riprova la prossima volta per guadagnare XP in ${locationName}!`,
@@ -246,9 +251,9 @@ export function useWalkin(
   const autoEnterStore = useCallback(async (location: NearbyLocation) => {
     if (phaseRef.current !== "idle") return;
 
-    const completedToday = await getDailyCompletionCount(location.id);
+    const capReached = await isDailyTypeCapReached(location.type, location.walkinMaxPerDay);
     if (!mountedRef.current) return;
-    if (completedToday >= location.walkinMaxPerDay) {
+    if (capReached) {
       setPhaseSync("already_done");
       setActiveLocation(location);
       activeLocationRef.current = location;
@@ -311,9 +316,8 @@ export function useWalkin(
     setErrorMsg(null);
   }, [setPhaseSync]);
 
-  const checkDailyCapForLocation = useCallback(async (locationId: number, maxPerDay: number): Promise<boolean> => {
-    const count = await getDailyCompletionCount(locationId);
-    return count >= maxPerDay;
+  const checkDailyCapForLocation = useCallback(async (locationId: number, maxPerDay: number, type: "oasi" | "standard" = "standard"): Promise<boolean> => {
+    return isDailyTypeCapReached(type, maxPerDay);
   }, []);
 
   return {

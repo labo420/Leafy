@@ -729,24 +729,36 @@ export default function HomeScreen() {
     bpPrize: { xp: number; lea: number } | null;
   } | null>(null);
 
+  const [inStoreModeEnabled, setInStoreModeEnabled] = useState(true);
   const [inStoreModeActive, setInStoreModeActive] = useState(false);
   const [walkinToast, setWalkinToast] = useState<{ msg: string; xp: number } | null>(null);
   const { pushEnabled } = useNotifications();
 
   const { locations, permissionStatus, loading: locationsLoading, refresh: refreshLocations } =
-    useNearbyLocations(inStoreModeActive && !!user);
+    useNearbyLocations(inStoreModeEnabled && !!user);
 
   const walkin = useWalkin(locations, pushEnabled);
 
   useEffect(() => {
     if (!user) return;
-    if (inStoreModeActive) {
+    if (inStoreModeEnabled) {
       walkin.startGeofenceWatch();
     } else {
       walkin.stopGeofenceWatch();
       walkin.reset();
+      setInStoreModeActive(false);
     }
-  }, [inStoreModeActive, user?.id]);
+  }, [inStoreModeEnabled, user?.id]);
+
+  useEffect(() => {
+    if (!user || !inStoreModeEnabled) return;
+    const isNearby = locations.some((loc) => loc.distanceM <= 50);
+    if (isNearby && !inStoreModeActive) {
+      setInStoreModeActive(true);
+    } else if (!isNearby && inStoreModeActive && walkin.phase === "idle") {
+      setInStoreModeActive(false);
+    }
+  }, [locations, inStoreModeEnabled, user?.id]);
 
   useEffect(() => {
     if (walkin.phase === "rewarded" && walkin.result) {
@@ -1074,19 +1086,17 @@ export default function HomeScreen() {
           style={[inStoreStyles.toggleRow, { backgroundColor: theme.card }]}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            const next = !inStoreModeActive;
-            setInStoreModeActive(next);
-            if (!next) walkin.reset();
+            setInStoreModeEnabled((prev) => !prev);
           }}
         >
-          <MaterialCommunityIcons name="store-marker" size={20} color={inStoreModeActive ? theme.leaf : theme.textMuted} />
-          <Text style={[inStoreStyles.toggleLabel, { color: inStoreModeActive ? theme.leaf : theme.text }]}>Modalità In-Store</Text>
-          <View style={[inStoreStyles.togglePill, { backgroundColor: inStoreModeActive ? theme.leaf : theme.border }]}>
-            <View style={[inStoreStyles.toggleKnob, { transform: [{ translateX: inStoreModeActive ? 18 : 2 }] }]} />
+          <MaterialCommunityIcons name="store-marker" size={20} color={inStoreModeEnabled ? theme.leaf : theme.textMuted} />
+          <Text style={[inStoreStyles.toggleLabel, { color: inStoreModeEnabled ? theme.leaf : theme.text }]}>Rilevamento negozi</Text>
+          <View style={[inStoreStyles.togglePill, { backgroundColor: inStoreModeEnabled ? theme.leaf : theme.border }]}>
+            <View style={[inStoreStyles.toggleKnob, { transform: [{ translateX: inStoreModeEnabled ? 18 : 2 }] }]} />
           </View>
         </Pressable>
 
-        {inStoreModeActive && (
+        {inStoreModeEnabled && inStoreModeActive && (
           <View style={[inStoreStyles.panel, { backgroundColor: theme.card }]}>
             {permissionStatus === "denied" && (
               <View style={inStoreStyles.permRow}>
@@ -1224,8 +1234,8 @@ function InStoreLocationCard({
   const checkDailyCapForLocation = walkin.checkDailyCapForLocation;
 
   useEffect(() => {
-    checkDailyCapForLocation(location.id, location.walkinMaxPerDay).then(setClientCapReached).catch(() => {});
-  }, [location.id, location.walkinMaxPerDay, walkin.phase, checkDailyCapForLocation]);
+    checkDailyCapForLocation(location.id, location.walkinMaxPerDay, location.type).then(setClientCapReached).catch(() => {});
+  }, [location.id, location.walkinMaxPerDay, location.type, walkin.phase, checkDailyCapForLocation]);
 
   const isActive = walkin.activeLocation?.id === location.id;
   const isStarting = isActive && walkin.phase === "starting";
