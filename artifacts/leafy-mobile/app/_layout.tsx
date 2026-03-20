@@ -14,7 +14,7 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -30,6 +30,21 @@ import { ThemeProvider } from "@/context/theme";
 import { useOnboardingTutorial } from "@/hooks/useOnboardingTutorial";
 
 SplashScreen.preventAutoHideAsync();
+
+// Suppress fontfaceobserver timeout errors — not a real crash, app renders fine with system fonts
+const _EU = (global as any).ErrorUtils;
+if (_EU) {
+  const prevHandler = _EU.getGlobalHandler();
+  _EU.setGlobalHandler((error: Error, isFatal?: boolean) => {
+    if (
+      error?.message?.includes("timeout exceeded") ||
+      error?.stack?.includes("fontfaceobserver")
+    ) {
+      return;
+    }
+    prevHandler(error, isFatal);
+  });
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -70,13 +85,20 @@ export default function RootLayout() {
     DMSans_700Bold,
   });
 
-  useEffect(() => {
-    if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded, fontError]);
+  const [forceReady, setForceReady] = useState(false);
 
-  if (!fontsLoaded && !fontError) return null;
+  useEffect(() => {
+    const timer = setTimeout(() => setForceReady(true), 4000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (fontsLoaded || fontError || forceReady) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [fontsLoaded, fontError, forceReady]);
+
+  if (!fontsLoaded && !fontError && !forceReady) return null;
 
   return (
     <SafeAreaProvider>
