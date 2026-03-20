@@ -1,4 +1,4 @@
-import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Feather, MaterialCommunityIcons, FontAwesome5 } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
@@ -426,9 +426,7 @@ export default function LoginScreen() {
                   <ActivityIndicator color={Colors.forest} size="small" />
                 ) : (
                   <>
-                    <View style={styles.googleIcon}>
-                      <Text style={styles.googleG}>G</Text>
-                    </View>
+                    <FontAwesome5 name="google" size={18} color="#4285F4" />
                     <Text style={styles.oauthIconLabel}>Google</Text>
                   </>
                 )}
@@ -443,9 +441,7 @@ export default function LoginScreen() {
                   <ActivityIndicator color={Colors.forest} size="small" />
                 ) : (
                   <>
-                    <View style={styles.fbIcon}>
-                      <Text style={styles.fbF}>f</Text>
-                    </View>
+                    <FontAwesome5 name="facebook" size={18} color="#1877F2" />
                     <Text style={styles.oauthIconLabel}>Facebook</Text>
                   </>
                 )}
@@ -768,36 +764,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingVertical: 12,
     backgroundColor: Colors.card,
-  },
-  googleIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: Colors.card,
-    borderWidth: 1.5,
-    borderColor: "#E2E8F0",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  googleG: {
-    fontSize: 13,
-    fontFamily: Fonts.bodyBold,
-    color: "#4285F4",
-    lineHeight: 16,
-  },
-  fbIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "#1877F2",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  fbF: {
-    fontSize: 14,
-    fontFamily: Fonts.bodyBold,
-    color: "#fff",
-    lineHeight: 18,
   },
   oauthIconLabel: {
     fontSize: 14,
