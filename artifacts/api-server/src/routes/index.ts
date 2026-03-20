@@ -14,9 +14,11 @@ import walletRouter from "./wallet";
 import kitsRouter from "./kits";
 import locationsRouter from "./locations";
 import walkinRouter from "./walkin";
+import assetsRouter from "./assets";
 
 const router: IRouter = Router();
 
+router.use(assetsRouter);
 router.use(healthRouter);
 router.use(authRouter);
 router.use(profileRouter);

@@ -58,17 +58,6 @@ function GoogleLogo() {
   );
 }
 
-function LeafyLogo() {
-  return (
-    <Svg width="100%" height="100%" viewBox="0 0 6960 2052" preserveAspectRatio="xMidYMid meet">
-      <Path d="M0,0 L200,0 L200,2052 L0,2052 Z M400,400 Q500,500 400,1000 L400,1600 L600,1600 L600,400 Z M700,300 L900,300 L900,1700 L700,1700 Z M1100,500 L1300,500 Q1400,600 1400,1000 L1400,1700 L1200,1700 L1200,500 Z" fill="white" />
-      <Path d="M2000,400 L2300,400 Q2600,400 2700,600 L2700,2000 L2500,2000 L2500,800 Q2500,700 2400,700 L2200,700 L2200,2000 L2000,2000 Z" fill="white" />
-      <Path d="M3000,400 L3400,400 L3400,650 L3200,650 L3200,2000 L3000,2000 Z M3600,400 L4000,400 Q4200,400 4200,650 L4200,1200 Q4200,1500 4000,1500 L3800,1500 L3600,1500 Z M3800,700 L4000,700 Q4100,700 4100,1000 L4100,1200 L3800,1200 Z" fill="white" />
-      <Path d="M4500,400 L4900,400 L4900,700 L4700,700 L4700,2000 L4500,2000 Z M5100,400 L5500,400 Q5700,400 5700,650 L5700,1200 Q5700,1500 5500,1500 L5300,1500 L5100,1500 Z M5300,700 L5500,700 Q5600,700 5600,1000 L5600,1200 L5300,1200 Z" fill="white" />
-      <Path d="M6100,300 L6500,300 Q6800,300 6900,700 L6900,1900 L6700,1900 L6700,900 Q6700,500 6400,500 L6300,500 L6300,2000 L6100,2000 Z M6100,1300 L6700,1300 L6700,1500 L6100,1500 Z" fill="white" />
-    </Svg>
-  );
-}
 
 function LeafTrail() {
   const positions = [0, 1, 2, 3, 4];
@@ -259,7 +248,12 @@ export default function LoginScreen() {
           showsVerticalScrollIndicator={false}
         >
           <Animated.View entering={FadeInDown.delay(60).springify()} style={styles.appNameContainer}>
-            <LeafyLogo />
+            <Image
+              source={require("../assets/images/logo-leafy-white.png")}
+              style={styles.appNameLogo}
+              resizeMode="contain"
+              fadeDuration={0}
+            />
           </Animated.View>
 
           <Animated.Text entering={FadeInDown.delay(90).springify()} style={styles.tagline}>
@@ -458,13 +452,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   appNameLogo: {
-    width: "100%",
-    height: "100%",
+    width: 280,
+    height: 80,
   },
   tagline: {
     fontSize: 15,
     fontFamily: Fonts.bodyRegular,
-    color: Colors.textSecondary,
+    color: "rgba(255,255,255,0.82)",
     marginBottom: 20,
     textAlign: "center",
   },
