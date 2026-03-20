@@ -427,8 +427,8 @@ const styles = StyleSheet.create({
   scroll: {
     flexGrow: 1,
     alignItems: "center",
-    justifyContent: "center",
     paddingHorizontal: 20,
+    paddingTop: 100,
     paddingBottom: 32,
   },
   logoWrap: {
@@ -447,7 +447,6 @@ const styles = StyleSheet.create({
   },
   appNameContainer: {
     height: 120,
-    marginTop: 60,
     marginBottom: 8,
     justifyContent: "center",
     alignItems: "center",
