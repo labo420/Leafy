@@ -259,8 +259,6 @@ export default function LoginScreen() {
 
           <HeroIllustration />
 
-          <LeafTrail />
-
           <Animated.View entering={FadeInDown.delay(260).springify()} style={styles.card}>
             <View style={styles.cardHeader}>
               <MaterialCommunityIcons name="leaf" size={14} color={Colors.leaf} />
