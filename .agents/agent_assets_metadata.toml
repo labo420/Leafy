@@ -18,3 +18,9 @@ id = "jkiw_t2AWMlLgMff1sJDP"
 uri = "file://artifacts/leafy-mobile/assets/images/logo-leafy-white-preview.jpg"
 type = "image"
 title = "Logo Leafy bianco (anteprima su sfondo verde)"
+
+[[outputs]]
+id = "k5cUoey7E8tNQtA3GQSx1"
+uri = "file://artifacts/leafy-mobile/assets/images/logo-leafy-preview-dark.jpg"
+type = "image"
+title = "Logo Leafy bianco — sfondo trasparente (anteprima su scuro)"
