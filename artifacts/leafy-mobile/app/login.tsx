@@ -14,6 +14,15 @@ import {
   TextInput,
   View,
 } from "react-native";
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import Colors from "@/constants/colors";
@@ -25,6 +34,52 @@ type Mode = "login" | "register";
 const BASE_URL = process.env.EXPO_PUBLIC_DOMAIN
   ? `https://${process.env.EXPO_PUBLIC_DOMAIN}`
   : "";
+
+function HeroIllustration() {
+  const floatY = useSharedValue(0);
+
+  React.useEffect(() => {
+    floatY.value = withRepeat(
+      withSequence(
+        withTiming(-7, { duration: 2200 }),
+        withTiming(0, { duration: 2200 }),
+      ),
+      -1,
+      false,
+    );
+  }, []);
+
+  const floatStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: floatY.value }],
+  }));
+
+  return (
+    <Animated.View entering={FadeInDown.delay(100).springify()} style={floatStyle}>
+      <View style={styles.heroWrap}>
+        <View style={styles.heroCircle}>
+          <MaterialCommunityIcons name="watering-can" size={44} color="#fff" />
+        </View>
+
+        <View style={styles.heroReceipt}>
+          <View style={[styles.heroLine, { width: "80%" }]} />
+          <View style={[styles.heroLine, { width: "55%" }]} />
+          <View style={[styles.heroLine, { width: "70%" }]} />
+          <View style={styles.heroReceiptDivider} />
+          <View style={[styles.heroLine, { width: "45%", alignSelf: "flex-end" }]} />
+        </View>
+
+        <View style={styles.xpBadge}>
+          <MaterialCommunityIcons name="star-four-points" size={10} color={Colors.leaf} />
+          <Text style={styles.xpBadgeText}>+15 XP</Text>
+        </View>
+
+        <View style={styles.leafBadge}>
+          <MaterialCommunityIcons name="leaf" size={12} color="#fff" />
+        </View>
+      </View>
+    </Animated.View>
+  );
+}
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
@@ -123,13 +178,25 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.logoWrap}>
+          <Animated.View entering={FadeInDown.delay(0).springify()} style={styles.logoWrap}>
             <MaterialCommunityIcons name="leaf" size={32} color={Colors.leaf} />
-          </View>
-          <Text style={styles.appName}>Leafy</Text>
-          <Text style={styles.tagline}>Acquisti sostenibili, punti reali</Text>
+          </Animated.View>
 
-          <View style={styles.card}>
+          <Animated.Text entering={FadeInDown.delay(60).springify()} style={styles.appName}>
+            Leafy
+          </Animated.Text>
+
+          <Animated.Text entering={FadeInDown.delay(100).springify()} style={styles.tagline}>
+            La tua spesa di ogni giorno, premiata.
+          </Animated.Text>
+
+          <HeroIllustration />
+
+          <Animated.Text entering={FadeInDown.delay(220).springify()} style={styles.socialProof}>
+            🌱 Unisciti a migliaia di esploratori green
+          </Animated.Text>
+
+          <Animated.View entering={FadeInDown.delay(280).springify()} style={styles.card}>
             <View style={styles.tabs}>
               {(["login", "register"] as Mode[]).map((m) => (
                 <Pressable
@@ -225,48 +292,51 @@ export default function LoginScreen() {
 
             <View style={styles.divider}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>oppure</Text>
+              <Text style={styles.dividerText}>oppure continua con</Text>
               <View style={styles.dividerLine} />
             </View>
 
-            <Pressable
-              style={({ pressed }) => [styles.oauthBtn, pressed && { opacity: 0.85 }]}
-              onPress={() => handleOAuth("google")}
-              disabled={!!oauthLoading}
-            >
-              {oauthLoading === "google" ? (
-                <ActivityIndicator color={Colors.forest} size="small" />
-              ) : (
-                <>
-                  <View style={styles.googleIcon}>
-                    <Text style={styles.googleG}>G</Text>
-                  </View>
-                  <Text style={styles.oauthBtnText}>Continua con Google</Text>
-                </>
-              )}
-            </Pressable>
+            <View style={styles.oauthRow}>
+              <Pressable
+                style={({ pressed }) => [styles.oauthIconBtn, pressed && { opacity: 0.8 }]}
+                onPress={() => handleOAuth("google")}
+                disabled={!!oauthLoading}
+              >
+                {oauthLoading === "google" ? (
+                  <ActivityIndicator color={Colors.forest} size="small" />
+                ) : (
+                  <>
+                    <View style={styles.googleIcon}>
+                      <Text style={styles.googleG}>G</Text>
+                    </View>
+                    <Text style={styles.oauthIconLabel}>Google</Text>
+                  </>
+                )}
+              </Pressable>
 
-            <Pressable
-              style={({ pressed }) => [styles.oauthBtn, pressed && { opacity: 0.85 }]}
-              onPress={() => handleOAuth("facebook")}
-              disabled={!!oauthLoading}
-            >
-              {oauthLoading === "facebook" ? (
-                <ActivityIndicator color={Colors.forest} size="small" />
-              ) : (
-                <>
-                  <View style={[styles.fbIcon]}>
-                    <Text style={styles.fbF}>f</Text>
-                  </View>
-                  <Text style={styles.oauthBtnText}>Continua con Facebook</Text>
-                </>
-              )}
-            </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.oauthIconBtn, pressed && { opacity: 0.8 }]}
+                onPress={() => handleOAuth("facebook")}
+                disabled={!!oauthLoading}
+              >
+                {oauthLoading === "facebook" ? (
+                  <ActivityIndicator color={Colors.forest} size="small" />
+                ) : (
+                  <>
+                    <View style={styles.fbIcon}>
+                      <Text style={styles.fbF}>f</Text>
+                    </View>
+                    <Text style={styles.oauthIconLabel}>Facebook</Text>
+                  </>
+                )}
+              </Pressable>
+            </View>
 
             <Text style={styles.terms}>
               Continuando accetti i Termini di Servizio e la Privacy Policy.
+              {"\n"}Non condividiamo i tuoi dati di spesa.
             </Text>
-          </View>
+          </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -282,35 +352,125 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 48,
+    paddingTop: 36,
     paddingBottom: 32,
   },
   logoWrap: {
-    width: 72,
-    height: 72,
-    borderRadius: 22,
+    width: 64,
+    height: 64,
+    borderRadius: 20,
     backgroundColor: Colors.primaryLight,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 16,
+    marginBottom: 12,
     shadowColor: Colors.leaf,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.15,
     shadowRadius: 12,
     elevation: 4,
   },
   appName: {
-    fontSize: 36,
+    fontSize: 34,
     fontFamily: Fonts.displayBold,
     color: Colors.text,
     letterSpacing: -0.5,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   tagline: {
     fontSize: 15,
     fontFamily: Fonts.bodyRegular,
     color: Colors.textSecondary,
-    marginBottom: 32,
+    marginBottom: 24,
+    textAlign: "center",
+  },
+  heroWrap: {
+    width: 200,
+    height: 120,
+    position: "relative",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+  },
+  heroCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Colors.leaf,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: Colors.leaf,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
+    position: "absolute",
+    left: 14,
+    top: 10,
+  },
+  heroReceipt: {
+    position: "absolute",
+    right: 10,
+    top: 8,
+    width: 88,
+    backgroundColor: Colors.card,
+    borderRadius: 8,
+    padding: 10,
+    gap: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  heroLine: {
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: Colors.cardAlt,
+  },
+  heroReceiptDivider: {
+    height: 1,
+    backgroundColor: Colors.border,
+    marginVertical: 2,
+  },
+  xpBadge: {
+    position: "absolute",
+    bottom: 0,
+    right: 18,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    backgroundColor: Colors.primaryLight,
+    borderRadius: 20,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: Colors.primaryMuted,
+  },
+  xpBadgeText: {
+    fontSize: 11,
+    fontFamily: Fonts.bodySemiBold,
+    color: Colors.leaf,
+  },
+  leafBadge: {
+    position: "absolute",
+    top: 4,
+    left: 58,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: Colors.mint,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: Colors.background,
+  },
+  socialProof: {
+    fontSize: 13,
+    fontFamily: Fonts.bodyMedium,
+    color: Colors.textSecondary,
+    marginBottom: 20,
     textAlign: "center",
   },
   card: {
@@ -412,7 +572,7 @@ const styles = StyleSheet.create({
   divider: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 8,
     marginVertical: 4,
   },
   dividerLine: {
@@ -425,21 +585,27 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.bodyRegular,
     color: Colors.textMuted,
   },
-  oauthBtn: {
+  oauthRow: {
+    flexDirection: "row",
+    gap: 12,
+    justifyContent: "center",
+  },
+  oauthIconBtn: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 10,
+    gap: 8,
     borderWidth: 1,
     borderColor: Colors.border,
     borderRadius: 14,
-    paddingVertical: 13,
+    paddingVertical: 12,
     backgroundColor: Colors.card,
   },
   googleIcon: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: Colors.card,
     borderWidth: 1.5,
     borderColor: "#E2E8F0",
@@ -453,9 +619,9 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   fbIcon: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: "#1877F2",
     alignItems: "center",
     justifyContent: "center",
@@ -466,7 +632,7 @@ const styles = StyleSheet.create({
     color: "#fff",
     lineHeight: 18,
   },
-  oauthBtnText: {
+  oauthIconLabel: {
     fontSize: 14,
     fontFamily: Fonts.bodyMedium,
     color: Colors.text,

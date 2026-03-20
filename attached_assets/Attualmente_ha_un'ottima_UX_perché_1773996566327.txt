@@ -1,0 +1,19 @@
+Attualmente ha un'ottima UX perché è chiara, ma sembra quasi la schermata di login di una banca o di un'app di investimenti (il che trasmette sicurezza, ed è un bene), però le manca quell'anima gamificata e giocosa di cui abbiamo parlato finora (gli XP, le sfide, l'innaffiatoio).
+
+Ecco 3 ritocchi "brutali" ma veloci per renderla più viva senza riempirla di confusione visiva:
+
+1. Il "Gancio" Visivo (L'Eroe)
+Invece di lasciare tutto quello spazio vuoto tra il logo e i bottoni, potremmo inserire una grafica vettoriale o un'illustrazione 3D. Magari uno scontrino da cui spunta una piantina, oppure un piccolo forziere con una foglia. L'utente, prima ancora di leggere, deve percepire che dentro c'è una meccanica divertente, un "gioco" legato alla spesa.
+
+2. Snellire la Gerarchia dei Bottoni
+In questo momento hai 4 "pilloloni" giganti impilati uno sull'altro, che creano un muro di testo.
+
+La soluzione: Lascia "Accedi" e "Crea account" così come sono (sono i principali).
+
+Per i login social, invece dei bottoni larghi quanto lo schermo, trasformali in due bottoni rotondi o quadrati affiancati (uno con la "G" di Google e uno con la "f" di Facebook), posizionati sotto la riga dell'"oppure". In colpo solo la pagina "respira" molto di più.
+
+3. Evitare le Ripetizioni (Micro-copy)
+Hai il sottotitolo: "La tua spesa di ogni giorno, premiata." (Ottimo, chiaro e dritto al punto).
+Poi in basso a tutto hai: "Ogni scelta sostenibile ti premia" (È una ripetizione del concetto di premio).
+
+La soluzione: Quello spazio in basso puoi usarlo per la Social Proof (es. "Unisciti a migliaia di esploratori green") oppure per rassicurare sulla privacy (es. "Non condividiamo i tuoi dati di spesa"). Altrimenti, toglilo del tutto per un design più pulito.
