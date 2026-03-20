@@ -134,11 +134,7 @@ function HeroIllustration() {
     <Animated.View
       entering={FadeInDown.delay(120).springify()}
       style={[styles.heroWrap, floatStyle]}
-    >
-      <View style={styles.leafBadge}>
-        <MaterialCommunityIcons name="leaf" size={12} color="#fff" />
-      </View>
-    </Animated.View>
+    />
   );
 }
 
