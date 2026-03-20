@@ -3,7 +3,7 @@ import { GoogleIcon } from "../../components/GoogleIcon";
 import { FacebookIcon } from "../../components/FacebookIcon";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
-import { router, useFocusEffect } from "expo-router";
+import { Redirect, router, useFocusEffect } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -813,9 +813,7 @@ export default function HomeScreen() {
   const bottomPad = Platform.OS === "web" ? 34 + 84 : 100 + insets.bottom;
 
   if (!user) {
-    return (
-      <GuestAuthScreen />
-    );
+    return <Redirect href="/login" />;
   }
 
   if (profileLoading) {
