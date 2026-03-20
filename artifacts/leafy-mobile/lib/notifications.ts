@@ -1,33 +1,38 @@
 import * as Notifications from "expo-notifications";
-import * as Constants from "expo-constants";
+import Constants from "expo-constants";
 import { Platform } from "react-native";
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+function isExpoGo(): boolean {
+  return (Constants as any).appOwnership === "expo";
+}
 
-function isExpoGoApp(): boolean {
-  return Constants.appOwnership === "expo";
+if (!isExpoGo()) {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
 }
 
 export async function requestNotificationPermission(): Promise<boolean> {
   if (Platform.OS === "web") return false;
-  if (isExpoGoApp()) return false;
-  const { status: existing } = await Notifications.getPermissionsAsync();
-  if (existing === "granted") return true;
-  const { status } = await Notifications.requestPermissionsAsync();
-  return status === "granted";
+  try {
+    const { status: existing } = await Notifications.getPermissionsAsync();
+    if (existing === "granted") return true;
+    const { status } = await Notifications.requestPermissionsAsync();
+    return status === "granted";
+  } catch {
+    return false;
+  }
 }
 
 export async function registerPushToken(): Promise<string | null> {
   if (Platform.OS === "web") return null;
-  if (isExpoGoApp()) return null;
+  if (isExpoGo()) return null;
   try {
     const granted = await requestNotificationPermission();
     if (!granted) return null;
@@ -43,8 +48,9 @@ export async function scheduleLocalNotification(
   body: string,
   options: { delaySeconds?: number; silent?: boolean } = {},
 ): Promise<void> {
+  if (Platform.OS === "web") return;
+  if (isExpoGo()) return;
   try {
-    if (Platform.OS === "web") return;
     const granted = await requestNotificationPermission();
     if (!granted) return;
     const { delaySeconds = 0, silent = false } = options;
