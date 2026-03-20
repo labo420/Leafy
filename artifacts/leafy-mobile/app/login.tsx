@@ -57,44 +57,6 @@ function GoogleLogo() {
   );
 }
 
-function SocialProofCard() {
-  const [idx, setIdx] = useState(0);
-  const opacity = useSharedValue(1);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      opacity.value = withTiming(0, { duration: 400 }, () => {
-        "worklet";
-      });
-      setTimeout(() => {
-        setIdx((i) => (i + 1) % SOCIAL_PROOF_MESSAGES.length);
-        opacity.value = withTiming(1, { duration: 400 });
-      }, 420);
-    }, 3200);
-    return () => clearInterval(interval);
-  }, []);
-
-  const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
-  const msg = SOCIAL_PROOF_MESSAGES[idx];
-
-  return (
-    <View style={styles.socialCard}>
-      <View style={styles.socialCardHeader}>
-        <View style={styles.socialCardDot} />
-        <Text style={styles.socialCardLive}>LIVE</Text>
-      </View>
-      <Animated.View style={animStyle}>
-        <Text style={styles.socialCardName}>{msg.name}</Text>
-        <Text style={styles.socialCardText}>
-          ha guadagnato{" "}
-          <Text style={styles.socialCardXp}>+{msg.xp} XP</Text>
-        </Text>
-        <Text style={styles.socialCardProduct}>{msg.product}</Text>
-      </Animated.View>
-    </View>
-  );
-}
-
 function LeafTrail() {
   const positions = [0, 1, 2, 3, 4];
   return (
@@ -176,8 +138,6 @@ function HeroIllustration() {
       <View style={styles.heroCircle}>
         <MaterialCommunityIcons name="watering-can" size={44} color="#fff" />
       </View>
-
-      <SocialProofCard />
 
       <View style={styles.xpBadge}>
         <MaterialCommunityIcons name="star-four-points" size={10} color={Colors.leaf} />
