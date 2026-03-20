@@ -429,7 +429,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-start",
     paddingHorizontal: 20,
-    paddingTop: 50,
+    paddingTop: 100,
     paddingBottom: 32,
   },
   logoWrap: {
