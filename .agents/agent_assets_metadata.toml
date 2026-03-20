@@ -12,3 +12,9 @@ id = "fD5GBZJanikWCHPOtmUbW"
 uri = "file://attached_assets/leafy-logo-hq.png"
 type = "image"
 title = "Logo completo — PNG alta qualità"
+
+[[outputs]]
+id = "jkiw_t2AWMlLgMff1sJDP"
+uri = "file://artifacts/leafy-mobile/assets/images/logo-leafy-white-preview.jpg"
+type = "image"
+title = "Logo Leafy bianco (anteprima su sfondo verde)"
