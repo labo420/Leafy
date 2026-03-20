@@ -5,6 +5,7 @@ import * as WebBrowser from "expo-web-browser";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Dimensions,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -15,6 +16,7 @@ import {
   TextInput,
   Image,
 } from "react-native";
+
 import Svg, { Path } from "react-native-svg";
 import Animated, {
   FadeInDown,
@@ -38,6 +40,8 @@ type Mode = "login" | "register";
 const BASE_URL = process.env.EXPO_PUBLIC_DOMAIN
   ? `https://${process.env.EXPO_PUBLIC_DOMAIN}`
   : "";
+
+const SCREEN_HEIGHT = Dimensions.get("window").height;
 
 const SOCIAL_PROOF_MESSAGES = [
   { name: "Lorenzo", xp: 45, product: "pasta bio" },
@@ -428,7 +432,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 140,
     paddingBottom: 32,
   },
   logoWrap: {
@@ -447,6 +450,7 @@ const styles = StyleSheet.create({
   },
   appNameContainer: {
     height: 120,
+    marginTop: SCREEN_HEIGHT * 0.2,
     marginBottom: 8,
     justifyContent: "center",
     alignItems: "center",
