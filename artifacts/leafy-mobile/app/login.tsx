@@ -14,6 +14,7 @@ import {
   View,
   TextInput,
 } from "react-native";
+import Svg, { Circle } from "react-native-svg";
 import Animated, {
   FadeInDown,
   FadeIn,
@@ -44,6 +45,18 @@ const SOCIAL_PROOF_MESSAGES = [
   { name: "Davide", xp: 25, product: "frutta di stagione" },
   { name: "Sara", xp: 50, product: "yogurt biologico" },
 ];
+
+function GoogleLogo() {
+  return (
+    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+      <Circle cx={12} cy={12} r={11} fill="#4285F4" opacity={0.1} />
+      <Circle cx={9} cy={9} r={3} fill="#4285F4" />
+      <Circle cx={15} cy={9} r={3} fill="#EA4335" />
+      <Circle cx={15} cy={15} r={3} fill="#FBBC04" />
+      <Circle cx={9} cy={15} r={3} fill="#34A853" />
+    </Svg>
+  );
+}
 
 function SocialProofCard() {
   const [idx, setIdx] = useState(0);
@@ -426,7 +439,7 @@ export default function LoginScreen() {
                   <ActivityIndicator color={Colors.forest} size="small" />
                 ) : (
                   <>
-                    <FontAwesome5 name="google" size={18} color="#4285F4" />
+                    <GoogleLogo />
                     <Text style={styles.oauthIconLabel}>Google</Text>
                   </>
                 )}
