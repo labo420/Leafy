@@ -182,6 +182,7 @@ function HeroIllustration() {
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const { setUser, refetch } = useAuth();
+  const scrollRef = useRef<ScrollView>(null);
 
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
@@ -191,6 +192,12 @@ export default function LoginScreen() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<"google" | "facebook" | null>(null);
+
+  const handleInputFocus = () => {
+    setTimeout(() => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    }, 300);
+  };
 
   const switchMode = (next: Mode) => {
     setMode(next);
@@ -270,9 +277,11 @@ export default function LoginScreen() {
       <BackgroundPattern />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "position"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 80}
       >
         <ScrollView
+          ref={scrollRef}
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -324,6 +333,7 @@ export default function LoginScreen() {
                   placeholderTextColor={Colors.textMuted}
                   value={username}
                   onChangeText={setUsername}
+                  onFocus={handleInputFocus}
                   autoCapitalize="none"
                   autoCorrect={false}
                 />
@@ -338,6 +348,7 @@ export default function LoginScreen() {
                 placeholderTextColor={Colors.textMuted}
                 value={email}
                 onChangeText={setEmail}
+                onFocus={handleInputFocus}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -353,6 +364,7 @@ export default function LoginScreen() {
                 placeholderTextColor={Colors.textMuted}
                 value={password}
                 onChangeText={setPassword}
+                onFocus={handleInputFocus}
                 secureTextEntry={!showPassword}
                 textContentType={mode === "login" ? "password" : "newPassword"}
                 autoCapitalize="none"
