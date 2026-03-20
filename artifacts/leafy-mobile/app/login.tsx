@@ -2,7 +2,7 @@ import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -11,17 +11,19 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
+  TextInput,
 } from "react-native";
 import Animated, {
   FadeInDown,
-  FadeInUp,
+  FadeIn,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
   withSequence,
   withTiming,
+  interpolate,
+  Easing,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -35,14 +37,115 @@ const BASE_URL = process.env.EXPO_PUBLIC_DOMAIN
   ? `https://${process.env.EXPO_PUBLIC_DOMAIN}`
   : "";
 
+const SOCIAL_PROOF_MESSAGES = [
+  { name: "Lorenzo", xp: 45, product: "pasta bio" },
+  { name: "Marta", xp: 30, product: "latte vegetale" },
+  { name: "Giulia", xp: 60, product: "detersivo ecologico" },
+  { name: "Davide", xp: 25, product: "frutta di stagione" },
+  { name: "Sara", xp: 50, product: "yogurt biologico" },
+];
+
+function SocialProofCard() {
+  const [idx, setIdx] = useState(0);
+  const opacity = useSharedValue(1);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      opacity.value = withTiming(0, { duration: 400 }, () => {
+        "worklet";
+      });
+      setTimeout(() => {
+        setIdx((i) => (i + 1) % SOCIAL_PROOF_MESSAGES.length);
+        opacity.value = withTiming(1, { duration: 400 });
+      }, 420);
+    }, 3200);
+    return () => clearInterval(interval);
+  }, []);
+
+  const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+  const msg = SOCIAL_PROOF_MESSAGES[idx];
+
+  return (
+    <View style={styles.socialCard}>
+      <View style={styles.socialCardHeader}>
+        <View style={styles.socialCardDot} />
+        <Text style={styles.socialCardLive}>LIVE</Text>
+      </View>
+      <Animated.View style={animStyle}>
+        <Text style={styles.socialCardName}>{msg.name}</Text>
+        <Text style={styles.socialCardText}>
+          ha guadagnato{" "}
+          <Text style={styles.socialCardXp}>+{msg.xp} XP</Text>
+        </Text>
+        <Text style={styles.socialCardProduct}>{msg.product}</Text>
+      </Animated.View>
+    </View>
+  );
+}
+
+function LeafTrail() {
+  const positions = [0, 1, 2, 3, 4];
+  return (
+    <View style={styles.trailWrap} pointerEvents="none">
+      {positions.map((i) => (
+        <Animated.View
+          key={i}
+          entering={FadeIn.delay(300 + i * 120).duration(600)}
+          style={[styles.trailLeaf, { left: 14 + i * 6, top: i * 13 }]}
+        >
+          <MaterialCommunityIcons
+            name="leaf"
+            size={10 - i}
+            color={Colors.leaf}
+            style={{ opacity: 1 - i * 0.15 }}
+          />
+        </Animated.View>
+      ))}
+    </View>
+  );
+}
+
+function BackgroundPattern() {
+  const leafPositions = [
+    { top: 60, left: 20, size: 28, rot: -30, opacity: 0.06 },
+    { top: 120, right: 18, size: 20, rot: 45, opacity: 0.05 },
+    { top: 200, left: 40, size: 16, rot: 10, opacity: 0.04 },
+    { top: 280, right: 30, size: 24, rot: -15, opacity: 0.05 },
+    { top: 400, left: 10, size: 18, rot: 60, opacity: 0.04 },
+    { top: 480, right: 10, size: 14, rot: -45, opacity: 0.04 },
+    { top: 580, left: 30, size: 22, rot: 20, opacity: 0.05 },
+    { top: 650, right: 25, size: 16, rot: -20, opacity: 0.04 },
+  ];
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      {leafPositions.map((pos, i) => (
+        <MaterialCommunityIcons
+          key={i}
+          name="leaf"
+          size={pos.size}
+          color={Colors.leaf}
+          style={{
+            position: "absolute",
+            top: pos.top,
+            ...(pos.left !== undefined ? { left: pos.left } : {}),
+            ...(pos.right !== undefined ? { right: pos.right } : {}),
+            opacity: pos.opacity,
+            transform: [{ rotate: `${pos.rot}deg` }],
+          }}
+        />
+      ))}
+    </View>
+  );
+}
+
 function HeroIllustration() {
   const floatY = useSharedValue(0);
 
-  React.useEffect(() => {
+  useEffect(() => {
     floatY.value = withRepeat(
       withSequence(
-        withTiming(-7, { duration: 2200 }),
-        withTiming(0, { duration: 2200 }),
+        withTiming(-8, { duration: 2400, easing: Easing.inOut(Easing.sin) }),
+        withTiming(0, { duration: 2400, easing: Easing.inOut(Easing.sin) }),
       ),
       -1,
       false,
@@ -54,28 +157,23 @@ function HeroIllustration() {
   }));
 
   return (
-    <Animated.View entering={FadeInDown.delay(100).springify()} style={floatStyle}>
-      <View style={styles.heroWrap}>
-        <View style={styles.heroCircle}>
-          <MaterialCommunityIcons name="watering-can" size={44} color="#fff" />
-        </View>
+    <Animated.View
+      entering={FadeInDown.delay(120).springify()}
+      style={[styles.heroWrap, floatStyle]}
+    >
+      <View style={styles.heroCircle}>
+        <MaterialCommunityIcons name="watering-can" size={44} color="#fff" />
+      </View>
 
-        <View style={styles.heroReceipt}>
-          <View style={[styles.heroLine, { width: "80%" }]} />
-          <View style={[styles.heroLine, { width: "55%" }]} />
-          <View style={[styles.heroLine, { width: "70%" }]} />
-          <View style={styles.heroReceiptDivider} />
-          <View style={[styles.heroLine, { width: "45%", alignSelf: "flex-end" }]} />
-        </View>
+      <SocialProofCard />
 
-        <View style={styles.xpBadge}>
-          <MaterialCommunityIcons name="star-four-points" size={10} color={Colors.leaf} />
-          <Text style={styles.xpBadgeText}>+15 XP</Text>
-        </View>
+      <View style={styles.xpBadge}>
+        <MaterialCommunityIcons name="star-four-points" size={10} color={Colors.leaf} />
+        <Text style={styles.xpBadgeText}>+15 XP</Text>
+      </View>
 
-        <View style={styles.leafBadge}>
-          <MaterialCommunityIcons name="leaf" size={12} color="#fff" />
-        </View>
+      <View style={styles.leafBadge}>
+        <MaterialCommunityIcons name="leaf" size={12} color="#fff" />
       </View>
     </Animated.View>
   );
@@ -169,6 +267,7 @@ export default function LoginScreen() {
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      <BackgroundPattern />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -186,17 +285,22 @@ export default function LoginScreen() {
             Leafy
           </Animated.Text>
 
-          <Animated.Text entering={FadeInDown.delay(100).springify()} style={styles.tagline}>
+          <Animated.Text entering={FadeInDown.delay(90).springify()} style={styles.tagline}>
             La tua spesa di ogni giorno, premiata.
           </Animated.Text>
 
           <HeroIllustration />
 
-          <Animated.Text entering={FadeInDown.delay(220).springify()} style={styles.socialProof}>
-            🌱 Unisciti a migliaia di esploratori green
-          </Animated.Text>
+          <LeafTrail />
 
-          <Animated.View entering={FadeInDown.delay(280).springify()} style={styles.card}>
+          <Animated.View entering={FadeInDown.delay(260).springify()} style={styles.card}>
+            <View style={styles.cardHeader}>
+              <MaterialCommunityIcons name="leaf" size={14} color={Colors.leaf} />
+              <Text style={styles.cardHeaderText}>
+                Unisciti a migliaia di esploratori green
+              </Text>
+            </View>
+
             <View style={styles.tabs}>
               {(["login", "register"] as Mode[]).map((m) => (
                 <Pressable
@@ -270,7 +374,11 @@ export default function LoginScreen() {
             ) : null}
 
             <Pressable
-              style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.85 }, loading && { opacity: 0.7 }]}
+              style={({ pressed }) => [
+                styles.primaryBtn,
+                pressed && { opacity: 0.85 },
+                loading && { opacity: 0.7 },
+              ]}
               onPress={handleSubmit}
               disabled={loading}
             >
@@ -333,8 +441,8 @@ export default function LoginScreen() {
             </View>
 
             <Text style={styles.terms}>
-              Continuando accetti i Termini di Servizio e la Privacy Policy.
-              {"\n"}Non condividiamo i tuoi dati di spesa.
+              Continuando accetti i Termini di Servizio e la Privacy Policy.{"\n"}
+              Non condividiamo i tuoi dati di spesa.
             </Text>
           </Animated.View>
         </ScrollView>
@@ -352,20 +460,20 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 36,
+    paddingTop: 28,
     paddingBottom: 32,
   },
   logoWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 18,
     backgroundColor: Colors.primaryLight,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 12,
+    marginBottom: 10,
     shadowColor: Colors.leaf,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.18,
     shadowRadius: 12,
     elevation: 4,
   },
@@ -380,64 +488,95 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: Fonts.bodyRegular,
     color: Colors.textSecondary,
-    marginBottom: 24,
+    marginBottom: 20,
     textAlign: "center",
   },
   heroWrap: {
-    width: 200,
-    height: 120,
+    width: 230,
+    height: 130,
     position: "relative",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 16,
+    marginBottom: 8,
   },
   heroCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 82,
+    height: 82,
+    borderRadius: 41,
     backgroundColor: Colors.leaf,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: Colors.leaf,
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowOpacity: 0.35,
+    shadowRadius: 18,
+    elevation: 10,
     position: "absolute",
-    left: 14,
-    top: 10,
+    left: 10,
+    top: 14,
   },
-  heroReceipt: {
+  socialCard: {
     position: "absolute",
-    right: 10,
-    top: 8,
-    width: 88,
+    right: 0,
+    top: 6,
+    width: 120,
     backgroundColor: Colors.card,
-    borderRadius: 8,
+    borderRadius: 10,
     padding: 10,
-    gap: 5,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.09,
     shadowRadius: 10,
     elevation: 5,
     borderWidth: 1,
     borderColor: Colors.border,
+    minHeight: 80,
   },
-  heroLine: {
-    height: 5,
+  socialCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginBottom: 6,
+  },
+  socialCardDot: {
+    width: 6,
+    height: 6,
     borderRadius: 3,
-    backgroundColor: Colors.cardAlt,
+    backgroundColor: "#22C55E",
   },
-  heroReceiptDivider: {
-    height: 1,
-    backgroundColor: Colors.border,
-    marginVertical: 2,
+  socialCardLive: {
+    fontSize: 9,
+    fontFamily: Fonts.bodySemiBold,
+    color: "#22C55E",
+    letterSpacing: 0.8,
+  },
+  socialCardName: {
+    fontSize: 11,
+    fontFamily: Fonts.bodySemiBold,
+    color: Colors.text,
+    marginBottom: 1,
+  },
+  socialCardText: {
+    fontSize: 10,
+    fontFamily: Fonts.bodyRegular,
+    color: Colors.textSecondary,
+  },
+  socialCardXp: {
+    fontSize: 10,
+    fontFamily: Fonts.bodySemiBold,
+    color: Colors.leaf,
+  },
+  socialCardProduct: {
+    fontSize: 10,
+    fontFamily: Fonts.bodyRegular,
+    color: Colors.textMuted,
+    marginTop: 2,
+    fontStyle: "italic",
   },
   xpBadge: {
     position: "absolute",
-    bottom: 0,
-    right: 18,
+    bottom: 2,
+    right: 8,
     flexDirection: "row",
     alignItems: "center",
     gap: 3,
@@ -455,8 +594,8 @@ const styles = StyleSheet.create({
   },
   leafBadge: {
     position: "absolute",
-    top: 4,
-    left: 58,
+    top: 8,
+    left: 68,
     width: 22,
     height: 22,
     borderRadius: 11,
@@ -466,19 +605,23 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: Colors.background,
   },
-  socialProof: {
-    fontSize: 13,
-    fontFamily: Fonts.bodyMedium,
-    color: Colors.textSecondary,
-    marginBottom: 20,
-    textAlign: "center",
+  trailWrap: {
+    width: 60,
+    height: 64,
+    position: "relative",
+    marginBottom: 0,
+    alignSelf: "flex-start",
+    marginLeft: 52,
+  },
+  trailLeaf: {
+    position: "absolute",
   },
   card: {
     width: "100%",
     backgroundColor: Colors.card,
     borderRadius: 24,
-    padding: 24,
-    gap: 12,
+    padding: 20,
+    gap: 11,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.08,
@@ -486,6 +629,21 @@ const styles = StyleSheet.create({
     elevation: 8,
     borderWidth: 1,
     borderColor: Colors.border,
+    marginTop: 2,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingBottom: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    marginBottom: 2,
+  },
+  cardHeaderText: {
+    fontSize: 12,
+    fontFamily: Fonts.bodyMedium,
+    color: Colors.textSecondary,
   },
   tabs: {
     flexDirection: "row",
@@ -493,7 +651,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 4,
     gap: 4,
-    marginBottom: 4,
   },
   tab: {
     flex: 1,
@@ -556,7 +713,6 @@ const styles = StyleSheet.create({
   primaryBtn: {
     borderRadius: 14,
     overflow: "hidden",
-    marginTop: 4,
   },
   primaryBtnGradient: {
     paddingVertical: 15,
@@ -573,7 +729,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    marginVertical: 4,
   },
   dividerLine: {
     flex: 1,
@@ -643,6 +798,6 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     textAlign: "center",
     lineHeight: 16,
-    marginTop: 4,
+    marginTop: 2,
   },
 });
