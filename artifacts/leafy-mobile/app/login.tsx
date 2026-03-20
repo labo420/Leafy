@@ -427,8 +427,8 @@ const styles = StyleSheet.create({
   scroll: {
     flexGrow: 1,
     alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 20,
-    paddingTop: 28,
     paddingBottom: 32,
   },
   logoWrap: {
