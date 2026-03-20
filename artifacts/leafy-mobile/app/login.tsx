@@ -258,10 +258,6 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <Animated.View entering={FadeInDown.delay(0).springify()} style={styles.logoWrap}>
-            <MaterialCommunityIcons name="leaf" size={32} color={Colors.leaf} />
-          </Animated.View>
-
           <Animated.View entering={FadeInDown.delay(60).springify()} style={styles.appNameContainer}>
             <LeafyLogo />
           </Animated.View>
