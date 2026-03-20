@@ -13,8 +13,8 @@ import {
   Text,
   View,
   TextInput,
+  Image,
 } from "react-native";
-import Svg, { Circle } from "react-native-svg";
 import Animated, {
   FadeInDown,
   FadeIn,
@@ -46,17 +46,7 @@ const SOCIAL_PROOF_MESSAGES = [
   { name: "Sara", xp: 50, product: "yogurt biologico" },
 ];
 
-function GoogleLogo() {
-  return (
-    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-      <Circle cx={12} cy={12} r={11} fill="#4285F4" opacity={0.1} />
-      <Circle cx={9} cy={9} r={3} fill="#4285F4" />
-      <Circle cx={15} cy={9} r={3} fill="#EA4335" />
-      <Circle cx={15} cy={15} r={3} fill="#FBBC04" />
-      <Circle cx={9} cy={15} r={3} fill="#34A853" />
-    </Svg>
-  );
-}
+const googleLogoImg = require("@/assets/images/google-logo.png");
 
 function SocialProofCard() {
   const [idx, setIdx] = useState(0);
@@ -439,7 +429,7 @@ export default function LoginScreen() {
                   <ActivityIndicator color={Colors.forest} size="small" />
                 ) : (
                   <>
-                    <GoogleLogo />
+                    <Image source={googleLogoImg} style={styles.googleLogoImg} resizeMode="contain" />
                     <Text style={styles.oauthIconLabel}>Google</Text>
                   </>
                 )}
@@ -777,6 +767,10 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingVertical: 12,
     backgroundColor: Colors.card,
+  },
+  googleLogoImg: {
+    width: 18,
+    height: 18,
   },
   oauthIconLabel: {
     fontSize: 14,
