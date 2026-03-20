@@ -447,6 +447,7 @@ const styles = StyleSheet.create({
   },
   appNameContainer: {
     height: 120,
+    marginTop: 60,
     marginBottom: 8,
     justifyContent: "center",
     alignItems: "center",
