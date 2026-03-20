@@ -427,9 +427,8 @@ const styles = StyleSheet.create({
   scroll: {
     flexGrow: 1,
     alignItems: "center",
-    justifyContent: "flex-start",
     paddingHorizontal: 20,
-    paddingTop: 100,
+    paddingTop: 28,
     paddingBottom: 32,
   },
   logoWrap: {
@@ -590,8 +589,6 @@ const styles = StyleSheet.create({
   },
   card: {
     width: "100%",
-    maxWidth: 340,
-    alignSelf: "center",
     backgroundColor: Colors.card,
     borderRadius: 24,
     padding: 20,
