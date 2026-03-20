@@ -135,15 +135,6 @@ function HeroIllustration() {
       entering={FadeInDown.delay(120).springify()}
       style={[styles.heroWrap, floatStyle]}
     >
-      <View style={styles.heroCircle}>
-        <MaterialCommunityIcons name="watering-can" size={44} color="#fff" />
-      </View>
-
-      <View style={styles.xpBadge}>
-        <MaterialCommunityIcons name="star-four-points" size={10} color={Colors.leaf} />
-        <Text style={styles.xpBadgeText}>+15 XP</Text>
-      </View>
-
       <View style={styles.leafBadge}>
         <MaterialCommunityIcons name="leaf" size={12} color="#fff" />
       </View>
