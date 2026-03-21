@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   balanceChipValue: {
-    fontSize: 16,
+    fontSize: 22,
     fontFamily: Fonts.bodyBold,
     color: "#ffffff",
   },
