@@ -57,7 +57,7 @@ const LEVEL_LABELS: Record<string, string> = {
 };
 
 const LEVEL_CONFIG = [
-  { name: "Germoglio", emoji: "🌱", minPts: 500, color: "#8BC34A", fruitColor: "#8BC34A", nodeSize: 26, imgSize: 26 },
+  { name: "Germoglio", emoji: "🌱", minPts: 0, color: "#8BC34A", fruitColor: "#8BC34A", nodeSize: 26, imgSize: 26 },
   { name: "Ramoscello", emoji: "🌿", minPts: 1500, color: "#66BB6A", fruitColor: "#8BC34A", nodeSize: 36, imgSize: 36 },
   { name: "Arbusto", emoji: "🍃", minPts: 5000, color: "#43A047", fruitColor: "#F4D03F", nodeSize: 48, imgSize: 48 },
   { name: "Albero", emoji: "🌳", minPts: 10000, color: "#2E7D32", fruitColor: "#FF8C42", nodeSize: 62, imgSize: 62 },
