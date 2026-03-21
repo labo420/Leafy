@@ -448,7 +448,7 @@ const styles = StyleSheet.create({
   },
   appNameContainer: {
     height: 120,
-    marginTop: SCREEN_HEIGHT * 0.2,
+    marginTop: SCREEN_HEIGHT * 0.15,
     marginBottom: 8,
     justifyContent: "center",
     alignItems: "center",
