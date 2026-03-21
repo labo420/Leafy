@@ -1,4 +1,5 @@
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import { XpIcon } from "../../components/XpIcon";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
@@ -803,13 +804,16 @@ export default function ProfiloScreen() {
                 </View>
                 <View style={[kitStyles.kitXpPill, { backgroundColor: kit.isCompleted ? theme.primaryLight : theme.cardAlt }]}>
                   {kit.isCompleted ? (
-                    <Feather name="check" size={11} color={theme.leaf} />
+                    <>
+                      <Feather name="check" size={11} color={theme.leaf} />
+                      <Text style={[kitStyles.kitXpText, { color: theme.leaf }]}>Completato</Text>
+                    </>
                   ) : (
-                    <MaterialCommunityIcons name="lightning-bolt" size={11} color="#FFD700" />
+                    <>
+                      <Text style={[kitStyles.kitXpText, { color: "#FFD700" }]}>+{kit.rewardXp}</Text>
+                      <XpIcon size={11} />
+                    </>
                   )}
-                  <Text style={[kitStyles.kitXpText, { color: kit.isCompleted ? theme.leaf : "#FFD700" }]}>
-                    {kit.isCompleted ? "Completato" : `+${kit.rewardXp} XP`}
-                  </Text>
                 </View>
               </View>
 

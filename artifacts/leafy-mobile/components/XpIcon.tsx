@@ -1,13 +1,13 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React from "react";
-import { StyleProp, ViewStyle } from "react-native";
+import { StyleProp, TextStyle } from "react-native";
 
 const XP_GOLD = "#FFD700";
 
 interface XpIconProps {
   size?: number;
   color?: string;
-  style?: StyleProp<ViewStyle>;
+  style?: StyleProp<TextStyle>;
 }
 
 export function XpIcon({ size = 14, color = XP_GOLD, style }: XpIconProps) {
@@ -16,7 +16,7 @@ export function XpIcon({ size = 14, color = XP_GOLD, style }: XpIconProps) {
       name="lightning-bolt"
       size={size}
       color={color}
-      style={style as any}
+      style={style}
     />
   );
 }
