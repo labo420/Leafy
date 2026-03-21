@@ -1021,25 +1021,53 @@ export default function HomeScreen() {
 
       {/* ── BATTLE PASS CTA ── */}
       {!hasBattlePass && (
-        <Animated.View entering={FadeInDown.delay(260).springify()} style={{ marginHorizontal: 20, marginTop: 4, marginBottom: 0 }}>
+        <Animated.View entering={FadeInDown.delay(260).springify()} style={styles.bpCtaOuter}>
           <Pressable
             onPress={() => setShowBattlePassModal(true)}
-            style={({ pressed }) => [{ opacity: pressed ? 0.88 : 1 }]}
+            style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }]}
           >
             <LinearGradient
-              colors={["#0f2a1e", "#1a4a2e"]}
+              colors={["#0a1f15", "#0f2a1e", "#1a3a28"]}
               start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
+              end={{ x: 1, y: 1 }}
               style={styles.bpCtaCard}
             >
-              <View style={styles.bpCtaIconWrap}>
-                <MaterialCommunityIcons name="shield-star" size={22} color="#FFD700" />
+              {/* Gold accent top bar */}
+              <LinearGradient
+                colors={["#FFD700", "#FFA500", "#FFD700"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.bpCtaAccentBar}
+              />
+
+              <View style={styles.bpCtaBody}>
+                {/* Icon + texts */}
+                <View style={styles.bpCtaLeft}>
+                  <View style={styles.bpCtaIconWrap}>
+                    <LinearGradient
+                      colors={["#FFD700", "#FFA500"]}
+                      style={styles.bpCtaIconGradient}
+                    >
+                      <MaterialCommunityIcons name="shield-star" size={26} color="#1a3a28" />
+                    </LinearGradient>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.bpCtaBadge}>BATTLE PASS</Text>
+                    <Text style={styles.bpCtaTitle}>Passa a Premium</Text>
+                    <Text style={styles.bpCtaSub}>Raddoppia i $LEA · Sblocca i prelievi</Text>
+                  </View>
+                </View>
+
+                {/* CTA pill */}
+                <LinearGradient
+                  colors={["#FFD700", "#FFA500"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.bpCtaPill}
+                >
+                  <Text style={styles.bpCtaPillText}>0,89€{"\n"}/mese</Text>
+                </LinearGradient>
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.bpCtaTitle}>Battle Pass · 0,89€/mese</Text>
-                <Text style={styles.bpCtaSub}>Raddoppia i $LEA e sblocca i prelievi</Text>
-              </View>
-              <Feather name="chevron-right" size={18} color="rgba(255,215,0,0.6)" />
             </LinearGradient>
           </Pressable>
         </Animated.View>
@@ -1952,36 +1980,89 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     textAlign: "center",
   },
+  bpCtaOuter: {
+    marginHorizontal: 20,
+    marginTop: 8,
+    marginBottom: 0,
+    shadowColor: "#FFD700",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 14,
+    elevation: 8,
+    borderRadius: 18,
+  },
   bpCtaCard: {
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "rgba(255,215,0,0.35)",
+    overflow: "hidden",
+  },
+  bpCtaAccentBar: {
+    height: 3,
+    opacity: 0.9,
+  },
+  bpCtaBody: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 12,
+  },
+  bpCtaLeft: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderWidth: 1,
-    borderColor: "rgba(255,215,0,0.2)",
-    overflow: "hidden",
   },
   bpCtaIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,215,0,0.12)",
+    borderRadius: 22,
+    shadowColor: "#FFD700",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  bpCtaIconGradient: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
   },
-  bpCtaTitle: {
-    fontSize: 14,
-    fontFamily: "DMSans_600SemiBold",
+  bpCtaBadge: {
+    fontSize: 9,
+    fontFamily: "Inter_700Bold",
     color: "#FFD700",
+    letterSpacing: 2.5,
+    marginBottom: 2,
+    opacity: 0.85,
+  },
+  bpCtaTitle: {
+    fontSize: 15,
+    fontFamily: "DMSans_700Bold",
+    color: "#fff",
     marginBottom: 2,
   },
   bpCtaSub: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: "Inter_400Regular",
-    color: "rgba(255,255,255,0.55)",
-    lineHeight: 17,
+    color: "rgba(255,255,255,0.5)",
+    lineHeight: 16,
+  },
+  bpCtaPill: {
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 56,
+  },
+  bpCtaPillText: {
+    fontSize: 12,
+    fontFamily: "DMSans_700Bold",
+    color: "#1a3a28",
+    textAlign: "center",
+    lineHeight: 16,
   },
   ctaSection: {
     paddingHorizontal: 20,
