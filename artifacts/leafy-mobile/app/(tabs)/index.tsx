@@ -1044,7 +1044,13 @@ export default function HomeScreen() {
           </Pressable>
         </Animated.View>
       )}
-      <BattlePassModal visible={showBattlePassModal} onClose={() => setShowBattlePassModal(false)} />
+      <BattlePassModal
+        visible={showBattlePassModal}
+        onClose={() => {
+          setShowBattlePassModal(false);
+          refetchProfile();
+        }}
+      />
 
       {/* ── CTA ── */}
       <View style={styles.ctaSection}>
