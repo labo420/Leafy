@@ -44,6 +44,7 @@ import { apiFetch } from "@/lib/api";
 import { useNearbyLocations, type NearbyLocation } from "@/hooks/useNearbyLocations";
 import { useWalkin } from "@/hooks/useWalkin";
 import type { Profile, DailyCheckinResponse } from "@workspace/api-client-react";
+import BattlePassModal from "@/components/BattlePassModal";
 
 const LEVEL_LABELS: Record<string, string> = {
   Germoglio: "Germoglio",
@@ -62,15 +63,6 @@ const LEVEL_CONFIG = [
 ];
 
 
-const MOTIVATIONAL_MESSAGES = [
-  (name: string) => `Oggi sei già un passo avanti, ${name}!`,
-  (name: string) => `Stai accumulando XP reali, ${name}!`,
-  () => `Ogni scontrino vale qualcosa per te.`,
-  (name: string) => `Grande slancio questa settimana, ${name}!`,
-  (_name: string, pts: number) => `${pts.toLocaleString("it-IT")} XP nel tuo portafoglio — continua così!`,
-  () => `Potresti sorprenderti di quanti XP guadagni già.`,
-  () => `Ogni scelta conta. La tua fa la differenza!`,
-];
 
 const RING_SIZE = 240;
 const RING_STROKE = 16;
@@ -732,6 +724,7 @@ export default function HomeScreen() {
   const [inStoreModeEnabled, setInStoreModeEnabled] = useState(true);
   const [inStoreModeActive, setInStoreModeActive] = useState(false);
   const [walkinToast, setWalkinToast] = useState<{ msg: string; xp: number } | null>(null);
+  const [showBattlePassModal, setShowBattlePassModal] = useState(false);
   const { pushEnabled } = useNotifications();
 
   const { locations, permissionStatus, loading: locationsLoading, refresh: refreshLocations } =
@@ -839,9 +832,6 @@ export default function HomeScreen() {
   const levelProgress = Math.max(0, Math.min(100, profile?.levelProgress ?? 0));
   const nextLevelPoints = profile?.nextLevelPoints ?? 0;
   const safeInitial = (username.trim().charAt(0) || "U").toUpperCase();
-
-  const msgFn = MOTIVATIONAL_MESSAGES[streak % MOTIVATIONAL_MESSAGES.length];
-  const motivationalMessage = msgFn(username, points);
 
   return (
     <View style={{ flex: 1 }}>
@@ -1029,16 +1019,32 @@ export default function HomeScreen() {
         </Animated.View>
       )}
 
-      {/* ── MOTIVATIONAL ── */}
-      <Animated.View
-        entering={FadeInDown.delay(260).springify()}
-        style={[styles.motivationalBox, { backgroundColor: theme.primaryLight }]}
-      >
-        <View style={styles.motivationalRow}>
-          <MaterialCommunityIcons name="leaf" size={16} color={theme.leaf} />
-          <Text style={[styles.motivationalText, { color: theme.leaf }]}>{motivationalMessage}</Text>
-        </View>
-      </Animated.View>
+      {/* ── BATTLE PASS CTA ── */}
+      {!hasBattlePass && (
+        <Animated.View entering={FadeInDown.delay(260).springify()} style={{ marginHorizontal: 20, marginTop: 4, marginBottom: 0 }}>
+          <Pressable
+            onPress={() => setShowBattlePassModal(true)}
+            style={({ pressed }) => [{ opacity: pressed ? 0.88 : 1 }]}
+          >
+            <LinearGradient
+              colors={["#0f2a1e", "#1a4a2e"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.bpCtaCard}
+            >
+              <View style={styles.bpCtaIconWrap}>
+                <MaterialCommunityIcons name="shield-star" size={22} color="#FFD700" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.bpCtaTitle}>Battle Pass · 0,89€/mese</Text>
+                <Text style={styles.bpCtaSub}>Raddoppia i $LEA e sblocca i prelievi</Text>
+              </View>
+              <Feather name="chevron-right" size={18} color="rgba(255,215,0,0.6)" />
+            </LinearGradient>
+          </Pressable>
+        </Animated.View>
+      )}
+      <BattlePassModal visible={showBattlePassModal} onClose={() => setShowBattlePassModal(false)} />
 
       {/* ── CTA ── */}
       <View style={styles.ctaSection}>
@@ -1940,30 +1946,36 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     textAlign: "center",
   },
-  motivationalBox: {
-    marginHorizontal: 20,
-    marginTop: 8,
-    marginBottom: 4,
-    backgroundColor: Colors.primaryLight,
-    borderWidth: 1,
-    borderColor: "rgba(46, 107, 80, 0.15)",
-    borderRadius: 24,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    alignItems: "center",
-  },
-  motivationalRow: {
+  bpCtaCard: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 12,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: "rgba(255,215,0,0.2)",
+    overflow: "hidden",
   },
-  motivationalText: {
+  bpCtaIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,215,0,0.12)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  bpCtaTitle: {
     fontSize: 14,
-    fontFamily: "Inter_500Medium",
-    color: Colors.leaf,
-    textAlign: "center",
-    lineHeight: 22,
-    flex: 1,
+    fontFamily: "DMSans_600SemiBold",
+    color: "#FFD700",
+    marginBottom: 2,
+  },
+  bpCtaSub: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    color: "rgba(255,255,255,0.55)",
+    lineHeight: 17,
   },
   ctaSection: {
     paddingHorizontal: 20,
