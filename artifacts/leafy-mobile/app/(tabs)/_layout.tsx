@@ -62,15 +62,15 @@ function BalanceBar() {
     <View style={[styles.balanceBar, { paddingTop: 4 }]}>
       <View style={styles.balanceInner}>
         <View style={styles.balanceChip}>
-          <XpIcon size={18} />
-          <Text style={[styles.balanceChipValue, { fontSize: 38 }]}>{xp.toLocaleString("it-IT")}</Text>
-          <Text style={[styles.balanceChipLabel, { fontSize: 13 }]}>XP</Text>
+          <XpIcon size={16} />
+          <Text style={[styles.balanceChipValue, { fontSize: 32 }]}>{xp.toLocaleString("it-IT")}</Text>
+          <Text style={[styles.balanceChipLabel, { fontSize: 12 }]}>XP</Text>
         </View>
         <View style={styles.balanceDot} />
         <View style={styles.balanceChip}>
-          <LeaIcon size={18} />
-          <Text style={[styles.balanceChipLeaLabel, { fontSize: 13 }]}>LEA</Text>
-          <Text style={[styles.balanceChipValue, { fontSize: 38 }]}>{leaBalance.toFixed(2)}</Text>
+          <LeaIcon size={16} />
+          <Text style={[styles.balanceChipLeaLabel, { fontSize: 12 }]}>LEA</Text>
+          <Text style={[styles.balanceChipValue, { fontSize: 32 }]}>{leaBalance.toFixed(2)}</Text>
         </View>
       </View>
     </View>
