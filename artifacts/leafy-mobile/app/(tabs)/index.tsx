@@ -949,7 +949,7 @@ export default function HomeScreen() {
                     : { backgroundColor: theme.primaryLight, borderWidth: 1.5, borderColor: "rgba(249,115,22,0.25)" },
                 ]}
               >
-                {filled && <MaterialCommunityIcons name="fire" size={13} color="#fff" />}
+                <Text style={{ fontSize: 11, fontFamily: "DMSans_700Bold", color: filled ? "#fff" : "rgba(249,115,22,0.45)" }}>{i + 1}</Text>
               </View>
             );
           })}
@@ -1766,7 +1766,7 @@ const streakStyles = StyleSheet.create({
   },
   dotsRow: {
     flexDirection: "row",
-    gap: 6,
+    justifyContent: "space-between",
     marginBottom: 7,
   },
   dot: {
