@@ -404,7 +404,7 @@ export default function ScanScreen() {
             <Animated.View entering={FadeInDown.delay(220)} style={[styles.xpHeroCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 }}>
                 <Text style={[styles.xpBigValue, { color: "#38BDF8" }]}>+{displayXp}</Text>
-                <XpIcon size={28} />
+                <XpIcon size={48} />
               </View>
               <Text style={[styles.xpMotivation, { color: theme.text }]}>{getMotivationMessage(scanResult.xpEarned ?? 0)}</Text>
               <View style={[styles.xpBarTrack, { backgroundColor: theme.border }]}>
@@ -420,7 +420,7 @@ export default function ScanScreen() {
                 <Text style={[styles.xpBarLabel, { color: "#38BDF8" }]}>
                   {scanResult.xpEarned ?? 0} / 100
                 </Text>
-                <XpIcon size={12} />
+                <XpIcon size={20} />
               </View>
               <View style={styles.leaSecondaryRow}>
                 <Feather name="dollar-sign" size={14} color={theme.textSecondary} />

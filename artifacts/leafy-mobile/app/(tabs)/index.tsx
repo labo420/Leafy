@@ -386,7 +386,7 @@ function LevelProgressRing({
             <Text style={[ringStyles.xpProgress, { color: "#38BDF8" }]}>
               {new Intl.NumberFormat("it-IT").format(points)} / {new Intl.NumberFormat("it-IT").format(targetPts)}
             </Text>
-            <XpIcon size={13} />
+            <XpIcon size={22} />
           </View>
         </View>
 
@@ -910,7 +910,7 @@ export default function HomeScreen() {
           <View style={styles.headerRight}>
             <View style={[styles.xpBadge, { backgroundColor: mode === "dark" ? "rgba(255,255,255,0.12)" : "rgba(46,107,80,0.10)" }]}>
               <Text style={[styles.xpBadgeValue, { color: "#38BDF8" }]}>{xp.toLocaleString("it-IT")}</Text>
-              <XpIcon size={12} />
+              <XpIcon size={20} />
             </View>
             <View style={[styles.leaBadge, { backgroundColor: mode === "dark" ? "rgba(255,255,255,0.15)" : "rgba(46,107,80,0.08)", borderColor: mode === "dark" ? "rgba(255,255,255,0.20)" : "rgba(46,107,80,0.18)" }]}>
               <Text style={[styles.leaBadgeSymbol, { color: mode === "dark" ? "#AADF2A" : "#2E6B50" }]}>$LEA</Text>
@@ -1003,7 +1003,7 @@ export default function HomeScreen() {
                     ) : isLea ? (
                       <Text style={{ fontSize: 7, color: "rgba(250,204,21,0.5)", fontFamily: "DMSans_700Bold" }}>$</Text>
                     ) : (
-                      <XpIcon size={9} />
+                      <XpIcon size={16} />
                     )}
                   </View>
                   <Text style={[streakStyles.bpLabel, { color: claimed ? (isLea && !isXp ? "#FACC15" : "#A78BFA") : theme.textSecondary }]}>

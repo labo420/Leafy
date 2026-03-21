@@ -7,7 +7,7 @@ interface XpIconProps {
   size?: number;
 }
 
-export function XpIcon({ size = 14 }: XpIconProps) {
+export function XpIcon({ size = 20 }: XpIconProps) {
   return (
     <Image
       source={DROP_ASSET}
