@@ -975,7 +975,7 @@ export default function ProfiloScreen() {
         {!hasBattlePass ? (
           <Pressable style={[styles.menuRow, { backgroundColor: theme.card, borderColor: theme.border }]} onPress={() => setShowBattlePassModal(true)}>
             <View style={[styles.menuRowIcon, { backgroundColor: "rgba(255,215,0,0.15)" }]}>
-              <Feather name="star" size={18} color="#FFD700" />
+              <Image source={require("@/assets/images/battle-pass-icon.png")} style={{ width: 22, height: 22 }} resizeMode="contain" />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.menuRowText, { color: theme.text }]}>Battle Pass</Text>
@@ -988,7 +988,7 @@ export default function ProfiloScreen() {
         ) : (
           <View style={[styles.menuRow, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <View style={[styles.menuRowIcon, { backgroundColor: "rgba(255,215,0,0.15)" }]}>
-              <Feather name="star" size={18} color="#FFD700" />
+              <Image source={require("@/assets/images/battle-pass-icon.png")} style={{ width: 22, height: 22 }} resizeMode="contain" />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.menuRowText, { color: theme.text }]}>Battle Pass</Text>

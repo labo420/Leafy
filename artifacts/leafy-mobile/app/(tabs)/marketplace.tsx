@@ -3,6 +3,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import React, { useState, useCallback } from "react";
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -232,7 +233,7 @@ export default function WalletScreen() {
 
               {hasBattlePass && (
                 <View style={styles.bpActiveBadge}>
-                  <Feather name="star" size={12} color="#1a4a2e" />
+                  <Image source={require("@/assets/images/battle-pass-icon.png")} style={{ width: 16, height: 16 }} resizeMode="contain" />
                   <Text style={styles.bpActiveBadgeText}>Battle Pass attivo · $LEA x2</Text>
                 </View>
               )}
@@ -350,7 +351,7 @@ export default function WalletScreen() {
                   <LinearGradient colors={["#0f2a1e", "#1a4a2e"]} style={StyleSheet.absoluteFill} />
                   <View style={styles.bpPromoLeft}>
                     <View style={styles.bpPromoIconWrap}>
-                      <Feather name="star" size={22} color="#FFD700" />
+                      <Image source={require("@/assets/images/battle-pass-icon.png")} style={{ width: 28, height: 28 }} resizeMode="contain" />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.bpPromoTitle}>Battle Pass · 0,89€/mese</Text>

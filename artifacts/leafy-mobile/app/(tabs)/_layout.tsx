@@ -3,7 +3,7 @@ import { Tabs } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
-import { Platform, StyleSheet, Text, View } from "react-native";
+import { Image, Platform, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import Animated, {
   useAnimatedStyle,
@@ -195,9 +195,11 @@ export default function TabLayout() {
               <View>
                 <Feather name="user" size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
                 {hasBattlePass && (
-                  <View style={styles.proBadge}>
-                    <Text style={styles.proBadgeText}>PRO</Text>
-                  </View>
+                  <Image
+                    source={require("@/assets/images/battle-pass-icon.png")}
+                    style={styles.proBadgeIcon}
+                    resizeMode="contain"
+                  />
                 )}
               </View>
             </TabIcon>
@@ -280,19 +282,11 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: "rgba(46,107,80,0.20)",
   },
-  proBadge: {
+  proBadgeIcon: {
     position: "absolute",
-    bottom: -4,
-    right: -7,
-    backgroundColor: "#FFD700",
-    borderRadius: 4,
-    paddingHorizontal: 3,
-    paddingVertical: 1,
-  },
-  proBadgeText: {
-    fontSize: 7,
-    fontFamily: Fonts.bodyBold,
-    color: "#1a4a2e",
-    letterSpacing: 0.5,
+    bottom: -6,
+    right: -8,
+    width: 18,
+    height: 18,
   },
 });

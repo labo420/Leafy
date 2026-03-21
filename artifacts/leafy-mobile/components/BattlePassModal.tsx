@@ -3,6 +3,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   Modal,
   Pressable,
   StyleSheet,
@@ -55,12 +56,11 @@ export default function BattlePassModal({ visible, onClose }: BattlePassModalPro
 
           <Animated.View entering={FadeInDown.delay(150).springify()} style={styles.header}>
             <View style={styles.iconWrap}>
-              <LinearGradient
-                colors={["#FFD700", "#FFA500"]}
-                style={styles.iconGradient}
-              >
-                <Feather name="star" size={28} color="#fff" />
-              </LinearGradient>
+              <Image
+                source={require("@/assets/images/battle-pass-icon.png")}
+                style={{ width: 72, height: 72 }}
+                resizeMode="contain"
+              />
             </View>
             <Text style={styles.badge}>BATTLE PASS</Text>
             <Text style={styles.title}>Passa a Premium</Text>
@@ -156,13 +156,6 @@ const styles = StyleSheet.create({
   },
   iconWrap: {
     marginBottom: 12,
-  },
-  iconGradient: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: "center",
-    justifyContent: "center",
   },
   badge: {
     fontSize: 10,

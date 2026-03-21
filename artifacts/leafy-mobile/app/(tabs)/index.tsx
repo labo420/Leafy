@@ -1041,12 +1041,11 @@ export default function HomeScreen() {
                 {/* Icon + texts */}
                 <View style={styles.bpCtaLeft}>
                   <View style={styles.bpCtaIconWrap}>
-                    <LinearGradient
-                      colors={["#FFD700", "#FFA500"]}
-                      style={styles.bpCtaIconGradient}
-                    >
-                      <MaterialCommunityIcons name="shield-star" size={26} color="#1a3a28" />
-                    </LinearGradient>
+                    <Image
+                      source={require("@/assets/images/battle-pass-icon.png")}
+                      style={{ width: 48, height: 48 }}
+                      resizeMode="contain"
+                    />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.bpCtaBadge}>BATTLE PASS</Text>
@@ -2018,13 +2017,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 6,
     elevation: 4,
-  },
-  bpCtaIconGradient: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
   },
   bpCtaBadge: {
     fontSize: 9,
