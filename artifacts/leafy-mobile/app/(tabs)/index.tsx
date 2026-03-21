@@ -1003,7 +1003,7 @@ export default function HomeScreen() {
                     ) : isLea ? (
                       <Text style={{ fontSize: 7, color: "rgba(250,204,21,0.5)", fontFamily: "DMSans_700Bold" }}>$</Text>
                     ) : (
-                      <XpIcon size={9} color="rgba(255,215,0,0.7)" />
+                      <XpIcon size={9} />
                     )}
                   </View>
                   <Text style={[streakStyles.bpLabel, { color: claimed ? (isLea && !isXp ? "#FACC15" : "#A78BFA") : theme.textSecondary }]}>
