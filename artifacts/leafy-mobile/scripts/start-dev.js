@@ -177,7 +177,16 @@ function startExpo() {
   const spawnEnv = Object.assign({}, process.env);
   delete spawnEnv.CI;
 
-  const child = spawn("pnpm", ["exec", "expo", "start", ...args], {
+  const hasTunnelFlag = args.includes("--tunnel");
+  const startArgs = hasTunnelFlag && restartAttempts >= 2
+    ? args.filter(a => a !== "--tunnel")
+    : args;
+
+  if (hasTunnelFlag && restartAttempts >= 2) {
+    console.log("Tunnel failed repeatedly, starting without --tunnel flag...");
+  }
+
+  const child = spawn("pnpm", ["exec", "expo", "start", ...startArgs], {
     stdio: ["inherit", "pipe", "pipe"],
     env: spawnEnv,
     cwd: path.join(__dirname, ".."),
