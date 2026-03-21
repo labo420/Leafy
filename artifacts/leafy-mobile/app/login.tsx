@@ -264,8 +264,6 @@ export default function LoginScreen() {
             La tua spesa di ogni giorno, premiata.
           </Animated.Text>
 
-          <HeroIllustration />
-
           <Animated.View entering={FadeInDown.delay(260).springify()} style={styles.card}>
             <View style={styles.cardHeader}>
               <MaterialCommunityIcons name="leaf" size={14} color={Colors.leaf} />
@@ -463,7 +461,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: Fonts.bodyRegular,
     color: "rgba(255,255,255,0.82)",
-    marginBottom: 20,
+    marginBottom: 12,
     textAlign: "center",
   },
   heroWrap: {
