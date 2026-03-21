@@ -930,10 +930,10 @@ export default function HomeScreen() {
       </LinearGradient>
 
       {/* ── STREAK CLASSICA ── */}
-      <Animated.View entering={FadeInDown.delay(180).springify()} style={[streakStyles.card, { backgroundColor: theme.card }]}>
+      <Animated.View entering={FadeInDown.delay(180).springify()} style={[streakStyles.card, { backgroundColor: "rgba(249,115,22,0.07)", borderLeftWidth: 4, borderLeftColor: "#F97316" }]}>
         <View style={streakStyles.cardHeader}>
-          <MaterialCommunityIcons name="fire" size={18} color="#F97316" />
-          <Text style={[streakStyles.cardTitle, { color: theme.text }]}>Streak Classica</Text>
+          <MaterialCommunityIcons name="fire" size={22} color="#F97316" />
+          <Text style={[streakStyles.cardTitle, { color: theme.text, fontSize: 15 }]}>Streak Classica</Text>
           <Text style={[streakStyles.cardBadge, { color: theme.textSecondary }]}>Giorno {loginStreak}/7</Text>
         </View>
         <View style={streakStyles.dotsRow}>
@@ -965,10 +965,10 @@ export default function HomeScreen() {
 
       {/* ── STREAK BATTLE PASS ── */}
       {hasBattlePass && (
-        <Animated.View entering={FadeInDown.delay(220).springify()} style={[streakStyles.card, { backgroundColor: theme.card }]}>
+        <Animated.View entering={FadeInDown.delay(220).springify()} style={[streakStyles.card, { backgroundColor: "rgba(167,139,250,0.08)", borderLeftWidth: 4, borderLeftColor: "#A78BFA" }]}>
           <View style={streakStyles.cardHeader}>
-            <MaterialCommunityIcons name="shield-star" size={18} color="#A78BFA" />
-            <Text style={[streakStyles.cardTitle, { color: theme.text }]}>Streak Battle Pass</Text>
+            <Image source={require("../../assets/images/battle-pass-icon.png")} style={{ width: 22, height: 22 }} />
+            <Text style={[streakStyles.cardTitle, { color: theme.text, fontSize: 15 }]}>Streak Battle Pass</Text>
             {bpStreakCompleted
               ? <Text style={[streakStyles.cardBadge, { color: "#A78BFA" }]}>Completata ✓</Text>
               : <Text style={[streakStyles.cardBadge, { color: theme.textSecondary }]}>{bpStreakClaimed}/7 premi</Text>
