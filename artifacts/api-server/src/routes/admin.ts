@@ -205,4 +205,33 @@ router.put("/admin/fraud/receipts/:id", requireAdmin, async (req, res): Promise<
   res.json(updated);
 });
 
+router.post("/admin/user/:email/add-lea", requireAdmin, async (req, res): Promise<void> => {
+  const email = (req.params.email as string).toLowerCase();
+  const { amount } = req.body as { amount?: number };
+
+  if (!amount || amount <= 0) {
+    res.status(400).json({ error: "Amount deve essere un numero positivo." });
+    return;
+  }
+
+  const [user] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.email, email));
+
+  if (!user) {
+    res.status(404).json({ error: "Utente non trovato." });
+    return;
+  }
+
+  const newBalance = (user.leaBalance ?? 0) + amount;
+  const [updated] = await db
+    .update(usersTable)
+    .set({ leaBalance: newBalance })
+    .where(eq(usersTable.id, user.id))
+    .returning();
+
+  res.json({ ok: true, user: updated.email, newBalance: updated.leaBalance });
+});
+
 export default router;
