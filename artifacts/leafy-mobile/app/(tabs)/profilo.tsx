@@ -805,9 +805,9 @@ export default function ProfiloScreen() {
                   {kit.isCompleted ? (
                     <Feather name="check" size={11} color={theme.leaf} />
                   ) : (
-                    <MaterialCommunityIcons name="lightning-bolt" size={11} color={theme.amber} />
+                    <MaterialCommunityIcons name="lightning-bolt" size={11} color="#FFD700" />
                   )}
-                  <Text style={[kitStyles.kitXpText, { color: kit.isCompleted ? theme.leaf : theme.amber }]}>
+                  <Text style={[kitStyles.kitXpText, { color: kit.isCompleted ? theme.leaf : "#FFD700" }]}>
                     {kit.isCompleted ? "Completato" : `+${kit.rewardXp} XP`}
                   </Text>
                 </View>

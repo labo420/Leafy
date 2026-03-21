@@ -1,4 +1,5 @@
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import { XpIcon } from "../../components/XpIcon";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
@@ -401,7 +402,10 @@ export default function ScanScreen() {
             </LinearGradient>
 
             <Animated.View entering={FadeInDown.delay(220)} style={[styles.xpHeroCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-              <Text style={[styles.xpBigValue, { color: theme.leaf }]}>+{displayXp} XP</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                <Text style={[styles.xpBigValue, { color: "#FFD700" }]}>+{displayXp}</Text>
+                <XpIcon size={28} />
+              </View>
               <Text style={[styles.xpMotivation, { color: theme.text }]}>{getMotivationMessage(scanResult.xpEarned ?? 0)}</Text>
               <View style={[styles.xpBarTrack, { backgroundColor: theme.border }]}>
                 <Animated.View
@@ -412,9 +416,12 @@ export default function ScanScreen() {
                   ]}
                 />
               </View>
-              <Text style={[styles.xpBarLabel, { color: theme.textMuted }]}>
-                {scanResult.xpEarned ?? 0} / 100 XP
-              </Text>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 3 }}>
+                <Text style={[styles.xpBarLabel, { color: "#FFD700" }]}>
+                  {scanResult.xpEarned ?? 0} / 100
+                </Text>
+                <XpIcon size={12} />
+              </View>
               <View style={styles.leaSecondaryRow}>
                 <Feather name="dollar-sign" size={14} color={theme.textSecondary} />
                 <Text style={[styles.leaSecondaryText, { color: theme.textSecondary }]}>

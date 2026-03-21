@@ -1,4 +1,5 @@
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import { XpIcon } from "../../components/XpIcon";
 import { GoogleIcon } from "../../components/GoogleIcon";
 import { FacebookIcon } from "../../components/FacebookIcon";
 import { LinearGradient } from "expo-linear-gradient";
@@ -381,9 +382,12 @@ function LevelProgressRing({
             </Animated.View>
           </Animated.View>
           <Text style={[ringStyles.levelName, { color: nameColor }]}>{LEVEL_LABELS[level] ?? level}</Text>
-          <Text style={[ringStyles.xpProgress, { color: xpSubColor }]}>
-            {new Intl.NumberFormat("it-IT").format(points)} / {new Intl.NumberFormat("it-IT").format(targetPts)} XP
-          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+            <Text style={[ringStyles.xpProgress, { color: "#FFD700" }]}>
+              {new Intl.NumberFormat("it-IT").format(points)} / {new Intl.NumberFormat("it-IT").format(targetPts)}
+            </Text>
+            <XpIcon size={13} />
+          </View>
         </View>
 
         {/* Watering can overlay */}
@@ -905,8 +909,8 @@ export default function HomeScreen() {
           </View>
           <View style={styles.headerRight}>
             <View style={[styles.xpBadge, { backgroundColor: mode === "dark" ? "rgba(255,255,255,0.12)" : "rgba(46,107,80,0.10)" }]}>
-              <Text style={[styles.xpBadgeValue, { color: mode === "dark" ? "#ffffff" : "#2E6B50" }]}>{xp.toLocaleString("it-IT")}</Text>
-              <Text style={[styles.xpBadgeSymbol, { color: mode === "dark" ? "rgba(255,255,255,0.6)" : "rgba(46,107,80,0.65)" }]}>XP</Text>
+              <Text style={[styles.xpBadgeValue, { color: "#FFD700" }]}>{xp.toLocaleString("it-IT")}</Text>
+              <XpIcon size={12} />
             </View>
             <View style={[styles.leaBadge, { backgroundColor: mode === "dark" ? "rgba(255,255,255,0.15)" : "rgba(46,107,80,0.08)", borderColor: mode === "dark" ? "rgba(255,255,255,0.20)" : "rgba(46,107,80,0.18)" }]}>
               <Text style={[styles.leaBadgeSymbol, { color: mode === "dark" ? "#AADF2A" : "#2E6B50" }]}>$LEA</Text>
@@ -999,7 +1003,7 @@ export default function HomeScreen() {
                     ) : isLea ? (
                       <Text style={{ fontSize: 7, color: "rgba(250,204,21,0.5)", fontFamily: "DMSans_700Bold" }}>$</Text>
                     ) : (
-                      <Text style={{ fontSize: 7, color: "rgba(167,139,250,0.5)", fontFamily: "DMSans_700Bold" }}>XP</Text>
+                      <XpIcon size={9} color="rgba(255,215,0,0.7)" />
                     )}
                   </View>
                   <Text style={[streakStyles.bpLabel, { color: claimed ? (isLea && !isXp ? "#FACC15" : "#A78BFA") : theme.textSecondary }]}>
