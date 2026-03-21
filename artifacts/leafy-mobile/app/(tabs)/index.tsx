@@ -965,12 +965,12 @@ export default function HomeScreen() {
 
       {/* ── STREAK BATTLE PASS ── */}
       {hasBattlePass && (
-        <Animated.View entering={FadeInDown.delay(220).springify()} style={[streakStyles.card, { backgroundColor: "rgba(167,139,250,0.08)", borderLeftWidth: 4, borderLeftColor: "#A78BFA" }]}>
+        <Animated.View entering={FadeInDown.delay(220).springify()} style={[streakStyles.card, { backgroundColor: "rgba(255,193,7,0.08)", borderLeftWidth: 4, borderLeftColor: "#FFD700" }]}>
           <View style={streakStyles.cardHeader}>
             <Image source={require("../../assets/images/battle-pass-icon.png")} style={{ width: 22, height: 22 }} />
             <Text style={[streakStyles.cardTitle, { color: theme.text, fontSize: 15 }]}>Streak Battle Pass</Text>
             {bpStreakCompleted
-              ? <Text style={[streakStyles.cardBadge, { color: "#A78BFA" }]}>Completata ✓</Text>
+              ? <Text style={[streakStyles.cardBadge, { color: "#F59E0B" }]}>Completata ✓</Text>
               : <Text style={[streakStyles.cardBadge, { color: theme.textSecondary }]}>{bpStreakClaimed}/7 premi</Text>
             }
           </View>
