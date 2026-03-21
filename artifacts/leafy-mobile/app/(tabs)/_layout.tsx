@@ -12,8 +12,6 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 
-import { XpIcon } from "@/components/XpIcon";
-import { LeaIcon } from "@/components/LeaIcon";
 import { Fonts } from "@/constants/typography";
 import { useAuth } from "@/context/auth";
 import { useScanReset } from "@/context/scan-reset";
@@ -53,30 +51,6 @@ function FloatingScanButton({ focused }: { focused: boolean }) {
   );
 }
 
-function BalanceBar() {
-  const { user, xp, leaBalance } = useAuth();
-
-  if (!user) return null;
-
-  return (
-    <View style={[styles.balanceBar, { paddingTop: 4 }]}>
-      <View style={styles.balanceInner}>
-        <View style={styles.balanceChip}>
-          <XpIcon size={14} />
-          <Text style={styles.balanceChipValue}>{xp.toLocaleString("it-IT")}</Text>
-          <Text style={styles.balanceChipLabel}>XP</Text>
-        </View>
-        <View style={styles.balanceDot} />
-        <View style={styles.balanceChip}>
-          <LeaIcon size={14} />
-          <Text style={styles.balanceChipLeaLabel}>LEA</Text>
-          <Text style={styles.balanceChipValue}>{leaBalance.toFixed(2)}</Text>
-        </View>
-      </View>
-    </View>
-  );
-}
-
 export default function TabLayout() {
   const isIOS = Platform.OS === "ios";
   const insets = useSafeAreaInsets();
@@ -90,9 +64,7 @@ export default function TabLayout() {
         style="light"
         backgroundColor={user ? "#2E6B50" : mode === "dark" ? "#121212" : "#2E6B50"}
       />
-      <View style={{ backgroundColor: user ? "#2E6B50" : undefined, paddingTop: insets.top }}>
-        <BalanceBar />
-      </View>
+      <View style={{ backgroundColor: user ? "#2E6B50" : undefined, paddingTop: insets.top }} />
     <Tabs
       screenOptions={{
         headerShown: false,
