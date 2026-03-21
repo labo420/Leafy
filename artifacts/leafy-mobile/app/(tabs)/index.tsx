@@ -1,5 +1,6 @@
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { XpIcon } from "../../components/XpIcon";
+import { LeaIcon } from "../../components/LeaIcon";
 import { GoogleIcon } from "../../components/GoogleIcon";
 import { FacebookIcon } from "../../components/FacebookIcon";
 import { LinearGradient } from "expo-linear-gradient";
@@ -913,7 +914,7 @@ export default function HomeScreen() {
               <XpIcon size={20} />
             </View>
             <View style={[styles.leaBadge, { backgroundColor: mode === "dark" ? "rgba(255,255,255,0.15)" : "rgba(46,107,80,0.08)", borderColor: mode === "dark" ? "rgba(255,255,255,0.20)" : "rgba(46,107,80,0.18)" }]}>
-              <Text style={[styles.leaBadgeSymbol, { color: mode === "dark" ? "#AADF2A" : "#2E6B50" }]}>$LEA</Text>
+              <LeaIcon size={20} />
               <Text style={[styles.leaBadgeValue, { color: mode === "dark" ? "#ffffff" : "#1A3028" }]}>{leaBalance.toFixed(2)}</Text>
             </View>
             <Pressable onPress={() => router.push("/(tabs)/profilo")}>
@@ -1001,7 +1002,7 @@ export default function HomeScreen() {
                     ) : prize.type === "both" ? (
                       <MaterialCommunityIcons name="star" size={11} color="rgba(167,139,250,0.5)" />
                     ) : isLea ? (
-                      <Text style={{ fontSize: 7, color: "rgba(250,204,21,0.5)", fontFamily: "DMSans_700Bold" }}>$</Text>
+                      <LeaIcon size={16} />
                     ) : (
                       <XpIcon size={16} />
                     )}

@@ -1,5 +1,6 @@
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { XpIcon } from "../../components/XpIcon";
+import { LeaIcon } from "../../components/LeaIcon";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
@@ -423,7 +424,7 @@ export default function ScanScreen() {
                 <XpIcon size={20} />
               </View>
               <View style={styles.leaSecondaryRow}>
-                <Feather name="dollar-sign" size={14} color={theme.textSecondary} />
+                <LeaIcon size={20} />
                 <Text style={[styles.leaSecondaryText, { color: theme.textSecondary }]}>
                   +{(scanResult.leaEarned ?? 0).toFixed(2)} $LEA guadagnati
                 </Text>
