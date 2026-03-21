@@ -1,6 +1,6 @@
 import { BlurView } from "expo-blur";
 import { Tabs } from "expo-router";
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
@@ -12,6 +12,8 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 
+import { XpIcon } from "@/components/XpIcon";
+import { LeaIcon } from "@/components/LeaIcon";
 import { Fonts } from "@/constants/typography";
 import { useAuth } from "@/context/auth";
 import { useScanReset } from "@/context/scan-reset";
@@ -60,13 +62,13 @@ function BalanceBar() {
     <View style={[styles.balanceBar, { paddingTop: 4 }]}>
       <View style={styles.balanceInner}>
         <View style={styles.balanceChip}>
-          <Ionicons name="leaf" size={12} color="rgba(255,255,255,0.7)" />
+          <XpIcon size={14} />
           <Text style={styles.balanceChipValue}>{xp.toLocaleString("it-IT")}</Text>
           <Text style={styles.balanceChipLabel}>XP</Text>
         </View>
         <View style={styles.balanceDot} />
         <View style={styles.balanceChip}>
-          <Feather name="dollar-sign" size={12} color="#AADF2A" />
+          <LeaIcon size={14} />
           <Text style={styles.balanceChipLeaLabel}>LEA</Text>
           <Text style={styles.balanceChipValue}>{leaBalance.toFixed(2)}</Text>
         </View>
