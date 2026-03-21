@@ -955,8 +955,10 @@ export default function HomeScreen() {
           })}
         </View>
         <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center" }}>
-          <Text style={{ fontFamily: Fonts.bodyBold, color: "#ffffff" }}>250</Text>
-          <LeaIcon size={16} />
+          <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "#F97316", paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20, gap: 4 }}>
+            <Text style={{ fontFamily: Fonts.bodyBold, color: "#ffffff", fontSize: 15 }}>250</Text>
+            <LeaIcon size={14} />
+          </View>
         </View>
       </Animated.View>
 
