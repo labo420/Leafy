@@ -21,7 +21,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { useAuth } from "@/context/auth";
 import { useTheme } from "@/context/theme";
-import BattlePassModal from "@/components/BattlePassModal";
+import LeafyGoldModal from "@/components/LeafyGoldModal";
 import { apiFetch } from "@/lib/api";
 
 const LEA_TO_EUR = 0.01;
@@ -55,11 +55,11 @@ function formatEur(n: number): string {
 
 export default function WalletScreen() {
   const insets = useSafeAreaInsets();
-  const { user, leaBalance, hasBattlePass, refreshBalances } = useAuth();
+  const { user, leaBalance, hasLeafyGold, refreshBalances } = useAuth();
   const { theme } = useTheme();
   const queryClient = useQueryClient();
 
-  const [showBattlePass, setShowBattlePass] = useState(false);
+  const [showLeafyGold, setShowLeafyGold] = useState(false);
   const [leaInput, setLeaInput] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -80,7 +80,7 @@ export default function WalletScreen() {
 
   const leaAmount = parseFloat(leaInput.replace(",", ".")) || 0;
   const euroAmount = leaAmount * LEA_TO_EUR;
-  const minLea = hasBattlePass ? 500 : 1000;
+  const minLea = hasLeafyGold ? 500 : 1000;
 
   let validationError: string | null = null;
   if (leaInput.length > 0) {
@@ -89,7 +89,7 @@ export default function WalletScreen() {
     } else if (leaAmount > leaBalance) {
       validationError = "Saldo $LEA insufficiente.";
     } else if (leaAmount < minLea) {
-      validationError = `Importo minimo: ${minLea.toLocaleString("it-IT")} $LEA (${formatEur(minLea * LEA_TO_EUR)} €)${hasBattlePass ? " con Battle Pass" : ""}.`;
+      validationError = `Importo minimo: ${minLea.toLocaleString("it-IT")} $LEA (${formatEur(minLea * LEA_TO_EUR)} €)${hasLeafyGold ? " con Leafy Gold" : ""}.`;
     }
   }
 
@@ -124,14 +124,14 @@ export default function WalletScreen() {
   });
 
   const handleConvert = useCallback(() => {
-    if (!hasBattlePass) {
-      setShowBattlePass(true);
+    if (!hasLeafyGold) {
+      setShowLeafyGold(true);
       return;
     }
     if (!canConvert) return;
     setSubmitError(null);
     setShowConfirm(true);
-  }, [hasBattlePass, canConvert]);
+  }, [hasLeafyGold, canConvert]);
 
   const handleMax = useCallback(() => {
     setLeaInput(leaBalance.toFixed(2).replace(".", ","));
@@ -149,7 +149,7 @@ export default function WalletScreen() {
 
   return (
     <>
-      <BattlePassModal visible={showBattlePass} onClose={() => setShowBattlePass(false)} />
+      <LeafyGoldModal visible={showLeafyGold} onClose={() => setShowLeafyGold(false)} />
 
       <Modal visible={showConfirm} transparent animationType="fade" onRequestClose={() => setShowConfirm(false)}>
         <Pressable style={styles.overlay} onPress={() => !isSubmitting && setShowConfirm(false)}>
@@ -231,10 +231,10 @@ export default function WalletScreen() {
 
               <Text style={[styles.balanceEuro, { color: theme.textSecondary }]}>≈ {formatEur(leaBalance * LEA_TO_EUR)} €</Text>
 
-              {hasBattlePass && (
+              {hasLeafyGold && (
                 <View style={styles.bpActiveBadge}>
-                  <Image source={require("@/assets/images/battle-pass-icon.png")} style={{ width: 16, height: 16 }} resizeMode="contain" />
-                  <Text style={styles.bpActiveBadgeText}>Battle Pass attivo · $LEA x2</Text>
+                  <Image source={require("@/assets/images/leafy-gold-icon.png")} style={{ width: 16, height: 16 }} resizeMode="contain" />
+                  <Text style={styles.bpActiveBadgeText}>Leafy Gold attivo · $LEA x2</Text>
                 </View>
               )}
             </Animated.View>
@@ -309,7 +309,7 @@ export default function WalletScreen() {
                   styles.convertBtn,
                   {
                     backgroundColor:
-                      !hasBattlePass
+                      !hasLeafyGold
                         ? theme.textSecondary
                         : canConvert
                         ? theme.primary
@@ -318,12 +318,12 @@ export default function WalletScreen() {
                   },
                 ]}
                 onPress={handleConvert}
-                disabled={hasBattlePass && !canConvert}
+                disabled={hasLeafyGold && !canConvert}
               >
-                {!hasBattlePass ? (
+                {!hasLeafyGold ? (
                   <>
                     <Feather name="lock" size={16} color="#fff" />
-                    <Text style={styles.convertBtnText}>Sblocca con Battle Pass</Text>
+                    <Text style={styles.convertBtnText}>Sblocca con Leafy Gold</Text>
                   </>
                 ) : (
                   <>
@@ -333,28 +333,28 @@ export default function WalletScreen() {
                 )}
               </Pressable>
 
-              {!hasBattlePass && (
+              {!hasLeafyGold && (
                 <Text style={[styles.swapLockNote, { color: theme.textMuted }]}>
-                  I prelievi richiedono il Battle Pass attivo.
+                  I prelievi richiedono Leafy Gold attivo.
                 </Text>
               )}
-              {hasBattlePass && (
+              {hasLeafyGold && (
                 <Text style={[styles.swapLockNote, { color: theme.textMuted }]}>
                   Minimo: {minLea.toLocaleString("it-IT")} $LEA · Elaborazione entro 24h
                 </Text>
               )}
             </Animated.View>
 
-            {!hasBattlePass && (
+            {!hasLeafyGold && (
               <Animated.View entering={FadeInDown.delay(200).springify()}>
                 <Pressable style={styles.bpPromoCard} onPress={() => setShowBattlePass(true)}>
                   <LinearGradient colors={["#0f2a1e", "#1a4a2e"]} style={StyleSheet.absoluteFill} />
                   <View style={styles.bpPromoLeft}>
                     <View style={styles.bpPromoIconWrap}>
-                      <Image source={require("@/assets/images/battle-pass-icon.png")} style={{ width: 28, height: 28 }} resizeMode="contain" />
+                      <Image source={require("@/assets/images/leafy-gold-icon.png")} style={{ width: 28, height: 28 }} resizeMode="contain" />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.bpPromoTitle}>Battle Pass · 0,89€/mese</Text>
+                      <Text style={styles.bpPromoTitle}>Leafy Gold · 0,89€/mese</Text>
                       <Text style={styles.bpPromoSub}>Raddoppia i $LEA · Sblocca i prelievi</Text>
                     </View>
                   </View>
@@ -410,7 +410,7 @@ export default function WalletScreen() {
                 { icon: "camera" as const, text: "Scansiona uno scontrino e guadagna XP" },
                 { icon: "maximize" as const, text: "Scansiona i barcode per ottenere $LEA extra" },
                 { icon: "dollar-sign" as const, text: "1 XP = 0,01€ in $LEA" },
-                { icon: "zap" as const, text: "Con Battle Pass ogni $LEA è raddoppiato (x2)" },
+                { icon: "zap" as const, text: "Con Leafy Gold ogni $LEA è raddoppiato (x2)" },
               ].map((item, i) => (
                 <View key={i} style={styles.infoRow}>
                   <View style={[styles.infoRowIcon, { backgroundColor: theme.primaryLight }]}>

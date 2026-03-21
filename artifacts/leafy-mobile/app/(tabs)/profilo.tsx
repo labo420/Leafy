@@ -27,7 +27,7 @@ import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/context/auth";
 import { useTheme } from "@/context/theme";
 import BadgeIcon3D from "@/components/BadgeIcon3D";
-import BattlePassModal from "@/components/BattlePassModal";
+import LeafyGoldModal from "@/components/LeafyGoldModal";
 import type {
   Profile,
   ImpactStats,
@@ -453,7 +453,7 @@ const badgeStyles = StyleSheet.create({
 
 export default function ProfiloScreen() {
   const insets = useSafeAreaInsets();
-  const { user, refetch, hasBattlePass, logout } = useAuth();
+  const { user, refetch, hasLeafyGold, logout } = useAuth();
   const { theme, mode, toggleTheme } = useTheme();
   const queryClient = useQueryClient();
   const params = useLocalSearchParams<{ tab?: string }>();
@@ -461,7 +461,7 @@ export default function ProfiloScreen() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [badgeTab, setBadgeTab] = useState<BadgeTab>("traguardi");
   const [impactVisible, setImpactVisible] = useState(false);
-  const [showBattlePassModal, setShowBattlePassModal] = useState(false);
+  const [showLeafyGoldModal, setShowLeafyGoldModal] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = useCallback(async () => {
@@ -624,7 +624,7 @@ export default function ProfiloScreen() {
 
   return (
     <>
-      <BattlePassModal visible={showBattlePassModal} onClose={() => setShowBattlePassModal(false)} />
+      <LeafyGoldModal visible={showLeafyGoldModal} onClose={() => setShowLeafyGoldModal(false)} />
     <ScrollView
       style={[styles.container, { backgroundColor: theme.background }]}
       contentContainerStyle={{ paddingBottom: bottomPad }}
@@ -972,13 +972,13 @@ export default function ProfiloScreen() {
           <Feather name="chevron-right" size={16} color={theme.textSecondary} />
         </Pressable>
 
-        {!hasBattlePass ? (
-          <Pressable style={[styles.menuRow, { backgroundColor: theme.card, borderColor: theme.border }]} onPress={() => setShowBattlePassModal(true)}>
+        {!hasLeafyGold ? (
+          <Pressable style={[styles.menuRow, { backgroundColor: theme.card, borderColor: theme.border }]} onPress={() => setShowLeafyGoldModal(true)}>
             <View style={[styles.menuRowIcon, { backgroundColor: "rgba(255,215,0,0.15)" }]}>
-              <Image source={require("@/assets/images/battle-pass-icon.png")} style={{ width: 22, height: 22 }} resizeMode="contain" />
+              <Image source={require("@/assets/images/leafy-gold-icon.png")} style={{ width: 22, height: 22 }} resizeMode="contain" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.menuRowText, { color: theme.text }]}>Battle Pass</Text>
+              <Text style={[styles.menuRowText, { color: theme.text }]}>Leafy Gold</Text>
               <Text style={[styles.menuRowSub, { color: theme.textSecondary }]}>x2 $LEA · Preleva su PayPal</Text>
             </View>
             <View style={styles.menuRowBadge}>
@@ -988,10 +988,10 @@ export default function ProfiloScreen() {
         ) : (
           <View style={[styles.menuRow, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <View style={[styles.menuRowIcon, { backgroundColor: "rgba(255,215,0,0.15)" }]}>
-              <Image source={require("@/assets/images/battle-pass-icon.png")} style={{ width: 22, height: 22 }} resizeMode="contain" />
+              <Image source={require("@/assets/images/leafy-gold-icon.png")} style={{ width: 22, height: 22 }} resizeMode="contain" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.menuRowText, { color: theme.text }]}>Battle Pass</Text>
+              <Text style={[styles.menuRowText, { color: theme.text }]}>Leafy Gold</Text>
               <Text style={[styles.menuRowSub, { color: theme.textSecondary }]}>Attivo · $LEA x2</Text>
             </View>
             <View style={[styles.menuRowBadge, { backgroundColor: "#4ade80" }]}>

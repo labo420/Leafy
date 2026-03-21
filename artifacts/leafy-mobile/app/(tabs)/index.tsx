@@ -46,7 +46,7 @@ import { apiFetch } from "@/lib/api";
 import { useNearbyLocations, type NearbyLocation } from "@/hooks/useNearbyLocations";
 import { useWalkin } from "@/hooks/useWalkin";
 import type { Profile, DailyCheckinResponse } from "@workspace/api-client-react";
-import BattlePassModal from "@/components/BattlePassModal";
+import LeafyGoldModal from "@/components/LeafyGoldModal";
 
 const LEVEL_LABELS: Record<string, string> = {
   Germoglio: "Germoglio",
@@ -729,7 +729,7 @@ export default function HomeScreen() {
   const [inStoreModeEnabled, setInStoreModeEnabled] = useState(true);
   const [inStoreModeActive, setInStoreModeActive] = useState(false);
   const [walkinToast, setWalkinToast] = useState<{ msg: string; xp: number } | null>(null);
-  const [showBattlePassModal, setShowBattlePassModal] = useState(false);
+  const [showLeafyGoldModal, setShowLeafyGoldModal] = useState(false);
   const { pushEnabled } = useNotifications();
 
   const { locations, permissionStatus, loading: locationsLoading, refresh: refreshLocations } =
@@ -826,7 +826,7 @@ export default function HomeScreen() {
   const username = profile?.username || user?.firstName || "Utente";
   const streak = profile?.streak ?? 0;
   const loginStreak = profile?.loginStreak ?? 0;
-  const hasBattlePass = profile?.hasBattlePass ?? false;
+  const hasLeafyGold = profile?.hasLeafyGold ?? false;
   const bpStreakDay = profile?.bpStreakDay ?? 0;
   const bpStreakClaimed = profile?.bpStreakClaimed ?? 0;
   const bpStreakCompleted = profile?.bpStreakCompleted ?? false;
@@ -855,7 +855,7 @@ export default function HomeScreen() {
             {streakToast.bonusAwarded
               ? "Streak completata!"
               : streakToast.bpPrize
-              ? "Battle Pass — Premio!"
+              ? "Leafy Gold — Premio!"
               : `Streak: giorno ${streakToast.loginStreak}`}
           </Text>
           <Text style={streakStyles.toastSub}>
@@ -933,7 +933,7 @@ export default function HomeScreen() {
       <Animated.View entering={FadeInDown.delay(180).springify()} style={[streakStyles.card, { backgroundColor: "rgba(249,115,22,0.07)", borderLeftWidth: 4, borderLeftColor: "#F97316" }]}>
         <View style={streakStyles.cardHeader}>
           <MaterialCommunityIcons name="fire" size={22} color="#F97316" />
-          <Text style={[streakStyles.cardTitle, { color: theme.text, fontSize: 15 }]}>Streak Classica</Text>
+          <Text style={[streakStyles.cardTitle, { color: theme.text, fontSize: 15 }]}>Check In</Text>
           <Text style={[streakStyles.cardBadge, { color: theme.textSecondary }]}>Giorno {loginStreak}/7</Text>
         </View>
         <View style={streakStyles.dotsRow}>
@@ -964,11 +964,11 @@ export default function HomeScreen() {
       </Animated.View>
 
       {/* ── STREAK BATTLE PASS ── */}
-      {hasBattlePass && (
+      {hasLeafyGold && (
         <Animated.View entering={FadeInDown.delay(220).springify()} style={[streakStyles.card, { backgroundColor: "rgba(255,193,7,0.08)", borderLeftWidth: 4, borderLeftColor: "#FFD700" }]}>
           <View style={streakStyles.cardHeader}>
-            <Image source={require("../../assets/images/battle-pass-icon.png")} style={{ width: 22, height: 22 }} />
-            <Text style={[streakStyles.cardTitle, { color: theme.text, fontSize: 15 }]}>Streak Battle Pass</Text>
+            <Image source={require("../../assets/images/leafy-gold-icon.png")} style={{ width: 22, height: 22 }} />
+            <Text style={[streakStyles.cardTitle, { color: theme.text, fontSize: 15 }]}>Check In Gold</Text>
             {bpStreakCompleted
               ? <Text style={[streakStyles.cardBadge, { color: "#F59E0B" }]}>Completata ✓</Text>
               : <Text style={[streakStyles.cardBadge, { color: theme.textSecondary }]}>{bpStreakClaimed}/7 premi</Text>
@@ -1017,10 +1017,10 @@ export default function HomeScreen() {
       )}
 
       {/* ── BATTLE PASS CTA ── */}
-      {!hasBattlePass && (
+      {!hasLeafyGold && (
         <Animated.View entering={FadeInDown.delay(260).springify()} style={styles.bpCtaOuter}>
           <Pressable
-            onPress={() => setShowBattlePassModal(true)}
+            onPress={() => setShowLeafyGoldModal(true)}
             style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }]}
           >
             <LinearGradient
@@ -1042,7 +1042,7 @@ export default function HomeScreen() {
                 <View style={styles.bpCtaLeft}>
                   <View style={styles.bpCtaIconWrap}>
                     <Image
-                      source={require("@/assets/images/battle-pass-icon.png")}
+                      source={require("@/assets/images/leafy-gold-icon.png")}
                       style={{ width: 48, height: 48 }}
                       resizeMode="contain"
                     />
@@ -1068,10 +1068,10 @@ export default function HomeScreen() {
           </Pressable>
         </Animated.View>
       )}
-      <BattlePassModal
-        visible={showBattlePassModal}
+      <LeafyGoldModal
+        visible={showLeafyGoldModal}
         onClose={() => {
-          setShowBattlePassModal(false);
+          setShowLeafyGoldModal(false);
           refetchProfile();
         }}
       />

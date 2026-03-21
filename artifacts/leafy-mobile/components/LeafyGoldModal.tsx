@@ -14,13 +14,13 @@ import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import { useTheme } from "@/context/theme";
 import { useAuth } from "@/context/auth";
 
-interface BattlePassModalProps {
+interface LeafyGoldModalProps {
   visible: boolean;
   onClose: () => void;
 }
 
-export default function BattlePassModal({ visible, onClose }: BattlePassModalProps) {
-  const { activateBattlePass, hasBattlePass } = useAuth();
+export default function LeafyGoldModal({ visible, onClose }: LeafyGoldModalProps) {
+  const { activateLeafyGold, hasLeafyGold } = useAuth();
   const { theme, mode } = useTheme();
   const [loading, setLoading] = useState(false);
   const [activated, setActivated] = useState(false);
@@ -28,7 +28,7 @@ export default function BattlePassModal({ visible, onClose }: BattlePassModalPro
   const handleActivate = async () => {
     setLoading(true);
     // TODO: Integrare qui il gateway di pagamento (es. Stripe o RevenueCat) per l'abbonamento reale.
-    await activateBattlePass();
+    await activateLeafyGold();
     setLoading(false);
     setActivated(true);
     setTimeout(() => {
@@ -57,12 +57,12 @@ export default function BattlePassModal({ visible, onClose }: BattlePassModalPro
           <Animated.View entering={FadeInDown.delay(150).springify()} style={styles.header}>
             <View style={styles.iconWrap}>
               <Image
-                source={require("@/assets/images/battle-pass-icon.png")}
+                source={require("@/assets/images/leafy-gold-icon.png")}
                 style={{ width: 72, height: 72 }}
                 resizeMode="contain"
               />
             </View>
-            <Text style={styles.badge}>BATTLE PASS</Text>
+            <Text style={styles.badge}>LEAFY GOLD</Text>
             <Text style={styles.title}>Passa a Premium</Text>
             <Text style={styles.subtitle}>Sblocca il massimo potenziale di Leafy</Text>
           </Animated.View>
@@ -84,10 +84,10 @@ export default function BattlePassModal({ visible, onClose }: BattlePassModalPro
             <Text style={styles.pricePer}>/mese</Text>
           </Animated.View>
 
-          {hasBattlePass || activated ? (
+          {hasLeafyGold || activated ? (
             <Animated.View entering={FadeIn} style={styles.activatedRow}>
               <Feather name="check-circle" size={20} color="#4ade80" />
-              <Text style={styles.activatedText}>Battle Pass attivo!</Text>
+              <Text style={styles.activatedText}>Leafy Gold attivo!</Text>
             </Animated.View>
           ) : (
             <Pressable
@@ -106,7 +106,7 @@ export default function BattlePassModal({ visible, onClose }: BattlePassModalPro
                 ) : (
                   <>
                     <Feather name="zap" size={18} color="#1a4a2e" />
-                    <Text style={styles.ctaText}>Attiva Battle Pass</Text>
+                    <Text style={styles.ctaText}>Attiva Leafy Gold</Text>
                   </>
                 )}
               </LinearGradient>

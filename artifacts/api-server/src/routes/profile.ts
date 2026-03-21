@@ -166,7 +166,7 @@ router.get("/profile", async (req, res): Promise<void> => {
   res.json({
     ...data,
     pendingValidations,
-    hasBattlePass: user.hasBattlePass ?? false,
+    hasLeafyGold: user.hasLeafyGold ?? false,
     loginStreak: user.loginStreak ?? 0,
     referralXpMultiplierRemaining: user.referralXpMultiplierRemaining ?? 0,
     bpStreakDay: user.bpStreakDay ?? 0,
@@ -250,21 +250,21 @@ router.get("/profile/referral", async (req, res): Promise<void> => {
   }));
 });
 
-router.post("/profile/battle-pass/activate", async (req, res): Promise<void> => {
+router.post("/profile/leafy-gold/activate", async (req, res): Promise<void> => {
   const user = await requireUser(req, res);
   if (!user) return;
 
   // TODO: Integrare gateway di pagamento Stripe/IAP qui
-  // Attualmente è un mock: imposta hasBattlePass = true senza pagamento reale
+  // Attualmente è un mock: imposta hasLeafyGold = true senza pagamento reale
   const expiry = new Date();
   expiry.setMonth(expiry.getMonth() + 1);
 
   await db.update(usersTable).set({
-    hasBattlePass: true,
-    battlePassExpiry: expiry,
+    hasLeafyGold: true,
+    leafyGoldExpiry: expiry,
   }).where(eq(usersTable.id, user.id));
 
-  res.json({ success: true, hasBattlePass: true, expiresAt: expiry.toISOString() });
+  res.json({ success: true, hasLeafyGold: true, expiresAt: expiry.toISOString() });
 });
 
 router.post("/profile/referral/apply", async (req, res): Promise<void> => {
@@ -370,7 +370,7 @@ router.post("/profile/daily-checkin", async (req, res): Promise<void> => {
   let newBpCompleted = user.bpStreakCompleted ?? false;
   let newBpMonth = user.bpStreakCompletedMonth ?? null;
 
-  if (user.hasBattlePass) {
+  if (user.hasLeafyGold) {
     // Reset monthly completion if month changed
     if (newBpCompleted && newBpMonth !== currentMonth) {
       newBpCompleted = false;
@@ -406,7 +406,7 @@ router.post("/profile/daily-checkin", async (req, res): Promise<void> => {
     bpStreakClaimed: newBpClaimed,
     bpStreakCompleted: newBpCompleted,
     bpStreakCompletedMonth: newBpMonth,
-    ...(user.hasBattlePass ? { bpLastLoginDate: today } : {}),
+    ...(user.hasLeafyGold ? { bpLastLoginDate: today } : {}),
     ...(totalXpGain > 0 ? {
       xp: sql`xp + ${totalXpGain}`,
       totalPoints: sql`total_points + ${totalXpGain}`,

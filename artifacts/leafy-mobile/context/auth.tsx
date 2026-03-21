@@ -7,10 +7,10 @@ type AuthContextType = {
   isLoading: boolean;
   xp: number;
   leaBalance: number;
-  hasBattlePass: boolean;
+  hasLeafyGold: boolean;
   refetch: () => void;
   refreshBalances: () => Promise<void>;
-  activateBattlePass: () => Promise<void>;
+  activateLeafyGold: () => Promise<void>;
   setUser: (user: AuthUser | null) => void;
   logout: () => Promise<void>;
 };
@@ -20,10 +20,10 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   xp: 0,
   leaBalance: 0,
-  hasBattlePass: false,
+  hasLeafyGold: false,
   refetch: () => {},
   refreshBalances: async () => {},
-  activateBattlePass: async () => {},
+  activateLeafyGold: async () => {},
   setUser: () => {},
   logout: async () => {},
 });
@@ -33,7 +33,7 @@ const STORAGE_KEYS = {
   token: "auth_session_token",
   xp: "auth_xp",
   leaBalance: "auth_lea",
-  hasBattlePass: "auth_bp",
+  hasLeafyGold: "auth_bp",
 };
 
 function getBase(): string {
@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [xp, setXp] = useState(0);
   const [leaBalance, setLeaBalance] = useState(0);
-  const [hasBattlePass, setHasBattlePass] = useState(false);
+  const [hasLeafyGold, setHasLeafyGold] = useState(false);
 
   const sessionTokenRef = useRef<string | null>(null);
 
@@ -96,12 +96,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   };
 
-  const saveBalancesLocally = async (xpVal: number, leaVal: number, bpVal: boolean) => {
+  const saveBalancesLocally = async (xpVal: number, leaVal: number, lgVal: boolean) => {
     try {
       await AsyncStorage.multiSet([
         [STORAGE_KEYS.xp, String(xpVal)],
         [STORAGE_KEYS.leaBalance, String(leaVal)],
-        [STORAGE_KEYS.hasBattlePass, bpVal ? "1" : "0"],
+        [STORAGE_KEYS.hasLeafyGold, lgVal ? "1" : "0"],
       ]);
     } catch {}
   };
@@ -111,11 +111,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const vals = await AsyncStorage.multiGet([
         STORAGE_KEYS.xp,
         STORAGE_KEYS.leaBalance,
-        STORAGE_KEYS.hasBattlePass,
+        STORAGE_KEYS.hasLeafyGold,
       ]);
       setXp(parseFloat(vals[0][1] ?? "0") || 0);
       setLeaBalance(parseFloat(vals[1][1] ?? "0") || 0);
-      setHasBattlePass(vals[2][1] === "1");
+      setHasLeafyGold(vals[2][1] === "1");
     } catch {}
   };
 
@@ -129,11 +129,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const leaVal = typeof data.leaBalance === "string"
           ? parseFloat(data.leaBalance)
           : (data.leaBalance ?? 0);
-        const bpVal = data.hasBattlePass ?? false;
+        const lgVal = data.hasLeafyGold ?? false;
         setXp(xpVal);
         setLeaBalance(leaVal);
-        setHasBattlePass(bpVal);
-        await saveBalancesLocally(xpVal, leaVal, bpVal);
+        setHasLeafyGold(lgVal);
+        await saveBalancesLocally(xpVal, leaVal, lgVal);
       }
     } catch {}
   }, [apiFetch]);
@@ -162,18 +162,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [apiFetch, fetchBalances, fetchAndSaveToken]);
 
-  const activateBattlePass = async () => {
+  const activateLeafyGold = async () => {
     try {
       const base = getBase();
-      const res = await apiFetch(`${base}/api/profile/battle-pass/activate`, {
+      const res = await apiFetch(`${base}/api/profile/leafy-gold/activate`, {
         method: "POST",
       });
       if (res.ok) {
-        setHasBattlePass(true);
+        setHasLeafyGold(true);
         await fetchBalances();
       }
     } catch (e) {
-      console.error("Failed to activate Battle Pass:", e);
+      console.error("Failed to activate Leafy Gold:", e);
     }
   };
 
@@ -186,7 +186,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setXp(0);
       setLeaBalance(0);
-      setHasBattlePass(false);
+      setHasLeafyGold(false);
       await saveUserLocally(null);
       await saveToken(null);
       await saveBalancesLocally(0, 0, false);
@@ -225,10 +225,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         xp,
         leaBalance,
-        hasBattlePass,
+        hasLeafyGold,
         refetch: fetchUser,
         refreshBalances: fetchBalances,
-        activateBattlePass,
+        activateLeafyGold,
         setUser,
         logout,
       }}

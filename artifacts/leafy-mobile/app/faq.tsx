@@ -24,11 +24,11 @@ const FAQ_ITEMS = [
   },
   {
     q: "Cos'è il $LEA?",
-    a: "$LEA è la valuta cashback di Leafy. 1 XP = 0,01€ in $LEA. Accumula $LEA e ritirali su PayPal (richiede Battle Pass attivo).",
+    a: "$LEA è la valuta cashback di Leafy. 1 XP = 0,01€ in $LEA. Accumula $LEA e ritirali su PayPal (richiede Leafy Gold attivo).",
   },
   {
-    q: "Cos'è il Battle Pass?",
-    a: "Il Battle Pass è l'abbonamento mensile di Leafy a 0,89€/mese. Con il Battle Pass attivo i tuoi $LEA guadagnati su ogni scontrino vengono raddoppiati (x2), e puoi prelevare i tuoi $LEA su PayPal.",
+    q: "Cos'è Leafy Gold?",
+    a: "Leafy Gold è l'abbonamento mensile di Leafy a 0,89€/mese. Con Leafy Gold attivo i tuoi $LEA guadagnati su ogni scontrino vengono raddoppiati (x2), e puoi prelevare i tuoi $LEA su PayPal.",
   },
   {
     q: "Quali negozi sono accettati?",

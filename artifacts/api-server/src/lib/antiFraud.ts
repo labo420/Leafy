@@ -13,7 +13,7 @@ export function normalizeDocumentNumber(raw: string): string {
 }
 
 export async function getUserTrustLevel(user: User): Promise<TrustLevel> {
-  if (user.hasBattlePass) return "trusted";
+  if (user.hasLeafyGold) return "trusted";
 
   const [countRow] = await db
     .select({ count: sql<number>`count(*)::int` })

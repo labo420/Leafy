@@ -179,7 +179,7 @@ function HowItWorksSection() {
 
 export default function ScanScreen() {
   const insets = useSafeAreaInsets();
-  const { user, refreshBalances, hasBattlePass } = useAuth();
+  const { user, refreshBalances, hasLeafyGold } = useAuth();
   const { theme } = useTheme();
   const queryClient = useQueryClient();
   const [state, setState] = useState<ScanState>("idle");
@@ -428,7 +428,7 @@ export default function ScanScreen() {
                 <Text style={[styles.leaSecondaryText, { color: theme.textSecondary }]}>
                   +{(scanResult.leaEarned ?? 0).toFixed(2)} $LEA guadagnati
                 </Text>
-                {hasBattlePass && (
+                {hasLeafyGold && (
                   <View style={styles.x2Badge}>
                     <Text style={styles.x2BadgeText}>x2</Text>
                   </View>
@@ -490,7 +490,7 @@ export default function ScanScreen() {
                   : [
                       "Scansiona i barcode dei prodotti idonei per guadagnare ancora più $LEA.",
                       "Prodotti con Eco-Score A o B valgono il doppio in punti.",
-                      "Con il Battle Pass ogni $LEA guadagnato viene raddoppiato automaticamente.",
+                      "Con Leafy Gold ogni $LEA guadagnato viene raddoppiato automaticamente.",
                       "Più scansioni fai ogni mese, più sali di livello e sblocchi badge esclusivi.",
                       "I prodotti bio e a km0 ottengono un bonus punti aggiuntivo.",
                     ][scanResult.receiptId % 5]

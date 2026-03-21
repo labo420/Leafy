@@ -80,7 +80,7 @@ function BalanceBar() {
 export default function TabLayout() {
   const isIOS = Platform.OS === "ios";
   const insets = useSafeAreaInsets();
-  const { user, hasBattlePass } = useAuth();
+  const { user, hasLeafyGold } = useAuth();
   const { triggerReset, triggerCamera } = useScanReset();
   const { theme, mode } = useTheme();
 
@@ -194,9 +194,9 @@ export default function TabLayout() {
             <TabIcon focused={focused}>
               <View>
                 <Feather name="user" size={22} color={color} strokeWidth={focused ? 2.5 : 2} />
-                {hasBattlePass && (
+                {hasLeafyGold && (
                   <Image
-                    source={require("@/assets/images/battle-pass-icon.png")}
+                    source={require("@/assets/images/leafy-gold-icon.png")}
                     style={styles.proBadgeIcon}
                     resizeMode="contain"
                   />

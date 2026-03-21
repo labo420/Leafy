@@ -25,7 +25,7 @@ export interface Profile {
   badgesCount: number;
   badges: Badge[];
   profileImageUrl?: string | null;
-  hasBattlePass?: boolean;
+  hasLeafyGold?: boolean;
   loginStreak?: number;
   bpStreakDay?: number;
   bpStreakClaimed?: number;

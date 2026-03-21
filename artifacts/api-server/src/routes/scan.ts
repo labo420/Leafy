@@ -236,7 +236,7 @@ router.post("/scan", async (req, res): Promise<void> => {
     receiptBonusAwarded = true;
 
     const bonusTotal = RECEIPT_SCAN_BONUS + (welcomeBonus ? WELCOME_BONUS : 0);
-    const leaMultiplier = user.hasBattlePass ? 2 : 1;
+    const leaMultiplier = user.hasLeafyGold ? 2 : 1;
     const bonusLeaDelta = Math.round(bonusTotal * XP_TO_LEA_RATE * leaMultiplier * 100) / 100;
 
     const referralMultiplierActive = referralMultiplierRemaining > 0;
@@ -312,7 +312,7 @@ router.post("/scan", async (req, res): Promise<void> => {
 
   const baseXpEarned = receiptBonusAwarded ? (RECEIPT_SCAN_BONUS + (welcomeBonus ? WELCOME_BONUS : 0)) : 0;
   const totalXpEarned = baseXpEarned + referralXpBonus;
-  const leaMultiplierResp = user.hasBattlePass ? 2 : 1;
+  const leaMultiplierResp = user.hasLeafyGold ? 2 : 1;
   const totalLeaEarned = Math.round(baseXpEarned * XP_TO_LEA_RATE * leaMultiplierResp * 100) / 100;
 
   res.json({
@@ -816,7 +816,7 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
       .returning();
 
     const totalPointsDelta = finalPoints + bonusVirtuosoPoints;
-    const leaMultiplierBarcode = user.hasBattlePass ? 2 : 1;
+    const leaMultiplierBarcode = user.hasLeafyGold ? 2 : 1;
     const leaDelta = Math.round(totalPointsDelta * XP_TO_LEA_RATE * leaMultiplierBarcode * 100) / 100;
     await tx
       .update(usersTable)

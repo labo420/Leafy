@@ -22,14 +22,14 @@ router.post("/wallet/withdraw", async (req, res): Promise<void> => {
     return;
   }
 
-  const minLea = user.hasBattlePass ? MIN_LEA_BATTLE_PASS : MIN_LEA_STANDARD;
+  const minLea = user.hasLeafyGold ? MIN_LEA_BATTLE_PASS : MIN_LEA_STANDARD;
   if (amount < minLea) {
     const minEur = (minLea * LEA_TO_EUR).toLocaleString("it-IT", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
     res.status(400).json({
-      error: `Importo minimo: ${minLea.toLocaleString("it-IT")} $LEA (${minEur} €)${user.hasBattlePass ? " con Battle Pass" : ""}.`,
+      error: `Importo minimo: ${minLea.toLocaleString("it-IT")} $LEA (${minEur} €)${user.hasLeafyGold ? " con Leafy Gold" : ""}.`,
     });
     return;
   }
