@@ -810,7 +810,7 @@ export default function ProfiloScreen() {
                     </>
                   ) : (
                     <>
-                      <Text style={[kitStyles.kitXpText, { color: "#FFD700" }]}>+{kit.rewardXp}</Text>
+                      <Text style={[kitStyles.kitXpText, { color: "#38BDF8" }]}>+{kit.rewardXp}</Text>
                       <XpIcon size={11} />
                     </>
                   )}

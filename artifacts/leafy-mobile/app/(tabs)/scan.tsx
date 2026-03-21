@@ -403,7 +403,7 @@ export default function ScanScreen() {
 
             <Animated.View entering={FadeInDown.delay(220)} style={[styles.xpHeroCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                <Text style={[styles.xpBigValue, { color: "#FFD700" }]}>+{displayXp}</Text>
+                <Text style={[styles.xpBigValue, { color: "#38BDF8" }]}>+{displayXp}</Text>
                 <XpIcon size={28} />
               </View>
               <Text style={[styles.xpMotivation, { color: theme.text }]}>{getMotivationMessage(scanResult.xpEarned ?? 0)}</Text>
@@ -417,7 +417,7 @@ export default function ScanScreen() {
                 />
               </View>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 3 }}>
-                <Text style={[styles.xpBarLabel, { color: "#FFD700" }]}>
+                <Text style={[styles.xpBarLabel, { color: "#38BDF8" }]}>
                   {scanResult.xpEarned ?? 0} / 100
                 </Text>
                 <XpIcon size={12} />

@@ -383,7 +383,7 @@ function LevelProgressRing({
           </Animated.View>
           <Text style={[ringStyles.levelName, { color: nameColor }]}>{LEVEL_LABELS[level] ?? level}</Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
-            <Text style={[ringStyles.xpProgress, { color: "#FFD700" }]}>
+            <Text style={[ringStyles.xpProgress, { color: "#38BDF8" }]}>
               {new Intl.NumberFormat("it-IT").format(points)} / {new Intl.NumberFormat("it-IT").format(targetPts)}
             </Text>
             <XpIcon size={13} />
@@ -909,7 +909,7 @@ export default function HomeScreen() {
           </View>
           <View style={styles.headerRight}>
             <View style={[styles.xpBadge, { backgroundColor: mode === "dark" ? "rgba(255,255,255,0.12)" : "rgba(46,107,80,0.10)" }]}>
-              <Text style={[styles.xpBadgeValue, { color: "#FFD700" }]}>{xp.toLocaleString("it-IT")}</Text>
+              <Text style={[styles.xpBadgeValue, { color: "#38BDF8" }]}>{xp.toLocaleString("it-IT")}</Text>
               <XpIcon size={12} />
             </View>
             <View style={[styles.leaBadge, { backgroundColor: mode === "dark" ? "rgba(255,255,255,0.15)" : "rgba(46,107,80,0.08)", borderColor: mode === "dark" ? "rgba(255,255,255,0.20)" : "rgba(46,107,80,0.18)" }]}>
