@@ -954,13 +954,10 @@ export default function HomeScreen() {
             );
           })}
         </View>
-        <Text style={[streakStyles.cardHint, { color: theme.textSecondary }]}>
-          {loginStreak === 0
-            ? "Fai check-in ogni giorno per 7 giorni di fila"
-            : loginStreak >= 6
-            ? "Domani completi la streak e vinci 250 XP!"
-            : `${7 - loginStreak} giorni al premio da 250 XP`}
-        </Text>
+        <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center" }}>
+          <Text style={{ fontFamily: Fonts.bodyBold, color: "#ffffff" }}>250</Text>
+          <LeaIcon size={16} />
+        </View>
       </Animated.View>
 
       {/* ── STREAK BATTLE PASS ── */}
