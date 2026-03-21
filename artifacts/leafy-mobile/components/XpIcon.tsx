@@ -1,12 +1,18 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React from "react";
+import { Image } from "react-native";
 
-const XP_BLUE = "#38BDF8";
+const DROP_ASSET = require("../assets/images/drop-xp.png");
 
 interface XpIconProps {
   size?: number;
 }
 
 export function XpIcon({ size = 14 }: XpIconProps) {
-  return <MaterialCommunityIcons name="water" size={size} color={XP_BLUE} />;
+  return (
+    <Image
+      source={DROP_ASSET}
+      style={{ width: size, height: size }}
+      resizeMode="contain"
+    />
+  );
 }
