@@ -1054,7 +1054,7 @@ export default function HomeScreen() {
                   <View style={{ flex: 1 }}>
                     <Text style={styles.bpCtaBadge}>BATTLE PASS</Text>
                     <Text style={styles.bpCtaTitle}>Passa a Premium</Text>
-                    <Text style={styles.bpCtaSub}>Raddoppia i $LEA · Sblocca i prelievi</Text>
+                    <Text style={styles.bpCtaSub}>Raddoppia i $LEA · 0,89€/mese</Text>
                   </View>
                 </View>
 
@@ -1065,7 +1065,7 @@ export default function HomeScreen() {
                   end={{ x: 1, y: 0 }}
                   style={styles.bpCtaPill}
                 >
-                  <Text style={styles.bpCtaPillText}>0,89€{"\n"}/mese</Text>
+                  <Text style={styles.bpCtaPillText}>Attiva{"\n"}ora</Text>
                 </LinearGradient>
               </View>
             </LinearGradient>
