@@ -363,7 +363,7 @@ router.post("/profile/daily-checkin", async (req, res): Promise<void> => {
   const classicBonusAwarded = newStreak >= STREAK_MAX;
   if (classicBonusAwarded) newStreak = 1;
 
-  // ── Battle Pass streak ──
+  // ── Leafy Gold streak ──
   let bpPrize: { xp: number; lea: number } | null = null;
   let newBpDay = user.bpStreakDay ?? 0;
   let newBpClaimed = user.bpStreakClaimed ?? 0;
