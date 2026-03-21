@@ -30,7 +30,7 @@ const STEPS = [
     iconColor: "#2E6B50",
     tag: "01 / 04",
     title: "Benvenuto in Leafy!",
-    body: "La prima app italiana che ti premia per ogni scelta sostenibile. Acquisti eco = XP e cashback reale in €.",
+    body: "La prima app italiana che ti premia per ogni scelta sostenibile. Acquisti eco = drops e cashback reale in €.",
   },
   {
     icon: "barcode-scan" as const,
@@ -38,7 +38,7 @@ const STEPS = [
     iconColor: "#2563EB",
     tag: "02 / 04",
     title: "Scansiona & Guadagna",
-    body: "Carica i tuoi scontrini o scansiona i barcode al supermercato. Ogni prodotto eco ti porta XP e $LEA cashback.",
+    body: "Carica i tuoi scontrini o scansiona i barcode al supermercato. Ogni prodotto eco ti porta drops e $LEA cashback.",
   },
   {
     icon: "forest" as const,

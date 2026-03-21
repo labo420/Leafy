@@ -44,11 +44,11 @@ const BASE_URL = process.env.EXPO_PUBLIC_DOMAIN
 const SCREEN_HEIGHT = Dimensions.get("window").height;
 
 const SOCIAL_PROOF_MESSAGES = [
-  { name: "Lorenzo", xp: 45, product: "pasta bio" },
-  { name: "Marta", xp: 30, product: "latte vegetale" },
-  { name: "Giulia", xp: 60, product: "detersivo ecologico" },
-  { name: "Davide", xp: 25, product: "frutta di stagione" },
-  { name: "Sara", xp: 50, product: "yogurt biologico" },
+  { name: "Lorenzo", drops: 45, product: "pasta bio" },
+  { name: "Marta", drops: 30, product: "latte vegetale" },
+  { name: "Giulia", drops: 60, product: "detersivo ecologico" },
+  { name: "Davide", drops: 25, product: "frutta di stagione" },
+  { name: "Sara", drops: 50, product: "yogurt biologico" },
 ];
 
 function GoogleLogo() {
@@ -546,7 +546,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontStyle: "italic",
   },
-  xpBadge: {
+  dropsBadge: {
     position: "absolute",
     bottom: 2,
     right: 8,
@@ -560,7 +560,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.primaryMuted,
   },
-  xpBadgeText: {
+  dropsBadgeText: {
     fontSize: 11,
     fontFamily: Fonts.bodySemiBold,
     color: Colors.leaf,

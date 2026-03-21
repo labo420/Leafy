@@ -33,6 +33,7 @@ import { useLevelUp } from "@/context/level-up";
 import { useNotifications } from "@/context/notifications";
 import { useTheme } from "@/context/theme";
 import { sendDiscoveryRewardNotification } from "@/lib/notifications";
+import { XpIcon } from "@/components/XpIcon";
 
 interface LookupResult {
   barcode: string;
@@ -100,7 +101,7 @@ function EcoScoreBadge({ score }: { score: string | null }) {
 }
 
 interface DiscoveryResult {
-  xpAwarded?: number;
+  dropsAwarded?: number;
   alreadyCompleted?: boolean;
   productName?: string;
   barcode?: string;
@@ -111,20 +112,20 @@ interface DiscoveryResult {
 function DiscoverySuccessView({
   rewarded,
   displayName,
-  xpAwarded,
+  dropsAwarded,
   topPadding,
   onBack,
 }: {
   rewarded: boolean;
   displayName: string;
-  xpAwarded: number;
+  dropsAwarded: number;
   topPadding: number;
   onBack: () => void;
 }) {
   const { theme } = useTheme();
   const canOpacity = useSharedValue(0);
   const canRotate = useSharedValue(0);
-  const xpBadgeScale = useSharedValue(0);
+  const dropsBadgeScale = useSharedValue(0);
 
   React.useEffect(() => {
     if (!rewarded) return;
@@ -139,7 +140,7 @@ function DiscoverySuccessView({
       withTiming(32, { duration: 700 }),
       withTiming(0, { duration: 550 }),
     );
-    xpBadgeScale.value = withDelay(1400, withSequence(
+    dropsBadgeScale.value = withDelay(1400, withSequence(
       withTiming(1.2, { duration: 250 }),
       withTiming(1, { duration: 150 }),
     ));
@@ -149,9 +150,9 @@ function DiscoverySuccessView({
     opacity: canOpacity.value,
     transform: [{ rotate: `${canRotate.value}deg` }],
   }));
-  const xpBadgeStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: xpBadgeScale.value }],
-    opacity: xpBadgeScale.value,
+  const dropsBadgeStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: dropsBadgeScale.value }],
+    opacity: dropsBadgeScale.value,
   }));
 
   return (
@@ -170,9 +171,12 @@ function DiscoverySuccessView({
           )}
           <Text style={styles.resultName}>{displayName}</Text>
           {rewarded ? (
-            <Animated.View style={[styles.resultPointsBox, xpBadgeStyle]}>
-              <Text style={styles.resultPointsLabel}>XP guadagnati</Text>
-              <Text style={styles.resultPointsValue}>+{xpAwarded} XP</Text>
+            <Animated.View style={[styles.resultPointsBox, dropsBadgeStyle]}>
+              <Text style={styles.resultPointsLabel}>Drops guadagnati</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <Text style={styles.resultPointsValue}>+{dropsAwarded}</Text>
+                <XpIcon size={28} />
+              </View>
             </Animated.View>
           ) : (
             <Text style={[styles.resultPointsLabel, { color: "rgba(255,255,255,0.8)", marginTop: 8 }]}>
@@ -268,7 +272,7 @@ export default function BarcodeScannerScreen() {
       setPhase("confirmed");
       if (!data.alreadyCompleted && data.success) {
         if (pushEnabled) {
-          await sendDiscoveryRewardNotification(data.productName ?? targetProductName ?? "", data.xpAwarded ?? 0);
+          await sendDiscoveryRewardNotification(data.productName ?? targetProductName ?? "", data.dropsAwarded ?? 0);
         }
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         queryClient.invalidateQueries({ queryKey: ["profile"] });
@@ -625,7 +629,7 @@ export default function BarcodeScannerScreen() {
       <DiscoverySuccessView
         rewarded={rewarded}
         displayName={displayName}
-        xpAwarded={discoveryResult.xpAwarded ?? 0}
+        dropsAwarded={discoveryResult.dropsAwarded ?? 0}
         topPadding={topPadding}
         onBack={() => router.back()}
       />

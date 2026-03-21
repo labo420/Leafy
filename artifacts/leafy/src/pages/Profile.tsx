@@ -130,7 +130,7 @@ export default function Profile() {
 
   const p = profile || {
     id: 1, username: "GuestUser", email: "guest@leafy.app", totalPoints: 1250,
-    xp: 1250, leaBalance: 12.50,
+    drops: 1250, leaBalance: 12.50,
     level: "Ramoscello", levelProgress: 65, nextLevelPoints: 2000, streak: 5, badgesCount: 12,
     badges: [], profileImageUrl: undefined as string | undefined
   };
@@ -245,8 +245,10 @@ export default function Profile() {
 
             <div className="flex gap-3 mt-4 w-full">
               <div className="flex-1 bg-primary/5 rounded-2xl p-3 text-center">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">XP</p>
-                <p className="text-xl font-bold text-foreground">{(p.xp ?? p.totalPoints).toLocaleString("it-IT")}</p>
+                <div className="flex items-center justify-center gap-1 mb-0.5">
+                  <img src={`${import.meta.env.BASE_URL}images/drop-xp.png`} alt="drops" style={{ width: 18, height: 18 }} />
+                </div>
+                <p className="text-xl font-bold text-foreground">{(p.drops ?? p.totalPoints).toLocaleString("it-IT")}</p>
               </div>
               <div className="flex-1 bg-green-50 rounded-2xl p-3 text-center">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">$LEA</p>

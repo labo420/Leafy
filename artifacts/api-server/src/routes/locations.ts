@@ -53,7 +53,7 @@ router.get("/locations/nearby", async (req, res): Promise<void> => {
             'productName',        dc.product_name,
             'productDescription', dc.product_description,
             'emoji',              dc.emoji,
-            'xpReward',           dc.xp_reward
+            'dropsReward',        dc.xp_reward
           )
         ) FILTER (WHERE dc.id IS NOT NULL AND dc.is_active = TRUE),
         '[]'::json

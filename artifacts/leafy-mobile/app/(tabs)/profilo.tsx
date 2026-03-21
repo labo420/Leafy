@@ -510,7 +510,7 @@ export default function ProfiloScreen() {
 
   type KitSlotData = { id: string; label: string; matchCategories: string[]; completed: boolean };
   type KitData = {
-    id: string; name: string; description: string | null; rewardXp: number;
+    id: string; name: string; description: string | null; rewardDrops: number;
     isCompleted: boolean; completedAt: string | null;
     slots: KitSlotData[]; completedCount: number; totalCount: number; progressPercent: number;
   };
@@ -719,7 +719,7 @@ export default function ProfiloScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={[styles.referralTitle, { color: theme.text }]}>Invita un amico</Text>
                 <Text style={[styles.referralSub, { color: theme.textSecondary }]}>
-                  +50 XP bonus + moltiplicatore XP per entrambi!
+                  +50 drops bonus + moltiplicatore drops per entrambi!
                 </Text>
               </View>
             </View>
@@ -728,15 +728,15 @@ export default function ProfiloScreen() {
             </View>
           </Pressable>
 
-          {((profile as any)?.referralXpMultiplierRemaining ?? 0) > 0 && (
+          {(profile?.referralDropsMultiplierRemaining ?? 0) > 0 && (
             <View style={[kitStyles.multiplierBanner, { backgroundColor: mode === "dark" ? "#1E3328" : "#D1FAE5" }]}>
               <Text style={{ fontSize: 18 }}>⚡</Text>
               <View style={{ flex: 1 }}>
                 <Text style={[kitStyles.multiplierTitle, { color: theme.leaf }]}>
-                  Moltiplicatore XP attivo!
+                  Moltiplicatore drops attivo!
                 </Text>
                 <Text style={[kitStyles.multiplierSub, { color: mode === "dark" ? "#86EFAC" : "#166534" }]}>
-                  +20% XP sui prossimi {(profile as any).referralXpMultiplierRemaining} scontrini
+                  +20% drops sui prossimi {profile?.referralDropsMultiplierRemaining} scontrini
                 </Text>
               </View>
               <MaterialCommunityIcons name="fire" size={20} color="#F97316" />
@@ -806,11 +806,11 @@ export default function ProfiloScreen() {
                   {kit.isCompleted ? (
                     <>
                       <Feather name="check" size={11} color={theme.leaf} />
-                      <Text style={[kitStyles.kitXpText, { color: theme.leaf }]}>Completato</Text>
+                      <Text style={[kitStyles.kitDropsText, { color: theme.leaf }]}>Completato</Text>
                     </>
                   ) : (
                     <>
-                      <Text style={[kitStyles.kitXpText, { color: "#38BDF8" }]}>+{kit.rewardXp}</Text>
+                      <Text style={[kitStyles.kitDropsText, { color: "#38BDF8" }]}>+{kit.rewardDrops}</Text>
                       <XpIcon size={20} />
                     </>
                   )}
@@ -1459,7 +1459,7 @@ const kitStyles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 20,
   },
-  kitXpText: {
+  kitDropsText: {
     fontSize: 11,
     fontFamily: "Inter_600SemiBold",
   },

@@ -3,7 +3,7 @@ import { eq, and, gte, gt, ne, desc, sql } from "drizzle-orm";
 import { db, usersTable, receiptsTable, barcodeScansTable, productCacheTable, userProductSubmissionsTable } from "@workspace/db";
 import { ScanReceiptBody } from "@workspace/api-zod";
 import { hashImage, extractTextViaGoogleVision, calculateLevel } from "../lib/scanner";
-import { XP_TO_LEA_RATE } from "../lib/economy";
+import { DROPS_TO_LEA_RATE } from "../lib/economy";
 import { runAntiFraudChecks, approvePendingPoints, getUserTrustLevel, normalizeDocumentNumber } from "../lib/antiFraud";
 import { lookupBarcode, validateReceiptWithAI, classifyProductsBatch, validateBarcodeImage, isValidBarcode, matchProductToReceipt, classifyManualProduct, analyzeEnvironmentContext, type PendingProduct } from "../lib/productClassifier";
 import { uploadReceiptImage } from "../lib/receiptImages";
@@ -167,8 +167,8 @@ router.post("/scan", async (req, res): Promise<void> => {
   let receipt: typeof receiptsTable.$inferSelect;
   let welcomeBonus = false;
   let receiptBonusAwarded = false;
-  let referralXpBonus = 0;
-  let referralMultiplierRemaining = user.referralXpMultiplierRemaining ?? 0;
+  let referralDropsBonus = 0;
+  let referralMultiplierRemaining = user.referralDropsMultiplierRemaining ?? 0;
 
   if (selfDuplicate) {
     const [existing] = await db
@@ -237,22 +237,22 @@ router.post("/scan", async (req, res): Promise<void> => {
 
     const bonusTotal = RECEIPT_SCAN_BONUS + (welcomeBonus ? WELCOME_BONUS : 0);
     const leaMultiplier = user.hasLeafyGold ? 2 : 1;
-    const bonusLeaDelta = Math.round(bonusTotal * XP_TO_LEA_RATE * leaMultiplier * 100) / 100;
+    const bonusLeaDelta = Math.round(bonusTotal * DROPS_TO_LEA_RATE * leaMultiplier * 100) / 100;
 
     const referralMultiplierActive = referralMultiplierRemaining > 0;
-    referralXpBonus = referralMultiplierActive ? Math.floor(bonusTotal * 0.2) : 0;
-    const totalXpDelta = bonusTotal + referralXpBonus;
+    referralDropsBonus = referralMultiplierActive ? Math.floor(bonusTotal * 0.2) : 0;
+    const totalDropsDelta = bonusTotal + referralDropsBonus;
     if (referralMultiplierActive) referralMultiplierRemaining--;
 
     const referralUpdate = referralMultiplierActive
-      ? { referralXpMultiplierRemaining: sql`referral_xp_multiplier_remaining - 1` }
+      ? { referralDropsMultiplierRemaining: sql`referral_xp_multiplier_remaining - 1` }
       : {};
 
     await db
       .update(usersTable)
       .set({
-        totalPoints: sql`total_points + ${totalXpDelta}`,
-        xp: sql`xp + ${totalXpDelta}`,
+        totalPoints: sql`total_points + ${totalDropsDelta}`,
+        drops: sql`xp + ${totalDropsDelta}`,
         leaBalance: sql`lea_balance + ${bonusLeaDelta}`,
         ...referralUpdate,
       })
@@ -305,15 +305,15 @@ router.post("/scan", async (req, res): Promise<void> => {
   }
 
   const message = pendingProducts.length > 0
-    ? `${pendingProducts.length} prodott${pendingProducts.length === 1 ? "o" : "i"} trovat${pendingProducts.length === 1 ? "o" : "i"} — scansiona i barcode per guadagnare XP!`
-    : "Scontrino registrato. Scansiona i codici a barre dei tuoi prodotti per guadagnare XP.";
+    ? `${pendingProducts.length} prodott${pendingProducts.length === 1 ? "o" : "i"} trovat${pendingProducts.length === 1 ? "o" : "i"} — scansiona i barcode per guadagnare drops!`
+    : "Scontrino registrato. Scansiona i codici a barre dei tuoi prodotti per guadagnare drops.";
 
-  const [refreshedUser] = await db.select({ xp: usersTable.xp, leaBalance: usersTable.leaBalance }).from(usersTable).where(eq(usersTable.id, user.id));
+  const [refreshedUser] = await db.select({ drops: usersTable.drops, leaBalance: usersTable.leaBalance }).from(usersTable).where(eq(usersTable.id, user.id));
 
-  const baseXpEarned = receiptBonusAwarded ? (RECEIPT_SCAN_BONUS + (welcomeBonus ? WELCOME_BONUS : 0)) : 0;
-  const totalXpEarned = baseXpEarned + referralXpBonus;
+  const baseDropsEarned = receiptBonusAwarded ? (RECEIPT_SCAN_BONUS + (welcomeBonus ? WELCOME_BONUS : 0)) : 0;
+  const totalDropsEarned = baseDropsEarned + referralDropsBonus;
   const leaMultiplierResp = user.hasLeafyGold ? 2 : 1;
-  const totalLeaEarned = Math.round(baseXpEarned * XP_TO_LEA_RATE * leaMultiplierResp * 100) / 100;
+  const totalLeaEarned = Math.round(baseDropsEarned * DROPS_TO_LEA_RATE * leaMultiplierResp * 100) / 100;
 
   res.json({
     receiptId: receipt.id,
@@ -325,10 +325,10 @@ router.post("/scan", async (req, res): Promise<void> => {
     receiptBonusPts: receiptBonusAwarded ? RECEIPT_SCAN_BONUS : 0,
     welcomeBonus,
     welcomeBonusPts: welcomeBonus ? WELCOME_BONUS : 0,
-    xpEarned: totalXpEarned,
+    dropsEarned: totalDropsEarned,
     leaEarned: totalLeaEarned,
-    referralBonus: referralXpBonus > 0 ? { active: true, xpBonus: referralXpBonus, remaining: referralMultiplierRemaining } : null,
-    xp: refreshedUser?.xp ?? 0,
+    referralBonus: referralDropsBonus > 0 ? { active: true, dropsBonus: referralDropsBonus, remaining: referralMultiplierRemaining } : null,
+    drops: refreshedUser?.drops ?? 0,
     leaBalance: parseFloat(String(refreshedUser?.leaBalance ?? "0")),
     greenItemsFound: pendingProducts.map((p) => ({
       name: p.name,
@@ -450,7 +450,7 @@ router.post("/scan/barcode/lookup", async (req, res): Promise<void> => {
   const remainingDailyCap = MAX_DAILY_POINTS - pointsEarnedToday;
 
   if (remainingDailyCap <= 0) {
-    res.status(400).json({ error: `Hai raggiunto il limite di ${MAX_DAILY_POINTS} XP al giorno. Torna domani!` });
+    res.status(400).json({ error: `Hai raggiunto il limite di ${MAX_DAILY_POINTS} drops al giorno. Torna domani!` });
     return;
   }
 
@@ -463,7 +463,7 @@ router.post("/scan/barcode/lookup", async (req, res): Promise<void> => {
 
   if (remainingReceiptCap <= 0) {
     res.status(400).json({
-      error: `Hai raggiunto il limite di ${MAX_RECEIPT_POINTS} XP per questo scontrino. Ottimo lavoro! 🌿`,
+      error: `Hai raggiunto il limite di ${MAX_RECEIPT_POINTS} drops per questo scontrino. Ottimo lavoro! 🌿`,
       receiptCapReached: true,
     });
     return;
@@ -582,7 +582,7 @@ router.post("/scan/barcode/manual-classify", async (req, res): Promise<void> => 
   const remainingDailyCap = MAX_DAILY_POINTS - pointsEarnedToday;
 
   if (remainingDailyCap <= 0) {
-    res.status(400).json({ error: `Hai raggiunto il limite di ${MAX_DAILY_POINTS} XP al giorno. Torna domani!` });
+    res.status(400).json({ error: `Hai raggiunto il limite di ${MAX_DAILY_POINTS} drops al giorno. Torna domani!` });
     return;
   }
 
@@ -601,8 +601,8 @@ router.post("/scan/barcode/manual-classify", async (req, res): Promise<void> => 
   if (effectiveCap <= 0) {
     res.status(400).json({
       error: remainingReceiptCap <= 0
-        ? `Hai raggiunto il limite di ${MAX_RECEIPT_POINTS} XP per questo scontrino.`
-        : `Hai raggiunto il limite di ${MAX_DAILY_POINTS} XP al giorno. Torna domani!`,
+        ? `Hai raggiunto il limite di ${MAX_RECEIPT_POINTS} drops per questo scontrino.`
+        : `Hai raggiunto il limite di ${MAX_DAILY_POINTS} drops al giorno. Torna domani!`,
     });
     return;
   }
@@ -721,7 +721,7 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
   const remainingDailyCap = MAX_DAILY_POINTS - pointsEarnedToday;
 
   if (remainingDailyCap <= 0) {
-    res.status(400).json({ error: `Hai raggiunto il limite di ${MAX_DAILY_POINTS} XP al giorno. Torna domani!` });
+    res.status(400).json({ error: `Hai raggiunto il limite di ${MAX_DAILY_POINTS} drops al giorno. Torna domani!` });
     return;
   }
 
@@ -734,7 +734,7 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
 
   if (remainingReceiptCap <= 0) {
     res.status(400).json({
-      error: `Hai raggiunto il limite di ${MAX_RECEIPT_POINTS} XP per questo scontrino. Ottimo lavoro! 🌿`,
+      error: `Hai raggiunto il limite di ${MAX_RECEIPT_POINTS} drops per questo scontrino. Ottimo lavoro! 🌿`,
       receiptCapReached: true,
     });
     return;
@@ -817,12 +817,12 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
 
     const totalPointsDelta = finalPoints + bonusVirtuosoPoints;
     const leaMultiplierBarcode = user.hasLeafyGold ? 2 : 1;
-    const leaDelta = Math.round(totalPointsDelta * XP_TO_LEA_RATE * leaMultiplierBarcode * 100) / 100;
+    const leaDelta = Math.round(totalPointsDelta * DROPS_TO_LEA_RATE * leaMultiplierBarcode * 100) / 100;
     await tx
       .update(usersTable)
       .set({
         totalPoints: sql`total_points + ${totalPointsDelta}`,
-        xp: sql`xp + ${totalPointsDelta}`,
+        drops: sql`xp + ${totalPointsDelta}`,
         leaBalance: sql`lea_balance + ${leaDelta}`,
       })
       .where(eq(usersTable.id, user.id));
@@ -852,7 +852,7 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
       .where(eq(receiptsTable.id, receiptId));
 
     const [updatedUser] = await tx
-      .select({ totalPoints: usersTable.totalPoints, xp: usersTable.xp, leaBalance: usersTable.leaBalance })
+      .select({ totalPoints: usersTable.totalPoints, drops: usersTable.drops, leaBalance: usersTable.leaBalance })
       .from(usersTable)
       .where(eq(usersTable.id, user.id));
 
@@ -880,9 +880,9 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
     }
   }
 
-  const userXp = updatedUser?.xp ?? updatedUser?.totalPoints ?? 0;
+  const userDrops = updatedUser?.drops ?? updatedUser?.totalPoints ?? 0;
   const userLeaBalance = parseFloat(String(updatedUser?.leaBalance ?? "0"));
-  const level = calculateLevel(userXp);
+  const level = calculateLevel(userDrops);
 
   const kitResult = await checkKitProgress(user.id, product.category).catch(() => null);
 
@@ -896,7 +896,7 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
     reasoning: product.reasoning,
     source: product.source,
     totalPoints: updatedUser?.totalPoints ?? 0,
-    xp: userXp,
+    drops: userDrops,
     leaBalance: userLeaBalance,
     level: level.level,
     remainingDailyPoints: remainingDailyCap - finalPoints,
@@ -907,7 +907,7 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
     bonusVirtuosoPts: bonusVirtuosoPoints,
     kitCompleted: kitResult?.kitCompleted ?? false,
     kitName: kitResult?.kitName ?? null,
-    kitRewardXp: kitResult?.rewardXp ?? null,
+    kitRewardDrops: kitResult?.rewardDrops ?? null,
   });
 });
 

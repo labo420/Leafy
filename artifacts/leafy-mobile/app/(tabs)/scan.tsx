@@ -60,7 +60,7 @@ interface ScanResponse {
   receiptBonusPts?: number;
   welcomeBonus?: boolean;
   welcomeBonusPts?: number;
-  xpEarned?: number;
+  dropsEarned?: number;
   leaEarned?: number;
 }
 
@@ -98,12 +98,12 @@ function formatTimeRemaining(minutes: number): string {
   return `${minutes} min`;
 }
 
-function getMotivationMessage(xp: number): string {
-  if (xp === 0) return "Ottimo! Hai guadagnato i punti base per questo scontrino.";
-  if (xp < 20) return `Bel colpo! Hai accumulato ${xp} XP con questo scontrino.`;
-  if (xp < 50) return `Ottimo lavoro! ${xp} XP aggiunti al tuo profilo.`;
-  if (xp < 100) return `Fantastico! ${xp} XP — stai diventando un campione del verde!`;
-  return `Incredibile! ${xp} XP in un solo scontrino. Sei un eroe della sostenibilità!`;
+function getMotivationMessage(drops: number): string {
+  if (drops === 0) return "Ottimo! Hai guadagnato i punti base per questo scontrino.";
+  if (drops < 20) return `Bel colpo! Hai accumulato ${drops} drops con questo scontrino.`;
+  if (drops < 50) return `Ottimo lavoro! ${drops} drops aggiunti al tuo profilo.`;
+  if (drops < 100) return `Fantastico! ${drops} drops — stai diventando un campione del verde!`;
+  return `Incredibile! ${drops} drops in un solo scontrino. Sei un eroe della sostenibilità!`;
 }
 
 function AcceptedStoresSection() {
@@ -199,7 +199,7 @@ export default function ScanScreen() {
     transform: [{ scale: cameraScale.value }],
   }));
 
-  const [displayXp, setDisplayXp] = useState(0);
+  const [displayDrops, setDisplayDrops] = useState(0);
   const barFill = useSharedValue(0);
   const barAnimStyle = useAnimatedStyle(() => ({
     width: `${barFill.value * 100}%` as any,
@@ -207,8 +207,8 @@ export default function ScanScreen() {
 
   useEffect(() => {
     if (state !== "confirmed" || !scanResult) return;
-    const target = scanResult.xpEarned ?? 0;
-    setDisplayXp(0);
+    const target = scanResult.dropsEarned ?? 0;
+    setDisplayDrops(0);
     barFill.value = 0;
     const steps = 30;
     const duration = 750;
@@ -216,12 +216,12 @@ export default function ScanScreen() {
     let current = 0;
     const timer = setInterval(() => {
       current = Math.min(target, current + Math.max(1, Math.ceil(target / steps)));
-      setDisplayXp(current);
+      setDisplayDrops(current);
       if (current >= target) clearInterval(timer);
     }, intervalMs);
     barFill.value = withDelay(200, withSpring(Math.min(1, target / 100), { damping: 18, stiffness: 65 }));
     return () => clearInterval(timer);
-  }, [state, scanResult?.xpEarned]);
+  }, [state, scanResult?.dropsEarned]);
 
   const { data: activeSession, isLoading: sessionLoading } = useQuery<ActiveSession>({
     queryKey: ["active-session"],
@@ -402,24 +402,24 @@ export default function ScanScreen() {
               </Animated.View>
             </LinearGradient>
 
-            <Animated.View entering={FadeInDown.delay(220)} style={[styles.xpHeroCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <Animated.View entering={FadeInDown.delay(220)} style={[styles.dropsHeroCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                <Text style={[styles.xpBigValue, { color: "#38BDF8" }]}>+{displayXp}</Text>
+                <Text style={[styles.dropsBigValue, { color: "#38BDF8" }]}>+{displayDrops}</Text>
                 <XpIcon size={48} />
               </View>
-              <Text style={[styles.xpMotivation, { color: theme.text }]}>{getMotivationMessage(scanResult.xpEarned ?? 0)}</Text>
-              <View style={[styles.xpBarTrack, { backgroundColor: theme.border }]}>
+              <Text style={[styles.dropsMotivation, { color: theme.text }]}>{getMotivationMessage(scanResult.dropsEarned ?? 0)}</Text>
+              <View style={[styles.dropsBarTrack, { backgroundColor: theme.border }]}>
                 <Animated.View
                   style={[
-                    styles.xpBarFill,
+                    styles.dropsBarFill,
                     barAnimStyle,
-                    { backgroundColor: (scanResult.xpEarned ?? 0) >= 50 ? Colors.amber : theme.leaf },
+                    { backgroundColor: (scanResult.dropsEarned ?? 0) >= 50 ? Colors.amber : theme.leaf },
                   ]}
                 />
               </View>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 3 }}>
-                <Text style={[styles.xpBarLabel, { color: "#38BDF8" }]}>
-                  {scanResult.xpEarned ?? 0} / 100
+                <Text style={[styles.dropsBarLabel, { color: "#38BDF8" }]}>
+                  {scanResult.dropsEarned ?? 0} / 100
                 </Text>
                 <XpIcon size={20} />
               </View>
@@ -1016,7 +1016,7 @@ const styles = StyleSheet.create({
   storesCatTitle: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: Colors.text },
   storesCatList: { fontSize: 12, fontFamily: "Inter_400Regular", color: Colors.textSecondary, lineHeight: 18 },
 
-  xpHeroCard: {
+  dropsHeroCard: {
     marginHorizontal: 20,
     marginTop: 16,
     backgroundColor: Colors.card,
@@ -1027,32 +1027,32 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
   },
-  xpBigValue: {
+  dropsBigValue: {
     fontSize: 56,
     fontFamily: "DMSans_700Bold",
     color: Colors.leaf,
     lineHeight: 64,
     textAlign: "center",
   },
-  xpMotivation: {
+  dropsMotivation: {
     fontSize: 15,
     fontFamily: "Inter_500Medium",
     color: Colors.text,
     textAlign: "center",
     lineHeight: 22,
   },
-  xpBarTrack: {
+  dropsBarTrack: {
     width: "100%",
     height: 8,
     borderRadius: 4,
     overflow: "hidden",
     marginTop: 14,
   },
-  xpBarFill: {
+  dropsBarFill: {
     height: 8,
     borderRadius: 4,
   },
-  xpBarLabel: {
+  dropsBarLabel: {
     fontSize: 12,
     fontFamily: "Inter_400Regular",
     marginTop: 5,

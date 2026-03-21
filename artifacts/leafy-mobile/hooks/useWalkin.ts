@@ -62,7 +62,7 @@ export type WalkinPhase =
   | "error";
 
 export interface WalkinResult {
-  xpAwarded: number;
+  dropsAwarded: number;
   locationName: string;
   locationId: number;
 }
@@ -141,7 +141,7 @@ export function useWalkin(
     try {
       const data = await apiFetch<{
         success?: boolean;
-        xpAwarded?: number;
+        dropsAwarded?: number;
         locationName?: string;
         alreadyCompleted?: boolean;
         message?: string;
@@ -152,19 +152,19 @@ export function useWalkin(
       if (!mountedRef.current) return;
       if (data.alreadyCompleted) {
         setPhaseSync("already_done");
-        setResult({ xpAwarded: 0, locationName: location?.name ?? "", locationId: location?.id ?? 0 });
+        setResult({ dropsAwarded: 0, locationName: location?.name ?? "", locationId: location?.id ?? 0 });
         scheduleAutoReset();
       } else {
         setPhaseSync("rewarded");
-        const xp = data.xpAwarded ?? 0;
+        const drops = data.dropsAwarded ?? 0;
         const name = data.locationName ?? location?.name ?? "";
-        setResult({ xpAwarded: xp, locationName: name, locationId: location?.id ?? 0 });
+        setResult({ dropsAwarded: drops, locationName: name, locationId: location?.id ?? 0 });
         if (location?.type) {
           await incrementDailyTypeCompletionCount(location.type);
         }
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         if (notificationsEnabledRef.current) {
-          await sendWalkinRewardNotification(name, xp);
+          await sendWalkinRewardNotification(name, drops);
         }
         scheduleAutoReset();
       }
@@ -221,7 +221,7 @@ export function useWalkin(
     if (elapsed >= NEAR_MISS_MIN_SECONDS && elapsed < DWELL_SECONDS && notificationsEnabledRef.current) {
       await scheduleLocalNotification(
         "Ti mancava pochissimo!",
-        `Eri in negozio da ${elapsed}s su ${DWELL_SECONDS}. Riprova la prossima volta per guadagnare XP in ${locationName}!`,
+        `Eri in negozio da ${elapsed}s su ${DWELL_SECONDS}. Riprova la prossima volta per guadagnare drops in ${locationName}!`,
         { silent: true },
       );
     }
@@ -287,7 +287,7 @@ export function useWalkin(
       setPhaseSync("already_done");
       setActiveLocation(location);
       activeLocationRef.current = location;
-      setResult({ xpAwarded: 0, locationName: location.name, locationId: location.id });
+      setResult({ dropsAwarded: 0, locationName: location.name, locationId: location.id });
       return;
     }
 
@@ -307,7 +307,7 @@ export function useWalkin(
       if (!mountedRef.current) return;
       if (data.alreadyCompleted || !data.sessionId) {
         setPhaseSync("already_done");
-        setResult({ xpAwarded: 0, locationName: location.name, locationId: location.id });
+        setResult({ dropsAwarded: 0, locationName: location.name, locationId: location.id });
         return;
       }
       sessionIdRef.current = data.sessionId;

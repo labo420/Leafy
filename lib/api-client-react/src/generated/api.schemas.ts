@@ -37,7 +37,7 @@ export interface Profile {
   username: string;
   email: string;
   totalPoints: number;
-  xp: number;
+  drops: number;
   leaBalance: number;
   leaToEur: number;
   level: ProfileLevel;
@@ -54,6 +54,7 @@ export interface Profile {
   bpStreakDay?: number;
   bpStreakClaimed?: number;
   bpStreakCompleted?: boolean;
+  referralDropsMultiplierRemaining?: number;
 }
 
 export interface ImpactStats {
@@ -68,8 +69,8 @@ export interface DailyCheckinResponse {
   alreadyCheckedIn: boolean;
   loginStreak: number;
   bonusAwarded: boolean;
-  xpBonus: number;
-  bpPrize?: { xp: number; lea: number } | null;
+  dropsBonus: number;
+  bpPrize?: { drops: number; lea: number } | null;
   bpStreakDay?: number;
   bpStreakClaimed?: number;
   bpStreakCompleted?: boolean;
@@ -128,6 +129,8 @@ export interface ScanResult {
   receiptBonusPts: number;
   welcomeBonus: boolean;
   welcomeBonusPts: number;
+  drops: number;
+  leaBalance: number;
   greenItemsFound: FoundGreenItem[];
   leveledUp: boolean;
   newLevel?: string | null;
@@ -181,7 +184,7 @@ export interface BarcodeConfirmResult {
   reasoning: string;
   source: string;
   totalPoints: number;
-  xp: number;
+  drops: number;
   leaBalance: number;
   level: string;
   remainingDailyPoints: number;

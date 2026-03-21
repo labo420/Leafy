@@ -13,7 +13,7 @@ export interface Profile {
   username: string;
   email: string;
   totalPoints: number;
-  xp: number;
+  drops: number;
   leaBalance: number;
   leaToEur: number;
   level: ProfileLevel;
@@ -30,4 +30,5 @@ export interface Profile {
   bpStreakDay?: number;
   bpStreakClaimed?: number;
   bpStreakCompleted?: boolean;
+  referralDropsMultiplierRemaining?: number;
 }

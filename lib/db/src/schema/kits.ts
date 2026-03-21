@@ -8,7 +8,7 @@ export const sustainabilityKitsTable = pgTable("sustainability_kits", {
   name: text("name").notNull(),
   description: text("description").notNull(),
   slotsJson: text("slots_json").notNull().default("[]"),
-  rewardXp: integer("reward_xp").notNull().default(50),
+  rewardDrops: integer("reward_xp").notNull().default(50),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

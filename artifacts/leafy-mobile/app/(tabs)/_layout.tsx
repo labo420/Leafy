@@ -54,7 +54,7 @@ function FloatingScanButton({ focused }: { focused: boolean }) {
 }
 
 function BalanceBar() {
-  const { user, xp, leaBalance } = useAuth();
+  const { user, drops, leaBalance } = useAuth();
 
   if (!user) return null;
 
@@ -63,8 +63,7 @@ function BalanceBar() {
       <View style={styles.balanceInner}>
         <View style={styles.balanceChip}>
           <XpIcon size={16} />
-          <Text style={[styles.balanceChipValue, { fontSize: 32 }]}>{xp.toLocaleString("it-IT")}</Text>
-          <Text style={[styles.balanceChipLabel, { fontSize: 12 }]}>XP</Text>
+          <Text style={[styles.balanceChipValue, { fontSize: 32 }]}>{drops.toLocaleString("it-IT")}</Text>
         </View>
         <View style={styles.balanceDot} />
         <View style={styles.balanceChip}>

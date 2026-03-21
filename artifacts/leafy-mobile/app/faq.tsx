@@ -16,15 +16,15 @@ import { useTheme } from "@/context/theme";
 const FAQ_ITEMS = [
   {
     q: "Come funziona Leafy?",
-    a: "Scansiona il tuo scontrino dopo aver fatto la spesa. Leafy identifica i prodotti sostenibili e ti assegna XP e $LEA in base al loro Eco-Score.",
+    a: "Scansiona il tuo scontrino dopo aver fatto la spesa. Leafy identifica i prodotti sostenibili e ti assegna drops e $LEA in base al loro Eco-Score.",
   },
   {
     q: "Cos'è l'Eco-Score?",
-    a: "L'Eco-Score è un punteggio che valuta l'impatto ambientale di un prodotto, dalla produzione al packaging. Più alto è il punteggio, più XP guadagni.",
+    a: "L'Eco-Score è un punteggio che valuta l'impatto ambientale di un prodotto, dalla produzione al packaging. Più alto è il punteggio, più drops guadagni.",
   },
   {
     q: "Cos'è il $LEA?",
-    a: "$LEA è la valuta cashback di Leafy. 1 XP = 0,01€ in $LEA. Accumula $LEA e ritirali su PayPal (richiede Leafy Gold attivo).",
+    a: "$LEA è la valuta cashback di Leafy. 1 drop = 0,01€ in $LEA. Accumula $LEA e ritirali su PayPal (richiede Leafy Gold attivo).",
   },
   {
     q: "Cos'è Leafy Gold?",
@@ -40,7 +40,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Come funziona il sistema livelli?",
-    a: "Ci sono 5 livelli: 🌱 Germoglio (0 XP), 🌿 Ramoscello (500 XP), 🍃 Arbusto (1.500 XP), 🌳 Albero (5.000 XP), 🌲 Foresta (10.000 XP). Ogni livello sblocca badge ed obiettivi speciali.",
+    a: "Ci sono 5 livelli: 🌱 Germoglio (0 drops), 🌿 Ramoscello (500 drops), 🍃 Arbusto (1.500 drops), 🌳 Albero (5.000 drops), 🌲 Foresta (10.000 drops). Ogni livello sblocca badge ed obiettivi speciali.",
   },
   {
     q: "Come contatto il supporto?",

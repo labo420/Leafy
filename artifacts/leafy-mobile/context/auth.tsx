@@ -5,7 +5,7 @@ import type { AuthUser } from "@workspace/api-client-react";
 type AuthContextType = {
   user: AuthUser | null;
   isLoading: boolean;
-  xp: number;
+  drops: number;
   leaBalance: number;
   hasLeafyGold: boolean;
   refetch: () => void;
@@ -19,7 +19,7 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: true,
-  xp: 0,
+  drops: 0,
   leaBalance: 0,
   hasLeafyGold: false,
   refetch: () => {},
@@ -33,7 +33,7 @@ const AuthContext = createContext<AuthContextType>({
 const STORAGE_KEYS = {
   user: "auth_user",
   token: "auth_session_token",
-  xp: "auth_xp",
+  drops: "auth_drops",
   leaBalance: "auth_lea",
   hasLeafyGold: "auth_bp",
 };
@@ -46,7 +46,7 @@ function getBase(): string {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [xp, setXp] = useState(0);
+  const [drops, setDrops] = useState(0);
   const [leaBalance, setLeaBalance] = useState(0);
   const [hasLeafyGold, setHasLeafyGold] = useState(false);
 
@@ -98,10 +98,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   };
 
-  const saveBalancesLocally = async (xpVal: number, leaVal: number, lgVal: boolean) => {
+  const saveBalancesLocally = async (dropsVal: number, leaVal: number, lgVal: boolean) => {
     try {
       await AsyncStorage.multiSet([
-        [STORAGE_KEYS.xp, String(xpVal)],
+        [STORAGE_KEYS.drops, String(dropsVal)],
         [STORAGE_KEYS.leaBalance, String(leaVal)],
         [STORAGE_KEYS.hasLeafyGold, lgVal ? "1" : "0"],
       ]);
@@ -111,11 +111,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loadBalancesLocally = async () => {
     try {
       const vals = await AsyncStorage.multiGet([
-        STORAGE_KEYS.xp,
+        STORAGE_KEYS.drops,
         STORAGE_KEYS.leaBalance,
         STORAGE_KEYS.hasLeafyGold,
       ]);
-      setXp(parseFloat(vals[0][1] ?? "0") || 0);
+      setDrops(parseFloat(vals[0][1] ?? "0") || 0);
       setLeaBalance(parseFloat(vals[1][1] ?? "0") || 0);
       setHasLeafyGold(vals[2][1] === "1");
     } catch {}
@@ -127,15 +127,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res = await apiFetch(`${base}/api/profile`);
       if (res.ok) {
         const data = await res.json();
-        const xpVal = data.xp ?? 0;
+        const dropsVal = data.drops ?? 0;
         const leaVal = typeof data.leaBalance === "string"
           ? parseFloat(data.leaBalance)
           : (data.leaBalance ?? 0);
         const lgVal = data.hasLeafyGold ?? false;
-        setXp(xpVal);
+        setDrops(dropsVal);
         setLeaBalance(leaVal);
         setHasLeafyGold(lgVal);
-        await saveBalancesLocally(xpVal, leaVal, lgVal);
+        await saveBalancesLocally(dropsVal, leaVal, lgVal);
       }
     } catch {}
   }, [apiFetch]);
@@ -194,7 +194,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
     } finally {
       setUser(null);
-      setXp(0);
+      setDrops(0);
       setLeaBalance(0);
       setHasLeafyGold(false);
       await saveUserLocally(null);
@@ -233,7 +233,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         isLoading,
-        xp,
+        drops,
         leaBalance,
         hasLeafyGold,
         refetch: fetchUser,

@@ -511,9 +511,9 @@ components:
           type: string
         totalPoints:
           type: integer
-        xp:
+        drops:
           type: integer
-          description: Experience points (used for leveling)
+          description: Drops (used for leveling)
         leaBalance:
           type: number
           format: double
@@ -562,7 +562,7 @@ components:
         - username
         - email
         - totalPoints
-        - xp
+        - drops
         - leaBalance
         - leaToEur
         - level
@@ -691,9 +691,9 @@ components:
           type: boolean
         welcomeBonusPts:
           type: integer
-        xp:
+        drops:
           type: integer
-          description: Current total XP after scan
+          description: Current total drops after scan
         leaBalance:
           type: number
           format: double
@@ -732,7 +732,7 @@ components:
         - receiptBonusPts
         - welcomeBonus
         - welcomeBonusPts
-        - xp
+        - drops
         - leaBalance
         - greenItemsFound
         - leveledUp
@@ -853,9 +853,9 @@ components:
           type: string
         totalPoints:
           type: integer
-        xp:
+        drops:
           type: integer
-          description: Current total XP after barcode confirm
+          description: Current total drops after barcode confirm
         leaBalance:
           type: number
           format: double
@@ -873,7 +873,7 @@ components:
         - reasoning
         - source
         - totalPoints
-        - xp
+        - drops
         - leaBalance
         - level
         - remainingDailyPoints

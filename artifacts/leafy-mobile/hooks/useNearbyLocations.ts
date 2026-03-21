@@ -7,7 +7,7 @@ export interface NearbyChallenge {
   name: string;
   description: string | null;
   barcode: string;
-  xpReward: number;
+  dropsReward: number;
 }
 
 export interface NearbyLocation {
@@ -17,7 +17,7 @@ export interface NearbyLocation {
   lat: number;
   lng: number;
   distanceM: number;
-  walkinXp: number;
+  walkinDrops: number;
   walkinMaxPerDay: number;
   challenges: NearbyChallenge[];
 }
@@ -28,7 +28,7 @@ interface RawChallenge {
   productName: string;
   productDescription: string | null;
   emoji: string | null;
-  xpReward: number;
+  dropsReward: number;
 }
 
 interface RawLocation {
@@ -41,7 +41,7 @@ interface RawLocation {
   challenges: RawChallenge[];
 }
 
-const WALKIN_XP: Record<string, number> = { oasi: 15, standard: 5 };
+const WALKIN_DROPS: Record<string, number> = { oasi: 15, standard: 5 };
 const WALKIN_MAX: Record<string, number> = { oasi: 2, standard: 1 };
 
 function mapLocation(raw: RawLocation): NearbyLocation {
@@ -53,14 +53,14 @@ function mapLocation(raw: RawLocation): NearbyLocation {
     lat: parseFloat(String(raw.lat)),
     lng: parseFloat(String(raw.lng)),
     distanceM: Math.round(distKm * 1000),
-    walkinXp: WALKIN_XP[raw.type] ?? 5,
+    walkinDrops: WALKIN_DROPS[raw.type] ?? 5,
     walkinMaxPerDay: WALKIN_MAX[raw.type] ?? 1,
     challenges: (raw.challenges ?? []).map((ch) => ({
       id: ch.id,
       name: ch.productName,
       description: ch.productDescription ?? null,
       barcode: ch.barcode,
-      xpReward: ch.xpReward,
+      dropsReward: ch.dropsReward,
     })),
   };
 }

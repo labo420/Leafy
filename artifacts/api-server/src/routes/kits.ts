@@ -36,7 +36,7 @@ router.get("/kits", async (req, res): Promise<void> => {
       id: kit.id,
       name: kit.name,
       description: kit.description,
-      rewardXp: kit.rewardXp,
+      rewardDrops: kit.rewardDrops,
       isCompleted: progress?.isCompleted ?? false,
       completedAt: progress?.completedAt?.toISOString() ?? null,
       slots: slots.map((s) => ({
@@ -57,7 +57,7 @@ router.get("/kits", async (req, res): Promise<void> => {
 export async function checkKitProgress(
   userId: number,
   productCategory: string,
-): Promise<{ kitCompleted: boolean; kitName?: string; rewardXp?: number } | null> {
+): Promise<{ kitCompleted: boolean; kitName?: string; rewardDrops?: number } | null> {
   const kits = await db.select().from(sustainabilityKitsTable)
     .where(eq(sustainabilityKitsTable.isActive, true));
 
@@ -104,11 +104,11 @@ export async function checkKitProgress(
 
     if (allDone) {
       await db.update(usersTable).set({
-        xp: sql`xp + ${kit.rewardXp}`,
-        totalPoints: sql`total_points + ${kit.rewardXp}`,
+        drops: sql`xp + ${kit.rewardDrops}`,
+        totalPoints: sql`total_points + ${kit.rewardDrops}`,
       }).where(eq(usersTable.id, userId));
 
-      return { kitCompleted: true, kitName: kit.name, rewardXp: kit.rewardXp };
+      return { kitCompleted: true, kitName: kit.name, rewardDrops: kit.rewardDrops };
     }
 
     return { kitCompleted: false };

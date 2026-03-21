@@ -69,20 +69,20 @@ export async function scheduleLocalNotification(
 
 export async function sendWalkinRewardNotification(
   locationName: string,
-  xp: number,
+  drops: number,
 ): Promise<void> {
   await scheduleLocalNotification(
     `Benvenuto in ${locationName}!`,
-    `+${xp} XP`,
+    `+${drops} drops`,
   );
 }
 
 export async function sendDiscoveryRewardNotification(
   productName: string,
-  xp: number,
+  drops: number,
 ): Promise<void> {
   await scheduleLocalNotification(
     "Scoperta completata!",
-    `Hai guadagnato ${xp} XP scansionando "${productName}"!`,
+    `Hai guadagnato ${drops} drops scansionando "${productName}"!`,
   );
 }

@@ -22,7 +22,7 @@ export const GetProfileResponse = zod.object({
   username: zod.string(),
   email: zod.string(),
   totalPoints: zod.number(),
-  xp: zod.number(),
+  drops: zod.number(),
   leaBalance: zod.number(),
   leaToEur: zod.number(),
   level: zod.enum(["Germoglio", "Ramoscello", "Arbusto", "Albero", "Foresta"]),
@@ -47,6 +47,7 @@ export const GetProfileResponse = zod.object({
   bpStreakDay: zod.number().optional(),
   bpStreakClaimed: zod.number().optional(),
   bpStreakCompleted: zod.boolean().optional(),
+  referralDropsMultiplierRemaining: zod.number().optional(),
 });
 
 /**
@@ -106,7 +107,7 @@ export const ScanReceiptResponse = zod.object({
   receiptBonusPts: zod.number(),
   welcomeBonus: zod.boolean(),
   welcomeBonusPts: zod.number(),
-  xp: zod.number(),
+  drops: zod.number(),
   leaBalance: zod.number(),
   greenItemsFound: zod.array(
     zod.object({
@@ -187,7 +188,7 @@ export const BarcodeConfirmResponse = zod.object({
   reasoning: zod.string(),
   source: zod.string(),
   totalPoints: zod.number(),
-  xp: zod.number(),
+  drops: zod.number(),
   leaBalance: zod.number(),
   level: zod.string(),
   remainingDailyPoints: zod.number(),

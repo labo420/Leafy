@@ -9,11 +9,11 @@ import {
   discoveryCompletionsTable,
 } from "@workspace/db";
 import { requireUser } from "./profile";
-import { addXp, addXpInTx } from "../lib/economy";
+import { addDrops, addDropsInTx } from "../lib/economy";
 
 const router: IRouter = Router();
 
-const WALKIN_XP: Record<"oasi" | "standard", number> = { oasi: 15, standard: 5 };
+const WALKIN_DROPS: Record<"oasi" | "standard", number> = { oasi: 15, standard: 5 };
 const WALKIN_DAILY_LIMIT: Record<"oasi" | "standard", number> = { oasi: 2, standard: 1 };
 const ADVISORY_KEY: Record<"oasi" | "standard", number> = { oasi: 1, standard: 2 };
 const REQUIRED_SECONDS = 120;
@@ -126,7 +126,7 @@ router.post("/walkin/complete", async (req, res): Promise<void> => {
 
     const bucket = todayBucket();
     const typeLimit = WALKIN_DAILY_LIMIT[location.type];
-    const xpToAward = WALKIN_XP[location.type];
+    const dropsToAward = WALKIN_DROPS[location.type];
 
     // Serialize per-type cap checks across concurrent requests for different locations of the same type
     await tx.execute(sql`SELECT pg_advisory_xact_lock(${user.id}, ${ADVISORY_KEY[location.type]})`);
@@ -144,7 +144,7 @@ router.post("/walkin/complete", async (req, res): Promise<void> => {
 
     const inserted = await tx
       .insert(walkinCompletionsTable)
-      .values({ userId: user.id, locationId: location.id, sessionId: session.id, dayBucket: bucket, xpAwarded: xpToAward })
+      .values({ userId: user.id, locationId: location.id, sessionId: session.id, dayBucket: bucket, xpAwarded: dropsToAward })
       .onConflictDoNothing()
       .returning({ id: walkinCompletionsTable.id });
 
@@ -153,17 +153,17 @@ router.post("/walkin/complete", async (req, res): Promise<void> => {
       return { success: false, alreadyCompleted: true, reason: "location", message: "Hai già completato il walk-in in questo negozio oggi." };
     }
 
-    await tx.update(walkinSessionsTable).set({ xpAwarded: xpToAward }).where(eq(walkinSessionsTable.id, sessionId));
-    const newXp = await addXpInTx(tx, user.id, xpToAward);
+    await tx.update(walkinSessionsTable).set({ xpAwarded: dropsToAward }).where(eq(walkinSessionsTable.id, sessionId));
+    const newDrops = await addDropsInTx(tx, user.id, dropsToAward);
 
     return {
       success: true,
-      xpAwarded: xpToAward,
+      dropsAwarded: dropsToAward,
       locationType: location.type,
       locationName: location.name,
       dwellSeconds: Math.round(ageSeconds),
-      newXp,
-      message: location.type === "oasi" ? `Benvenuto in un'Oasi Green! +${xpToAward} XP per te.` : `Walk-in completato! +${xpToAward} XP.`,
+      newDrops,
+      message: location.type === "oasi" ? `Benvenuto in un'Oasi Green! +${dropsToAward} drops per te.` : `Walk-in completato! +${dropsToAward} drops.`,
     };
   });
 
@@ -212,8 +212,8 @@ router.post("/discovery/scan", async (req, res): Promise<void> => {
       return { success: false, alreadyCompleted: true, message: "Hai già completato questa sfida oggi." };
     }
 
-    const newXp = await addXpInTx(tx, user.id, challenge.xpReward);
-    return { success: true, found: true, xpAwarded: challenge.xpReward, productName: challenge.productName, productDescription: challenge.productDescription, emoji: challenge.emoji, newXp, message: `Trovato! +${challenge.xpReward} XP per aver trovato "${challenge.productName}".` };
+    const newDrops = await addDropsInTx(tx, user.id, challenge.xpReward);
+    return { success: true, found: true, dropsAwarded: challenge.xpReward, productName: challenge.productName, productDescription: challenge.productDescription, emoji: challenge.emoji, newDrops, message: `Trovato! +${challenge.xpReward} drops per aver trovato "${challenge.productName}".` };
   });
 
   res.json(result);

@@ -59,7 +59,9 @@ export function LevelProgress({
         <span className="font-display text-4xl font-bold text-primary tracking-tighter">
           {new Intl.NumberFormat("it-IT").format(points)}
         </span>
-        <span className="text-xs font-medium text-muted-foreground mt-1">XP</span>
+        <span className="text-xs font-medium text-muted-foreground mt-1">
+          <img src={`${import.meta.env.BASE_URL}images/drop-xp.png`} alt="drops" style={{ width: 20, height: 20, display: "inline" }} />
+        </span>
       </div>
     </div>
   );

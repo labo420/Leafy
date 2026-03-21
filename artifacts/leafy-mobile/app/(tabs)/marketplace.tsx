@@ -407,9 +407,9 @@ export default function WalletScreen() {
             <Animated.View entering={FadeInDown.delay(340).springify()} style={[styles.infoSection, { backgroundColor: theme.card, borderColor: theme.border }]}>
               <Text style={[styles.infoSectionTitle, { color: theme.text }]}>Come funziona $LEA</Text>
               {[
-                { icon: "camera" as const, text: "Scansiona uno scontrino e guadagna XP" },
+                { icon: "camera" as const, text: "Scansiona uno scontrino e guadagna drops" },
                 { icon: "maximize" as const, text: "Scansiona i barcode per ottenere $LEA extra" },
-                { icon: "dollar-sign" as const, text: "1 XP = 0,01€ in $LEA" },
+                { icon: "dollar-sign" as const, text: "1 drop = 0,01€ in $LEA" },
                 { icon: "zap" as const, text: "Con Leafy Gold ogni $LEA è raddoppiato (x2)" },
               ].map((item, i) => (
                 <View key={i} style={styles.infoRow}>

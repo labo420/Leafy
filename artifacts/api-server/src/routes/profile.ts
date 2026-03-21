@@ -97,8 +97,8 @@ router.get("/profile", async (req, res): Promise<void> => {
   const user = await requireUser(req, res);
   if (!user) return;
 
-  const userXp = user.xp ?? user.totalPoints;
-  const { level, nextLevelPoints, progressPercent } = calculateLevel(userXp);
+  const userDrops = user.drops ?? user.totalPoints;
+  const { level, nextLevelPoints, progressPercent } = calculateLevel(userDrops);
   const leaBalance = parseFloat(String(user.leaBalance ?? "0"));
 
   const receipts = await db.select().from(receiptsTable).where(eq(receiptsTable.userId, user.id));
@@ -112,10 +112,10 @@ router.get("/profile", async (req, res): Promise<void> => {
   if (categories.includes("Equo Solidale")) earnedBadges.push("fair_hero");
   if (categories.includes("Vegano")) earnedBadges.push("vegan_champ");
   if (user.streak >= 7) earnedBadges.push("streak_7");
-  if (userXp >= 500) earnedBadges.push("level_ramoscello");
-  if (userXp >= 2000) earnedBadges.push("level_arbusto");
-  if (userXp >= 5000) earnedBadges.push("level_albero");
-  if (userXp >= 10000) earnedBadges.push("level_foresta");
+  if (userDrops >= 500) earnedBadges.push("level_ramoscello");
+  if (userDrops >= 2000) earnedBadges.push("level_arbusto");
+  if (userDrops >= 5000) earnedBadges.push("level_albero");
+  if (userDrops >= 10000) earnedBadges.push("level_foresta");
 
   const badges = ALL_BADGES.map(b => ({
     ...b,
@@ -127,7 +127,7 @@ router.get("/profile", async (req, res): Promise<void> => {
     username: user.username,
     email: user.email,
     totalPoints: user.totalPoints,
-    xp: userXp,
+    drops: userDrops,
     leaBalance,
     leaToEur: leaToEur(leaBalance),
     level,
@@ -168,7 +168,7 @@ router.get("/profile", async (req, res): Promise<void> => {
     pendingValidations,
     hasLeafyGold: user.hasLeafyGold ?? false,
     loginStreak: user.loginStreak ?? 0,
-    referralXpMultiplierRemaining: user.referralXpMultiplierRemaining ?? 0,
+    referralDropsMultiplierRemaining: user.referralDropsMultiplierRemaining ?? 0,
     bpStreakDay: user.bpStreakDay ?? 0,
     bpStreakClaimed: user.bpStreakClaimed ?? 0,
     bpStreakCompleted: bpCompleted,
@@ -296,34 +296,34 @@ router.post("/profile/referral/apply", async (req, res): Promise<void> => {
   await db.update(usersTable)
     .set({
       totalPoints: sql`total_points + ${REFERRAL_BONUS_XP}`,
-      xp: sql`xp + ${REFERRAL_BONUS_XP}`,
+      drops: sql`xp + ${REFERRAL_BONUS_XP}`,
       referralPointsEarned: sql`referral_points_earned + ${REFERRAL_BONUS_XP}`,
-      referralXpMultiplierRemaining: MULTIPLIER_RECEIPTS,
+      referralDropsMultiplierRemaining: MULTIPLIER_RECEIPTS,
     })
     .where(eq(usersTable.id, user.id));
 
   await db.update(usersTable)
     .set({
       referralCount: sql`referral_count + 1`,
-      referralXpMultiplierRemaining: MULTIPLIER_RECEIPTS,
+      referralDropsMultiplierRemaining: MULTIPLIER_RECEIPTS,
     })
     .where(eq(usersTable.id, referrer.id));
 
   res.json(ApplyReferralResponse.parse({
     success: true,
     pointsAwarded: REFERRAL_BONUS_XP,
-    message: `Referral applicato! Hai guadagnato ${REFERRAL_BONUS_XP} XP bonus e un moltiplicatore +20% XP sui prossimi ${MULTIPLIER_RECEIPTS} scontrini! 🎉`,
+    message: `Referral applicato! Hai guadagnato ${REFERRAL_BONUS_XP} drops bonus e un moltiplicatore +20% drops sui prossimi ${MULTIPLIER_RECEIPTS} scontrini! 🎉`,
   }));
 });
 
-const BP_PRIZES: { xp: number; lea: number }[] = [
-  { xp: 50,  lea: 0  },
-  { xp: 0,   lea: 5  },
-  { xp: 75,  lea: 0  },
-  { xp: 0,   lea: 8  },
-  { xp: 100, lea: 0  },
-  { xp: 0,   lea: 10 },
-  { xp: 150, lea: 15 },
+const BP_PRIZES: { drops: number; lea: number }[] = [
+  { drops: 50,  lea: 0  },
+  { drops: 0,   lea: 5  },
+  { drops: 75,  lea: 0  },
+  { drops: 0,   lea: 8  },
+  { drops: 100, lea: 0  },
+  { drops: 0,   lea: 10 },
+  { drops: 150, lea: 15 },
 ];
 
 router.post("/profile/daily-checkin", async (req, res): Promise<void> => {
@@ -346,7 +346,7 @@ router.post("/profile/daily-checkin", async (req, res): Promise<void> => {
       alreadyCheckedIn: true,
       loginStreak: user.loginStreak ?? 0,
       bonusAwarded: false,
-      xpBonus: 0,
+      dropsBonus: 0,
       bpStreakDay: user.bpStreakDay ?? 0,
       bpStreakClaimed: user.bpStreakClaimed ?? 0,
       bpStreakCompleted: bpCompleted,
@@ -364,7 +364,7 @@ router.post("/profile/daily-checkin", async (req, res): Promise<void> => {
   if (classicBonusAwarded) newStreak = 1;
 
   // ── Leafy Gold streak ──
-  let bpPrize: { xp: number; lea: number } | null = null;
+  let bpPrize: { drops: number; lea: number } | null = null;
   let newBpDay = user.bpStreakDay ?? 0;
   let newBpClaimed = user.bpStreakClaimed ?? 0;
   let newBpCompleted = user.bpStreakCompleted ?? false;
@@ -397,7 +397,7 @@ router.post("/profile/daily-checkin", async (req, res): Promise<void> => {
   }
 
   // ── DB update ──
-  const totalXpGain = (classicBonusAwarded ? STREAK_BONUS_XP : 0) + (bpPrize?.xp ?? 0);
+  const totalDropsGain = (classicBonusAwarded ? STREAK_BONUS_XP : 0) + (bpPrize?.drops ?? 0);
 
   await db.update(usersTable).set({
     loginStreak: newStreak,
@@ -407,9 +407,9 @@ router.post("/profile/daily-checkin", async (req, res): Promise<void> => {
     bpStreakCompleted: newBpCompleted,
     bpStreakCompletedMonth: newBpMonth,
     ...(user.hasLeafyGold ? { bpLastLoginDate: today } : {}),
-    ...(totalXpGain > 0 ? {
-      xp: sql`xp + ${totalXpGain}`,
-      totalPoints: sql`total_points + ${totalXpGain}`,
+    ...(totalDropsGain > 0 ? {
+      drops: sql`xp + ${totalDropsGain}`,
+      totalPoints: sql`total_points + ${totalDropsGain}`,
     } : {}),
     ...(bpPrize && bpPrize.lea > 0 ? {
       leaBalance: sql`lea_balance + ${bpPrize.lea}`,
@@ -420,7 +420,7 @@ router.post("/profile/daily-checkin", async (req, res): Promise<void> => {
     alreadyCheckedIn: false,
     loginStreak: newStreak,
     bonusAwarded: classicBonusAwarded,
-    xpBonus: classicBonusAwarded ? STREAK_BONUS_XP : 0,
+    dropsBonus: classicBonusAwarded ? STREAK_BONUS_XP : 0,
     bpStreakDay: newBpDay,
     bpStreakClaimed: newBpClaimed,
     bpStreakCompleted: newBpCompleted,

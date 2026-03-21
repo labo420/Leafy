@@ -19,20 +19,20 @@ export default function Home() {
 
   const p = profile || {
     id: 1, username: "Guest", email: "guest@leafy.app",
-    xp: 1200, leaBalance: 4.50,
+    drops: 1200, leaBalance: 4.50,
     level: "Ramoscello", levelProgress: 65, nextLevelPoints: 2000, streak: 5, badgesCount: 12, badges: []
   };
 
-  const xp = p.xp ?? 0;
+  const drops = p.drops ?? 0;
   const lea = p.leaBalance ?? 0;
 
   const motivationalMessages = [
     `Oggi sei già un passo avanti, ${p.username}! 🌿`,
-    `Stai accumulando XP reali, ${p.username}! 🏆`,
+    `Stai accumulando drops reali, ${p.username}! 🏆`,
     `Ogni scontrino vale qualcosa per te. 💫`,
     `Grande slancio questa settimana, ${p.username}! ♻️`,
-    `${xp.toLocaleString("it-IT")} XP nel tuo portafoglio — continua così! 🎁`,
-    `Potresti sorprenderti di quanti XP guadagni già. 🛒`,
+    `${drops.toLocaleString("it-IT")} drops nel tuo portafoglio — continua così! 🎁`,
+    `Potresti sorprenderti di quanti drops guadagni già. 🛒`,
     `Ogni scelta conta. La tua fa la differenza! 🌱`,
   ];
   const message = motivationalMessages[p.streak % motivationalMessages.length];
@@ -55,8 +55,8 @@ export default function Home() {
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 rounded-full px-3 py-1.5">
-            <Zap className="w-3 h-3 text-primary" fill="currentColor" />
-            <span className="text-sm font-bold text-primary">{xp.toLocaleString("it-IT")} XP</span>
+            <img src={`${import.meta.env.BASE_URL}images/drop-xp.png`} alt="drops" style={{ width: 14, height: 14 }} />
+            <span className="text-sm font-bold text-primary">{drops.toLocaleString("it-IT")}</span>
           </div>
           <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 rounded-full px-3 py-1.5">
             <span className="text-sm font-bold text-green-700">{lea.toFixed(2)}</span>
@@ -76,13 +76,16 @@ export default function Home() {
         <LevelProgress
           progress={p.levelProgress}
           level={p.level}
-          points={xp}
+          points={drops}
           size={240}
         />
         <div className="mt-6 w-full max-w-[280px]">
           <div className="flex justify-between text-xs font-medium text-muted-foreground mb-2">
             <span>{p.level}</span>
-            <span>{p.nextLevelPoints?.toLocaleString("it-IT")} xp per il prossimo livello</span>
+            <span className="flex items-center gap-1">
+              <img src={`${import.meta.env.BASE_URL}images/drop-xp.png`} alt="drops" style={{ width: 12, height: 12 }} />
+              {p.nextLevelPoints?.toLocaleString("it-IT")} al prossimo livello
+            </span>
           </div>
           <div className="h-2.5 bg-muted rounded-full overflow-hidden">
             <div

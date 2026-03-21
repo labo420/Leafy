@@ -112,11 +112,11 @@ const LEVEL_MCI_ICONS: Record<string, React.ComponentProps<typeof MaterialCommun
 };
 
 const BP_PRIZES_DISPLAY = [
-  { type: "xp" as const, label: "50 XP" },
+  { type: "drops" as const, label: "50" },
   { type: "lea" as const, label: "5 LEA" },
-  { type: "xp" as const, label: "75 XP" },
+  { type: "drops" as const, label: "75" },
   { type: "lea" as const, label: "8 LEA" },
-  { type: "xp" as const, label: "100 XP" },
+  { type: "drops" as const, label: "100" },
   { type: "lea" as const, label: "10 LEA" },
   { type: "both" as const, label: "150+15" },
 ];
@@ -252,7 +252,7 @@ function LevelProgressRing({
       return;
     }
 
-    // XP gain: watering animation
+    // Drops gain: watering animation
     if (points > prev && prev > 0) {
       // Cancel any in-flight animations
       if (progTimeoutRef.current) clearTimeout(progTimeoutRef.current);
@@ -403,7 +403,7 @@ function LevelProgressRing({
       <Text style={[ringStyles.nextLevelText, { color: nextLvlColor }]} numberOfLines={3}>
         {isMaxLevel
           ? "Hai raggiunto il massimo livello!"
-          : `Ti mancano solo ${new Intl.NumberFormat("it-IT").format(pointsRemaining)} XP per sbloccare ${nextLevel!.name} e ottenere i nuovi vantaggi.`}
+          : `Ti mancano solo ${new Intl.NumberFormat("it-IT").format(pointsRemaining)} drops per sbloccare ${nextLevel!.name} e ottenere i nuovi vantaggi.`}
       </Text>
     </Animated.View>
   );
@@ -722,13 +722,13 @@ export default function HomeScreen() {
   const [streakToast, setStreakToast] = React.useState<{
     loginStreak: number;
     bonusAwarded: boolean;
-    xpBonus: number;
-    bpPrize: { xp: number; lea: number } | null;
+    dropsBonus: number;
+    bpPrize: { drops: number; lea: number } | null;
   } | null>(null);
 
   const [inStoreModeEnabled, setInStoreModeEnabled] = useState(true);
   const [inStoreModeActive, setInStoreModeActive] = useState(false);
-  const [walkinToast, setWalkinToast] = useState<{ msg: string; xp: number } | null>(null);
+  const [walkinToast, setWalkinToast] = useState<{ locationName: string; drops: number } | null>(null);
   const [showLeafyGoldModal, setShowLeafyGoldModal] = useState(false);
   const { pushEnabled } = useNotifications();
 
@@ -759,7 +759,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (walkin.phase === "rewarded" && walkin.result) {
-      setWalkinToast({ msg: `+${walkin.result.xpAwarded} XP da ${walkin.result.locationName}!`, xp: walkin.result.xpAwarded });
+      setWalkinToast({ locationName: walkin.result.locationName, drops: walkin.result.dropsAwarded });
       setTimeout(() => setWalkinToast(null), 4000);
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       refetchProfile();
@@ -779,7 +779,7 @@ export default function HomeScreen() {
         setStreakToast({
           loginStreak: data.loginStreak,
           bonusAwarded: data.bonusAwarded,
-          xpBonus: data.xpBonus,
+          dropsBonus: data.dropsBonus,
           bpPrize: data.bpPrize ?? null,
         });
         setTimeout(() => setStreakToast(null), 4500);
@@ -830,9 +830,9 @@ export default function HomeScreen() {
   const bpStreakDay = profile?.bpStreakDay ?? 0;
   const bpStreakClaimed = profile?.bpStreakClaimed ?? 0;
   const bpStreakCompleted = profile?.bpStreakCompleted ?? false;
-  const xp = profile?.xp ?? profile?.totalPoints ?? 0;
+  const drops = profile?.drops ?? profile?.totalPoints ?? 0;
   const leaBalance = profile?.leaBalance ?? 0;
-  const points = xp;
+  const points = drops;
   const level = profile?.level ?? "Germoglio";
   const levelProgress = Math.max(0, Math.min(100, profile?.levelProgress ?? 0));
   const nextLevelPoints = profile?.nextLevelPoints ?? 0;
@@ -858,18 +858,30 @@ export default function HomeScreen() {
               ? "Leafy Gold — Premio!"
               : `Streak: giorno ${streakToast.loginStreak}`}
           </Text>
-          <Text style={streakStyles.toastSub}>
-            {streakToast.bonusAwarded
-              ? `7 giorni consecutivi! +${streakToast.xpBonus} XP`
-              : streakToast.bpPrize
-              ? [
-                  streakToast.bpPrize.xp > 0 ? `+${streakToast.bpPrize.xp} XP` : "",
-                  streakToast.bpPrize.lea > 0 ? `+${streakToast.bpPrize.lea} $LEA` : "",
-                ].filter(Boolean).join("  ")
-              : streakToast.loginStreak === 1
-              ? "Ottimo inizio! Torna domani."
-              : `${7 - streakToast.loginStreak} giorni al premio da 250 XP.`}
-          </Text>
+          {streakToast.bonusAwarded ? (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+              <Text style={streakStyles.toastSub}>7 giorni consecutivi! +{streakToast.dropsBonus}</Text>
+              <XpIcon size={12} />
+            </View>
+          ) : streakToast.bpPrize ? (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 3, flexWrap: "wrap" }}>
+              {streakToast.bpPrize.drops > 0 && (
+                <>
+                  <Text style={streakStyles.toastSub}>+{streakToast.bpPrize.drops}</Text>
+                  <XpIcon size={12} />
+                </>
+              )}
+              {streakToast.bpPrize.lea > 0 && (
+                <Text style={streakStyles.toastSub}>{streakToast.bpPrize.drops > 0 ? "  " : ""}+{streakToast.bpPrize.lea} $LEA</Text>
+              )}
+            </View>
+          ) : (
+            <Text style={streakStyles.toastSub}>
+              {streakToast.loginStreak === 1
+                ? "Ottimo inizio! Torna domani."
+                : `${7 - streakToast.loginStreak} giorni al prossimo premio.`}
+            </Text>
+          )}
         </View>
       </Animated.View>
     )}
@@ -976,10 +988,10 @@ export default function HomeScreen() {
           <View style={streakStyles.bpRow}>
             {BP_PRIZES_DISPLAY.map((prize, i) => {
               const claimed = i < bpStreakClaimed;
-              const isXp = prize.type === "xp" || prize.type === "both";
+              const isDrops = prize.type === "drops" || prize.type === "both";
               const isLea = prize.type === "lea" || prize.type === "both";
               const dotColor = claimed
-                ? (isLea && !isXp ? "#FACC15" : "#A78BFA")
+                ? (isLea && !isDrops ? "#FACC15" : "#A78BFA")
                 : theme.primaryLight;
               return (
                 <View key={i} style={streakStyles.bpSlot}>
@@ -998,7 +1010,7 @@ export default function HomeScreen() {
                       <XpIcon size={16} />
                     )}
                   </View>
-                  <Text style={[streakStyles.bpLabel, { color: claimed ? (isLea && !isXp ? "#FACC15" : "#A78BFA") : theme.textSecondary }]}>
+                  <Text style={[streakStyles.bpLabel, { color: claimed ? (isLea && !isDrops ? "#FACC15" : "#A78BFA") : theme.textSecondary }]}>
                     {prize.label}
                   </Text>
                 </View>
@@ -1107,7 +1119,11 @@ export default function HomeScreen() {
           <MaterialCommunityIcons name="store-check" size={22} color="#51B888" />
           <View style={{ flex: 1 }}>
             <Text style={inStoreStyles.walkinToastTitle}>Walk-in completato!</Text>
-            <Text style={inStoreStyles.walkinToastSub}>{walkinToast.msg}</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+              <Text style={inStoreStyles.walkinToastSub}>+{walkinToast.drops}</Text>
+              <XpIcon size={13} />
+              <Text style={inStoreStyles.walkinToastSub}> da {walkinToast.locationName}</Text>
+            </View>
           </View>
         </Animated.View>
       )}
@@ -1304,13 +1320,14 @@ function InStoreLocationCard({
               : `${(location.distanceM / 1000).toFixed(1)} km di distanza`}
           </Text>
           <Text style={[inStoreStyles.locationCap, { color: theme.textMuted }]}>
-            {`Max ${location.walkinMaxPerDay}x al giorno · ${location.walkinXp} XP`}
+            {`Max ${location.walkinMaxPerDay}x al giorno · ${location.walkinDrops} drops`}
           </Text>
         </View>
-        <View style={[inStoreStyles.xpBubble, { backgroundColor: isOasi ? "rgba(167,139,250,0.12)" : theme.primaryLight }]}>
-          <Text style={[inStoreStyles.xpBubbleText, { color: isOasi ? "#7C3AED" : theme.leaf }]}>
-            +{location.walkinXp} XP
+        <View style={[inStoreStyles.dropsBubble, { backgroundColor: isOasi ? "rgba(167,139,250,0.12)" : theme.primaryLight, flexDirection: "row", alignItems: "center", gap: 3 }]}>
+          <Text style={[inStoreStyles.dropsBubbleText, { color: isOasi ? "#7C3AED" : theme.leaf }]}>
+            +{location.walkinDrops}
           </Text>
+          <XpIcon size={16} />
         </View>
       </View>
 
@@ -1331,9 +1348,17 @@ function InStoreLocationCard({
             size={16}
             color={isRewarded ? "#51B888" : theme.textMuted}
           />
-          <Text style={[inStoreStyles.rewardText, { color: isRewarded ? "#51B888" : theme.textMuted }]}>
-            {isRewarded ? `+${walkin.result?.xpAwarded} XP guadagnati!` : "Già completato oggi"}
-          </Text>
+          {isRewarded ? (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+              <Text style={[inStoreStyles.rewardText, { color: "#51B888" }]}>
+                {`+${walkin.result?.dropsAwarded}`}
+              </Text>
+              <XpIcon size={13} />
+              <Text style={[inStoreStyles.rewardText, { color: "#51B888" }]}> guadagnati!</Text>
+            </View>
+          ) : (
+            <Text style={[inStoreStyles.rewardText, { color: theme.textMuted }]}>Già completato oggi</Text>
+          )}
         </View>
       )}
 
@@ -1359,7 +1384,10 @@ function InStoreLocationCard({
                   <Text style={[inStoreStyles.challengeDesc, { color: theme.textMuted }]}>{ch.description}</Text>
                 )}
               </View>
-              <Text style={[inStoreStyles.challengeXp, { color: theme.leaf }]}>+{ch.xpReward} XP</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
+                <Text style={[inStoreStyles.challengeDrops, { color: theme.leaf }]}>+{ch.dropsReward}</Text>
+                <XpIcon size={14} />
+              </View>
             </Pressable>
           ))}
         </View>
@@ -1374,7 +1402,10 @@ function InStoreLocationCard({
               <View style={{ flex: 1 }}>
                 <Text style={[inStoreStyles.challengeName, { color: theme.textMuted }]}>{ch.name}</Text>
               </View>
-              <Text style={[inStoreStyles.challengeXp, { color: theme.textMuted }]}>+{ch.xpReward} XP</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
+                <Text style={[inStoreStyles.challengeDrops, { color: theme.textMuted }]}>+{ch.dropsReward}</Text>
+                <XpIcon size={14} />
+              </View>
             </View>
           ))}
           <Text style={[inStoreStyles.challengeHint, { color: theme.textMuted }]}>Entra nel negozio per sbloccare le sfide</Text>
@@ -1574,12 +1605,12 @@ const inStoreStyles = StyleSheet.create({
     marginTop: 2,
     opacity: 0.65,
   },
-  xpBubble: {
+  dropsBubble: {
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
-  xpBubbleText: {
+  dropsBubbleText: {
     fontSize: 13,
     fontFamily: "DMSans_700Bold",
   },
@@ -1669,7 +1700,7 @@ const inStoreStyles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     marginTop: 1,
   },
-  challengeXp: {
+  challengeDrops: {
     fontSize: 12,
     fontFamily: "DMSans_700Bold",
   },
@@ -1873,7 +1904,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
   },
-  xpBadge: {
+  dropsBadge: {
     backgroundColor: "rgba(255,255,255,0.12)",
     borderRadius: 16,
     paddingHorizontal: 8,
@@ -1882,12 +1913,12 @@ const styles = StyleSheet.create({
     alignItems: "center" as const,
     gap: 3,
   },
-  xpBadgeValue: {
+  dropsBadgeValue: {
     fontSize: 13,
     fontFamily: "DMSans_700Bold",
     color: "#ffffff",
   },
-  xpBadgeSymbol: {
+  dropsBadgeSymbol: {
     fontSize: 10,
     fontFamily: "DMSans_700Bold",
     color: "rgba(255,255,255,0.6)",
