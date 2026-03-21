@@ -146,7 +146,7 @@ function HeroIllustration() {
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
-  const { setUser, refetch } = useAuth();
+  const { loginWithToken } = useAuth();
   const scrollRef = useRef<ScrollView>(null);
 
   const [mode, setMode] = useState<Mode>("login");
@@ -208,8 +208,8 @@ export default function LoginScreen() {
         return;
       }
 
-      if (data.user) {
-        setUser(data.user);
+      if (data.user && data.token) {
+        await loginWithToken(data.user, data.token);
       }
       router.replace("/(tabs)");
     } catch {

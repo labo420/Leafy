@@ -12,6 +12,7 @@ type AuthContextType = {
   refreshBalances: () => Promise<void>;
   activateLeafyGold: () => Promise<void>;
   setUser: (user: AuthUser | null) => void;
+  loginWithToken: (user: AuthUser, token: string) => Promise<void>;
   logout: () => Promise<void>;
 };
 
@@ -25,6 +26,7 @@ const AuthContext = createContext<AuthContextType>({
   refreshBalances: async () => {},
   activateLeafyGold: async () => {},
   setUser: () => {},
+  loginWithToken: async () => {},
   logout: async () => {},
 });
 
@@ -162,6 +164,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [apiFetch, fetchBalances, fetchAndSaveToken]);
 
+  const loginWithToken = async (userData: AuthUser, token: string) => {
+    sessionTokenRef.current = token;
+    await AsyncStorage.setItem(STORAGE_KEYS.token, token);
+    setUser(userData);
+    await saveUserLocally(userData);
+    fetchBalances();
+  };
+
   const activateLeafyGold = async () => {
     try {
       const base = getBase();
@@ -230,6 +240,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         refreshBalances: fetchBalances,
         activateLeafyGold,
         setUser,
+        loginWithToken,
         logout,
       }}
     >

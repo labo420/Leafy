@@ -304,7 +304,7 @@ router.post("/auth/register", async (req: Request, res: Response) => {
   const sid = await createSession(sessionData);
   setSessionCookie(res, sid);
 
-  res.json({ user: sessionData.user });
+  res.json({ user: sessionData.user, token: sid });
 });
 
 // ─── POST /auth/login ────────────────────────────────────────────────────────
@@ -337,7 +337,7 @@ router.post("/auth/login", async (req: Request, res: Response) => {
   const sid = await createSession(sessionData);
   setSessionCookie(res, sid);
 
-  res.json({ user: sessionData.user });
+  res.json({ user: sessionData.user, token: sid });
 });
 
 // ─── GET /auth/google ────────────────────────────────────────────────────────
@@ -504,6 +504,15 @@ router.get("/callback", async (req: Request, res: Response) => {
   setSessionCookie(res, sid);
 
   res.redirect(returnTo);
+});
+
+// ─── POST /auth/logout (mobile) ──────────────────────────────────────────────
+
+router.post("/auth/logout", async (req: Request, res: Response) => {
+  const sid = getSessionId(req);
+  if (sid) await deleteSession(sid);
+  res.clearCookie(SESSION_COOKIE, { path: "/" });
+  res.json({ ok: true });
 });
 
 // ─── GET /logout ─────────────────────────────────────────────────────────────
