@@ -55,9 +55,9 @@ const RADIUS = (RING_SIZE - STROKE_WIDTH) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 const PAYPAL_BLUE = "#0070E0";
 
+const LEAF_GREEN = "#30A33E";
+
 function PayPalHeroRing({ leaBalance }: { leaBalance: number }) {
-  const { theme } = useTheme();
-  const leafColor = theme.leaf;
   return (
     <View style={styles.heroContainer}>
       <Svg
@@ -70,7 +70,7 @@ function PayPalHeroRing({ leaBalance }: { leaBalance: number }) {
           cy={RING_SIZE / 2}
           r={RADIUS}
           fill="none"
-          stroke={`${leafColor}22`}
+          stroke="rgba(48,163,62,0.13)"
           strokeWidth={STROKE_WIDTH}
         />
         <Circle
@@ -78,7 +78,7 @@ function PayPalHeroRing({ leaBalance }: { leaBalance: number }) {
           cy={RING_SIZE / 2}
           r={RADIUS}
           fill="none"
-          stroke={leafColor}
+          stroke={LEAF_GREEN}
           strokeWidth={STROKE_WIDTH}
           strokeDasharray={`${CIRCUMFERENCE}`}
           strokeDashoffset={0}
