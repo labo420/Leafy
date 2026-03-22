@@ -975,35 +975,82 @@ export default function HomeScreen() {
       </View>
 
       {/* ── STREAK CLASSICA ── */}
-      <Animated.View entering={FadeInDown.delay(180).springify()} style={[streakStyles.card, { backgroundColor: "rgba(249,115,22,0.07)", borderLeftWidth: 4, borderLeftColor: "#F97316" }]}>
+      <Animated.View entering={FadeInDown.delay(180).springify()} style={[streakStyles.card, { overflow: "hidden" }]}>
+        <LinearGradient
+          colors={["rgba(249,115,22,0.13)", "rgba(249,115,22,0.04)"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+        <View style={streakStyles.accentBorder} />
         <View style={streakStyles.cardHeader}>
           <MaterialCommunityIcons name="fire" size={22} color="#F97316" />
-          <Text style={[streakStyles.cardTitle, { color: theme.text, fontSize: 15 }]}>Check In</Text>
-          <Text style={[streakStyles.cardBadge, { color: theme.textSecondary }]}>Giorno {loginStreak}/7</Text>
-        </View>
-        <View style={streakStyles.dotsRow}>
-          {Array.from({ length: 7 }, (_, i) => {
-            const filled = i < loginStreak;
-            return (
-              <View
-                key={i}
-                style={[
-                  streakStyles.dot,
-                  filled
-                    ? { backgroundColor: "#F97316" }
-                    : { backgroundColor: theme.primaryLight, borderWidth: 1.5, borderColor: "rgba(249,115,22,0.25)" },
-                ]}
-              >
-                <Text style={{ fontSize: 11, fontFamily: "DMSans_700Bold", color: filled ? "#fff" : "rgba(249,115,22,0.45)" }}>{i + 1}</Text>
-              </View>
-            );
-          })}
-        </View>
-        <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center" }}>
-          <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "#F97316", paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20, gap: 4 }}>
-            <Text style={{ fontFamily: Fonts.bodyBold, color: "#ffffff", fontSize: 15 }}>250</Text>
-            <LeaIcon size={14} />
+          <View style={{ flex: 1, marginLeft: 2 }}>
+            <Text style={[streakStyles.cardTitle, { color: theme.text, fontSize: 15 }]}>Check In</Text>
+            <Text style={{ fontFamily: "Inter_400Regular", fontSize: 10, color: theme.textSecondary, marginTop: 1 }}>Fai check-in ogni giorno</Text>
           </View>
+          <View style={streakStyles.dayBadge}>
+            <Text style={{ fontFamily: "DMSans_700Bold", fontSize: 12, color: "#F97316" }}>Giorno {loginStreak}/7</Text>
+          </View>
+        </View>
+        {/* Progress dots with connecting line */}
+        <View style={{ position: "relative", height: CHECKIN_DOT_SIZE, marginHorizontal: 4, marginBottom: 12 }}>
+          {/* Background track */}
+          <View style={{
+            position: "absolute",
+            left: CHECKIN_DOT_SIZE / 2,
+            right: CHECKIN_DOT_SIZE / 2,
+            height: 2,
+            top: (CHECKIN_DOT_SIZE - 2) / 2,
+            backgroundColor: "rgba(249,115,22,0.18)",
+            borderRadius: 1,
+          }} />
+          {/* Progress track */}
+          {loginStreak > 1 && (
+            <View style={{
+              position: "absolute",
+              left: CHECKIN_DOT_SIZE / 2,
+              width: ((loginStreak - 1) / 6) * (CHECKIN_SECTION_W - CHECKIN_DOT_SIZE),
+              height: 2,
+              top: (CHECKIN_DOT_SIZE - 2) / 2,
+              backgroundColor: "#F97316",
+              borderRadius: 1,
+            }} />
+          )}
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", height: CHECKIN_DOT_SIZE }}>
+            {Array.from({ length: 7 }, (_, i) => {
+              const done = i < loginStreak;
+              const isCurrentLast = done && i === loginStreak - 1;
+              return (
+                <View key={i} style={{ width: CHECKIN_DOT_SIZE, height: CHECKIN_DOT_SIZE, alignItems: "center", justifyContent: "center" }}>
+                  {isCurrentLast && <View style={streakStyles.dotGlow} />}
+                  <View style={[
+                    streakStyles.dot,
+                    done
+                      ? { backgroundColor: "#F97316" }
+                      : { backgroundColor: "rgba(249,115,22,0.07)", borderWidth: 1.5, borderColor: "rgba(249,115,22,0.2)" },
+                  ]}>
+                    {done
+                      ? <MaterialCommunityIcons name="check" size={13} color="#fff" />
+                      : <Text style={{ fontSize: 10, fontFamily: "DMSans_700Bold", color: "rgba(249,115,22,0.35)" }}>{i + 1}</Text>
+                    }
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+        {/* Reward badge */}
+        <View style={{ flexDirection: "row", justifyContent: "center", marginBottom: 2 }}>
+          <LinearGradient
+            colors={["#FF8C00", "#F97316"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={streakStyles.rewardBadge}
+          >
+            <XpIcon size={18} />
+            <Text style={{ fontFamily: Fonts.bodyBold, color: "#ffffff", fontSize: 16 }}>250 gocce</Text>
+          </LinearGradient>
         </View>
       </Animated.View>
 
@@ -1773,6 +1820,9 @@ const inStoreStyles = StyleSheet.create({
   },
 });
 
+const CHECKIN_DOT_SIZE = 30;
+const CHECKIN_SECTION_W = Dimensions.get("window").width - 60;
+
 const streakStyles = StyleSheet.create({
   toast: {
     position: "absolute",
@@ -1833,11 +1883,49 @@ const streakStyles = StyleSheet.create({
     marginBottom: 7,
   },
   dot: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     alignItems: "center",
     justifyContent: "center",
+  },
+  accentBorder: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
+    backgroundColor: "#F97316",
+    borderTopLeftRadius: 14,
+    borderBottomLeftRadius: 14,
+  },
+  dayBadge: {
+    backgroundColor: "rgba(249,115,22,0.12)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "rgba(249,115,22,0.25)",
+  },
+  dotGlow: {
+    position: "absolute",
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(249,115,22,0.18)",
+  },
+  rewardBadge: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 22,
+    gap: 8,
+    shadowColor: "#F97316",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 5,
   },
   cardHint: {
     fontFamily: "Inter_400Regular",
