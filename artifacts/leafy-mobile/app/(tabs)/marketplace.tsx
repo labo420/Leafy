@@ -93,18 +93,18 @@ function PayPalHeroRing({ leaBalance }: { leaBalance: number }) {
 
 function PayPalLogo({ size = 28 }: { size?: number }) {
   const h = size;
-  const w = h * (24 / 36);
+  const w = h * (26 / 40);
   return (
-    <Svg width={w} height={h} viewBox="0 0 24 36">
-      {/* Back P — dark navy */}
+    <Svg width={w} height={h} viewBox="0 0 26 40">
+      {/* Back P — dark navy: stem (width 6) + circular bowl (r=10 outer, r=7 inner), center (6,13) */}
       <Path
-        d="M0,0 L0,30 L4,30 L4,16 Q20,16 20,8 Q20,0 4,0 Z M4,3.5 Q16.5,3.5 16.5,8 Q16.5,12.5 4,12.5 Z"
+        d="M0,0 L6,0 L6,3 A 10 10 0 1 1 6,23 L6,36 L0,36 Z M6,6 A 7 7 0 1 1 6,20 Z"
         fill="#003087"
         fillRule="evenodd"
       />
-      {/* Front P — sky blue, offset +4 right +5 down */}
+      {/* Front P — sky blue: same shape, offset +4 right +4 down */}
       <Path
-        d="M4,5 L4,36 L8,36 L8,21 Q24,21 24,13 Q24,5 8,5 Z M8,8.5 Q20.5,8.5 20.5,13 Q20.5,17.5 8,17.5 Z"
+        d="M4,4 L10,4 L10,7 A 10 10 0 1 1 10,27 L10,40 L4,40 Z M10,10 A 7 7 0 1 1 10,24 Z"
         fill="#009CDE"
         fillRule="evenodd"
       />
