@@ -975,82 +975,43 @@ export default function HomeScreen() {
       </View>
 
       {/* ── STREAK CLASSICA ── */}
-      <Animated.View entering={FadeInDown.delay(180).springify()} style={[streakStyles.card, { overflow: "hidden" }]}>
-        <LinearGradient
-          colors={["rgba(249,115,22,0.13)", "rgba(249,115,22,0.04)"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
-        <View style={streakStyles.accentBorder} />
-        <View style={streakStyles.cardHeader}>
-          <MaterialCommunityIcons name="fire" size={22} color="#F97316" />
-          <View style={{ flex: 1, marginLeft: 2 }}>
-            <Text style={[streakStyles.cardTitle, { color: theme.text, fontSize: 15 }]}>Check In</Text>
-            <Text style={{ fontFamily: "Inter_400Regular", fontSize: 10, color: theme.textSecondary, marginTop: 1 }}>Fai check-in ogni giorno</Text>
-          </View>
-          <View style={streakStyles.dayBadge}>
-            <Text style={{ fontFamily: "DMSans_700Bold", fontSize: 12, color: "#F97316" }}>Giorno {loginStreak}/7</Text>
-          </View>
+      <Animated.View entering={FadeInDown.delay(180).springify()} style={streakStyles.stampCard}>
+        {/* Header */}
+        <View style={streakStyles.stampHeader}>
+          <Text style={streakStyles.stampTitle}>🔥  CHECK IN</Text>
+          <Text style={streakStyles.stampWeekLabel}>7 giorni</Text>
         </View>
-        {/* Progress dots with connecting line */}
-        <View style={{ position: "relative", height: CHECKIN_DOT_SIZE, marginHorizontal: 4, marginBottom: 12 }}>
-          {/* Background track */}
-          <View style={{
-            position: "absolute",
-            left: CHECKIN_DOT_SIZE / 2,
-            right: CHECKIN_DOT_SIZE / 2,
-            height: 2,
-            top: (CHECKIN_DOT_SIZE - 2) / 2,
-            backgroundColor: "rgba(249,115,22,0.18)",
-            borderRadius: 1,
-          }} />
-          {/* Progress track */}
-          {loginStreak > 1 && (
-            <View style={{
-              position: "absolute",
-              left: CHECKIN_DOT_SIZE / 2,
-              width: ((loginStreak - 1) / 6) * (CHECKIN_SECTION_W - CHECKIN_DOT_SIZE),
-              height: 2,
-              top: (CHECKIN_DOT_SIZE - 2) / 2,
-              backgroundColor: "#F97316",
-              borderRadius: 1,
-            }} />
-          )}
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", height: CHECKIN_DOT_SIZE }}>
-            {Array.from({ length: 7 }, (_, i) => {
-              const done = i < loginStreak;
-              const isCurrentLast = done && i === loginStreak - 1;
-              return (
-                <View key={i} style={{ width: CHECKIN_DOT_SIZE, height: CHECKIN_DOT_SIZE, alignItems: "center", justifyContent: "center" }}>
-                  {isCurrentLast && <View style={streakStyles.dotGlow} />}
-                  <View style={[
-                    streakStyles.dot,
-                    done
-                      ? { backgroundColor: "#F97316" }
-                      : { backgroundColor: "rgba(249,115,22,0.07)", borderWidth: 1.5, borderColor: "rgba(249,115,22,0.2)" },
-                  ]}>
-                    {done
-                      ? <MaterialCommunityIcons name="check" size={13} color="#fff" />
-                      : <Text style={{ fontSize: 10, fontFamily: "DMSans_700Bold", color: "rgba(249,115,22,0.35)" }}>{i + 1}</Text>
-                    }
-                  </View>
+        <View style={streakStyles.stampDivider} />
+        {/* 7 timbri */}
+        <View style={streakStyles.stampRow}>
+          {Array.from({ length: 7 }, (_, i) => {
+            const done = i < loginStreak;
+            const isNext = i === loginStreak && loginStreak < 7;
+            return (
+              <View key={i} style={streakStyles.stampSlot}>
+                <View style={[
+                  streakStyles.stampCell,
+                  done ? streakStyles.stampCellDone : isNext ? streakStyles.stampCellNext : streakStyles.stampCellFuture,
+                ]}>
+                  {done && <Text style={{ fontSize: 17, lineHeight: 22 }}>🔥</Text>}
+                  {isNext && <Text style={streakStyles.stampCellNextNum}>{i + 1}</Text>}
                 </View>
-              );
-            })}
-          </View>
+                <Text style={[
+                  streakStyles.stampLabel,
+                  { color: done ? "#F97316" : isNext ? "rgba(249,115,22,0.65)" : "rgba(255,255,255,0.18)" },
+                ]}>G{i + 1}</Text>
+              </View>
+            );
+          })}
         </View>
-        {/* Reward badge */}
-        <View style={{ flexDirection: "row", justifyContent: "center", marginBottom: 2 }}>
-          <LinearGradient
-            colors={["#FF8C00", "#F97316"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={streakStyles.rewardBadge}
-          >
-            <XpIcon size={18} />
-            <Text style={{ fontFamily: Fonts.bodyBold, color: "#ffffff", fontSize: 16 }}>250 gocce</Text>
-          </LinearGradient>
+        <View style={streakStyles.stampDivider} />
+        {/* Footer: giorno e premio */}
+        <View style={streakStyles.stampFooter}>
+          <Text style={streakStyles.stampFooterDay}>Giorno {loginStreak}/7</Text>
+          <View style={streakStyles.stampFooterReward}>
+            <XpIcon size={15} />
+            <Text style={streakStyles.stampFooterRewardText}>+250 gocce</Text>
+          </View>
         </View>
       </Animated.View>
 
@@ -1926,6 +1887,97 @@ const streakStyles = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 8,
     elevation: 5,
+  },
+  stampCard: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    borderRadius: 16,
+    padding: 14,
+    backgroundColor: "#1C0A00",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  stampHeader: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
+  },
+  stampTitle: {
+    fontFamily: "DMSans_700Bold",
+    fontSize: 13,
+    color: "#ffffff",
+    letterSpacing: 1.2,
+  },
+  stampWeekLabel: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 11,
+    color: "rgba(255,255,255,0.35)",
+  },
+  stampDivider: {
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.07)",
+    marginVertical: 10,
+  },
+  stampRow: {
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+  },
+  stampSlot: {
+    alignItems: "center" as const,
+    gap: 5,
+    flex: 1,
+  },
+  stampCell: {
+    width: 36,
+    height: 36,
+    borderRadius: 9,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+  },
+  stampCellDone: {
+    backgroundColor: "#F97316",
+  },
+  stampCellNext: {
+    backgroundColor: "rgba(249,115,22,0.1)",
+    borderWidth: 1.5,
+    borderColor: "#F97316",
+  },
+  stampCellFuture: {
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+  },
+  stampLabel: {
+    fontFamily: "DMSans_700Bold",
+    fontSize: 9,
+  },
+  stampCellNextNum: {
+    fontFamily: "DMSans_700Bold",
+    fontSize: 13,
+    color: "#F97316",
+  },
+  stampFooter: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
+  },
+  stampFooterDay: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 12,
+    color: "rgba(255,255,255,0.4)",
+  },
+  stampFooterReward: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 5,
+  },
+  stampFooterRewardText: {
+    fontFamily: "DMSans_700Bold",
+    fontSize: 14,
+    color: "#F97316",
   },
   cardHint: {
     fontFamily: "Inter_400Regular",
