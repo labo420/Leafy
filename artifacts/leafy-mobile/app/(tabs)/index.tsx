@@ -353,16 +353,7 @@ function LevelProgressRing({
           <Circle
             cx={RING_CX}
             cy={RING_CY}
-            r={RING_RADIUS + RING_STROKE / 2 + 2}
-            stroke={borderColor}
-            strokeWidth={1.5}
-            fill="none"
-          />
-          {/* Inner border ring */}
-          <Circle
-            cx={RING_CX}
-            cy={RING_CY}
-            r={RING_RADIUS - RING_STROKE / 2 - 2}
+            r={RING_RADIUS + RING_STROKE / 2 + 1.5}
             stroke={borderColor}
             strokeWidth={1.5}
             fill="none"
