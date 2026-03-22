@@ -92,18 +92,20 @@ function PayPalHeroRing({ leaBalance }: { leaBalance: number }) {
 }
 
 function PayPalLogo({ size = 28 }: { size?: number }) {
-  const w = size * (17 / 21);
+  const aspect = 0.72;
+  const w = size * aspect;
+  const h = size;
   return (
-    <Svg width={w} height={size} viewBox="0 0 17 21">
+    <Svg width={w * 1.55} height={h} viewBox="0 0 26 20">
       <Path
-        fillRule="evenodd"
-        d="M0 0 L0 18 L3 18 L3 11 L7 11 Q12 11 12 5.5 Q12 0 7 0 Z M3 2.5 L7 2.5 Q9.5 2.5 9.5 5.5 Q9.5 8.5 7 8.5 L3 8.5 Z"
+        d="M2 0 C2 0 10 0 10 6 C10 10.5 6.5 12 3 12 L1.5 12 L0.5 18 L-2 18 L2 0 Z M3.5 2.5 L2.8 9.5 C5 9.5 7.5 8.5 7.5 6 C7.5 3 3.5 2.5 3.5 2.5 Z"
         fill="#003087"
+        fillRule="evenodd"
       />
       <Path
-        fillRule="evenodd"
-        d="M5 3 L5 21 L8 21 L8 14 L12 14 Q17 14 17 8.5 Q17 3 12 3 Z M8 5.5 L12 5.5 Q14.5 5.5 14.5 8.5 Q14.5 11.5 12 11.5 L8 11.5 Z"
+        d="M7 3 C7 3 15 3 15 9 C15 13.5 11.5 15 8 15 L6.5 15 L5.5 21 L3 21 L7 3 Z M8.5 5.5 L7.8 12.5 C10 12.5 12.5 11.5 12.5 9 C12.5 6 8.5 5.5 8.5 5.5 Z"
         fill="#009CDE"
+        fillRule="evenodd"
       />
     </Svg>
   );
