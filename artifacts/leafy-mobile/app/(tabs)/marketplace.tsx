@@ -499,6 +499,7 @@ const styles = StyleSheet.create({
   paypalBtn: {
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "transparent",
   },
   paypalBtnImage: {
     width: 280,
