@@ -1080,7 +1080,7 @@ export default function HomeScreen() {
               <View style={styles.bpCtaIconWrap}>
                 <Image
                   source={require("@/assets/images/leafy-gold-icon.png")}
-                  style={{ width: 64, height: 64 }}
+                  style={{ width: 44, height: 44 }}
                   resizeMode="contain"
                 />
               </View>
@@ -2104,59 +2104,59 @@ const styles = StyleSheet.create({
     borderRadius: 22,
   },
   bpCtaCard: {
-    borderRadius: 22,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: "rgba(255,215,0,0.3)",
     backgroundColor: "#0D0D0D",
-    paddingHorizontal: 24,
-    paddingTop: 12,
-    paddingBottom: 10,
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 12,
     alignItems: "center",
   },
   bpCtaIconWrap: {
-    marginBottom: 5,
+    marginBottom: 6,
     shadowColor: "#FFD700",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.55,
-    shadowRadius: 20,
+    shadowRadius: 16,
     elevation: 8,
   },
   bpCtaTitle: {
-    fontSize: 24,
+    fontSize: 17,
     fontFamily: "DMSans_700Bold",
     color: "#fff",
-    marginBottom: 1,
-    letterSpacing: 0.3,
+    marginBottom: 2,
+    letterSpacing: 0.2,
   },
   bpCtaPrice: {
-    fontSize: 36,
+    fontSize: 26,
     fontFamily: "DMSans_700Bold",
     color: "#FFD700",
-    marginBottom: 2,
-    letterSpacing: -0.5,
+    marginBottom: 4,
+    letterSpacing: -0.3,
   },
   bpCtaPriceSub: {
-    fontSize: 18,
+    fontSize: 14,
     fontFamily: "DMSans_400Regular",
     color: "rgba(255,215,0,0.7)",
   },
   bpCtaSub: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: "Inter_400Regular",
     color: "rgba(255,255,255,0.4)",
     textAlign: "center",
-    marginBottom: 10,
-    lineHeight: 18,
+    marginBottom: 12,
+    lineHeight: 16,
   },
   bpCtaBtn: {
-    borderRadius: 14,
-    paddingVertical: 14,
+    borderRadius: 12,
+    paddingVertical: 11,
     alignItems: "center",
     justifyContent: "center",
     width: "100%",
   },
   bpCtaBtnText: {
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: "DMSans_700Bold",
     color: "#1a1a00",
   },
