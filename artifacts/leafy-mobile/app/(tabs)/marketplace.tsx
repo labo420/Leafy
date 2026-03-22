@@ -244,7 +244,7 @@ export default function WalletScreen() {
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
         <ScrollView
-          style={[styles.container, { backgroundColor: "rgba(77,184,71,0.08)" }]}
+          style={[styles.container, { backgroundColor: "rgba(77,184,71,0.12)" }]}
           contentContainerStyle={{ paddingTop: topPadding + 20, paddingBottom: bottomPad }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
