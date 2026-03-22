@@ -9,7 +9,7 @@ export function dropsToLea(drops: number): number {
 }
 
 export function leaToEur(lea: number): number {
-  return Math.round(lea * LEA_TO_EUR_RATE * 100) / 100;
+  return Math.floor(lea) * LEA_TO_EUR_RATE;
 }
 
 // Extract the Drizzle transaction type from db.transaction without using `any`

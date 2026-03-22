@@ -15,7 +15,8 @@ router.post("/wallet/withdraw", async (req, res): Promise<void> => {
 
   const { leaAmount } = req.body;
 
-  const amount = typeof leaAmount === "string" ? parseFloat(leaAmount) : leaAmount;
+  const amountRaw = typeof leaAmount === "string" ? parseFloat(leaAmount) : leaAmount;
+  const amount = Math.floor(amountRaw);
 
   if (typeof amount !== "number" || isNaN(amount) || amount <= 0) {
     res.status(400).json({ error: "Importo non valido." });
@@ -34,7 +35,7 @@ router.post("/wallet/withdraw", async (req, res): Promise<void> => {
     return;
   }
 
-  const currentBalance = parseFloat(user.leaBalance as string);
+  const currentBalance = Math.floor(parseFloat(user.leaBalance as string));
   if (amount > currentBalance) {
     res.status(400).json({ error: "Saldo $LEA insufficiente." });
     return;
@@ -45,14 +46,14 @@ router.post("/wallet/withdraw", async (req, res): Promise<void> => {
   const withdrawal = await db.transaction(async (tx) => {
     await tx
       .update(usersTable)
-      .set({ leaBalance: sql`lea_balance - ${amount.toFixed(2)}::numeric` })
+      .set({ leaBalance: sql`lea_balance - ${amount}::numeric` })
       .where(eq(usersTable.id, user.id));
 
     const [record] = await tx
       .insert(leaWithdrawalsTable)
       .values({
         userId: user.id,
-        leaAmount: amount.toFixed(2),
+        leaAmount: String(amount),
         euroAmount: euroAmount.toFixed(2),
         status: "pending",
       })

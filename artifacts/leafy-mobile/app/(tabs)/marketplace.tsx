@@ -78,7 +78,7 @@ export default function WalletScreen() {
   const topPadding = Platform.OS === "web" ? 67 : 0;
   const bottomPad = Platform.OS === "web" ? 34 + 84 : 100 + insets.bottom;
 
-  const leaAmount = parseFloat(leaInput.replace(",", ".")) || 0;
+  const leaAmount = Math.floor(parseFloat(leaInput.replace(",", ".")) || 0);
   const euroAmount = leaAmount * LEA_TO_EUR;
   const minLea = hasLeafyGold ? 500 : 1000;
 
@@ -391,7 +391,7 @@ export default function WalletScreen() {
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={[styles.historyAmount, { color: theme.text }]}>
-                          -{parseFloat(w.leaAmount).toLocaleString("it-IT", { minimumFractionDigits: 2 })} $LEA → {parseFloat(w.euroAmount).toLocaleString("it-IT", { minimumFractionDigits: 2 })} €
+                          -{Math.floor(parseFloat(w.leaAmount)).toLocaleString("it-IT")} $LEA → {parseFloat(w.euroAmount).toLocaleString("it-IT", { minimumFractionDigits: 2 })} €
                         </Text>
                         <Text style={[styles.historyDate, { color: theme.textMuted }]}>{date}</Text>
                       </View>
