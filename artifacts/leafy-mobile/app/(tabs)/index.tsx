@@ -348,7 +348,7 @@ function LevelProgressRing({
   return (
     <Animated.View style={[ringStyles.outerContainer, containerAnimStyle]}>
       <View style={ringStyles.container}>
-        <Svg width={RING_SIZE} height={RING_SIZE} style={{ transform: [{ rotate: "-90deg" }] }}>
+        <Svg width={RING_SIZE} height={RING_SIZE} overflow="visible" style={{ transform: [{ rotate: "-90deg" }] }}>
           <Circle
             cx={RING_CX}
             cy={RING_CY}
