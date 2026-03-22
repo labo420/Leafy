@@ -450,6 +450,7 @@ const ringStyles = StyleSheet.create({
     height: RING_SIZE,
     alignItems: "center",
     justifyContent: "center",
+    overflow: "visible",
   },
   innerContent: {
     position: "absolute",
