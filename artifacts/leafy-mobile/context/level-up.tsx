@@ -8,6 +8,7 @@ import type { Profile } from "@workspace/api-client-react";
 import LevelUpModal from "@/components/LevelUpModal";
 
 const PREV_LEVEL_KEY_PREFIX = "leafy_prev_level:";
+const WATERING_CAN_DURATION_MS = 3200;
 
 interface LevelUpContextValue {
   checkForLevelUp: () => void;
@@ -26,6 +27,7 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
   const [toLevel, setToLevel] = useState("");
   const prevLevelRef = useRef<string | null>(null);
   const [storageReady, setStorageReady] = useState(false);
+  const levelUpTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const storageKey = user?.id ? `${PREV_LEVEL_KEY_PREFIX}${user.id}` : null;
 
@@ -53,14 +55,25 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
     const currentLevel = profile.level;
 
     if (prevLevelRef.current && prevLevelRef.current !== currentLevel && !visible) {
-      setFromLevel(prevLevelRef.current);
-      setToLevel(currentLevel);
-      setVisible(true);
+      const from = prevLevelRef.current;
+      if (levelUpTimeoutRef.current) clearTimeout(levelUpTimeoutRef.current);
+      levelUpTimeoutRef.current = setTimeout(() => {
+        setFromLevel(from);
+        setToLevel(currentLevel);
+        setVisible(true);
+        levelUpTimeoutRef.current = null;
+      }, WATERING_CAN_DURATION_MS);
     }
 
     prevLevelRef.current = currentLevel;
     AsyncStorage.setItem(storageKey, currentLevel);
   }, [profile?.level, visible, storageKey, storageReady]);
+
+  useEffect(() => {
+    return () => {
+      if (levelUpTimeoutRef.current) clearTimeout(levelUpTimeoutRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!user) return;
