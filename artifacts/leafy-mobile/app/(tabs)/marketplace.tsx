@@ -16,6 +16,7 @@ import {
   View,
 } from "react-native";
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
+import Svg, { Circle } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -49,8 +50,47 @@ function statusLabel(status: string): { label: string; color: string } {
 function formatLea(n: number): string {
   return Math.floor(n).toLocaleString("it-IT", { maximumFractionDigits: 0 });
 }
-function formatEur(n: number): string {
-  return n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+const RING_SIZE = 200;
+const STROKE_WIDTH = 14;
+const RADIUS = (RING_SIZE - STROKE_WIDTH) / 2;
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+const PAYPAL_BLUE = "#0070E0";
+
+function PayPalHeroRing({ leaBalance }: { leaBalance: number }) {
+  return (
+    <View style={styles.heroContainer}>
+      <Svg
+        width={RING_SIZE}
+        height={RING_SIZE}
+        style={{ transform: [{ rotate: "-90deg" }] }}
+      >
+        <Circle
+          cx={RING_SIZE / 2}
+          cy={RING_SIZE / 2}
+          r={RADIUS}
+          fill="none"
+          stroke="rgba(0,112,224,0.15)"
+          strokeWidth={STROKE_WIDTH}
+        />
+        <Circle
+          cx={RING_SIZE / 2}
+          cy={RING_SIZE / 2}
+          r={RADIUS}
+          fill="none"
+          stroke={PAYPAL_BLUE}
+          strokeWidth={STROKE_WIDTH}
+          strokeDasharray={`${CIRCUMFERENCE}`}
+          strokeDashoffset={0}
+          strokeLinecap="round"
+        />
+      </Svg>
+      <View style={styles.heroCenter}>
+        <Text style={styles.heroAmount}>{formatLea(leaBalance)}</Text>
+        <Text style={styles.heroLabel}>$LEA</Text>
+      </View>
+    </View>
+  );
 }
 
 export default function WalletScreen() {
@@ -60,6 +100,7 @@ export default function WalletScreen() {
   const queryClient = useQueryClient();
 
   const [showLeafyGold, setShowLeafyGold] = useState(false);
+  const [showWithdrawForm, setShowWithdrawForm] = useState(false);
   const [leaInput, setLeaInput] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -89,7 +130,7 @@ export default function WalletScreen() {
     } else if (leaAmount > leaBalance) {
       validationError = "Saldo $LEA insufficiente.";
     } else if (leaAmount < minLea) {
-      validationError = `Importo minimo: ${minLea.toLocaleString("it-IT")} $LEA (${formatEur(minLea * LEA_TO_EUR)} €)${hasLeafyGold ? " con Leafy Gold" : ""}.`;
+      validationError = `Importo minimo: ${minLea.toLocaleString("it-IT")} $LEA${hasLeafyGold ? " con Leafy Gold" : ""}.`;
     }
   }
 
@@ -108,11 +149,12 @@ export default function WalletScreen() {
         method: "POST",
         body: JSON.stringify({ leaAmount }),
       }),
-    onSuccess: (data) => {
+    onSuccess: () => {
       setShowConfirm(false);
       setLeaInput("");
+      setShowWithdrawForm(false);
       setSubmitError(null);
-      setSuccessMsg(`Prelievo di ${formatEur(parseFloat(data.euroAmount))} € registrato! Elaborazione entro 24h.`);
+      setSuccessMsg(`Prelievo di ${formatLea(leaAmount)} $LEA registrato! Elaborazione entro 24h.`);
       refreshBalances();
       queryClient.invalidateQueries({ queryKey: ["wallet-withdrawals"] });
       setTimeout(() => setSuccessMsg(null), 5000);
@@ -123,19 +165,25 @@ export default function WalletScreen() {
     },
   });
 
-  const handleConvert = useCallback(() => {
+  const handlePayPalPress = useCallback(() => {
     if (!hasLeafyGold) {
       setShowLeafyGold(true);
       return;
     }
-    if (!canConvert) return;
+    setShowWithdrawForm((v) => !v);
+    setLeaInput("");
     setSubmitError(null);
-    setShowConfirm(true);
-  }, [hasLeafyGold, canConvert]);
+  }, [hasLeafyGold]);
 
   const handleMax = useCallback(() => {
     setLeaInput(String(Math.floor(leaBalance)));
   }, [leaBalance]);
+
+  const handleConfirmPress = useCallback(() => {
+    if (!canConvert) return;
+    setSubmitError(null);
+    setShowConfirm(true);
+  }, [canConvert]);
 
   if (!user) {
     return (
@@ -157,21 +205,10 @@ export default function WalletScreen() {
             <Text style={[styles.confirmTitle, { color: theme.text }]}>Conferma prelievo</Text>
 
             <View style={styles.confirmSummary}>
-              <View style={[styles.confirmPanel, { backgroundColor: theme.primaryLight, borderColor: theme.leaf }]}>
-                <Text style={[styles.confirmPanelLabel, { color: theme.primary }]}>Paghi</Text>
-                <Text style={[styles.confirmPanelAmount, { color: theme.primaryDeep }]}>
+              <View style={[styles.confirmPanel, { backgroundColor: "rgba(0,112,224,0.08)", borderColor: "rgba(0,112,224,0.25)" }]}>
+                <Text style={[styles.confirmPanelLabel, { color: PAYPAL_BLUE }]}>Prelevi</Text>
+                <Text style={[styles.confirmPanelAmount, { color: theme.text }]}>
                   {formatLea(leaAmount)} <Text style={{ fontSize: 14 }}>$LEA</Text>
-                </Text>
-              </View>
-
-              <View style={styles.confirmArrow}>
-                <Feather name="arrow-down" size={20} color={theme.primary} />
-              </View>
-
-              <View style={[styles.confirmPanel, { backgroundColor: theme.primaryLight, borderColor: theme.leaf }]}>
-                <Text style={[styles.confirmPanelLabel, { color: theme.primary }]}>Ricevi</Text>
-                <Text style={[styles.confirmPanelAmount, { color: theme.primaryDeep }]}>
-                  {formatEur(euroAmount)} <Text style={{ fontSize: 14 }}>€</Text>
                 </Text>
               </View>
             </View>
@@ -190,7 +227,7 @@ export default function WalletScreen() {
               </Pressable>
 
               <Pressable
-                style={[styles.confirmBtnConfirm, { backgroundColor: theme.primary }]}
+                style={[styles.confirmBtnConfirm, { backgroundColor: PAYPAL_BLUE }]}
                 onPress={() => submitWithdrawal()}
                 disabled={isSubmitting}
               >
@@ -215,146 +252,111 @@ export default function WalletScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={theme.primary}
-              colors={[theme.primary]}
+              tintColor={PAYPAL_BLUE}
+              colors={[PAYPAL_BLUE]}
             />
           }
         >
           <View style={styles.content}>
-            <Animated.View entering={FadeInDown.delay(80).springify()} style={[styles.balanceCard, { backgroundColor: theme.primaryLight, borderColor: theme.leaf }]}>
-              <Text style={[styles.balanceLabel, { color: theme.primary }]}>Mio Wallet</Text>
-
-              <View style={styles.balanceRow}>
-                <Text style={[styles.balanceAmount, { color: theme.primaryDeep }]}>{formatLea(leaBalance)}</Text>
-                <Text style={[styles.balanceCurrency, { color: theme.primary }]}>$LEA</Text>
-              </View>
-
-              <Text style={[styles.balanceEuro, { color: theme.textSecondary }]}>≈ {formatEur(leaBalance * LEA_TO_EUR)} €</Text>
+            <Animated.View entering={FadeInDown.delay(60).springify()} style={styles.heroSection}>
+              <PayPalHeroRing leaBalance={leaBalance} />
 
               {hasLeafyGold && (
-                <View style={styles.bpActiveBadge}>
-                  <Image source={require("@/assets/images/leafy-gold-icon.png")} style={{ width: 16, height: 16 }} resizeMode="contain" />
-                  <Text style={styles.bpActiveBadgeText}>Leafy Gold attivo · $LEA x2</Text>
+                <View style={styles.goldBadge}>
+                  <Image source={require("@/assets/images/leafy-gold-icon.png")} style={{ width: 14, height: 14 }} resizeMode="contain" />
+                  <Text style={styles.goldBadgeText}>Leafy Gold · $LEA x2</Text>
                 </View>
               )}
             </Animated.View>
 
-            <Animated.View entering={FadeInDown.delay(140).springify()} style={[styles.swapCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-              <Text style={[styles.swapTitle, { color: theme.text }]}>Converti $LEA in €</Text>
-              <Text style={[styles.swapRate, { color: theme.textSecondary }]}>Tasso: 1 $LEA = 0,01 €</Text>
+            <Animated.View entering={FadeInDown.delay(120).springify()}>
+              <Pressable
+                style={({ pressed }) => [styles.paypalBtn, { opacity: pressed ? 0.88 : 1 }]}
+                onPress={handlePayPalPress}
+              >
+                <Text style={styles.paypalBtnTextPay}>Pay</Text>
+                <Text style={styles.paypalBtnTextPal}>Pal</Text>
+                <Text style={styles.paypalBtnDivider}> · </Text>
+                <Text style={styles.paypalBtnAction}>Preleva su PayPal</Text>
+                <Feather name="arrow-up-right" size={18} color="#fff" style={{ marginLeft: 4 }} />
+              </Pressable>
+            </Animated.View>
 
-              <View style={[styles.swapPanel, { backgroundColor: theme.background, borderColor: theme.border }]}>
-                <View style={styles.swapPanelHeader}>
-                  <Text style={[styles.swapPanelLabel, { color: theme.textSecondary }]}>Paghi</Text>
-                  <Pressable style={[styles.maxBtn, { backgroundColor: theme.primaryLight }]} onPress={handleMax}>
-                    <Text style={[styles.maxBtnText, { color: theme.primary }]}>MAX</Text>
-                  </Pressable>
-                </View>
-                <View style={styles.swapInputRow}>
+            {showWithdrawForm && (
+              <Animated.View entering={FadeIn.duration(220)} style={[styles.withdrawCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                <View style={styles.withdrawInputRow}>
                   <TextInput
-                    style={[styles.swapInput, { color: theme.text }]}
+                    style={[styles.withdrawInput, { color: theme.text }]}
                     value={leaInput}
                     onChangeText={(v) => {
                       setLeaInput(v.replace(/[^0-9,\.]/g, ""));
                       setSubmitError(null);
                     }}
-                    placeholder="0,00"
+                    placeholder="0"
                     placeholderTextColor={theme.textMuted}
                     keyboardType="decimal-pad"
                     returnKeyType="done"
+                    autoFocus
                   />
-                  <View style={[styles.currencyBadge, { backgroundColor: theme.primaryLight }]}>
-                    <Text style={[styles.currencyBadgeText, { color: theme.primary }]}>$LEA</Text>
+                  <View style={[styles.leaBadge, { backgroundColor: "rgba(0,112,224,0.10)" }]}>
+                    <Text style={[styles.leaBadgeText, { color: PAYPAL_BLUE }]}>$LEA</Text>
                   </View>
+                  <Pressable style={[styles.maxBtn, { backgroundColor: "rgba(0,112,224,0.10)" }]} onPress={handleMax}>
+                    <Text style={[styles.maxBtnText, { color: PAYPAL_BLUE }]}>MAX</Text>
+                  </Pressable>
                 </View>
-                <Text style={[styles.swapBalance, { color: theme.textMuted }]}>
-                  Disponibile: {formatLea(leaBalance)} $LEA
+
+                <Text style={[styles.withdrawAvail, { color: theme.textMuted }]}>
+                  Disponibile: {formatLea(leaBalance)} $LEA · Min: {minLea.toLocaleString("it-IT")} $LEA
                 </Text>
-              </View>
 
-              <View style={styles.swapArrowWrap}>
-                <View style={[styles.swapArrowCircle, { backgroundColor: theme.primaryLight, borderColor: theme.leaf }]}>
-                  <Feather name="arrow-down" size={18} color={theme.primary} />
-                </View>
-              </View>
-
-              <View style={[styles.swapPanel, { backgroundColor: theme.background, borderColor: theme.border }]}>
-                <Text style={[styles.swapPanelLabel, { color: theme.textSecondary }]}>Ricevi</Text>
-                <View style={styles.swapInputRow}>
-                  <Text style={[styles.swapOutputAmount, { color: leaAmount > 0 ? theme.primaryDeep : theme.textMuted }]}>
-                    {leaAmount > 0 ? formatEur(euroAmount) : "0,00"}
-                  </Text>
-                  <View style={[styles.currencyBadge, { backgroundColor: theme.primaryLight }]}>
-                    <Text style={[styles.currencyBadgeText, { color: theme.primary }]}>€</Text>
-                  </View>
-                </View>
-              </View>
-
-              {(validationError || submitError) && (
-                <Animated.View entering={FadeIn} style={[styles.errorBox, { backgroundColor: "#FEE2E2", borderColor: "#FCA5A5" }]}>
-                  <Feather name="alert-circle" size={14} color="#DC2626" />
-                  <Text style={styles.errorText}>{validationError ?? submitError}</Text>
-                </Animated.View>
-              )}
-
-              {successMsg && (
-                <Animated.View entering={FadeIn} style={[styles.successBox, { backgroundColor: "#DCFCE7", borderColor: "#86EFAC" }]}>
-                  <Feather name="check-circle" size={14} color="#16A34A" />
-                  <Text style={styles.successText}>{successMsg}</Text>
-                </Animated.View>
-              )}
-
-              <Pressable
-                style={({ pressed }) => [
-                  styles.convertBtn,
-                  {
-                    backgroundColor:
-                      !hasLeafyGold
-                        ? theme.textSecondary
-                        : canConvert
-                        ? theme.primary
-                        : theme.textMuted,
-                    opacity: pressed ? 0.85 : 1,
-                  },
-                ]}
-                onPress={handleConvert}
-                disabled={hasLeafyGold && !canConvert}
-              >
-                {!hasLeafyGold ? (
-                  <>
-                    <Feather name="lock" size={16} color="#fff" />
-                    <Text style={styles.convertBtnText}>Sblocca con Leafy Gold</Text>
-                  </>
-                ) : (
-                  <>
-                    <Feather name="repeat" size={16} color="#fff" />
-                    <Text style={styles.convertBtnText}>Converti in €</Text>
-                  </>
+                {(validationError || submitError) && (
+                  <Animated.View entering={FadeIn} style={[styles.errorBox, { backgroundColor: "#FEE2E2", borderColor: "#FCA5A5" }]}>
+                    <Feather name="alert-circle" size={14} color="#DC2626" />
+                    <Text style={styles.errorText}>{validationError ?? submitError}</Text>
+                  </Animated.View>
                 )}
-              </Pressable>
 
-              {!hasLeafyGold && (
-                <Text style={[styles.swapLockNote, { color: theme.textMuted }]}>
-                  I prelievi richiedono Leafy Gold attivo.
-                </Text>
-              )}
-              {hasLeafyGold && (
-                <Text style={[styles.swapLockNote, { color: theme.textMuted }]}>
-                  Minimo: {minLea.toLocaleString("it-IT")} $LEA · Elaborazione entro 24h
-                </Text>
-              )}
-            </Animated.View>
+                {successMsg && (
+                  <Animated.View entering={FadeIn} style={[styles.successBox, { backgroundColor: "#DCFCE7", borderColor: "#86EFAC" }]}>
+                    <Feather name="check-circle" size={14} color="#16A34A" />
+                    <Text style={styles.successText}>{successMsg}</Text>
+                  </Animated.View>
+                )}
+
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.confirmWithdrawBtn,
+                    {
+                      backgroundColor: canConvert ? PAYPAL_BLUE : theme.textMuted,
+                      opacity: pressed ? 0.85 : 1,
+                    },
+                  ]}
+                  onPress={handleConfirmPress}
+                  disabled={!canConvert}
+                >
+                  <Text style={styles.confirmWithdrawBtnText}>Conferma prelievo</Text>
+                </Pressable>
+              </Animated.View>
+            )}
+
+            {successMsg && !showWithdrawForm && (
+              <Animated.View entering={FadeIn} style={[styles.successBox, { backgroundColor: "#DCFCE7", borderColor: "#86EFAC" }]}>
+                <Feather name="check-circle" size={14} color="#16A34A" />
+                <Text style={styles.successText}>{successMsg}</Text>
+              </Animated.View>
+            )}
 
             {!hasLeafyGold && (
-              <Animated.View entering={FadeInDown.delay(200).springify()}>
-                <Pressable style={styles.bpPromoCard} onPress={() => setShowBattlePass(true)}>
+              <Animated.View entering={FadeInDown.delay(180).springify()}>
+                <Pressable style={styles.bpPromoCard} onPress={() => setShowLeafyGold(true)}>
                   <LinearGradient colors={["#0f2a1e", "#1a4a2e"]} style={StyleSheet.absoluteFill} />
                   <View style={styles.bpPromoLeft}>
                     <View style={styles.bpPromoIconWrap}>
                       <Image source={require("@/assets/images/leafy-gold-icon.png")} style={{ width: 28, height: 28 }} resizeMode="contain" />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.bpPromoTitle}>Leafy Gold · 0,89€/mese</Text>
+                      <Text style={styles.bpPromoTitle}>Leafy Gold</Text>
                       <Text style={styles.bpPromoSub}>Raddoppia i $LEA · Sblocca i prelievi</Text>
                     </View>
                   </View>
@@ -366,11 +368,11 @@ export default function WalletScreen() {
             )}
 
             {user && (
-              <Animated.View entering={FadeInDown.delay(260).springify()} style={[styles.historySection, { backgroundColor: theme.card, borderColor: theme.border }]}>
+              <Animated.View entering={FadeInDown.delay(240).springify()} style={[styles.historySection, { backgroundColor: theme.card, borderColor: theme.border }]}>
                 <Text style={[styles.historySectionTitle, { color: theme.text }]}>Prelievi recenti</Text>
 
                 {loadingWithdrawals && (
-                  <ActivityIndicator color={theme.primary} style={{ marginVertical: 16 }} />
+                  <ActivityIndicator color={PAYPAL_BLUE} style={{ marginVertical: 16 }} />
                 )}
 
                 {!loadingWithdrawals && (!withdrawals || withdrawals.length === 0) && (
@@ -386,12 +388,12 @@ export default function WalletScreen() {
                   });
                   return (
                     <View key={w.id} style={[styles.historyRow, { borderBottomColor: theme.border }]}>
-                      <View style={[styles.historyIconWrap, { backgroundColor: theme.primaryLight }]}>
-                        <Feather name="arrow-up-right" size={16} color={theme.primary} />
+                      <View style={[styles.historyIconWrap, { backgroundColor: "rgba(0,112,224,0.10)" }]}>
+                        <Feather name="arrow-up-right" size={16} color={PAYPAL_BLUE} />
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={[styles.historyAmount, { color: theme.text }]}>
-                          -{Math.floor(parseFloat(w.leaAmount)).toLocaleString("it-IT")} $LEA → {parseFloat(w.euroAmount).toLocaleString("it-IT", { minimumFractionDigits: 2 })} €
+                          -{Math.floor(parseFloat(w.leaAmount)).toLocaleString("it-IT")} $LEA
                         </Text>
                         <Text style={[styles.historyDate, { color: theme.textMuted }]}>{date}</Text>
                       </View>
@@ -404,12 +406,11 @@ export default function WalletScreen() {
               </Animated.View>
             )}
 
-            <Animated.View entering={FadeInDown.delay(340).springify()} style={[styles.infoSection, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <Animated.View entering={FadeInDown.delay(300).springify()} style={[styles.infoSection, { backgroundColor: theme.card, borderColor: theme.border }]}>
               <Text style={[styles.infoSectionTitle, { color: theme.text }]}>Come funziona $LEA</Text>
               {[
                 { icon: "camera" as const, text: "Scansiona uno scontrino e guadagna drops" },
                 { icon: "maximize" as const, text: "Scansiona i barcode per ottenere $LEA extra" },
-                { icon: "dollar-sign" as const, text: "1 drop = 0,01€ in $LEA" },
                 { icon: "zap" as const, text: "Con Leafy Gold ogni $LEA è raddoppiato (x2)" },
               ].map((item, i) => (
                 <View key={i} style={styles.infoRow}>
@@ -453,40 +454,36 @@ const styles = StyleSheet.create({
     gap: 16,
   },
 
-  balanceCard: {
-    borderRadius: 24,
-    borderWidth: 1,
-    padding: 24,
-    gap: 4,
+  heroSection: {
+    alignItems: "center",
+    paddingVertical: 12,
+    gap: 12,
   },
-  balanceLabel: {
-    fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    marginBottom: 8,
+  heroContainer: {
+    width: RING_SIZE,
+    height: RING_SIZE,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  balanceRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 8,
+  heroCenter: {
+    position: "absolute",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  balanceAmount: {
-    fontSize: 52,
+  heroAmount: {
+    fontSize: 40,
     fontFamily: "DMSans_700Bold",
-    lineHeight: 58,
+    color: "#fff",
+    lineHeight: 46,
   },
-  balanceCurrency: {
-    fontSize: 20,
-    fontFamily: "Inter_700Bold",
-    marginBottom: 6,
-  },
-  balanceEuro: {
-    fontSize: 16,
-    fontFamily: "Inter_400Regular",
+  heroLabel: {
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+    color: "rgba(255,255,255,0.55)",
     marginTop: 2,
   },
-  bpActiveBadge: {
+
+  goldBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
@@ -494,100 +491,83 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 5,
-    alignSelf: "flex-start",
-    marginTop: 10,
   },
-  bpActiveBadgeText: {
+  goldBadgeText: {
     fontSize: 12,
     fontFamily: "Inter_700Bold",
     color: "#1a4a2e",
   },
 
-  swapCard: {
-    borderRadius: 24,
+  paypalBtn: {
+    backgroundColor: PAYPAL_BLUE,
+    borderRadius: 16,
+    paddingVertical: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 0,
+  },
+  paypalBtnTextPay: {
+    fontSize: 16,
+    fontFamily: "Inter_400Regular",
+    color: "#fff",
+  },
+  paypalBtnTextPal: {
+    fontSize: 16,
+    fontFamily: "Inter_700Bold",
+    color: "#fff",
+  },
+  paypalBtnDivider: {
+    fontSize: 16,
+    fontFamily: "Inter_400Regular",
+    color: "rgba(255,255,255,0.6)",
+    marginHorizontal: 4,
+  },
+  paypalBtnAction: {
+    fontSize: 16,
+    fontFamily: "Inter_600SemiBold",
+    color: "#fff",
+  },
+
+  withdrawCard: {
+    borderRadius: 20,
     borderWidth: 1,
     padding: 20,
     gap: 12,
   },
-  swapTitle: {
-    fontSize: 16,
-    fontFamily: "Inter_700Bold",
-    marginBottom: 2,
-  },
-  swapRate: {
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
-    marginBottom: 4,
-  },
-  swapPanel: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 16,
-    gap: 8,
-  },
-  swapPanelHeader: {
+  withdrawInputRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: 10,
   },
-  swapPanelLabel: {
-    fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
+  withdrawInput: {
+    flex: 1,
+    fontSize: 32,
+    fontFamily: "DMSans_700Bold",
+    padding: 0,
+    minHeight: 40,
+  },
+  leaBadge: {
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  leaBadgeText: {
+    fontSize: 13,
+    fontFamily: "Inter_700Bold",
   },
   maxBtn: {
     borderRadius: 8,
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 5,
   },
   maxBtnText: {
     fontSize: 11,
     fontFamily: "Inter_700Bold",
   },
-  swapInputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  swapInput: {
-    flex: 1,
-    fontSize: 28,
-    fontFamily: "DMSans_700Bold",
-    padding: 0,
-    minHeight: 36,
-  },
-  swapOutputAmount: {
-    flex: 1,
-    fontSize: 28,
-    fontFamily: "DMSans_700Bold",
-  },
-  currencyBadge: {
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  currencyBadgeText: {
-    fontSize: 13,
-    fontFamily: "Inter_700Bold",
-  },
-  swapBalance: {
+  withdrawAvail: {
     fontSize: 12,
     fontFamily: "Inter_400Regular",
-  },
-
-  swapArrowWrap: {
-    alignItems: "center",
-    marginVertical: -4,
-    zIndex: 1,
-  },
-  swapArrowCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
   },
 
   errorBox: {
@@ -621,25 +601,18 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
 
-  convertBtn: {
+  confirmWithdrawBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    borderRadius: 16,
-    paddingVertical: 16,
+    borderRadius: 14,
+    paddingVertical: 15,
     marginTop: 4,
   },
-  convertBtnText: {
+  confirmWithdrawBtnText: {
     fontSize: 16,
     fontFamily: "Inter_700Bold",
     color: "#fff",
-  },
-  swapLockNote: {
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
-    textAlign: "center",
-    marginTop: -4,
   },
 
   bpPromoCard: {
@@ -813,10 +786,6 @@ const styles = StyleSheet.create({
   confirmPanelAmount: {
     fontSize: 26,
     fontFamily: "DMSans_700Bold",
-  },
-  confirmArrow: {
-    alignItems: "center",
-    paddingVertical: 4,
   },
   confirmNote: {
     fontSize: 13,
