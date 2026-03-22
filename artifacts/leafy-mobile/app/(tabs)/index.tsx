@@ -1009,8 +1009,8 @@ export default function HomeScreen() {
         <View style={streakStyles.stampFooter}>
           <Text style={streakStyles.stampFooterDay}>Giorno {loginStreak}/7</Text>
           <View style={streakStyles.stampFooterReward}>
+            <Text style={streakStyles.stampFooterRewardText}>+250</Text>
             <XpIcon size={15} />
-            <Text style={streakStyles.stampFooterRewardText}>+250 gocce</Text>
           </View>
         </View>
       </Animated.View>
@@ -1840,7 +1840,7 @@ const streakStyles = StyleSheet.create({
     marginTop: 8,
     borderRadius: 16,
     padding: 14,
-    backgroundColor: "#1C0A00",
+    backgroundColor: "#3A1500",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
