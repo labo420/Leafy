@@ -243,7 +243,63 @@ function LevelProgressRing({
 
     const newIconScale = ICON_MIN_SCALE + (progress / 100) * (ICON_MAX_SCALE - ICON_MIN_SCALE);
 
-    // Level evolution animation
+    // ── Branch A: livello cambiato E nuovi drops ──
+    // Mostra prima l'annafiatoio, poi anima il badge livello dopo 2700ms
+    if (prevLev !== level && points > prev && prev > 0) {
+      if (progTimeoutRef.current) clearTimeout(progTimeoutRef.current);
+      if (hapticTimeoutRef.current) clearTimeout(hapticTimeoutRef.current);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+
+      const oldP = displayProgressRef.current;
+      const newP = progress;
+
+      // Watering can: fade in (450ms), hold (1750ms), fade out (500ms) → 2700ms totali
+      canOpacity.value = withSequence(
+        withTiming(1, { duration: 450 }),
+        withTiming(1, { duration: 1750 }),
+        withTiming(0, { duration: 500 }),
+      );
+      // Can inclina 35° per versare poi ritorna → 2200ms totali
+      canRotate.value = withSequence(
+        withTiming(0, { duration: 100 }),
+        withTiming(35, { duration: 750, easing: Easing.out(Easing.quad) }),
+        withTiming(35, { duration: 700 }),
+        withTiming(0, { duration: 650, easing: Easing.inOut(Easing.quad) }),
+      );
+      // Goccia: attesa 950ms, appare 120ms, cade 900ms, svanisce 300ms → 2270ms
+      dropOpacity.value = withSequence(
+        withTiming(0, { duration: 950 }),
+        withTiming(1, { duration: 120 }),
+        withTiming(1, { duration: 900 }),
+        withTiming(0, { duration: 300 }),
+      );
+      dropY.value = withSequence(
+        withTiming(0, { duration: 950 }),
+        withTiming(DROP_TRAVEL, { duration: 1020, easing: Easing.in(Easing.quad) }),
+        withTiming(0, { duration: 0 }),
+      );
+
+      // Haptic e progress bar all'atterraggio goccia (1970ms)
+      hapticTimeoutRef.current = setTimeout(() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }, 1970);
+      progTimeoutRef.current = setTimeout(() => animateProgress(oldP, newP), 1970);
+
+      // Badge level-change animation DOPO annafiatoio (2700ms)
+      badgeOpacity.value = withDelay(2700, withSequence(
+        withTiming(0, { duration: 220, easing: Easing.out(Easing.quad) }),
+        withDelay(60, withTiming(1, { duration: 380, easing: Easing.out(Easing.quad) })),
+      ));
+      badgeVScale.value = withDelay(2700, withSequence(
+        withTiming(0.45, { duration: 220, easing: Easing.out(Easing.quad) }),
+        withDelay(60, withSpring(1, { damping: 9, stiffness: 130 })),
+      ));
+      iconScale.value = withDelay(2980, withSpring(newIconScale, { damping: 10, stiffness: 90 }));
+      return;
+    }
+
+    // ── Branch B: livello cambiato senza nuovi drops (es. ripristino app) ──
+    // Animazione badge immediata, nessun annafiatoio
     if (prevLev !== level) {
       displayProgressRef.current = progress;
       setDisplayProgress(progress);
@@ -259,7 +315,7 @@ function LevelProgressRing({
       return;
     }
 
-    // Drops gain: watering animation
+    // ── Branch C: solo nuovi drops, nessun cambio livello ──
     if (points > prev && prev > 0) {
       // Cancel any in-flight animations
       if (progTimeoutRef.current) clearTimeout(progTimeoutRef.current);
@@ -309,13 +365,12 @@ function LevelProgressRing({
         withSpring(newIconScale, { damping: 6, stiffness: 130, mass: 0.8 }),
       );
 
-
-      // 4. Haptic tick at landing
+      // 3. Haptic tick at landing
       hapticTimeoutRef.current = setTimeout(() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }, 1970);
 
-      // 5. Progress bar fills at landing
+      // 4. Progress bar fills at landing
       progTimeoutRef.current = setTimeout(() => animateProgress(oldP, newP), 1970);
 
     } else {
