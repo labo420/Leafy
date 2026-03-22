@@ -426,7 +426,7 @@ export default function ScanScreen() {
               <View style={styles.leaSecondaryRow}>
                 <LeaIcon size={20} />
                 <Text style={[styles.leaSecondaryText, { color: theme.textSecondary }]}>
-                  +{(scanResult.leaEarned ?? 0).toFixed(2)} $LEA guadagnati
+                  +{Math.floor(scanResult.leaEarned ?? 0)} $LEA guadagnati
                 </Text>
                 {hasLeafyGold && (
                   <View style={styles.x2Badge}>

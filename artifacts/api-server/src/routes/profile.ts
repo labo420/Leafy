@@ -100,7 +100,7 @@ router.get("/profile", async (req, res): Promise<void> => {
 
   const userDrops = user.drops ?? user.totalPoints;
   const { level, nextLevelPoints, progressPercent } = calculateLevel(userDrops);
-  const leaBalance = parseFloat(String(user.leaBalance ?? "0"));
+  const leaBalance = Math.floor(parseFloat(String(user.leaBalance ?? "0")));
 
   const receipts = await db.select().from(receiptsTable).where(eq(receiptsTable.userId, user.id));
   const categories = [...new Set(receipts.flatMap(r => r.categories))];

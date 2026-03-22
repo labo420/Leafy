@@ -252,7 +252,7 @@ export default function Profile() {
               </div>
               <div className="flex-1 bg-green-50 rounded-2xl p-3 text-center">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">$LEA</p>
-                <p className="text-xl font-bold text-green-700">{(p.leaBalance ?? 0).toFixed(2)}€</p>
+                <p className="text-xl font-bold text-green-700">{Math.floor(p.leaBalance ?? 0)}€</p>
               </div>
             </div>
           </CardContent>

@@ -69,7 +69,7 @@ function BalanceBar() {
         <View style={styles.balanceChip}>
           <LeaIcon size={16} />
           <Text style={[styles.balanceChipLeaLabel, { fontSize: 12 }]}>LEA</Text>
-          <Text style={[styles.balanceChipValue, { fontSize: 32 }]}>{leaBalance.toFixed(2)}</Text>
+          <Text style={[styles.balanceChipValue, { fontSize: 32 }]}>{Math.floor(leaBalance)}</Text>
         </View>
       </View>
     </View>

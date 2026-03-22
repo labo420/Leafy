@@ -224,7 +224,7 @@ router.post("/admin/user/:email/add-lea", requireAdmin, async (req, res): Promis
     return;
   }
 
-  const newBalance = (user.leaBalance ?? 0) + amount;
+  const newBalance = Math.floor((parseFloat(String(user.leaBalance ?? "0"))) + amount);
   const [updated] = await db
     .update(usersTable)
     .set({ leaBalance: newBalance })

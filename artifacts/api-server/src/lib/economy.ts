@@ -5,7 +5,7 @@ export const DROPS_TO_LEA_RATE = 0.01;
 export const LEA_TO_EUR_RATE = 1.0;
 
 export function dropsToLea(drops: number): number {
-  return Math.round(drops * DROPS_TO_LEA_RATE * 100) / 100;
+  return Math.floor(drops * DROPS_TO_LEA_RATE);
 }
 
 export function leaToEur(lea: number): number {

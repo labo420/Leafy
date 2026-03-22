@@ -59,7 +59,7 @@ export default function Home() {
             <span className="text-sm font-bold text-primary">{drops.toLocaleString("it-IT")}</span>
           </div>
           <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 rounded-full px-3 py-1.5">
-            <span className="text-sm font-bold text-green-700">{lea.toFixed(2)}</span>
+            <span className="text-sm font-bold text-green-700">{Math.floor(lea)}</span>
             <span className="text-[10px] font-bold text-green-600 tracking-wide">$LEA</span>
           </div>
           <Link href="/profilo" className="block">

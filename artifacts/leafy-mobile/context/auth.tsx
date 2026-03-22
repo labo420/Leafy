@@ -116,7 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         STORAGE_KEYS.hasLeafyGold,
       ]);
       setDrops(parseFloat(vals[0][1] ?? "0") || 0);
-      setLeaBalance(parseFloat(vals[1][1] ?? "0") || 0);
+      setLeaBalance(Math.floor(parseFloat(vals[1][1] ?? "0") || 0));
       setHasLeafyGold(vals[2][1] === "1");
     } catch {}
   };
@@ -128,9 +128,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (res.ok) {
         const data = await res.json();
         const dropsVal = data.drops ?? 0;
-        const leaVal = typeof data.leaBalance === "string"
+        const leaVal = Math.floor(typeof data.leaBalance === "string"
           ? parseFloat(data.leaBalance)
-          : (data.leaBalance ?? 0);
+          : (data.leaBalance ?? 0));
         const lgVal = data.hasLeafyGold ?? false;
         setDrops(dropsVal);
         setLeaBalance(leaVal);

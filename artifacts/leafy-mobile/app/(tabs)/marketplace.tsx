@@ -47,7 +47,7 @@ function statusLabel(status: string): { label: string; color: string } {
 }
 
 function formatLea(n: number): string {
-  return n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return Math.floor(n).toLocaleString("it-IT", { maximumFractionDigits: 0 });
 }
 function formatEur(n: number): string {
   return n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -134,7 +134,7 @@ export default function WalletScreen() {
   }, [hasLeafyGold, canConvert]);
 
   const handleMax = useCallback(() => {
-    setLeaInput(leaBalance.toFixed(2).replace(".", ","));
+    setLeaInput(String(Math.floor(leaBalance)));
   }, [leaBalance]);
 
   if (!user) {

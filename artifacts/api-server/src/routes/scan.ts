@@ -237,7 +237,7 @@ router.post("/scan", async (req, res): Promise<void> => {
 
     const bonusTotal = RECEIPT_SCAN_BONUS + (welcomeBonus ? WELCOME_BONUS : 0);
     const leaMultiplier = user.hasLeafyGold ? 2 : 1;
-    const bonusLeaDelta = Math.round(bonusTotal * DROPS_TO_LEA_RATE * leaMultiplier * 100) / 100;
+    const bonusLeaDelta = Math.floor(bonusTotal * DROPS_TO_LEA_RATE * leaMultiplier);
 
     const referralMultiplierActive = referralMultiplierRemaining > 0;
     referralDropsBonus = referralMultiplierActive ? Math.floor(bonusTotal * 0.2) : 0;
@@ -313,7 +313,7 @@ router.post("/scan", async (req, res): Promise<void> => {
   const baseDropsEarned = receiptBonusAwarded ? (RECEIPT_SCAN_BONUS + (welcomeBonus ? WELCOME_BONUS : 0)) : 0;
   const totalDropsEarned = baseDropsEarned + referralDropsBonus;
   const leaMultiplierResp = user.hasLeafyGold ? 2 : 1;
-  const totalLeaEarned = Math.round(baseDropsEarned * DROPS_TO_LEA_RATE * leaMultiplierResp * 100) / 100;
+  const totalLeaEarned = Math.floor(baseDropsEarned * DROPS_TO_LEA_RATE * leaMultiplierResp);
 
   res.json({
     receiptId: receipt.id,
@@ -329,7 +329,7 @@ router.post("/scan", async (req, res): Promise<void> => {
     leaEarned: totalLeaEarned,
     referralBonus: referralDropsBonus > 0 ? { active: true, dropsBonus: referralDropsBonus, remaining: referralMultiplierRemaining } : null,
     drops: refreshedUser?.drops ?? 0,
-    leaBalance: parseFloat(String(refreshedUser?.leaBalance ?? "0")),
+    leaBalance: Math.floor(parseFloat(String(refreshedUser?.leaBalance ?? "0"))),
     greenItemsFound: pendingProducts.map((p) => ({
       name: p.name,
       matched: false,
@@ -817,7 +817,7 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
 
     const totalPointsDelta = finalPoints + bonusVirtuosoPoints;
     const leaMultiplierBarcode = user.hasLeafyGold ? 2 : 1;
-    const leaDelta = Math.round(totalPointsDelta * DROPS_TO_LEA_RATE * leaMultiplierBarcode * 100) / 100;
+    const leaDelta = Math.floor(totalPointsDelta * DROPS_TO_LEA_RATE * leaMultiplierBarcode);
     await tx
       .update(usersTable)
       .set({
@@ -881,7 +881,7 @@ router.post("/scan/barcode/confirm", async (req, res): Promise<void> => {
   }
 
   const userDrops = updatedUser?.drops ?? updatedUser?.totalPoints ?? 0;
-  const userLeaBalance = parseFloat(String(updatedUser?.leaBalance ?? "0"));
+  const userLeaBalance = Math.floor(parseFloat(String(updatedUser?.leaBalance ?? "0")));
   const level = calculateLevel(userDrops);
 
   const kitResult = await checkKitProgress(user.id, product.category).catch(() => null);
