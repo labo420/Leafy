@@ -380,25 +380,12 @@ function LevelProgressRing({
               fill={sweepColor(displayProgress / 100)}
             />
           )}
-          {/* Outer border ring — drawn last to stay on top of progress arcs */}
-          <Circle
-            cx={RING_CX}
-            cy={RING_CY}
-            r={RING_RADIUS + RING_STROKE / 2 + 1.5}
-            stroke={borderColor}
-            strokeWidth={2}
-            fill="none"
-          />
-          {/* Inner border ring — drawn last to stay on top of progress arcs */}
-          <Circle
-            cx={RING_CX}
-            cy={RING_CY}
-            r={RING_RADIUS - RING_STROKE / 2 - 1.5}
-            stroke={borderColor}
-            strokeWidth={2}
-            fill="none"
-          />
         </Svg>
+
+        {/* Outer border ring — native View, always continuous on Android */}
+        <View style={[ringStyles.outerBorder, { borderColor }]} />
+        {/* Inner border ring — native View, always continuous on Android */}
+        <View style={[ringStyles.innerBorder, { borderColor }]} />
 
         {/* Center: badge icon + text */}
         <View style={ringStyles.innerContent}>
@@ -493,6 +480,24 @@ const ringStyles = StyleSheet.create({
     width: 18,
     height: 24,
     zIndex: 10,
+  },
+  outerBorder: {
+    position: "absolute",
+    width: 243,
+    height: 243,
+    borderRadius: 121.5,
+    borderWidth: 2,
+    top: -1.5,
+    left: -1.5,
+  },
+  innerBorder: {
+    position: "absolute",
+    width: 205,
+    height: 205,
+    borderRadius: 102.5,
+    borderWidth: 2,
+    top: 17.5,
+    left: 17.5,
   },
 });
 
