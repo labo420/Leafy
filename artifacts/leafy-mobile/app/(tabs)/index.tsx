@@ -934,9 +934,6 @@ export default function HomeScreen() {
           { backgroundColor: mode === "dark" ? "#142A20" : "#F2F9F5" }
         ]}
       >
-        <View style={[styles.decoCircle1, { backgroundColor: mode === "dark" ? "rgba(255,255,255,0.06)" : "rgba(46,107,80,0.07)" }]} />
-        <View style={[styles.decoCircle2, { backgroundColor: mode === "dark" ? "rgba(255,255,255,0.04)" : "rgba(46,107,80,0.05)" }]} />
-
         <View style={[styles.header, { paddingTop: topPadding + 12 }]}>
           <View style={styles.headerLeft}>
             <View style={styles.logoBoxHero}>
@@ -1880,25 +1877,6 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     paddingBottom: 32,
   },
-  decoCircle1: {
-    position: "absolute",
-    top: -70,
-    right: -50,
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    backgroundColor: "rgba(255,255,255,0.06)",
-  },
-  decoCircle2: {
-    position: "absolute",
-    bottom: 20,
-    left: -60,
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: "rgba(255,255,255,0.04)",
-  },
-
   header: {
     paddingHorizontal: 20,
     paddingBottom: 12,
