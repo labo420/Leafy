@@ -106,7 +106,7 @@ export function calculateImpact(greenItemsCount: number, categories: string[]): 
   };
 }
 
-export type LevelName = "Germoglio" | "Ramoscello" | "Arbusto" | "Albero" | "Foresta";
+export type LevelName = "Germoglio" | "Ramoscello" | "Arbusto" | "Albero" | "Foresta" | "Giungla";
 
 export const LEVEL_THRESHOLDS: { name: LevelName; minPoints: number }[] = [
   { name: "Germoglio", minPoints: 0 },
@@ -114,6 +114,7 @@ export const LEVEL_THRESHOLDS: { name: LevelName; minPoints: number }[] = [
   { name: "Arbusto", minPoints: 2000 },
   { name: "Albero", minPoints: 5000 },
   { name: "Foresta", minPoints: 10000 },
+  { name: "Giungla", minPoints: 25000 },
 ];
 
 export function calculateLevel(points: number): {

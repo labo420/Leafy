@@ -32,6 +32,7 @@ const BADGE_IMAGES: Record<string, ImageSourcePropType> = {
   "level-arbusto": require("@/assets/badges/level-arbusto.png"),
   "level-albero": require("@/assets/badges/level-albero.png"),
   "level-foresta": require("@/assets/badges/level-foresta.png"),
+  "level-giungla": require("@/assets/badges/level-giungla.png"),
 };
 
 const FALLBACK_IMAGE = require("@/assets/badges/badge-sprout.png");
@@ -42,6 +43,7 @@ const LEVEL_NAME_TO_KEY: Record<string, string> = {
   Arbusto: "level-arbusto",
   Albero: "level-albero",
   Foresta: "level-foresta",
+  Giungla: "level-giungla",
 };
 
 interface BadgeIcon3DProps {

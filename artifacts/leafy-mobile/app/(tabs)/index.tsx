@@ -55,6 +55,7 @@ const LEVEL_LABELS: Record<string, string> = {
   Arbusto: "Arbusto",
   Albero: "Albero",
   Foresta: "Foresta",
+  Giungla: "Giungla",
 };
 
 const LEVEL_CONFIG = [
@@ -63,6 +64,7 @@ const LEVEL_CONFIG = [
   { name: "Arbusto", emoji: "🍃", minPts: 2000, color: "#43A047", fruitColor: "#F4D03F", nodeSize: 48, imgSize: 48 },
   { name: "Albero", emoji: "🌳", minPts: 5000, color: "#2E7D32", fruitColor: "#FF8C42", nodeSize: 62, imgSize: 62 },
   { name: "Foresta", emoji: "🌲", minPts: 10000, color: "#1B5E20", fruitColor: "#E74C3C", nodeSize: 78, imgSize: 78 },
+  { name: "Giungla", emoji: "🌴", minPts: 25000, color: "#004D25", fruitColor: "#FFD700", nodeSize: 90, imgSize: 90 },
 ];
 
 
@@ -110,6 +112,7 @@ const LEVEL_MCI_ICONS: Record<string, React.ComponentProps<typeof MaterialCommun
   Arbusto: "leaf-maple",
   Albero: "tree",
   Foresta: "forest",
+  Giungla: "palm-tree",
 };
 
 const BP_PRIZES_DISPLAY = [

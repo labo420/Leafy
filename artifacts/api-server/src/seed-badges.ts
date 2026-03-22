@@ -12,7 +12,8 @@ const seedBadges = [
   { name: "Ramoscello", emoji: "🌿", category: "Livello", description: "Hai raggiunto il livello Ramoscello!", unlockHint: "Accumula 500 punti", badgeType: "lifetime" as const, targetCount: 1 },
   { name: "Arbusto", emoji: "🍃", category: "Livello", description: "Hai raggiunto il livello Arbusto!", unlockHint: "Accumula 2.000 punti", badgeType: "lifetime" as const, targetCount: 1 },
   { name: "Albero", emoji: "🌳", category: "Livello", description: "Hai raggiunto il livello Albero!", unlockHint: "Accumula 5.000 punti", badgeType: "lifetime" as const, targetCount: 1 },
-  { name: "Foresta", emoji: "🌲", category: "Livello", description: "Hai raggiunto il livello Foresta — il massimo!", unlockHint: "Accumula 10.000 punti", badgeType: "lifetime" as const, targetCount: 1 },
+  { name: "Foresta", emoji: "🌲", category: "Livello", description: "Hai raggiunto il livello Foresta!", unlockHint: "Accumula 10.000 punti", badgeType: "lifetime" as const, targetCount: 1 },
+  { name: "Giungla", emoji: "🌴", category: "Livello", description: "Hai raggiunto il livello Giungla — il massimo!", unlockHint: "Accumula 25.000 punti", badgeType: "lifetime" as const, targetCount: 1 },
   { name: "Ambasciatore", emoji: "👥", category: "Sociale", description: "Hai invitato 5 amici su Leafy", unlockHint: "Invita 5 amici con il tuo codice referral", badgeType: "lifetime" as const, targetCount: 5 },
 
   { name: "Eroe Settimanale", emoji: "🔥", category: "Streak", description: "Scansiona almeno un prodotto per 7 giorni consecutivi", unlockHint: "Usa Leafy per 7 giorni di fila", badgeType: "weekly" as const, targetCount: 7 },

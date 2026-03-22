@@ -29,6 +29,7 @@ const LEVEL_BADGE_IMAGES: Record<string, ImageSourcePropType> = {
   Arbusto: require("@/assets/badges/level-arbusto.png"),
   Albero: require("@/assets/badges/level-albero.png"),
   Foresta: require("@/assets/badges/level-foresta.png"),
+  Giungla: require("@/assets/badges/level-giungla.png"),
 };
 
 const LEVEL_EMOJI: Record<string, string> = {
@@ -37,6 +38,7 @@ const LEVEL_EMOJI: Record<string, string> = {
   Arbusto: "🍃",
   Albero: "🌳",
   Foresta: "🌲",
+  Giungla: "🌴",
 };
 
 interface LevelUpModalProps {

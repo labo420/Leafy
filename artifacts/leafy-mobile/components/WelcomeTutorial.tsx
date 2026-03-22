@@ -46,7 +46,7 @@ const STEPS = [
     iconColor: "#0D9488",
     tag: "03 / 04",
     title: "Sali di Livello",
-    body: "Da Germoglio fino a Foresta: più sali, più vantaggi sblocchi. Ogni livello apre nuovi premi esclusivi.",
+    body: "Da Germoglio fino a Giungla: più sali, più vantaggi sblocchi. Ogni livello apre nuovi premi esclusivi.",
   },
   {
     icon: "wallet" as const,

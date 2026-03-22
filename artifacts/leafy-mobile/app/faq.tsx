@@ -40,7 +40,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Come funziona il sistema livelli?",
-    a: "Ci sono 5 livelli: 🌱 Germoglio (0 drops), 🌿 Ramoscello (500 drops), 🍃 Arbusto (1.500 drops), 🌳 Albero (5.000 drops), 🌲 Foresta (10.000 drops). Ogni livello sblocca badge ed obiettivi speciali.",
+    a: "Ci sono 6 livelli: 🌱 Germoglio (0 drops), 🌿 Ramoscello (500 drops), 🍃 Arbusto (2.000 drops), 🌳 Albero (5.000 drops), 🌲 Foresta (10.000 drops), 🌴 Giungla (25.000 drops). Ogni livello sblocca badge ed obiettivi speciali.",
   },
   {
     q: "Come contatto il supporto?",

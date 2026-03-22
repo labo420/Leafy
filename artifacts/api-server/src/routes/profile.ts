@@ -25,6 +25,7 @@ const ALL_BADGES = [
   { id: "level_arbusto", name: "Livello Arbusto", emoji: "🍃", category: "Livello" },
   { id: "level_albero", name: "Livello Albero", emoji: "🌳", category: "Livello" },
   { id: "level_foresta", name: "Livello Foresta", emoji: "🌲", category: "Livello" },
+  { id: "level_giungla", name: "Livello Giungla", emoji: "🌴", category: "Livello" },
   { id: "artisan_fan", name: "Fan Artigianale", emoji: "🏺", category: "Artigianale" },
 ];
 
@@ -116,6 +117,7 @@ router.get("/profile", async (req, res): Promise<void> => {
   if (userDrops >= 2000) earnedBadges.push("level_arbusto");
   if (userDrops >= 5000) earnedBadges.push("level_albero");
   if (userDrops >= 10000) earnedBadges.push("level_foresta");
+  if (userDrops >= 25000) earnedBadges.push("level_giungla");
 
   const badges = ALL_BADGES.map(b => ({
     ...b,
