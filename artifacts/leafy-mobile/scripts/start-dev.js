@@ -43,10 +43,11 @@ const portFlag = args.indexOf("--port");
 const cliPort = portFlag !== -1 && args[portFlag + 1] ? args[portFlag + 1] : null;
 const tunnelFlag = args.indexOf("--tunnel");
 
-// Keep --tunnel flag enabled for Expo Go mobile access
-// if (tunnelFlag !== -1) {
-//   args.splice(tunnelFlag, 1);
-// }
+// Remove --tunnel flag if no ngrok auth token is configured to avoid failures
+if (tunnelFlag !== -1 && !NGROK_AUTH_TOKEN) {
+  args.splice(tunnelFlag, 1);
+  console.log("No NGROK_AUTH_TOKEN set, skipping tunnel mode.");
+}
 
 const expoPort = ARTIFACT_PORT || (cliPort ? Number(cliPort) : 8081);
 const workflowPort = cliPort ? Number(cliPort) : null;
@@ -172,6 +173,7 @@ process.on("SIGTERM", () => { intentionalExit = true; process.exit(0); });
 process.on("SIGINT", () => { intentionalExit = true; process.exit(0); });
 
 function startExpo() {
+  killStaleProcesses();
   console.log(`Starting Expo on port ${expoPort}... (attempt ${restartAttempts + 1})`);
 
   const spawnEnv = Object.assign({}, process.env);
