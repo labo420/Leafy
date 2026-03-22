@@ -1017,54 +1017,60 @@ export default function HomeScreen() {
 
       {/* ── STREAK BATTLE PASS ── */}
       {hasLeafyGold && (
-        <Animated.View entering={FadeInDown.delay(220).springify()} style={[streakStyles.card, { backgroundColor: "rgba(255,193,7,0.08)", borderLeftWidth: 4, borderLeftColor: "#FFD700" }]}>
-          <View style={streakStyles.cardHeader}>
-            <Image source={require("../../assets/images/leafy-gold-icon.png")} style={{ width: 22, height: 22 }} />
-            <Text style={[streakStyles.cardTitle, { color: theme.text, fontSize: 15 }]}>Check In Gold</Text>
-            {bpStreakCompleted
-              ? <Text style={[streakStyles.cardBadge, { color: "#F59E0B" }]}>Completata ✓</Text>
-              : <Text style={[streakStyles.cardBadge, { color: theme.textSecondary }]}>{bpStreakClaimed}/7 premi</Text>
-            }
+        <Animated.View entering={FadeInDown.delay(220).springify()} style={streakStyles.stampGoldCard}>
+          {/* Header */}
+          <View style={streakStyles.stampHeader}>
+            <Text style={streakStyles.stampGoldTitle}>⭐  CHECK IN GOLD</Text>
+            <Text style={streakStyles.stampWeekLabel}>7 giorni</Text>
           </View>
-          <View style={streakStyles.bpRow}>
+          <View style={streakStyles.stampDivider} />
+
+          {/* 7 celle timbro */}
+          <View style={streakStyles.stampRow}>
             {BP_PRIZES_DISPLAY.map((prize, i) => {
-              const claimed = i < bpStreakClaimed;
-              const isDrops = prize.type === "drops" || prize.type === "both";
-              const isLea = prize.type === "lea" || prize.type === "both";
-              const dotColor = claimed
-                ? (isLea && !isDrops ? "#FACC15" : "#A78BFA")
-                : theme.primaryLight;
+              const done = i < bpStreakClaimed;
+              const isNext = i === bpStreakClaimed && !bpStreakCompleted;
               return (
-                <View key={i} style={streakStyles.bpSlot}>
+                <View key={i} style={streakStyles.stampSlot}>
                   <View style={[
-                    streakStyles.bpDot,
-                    { backgroundColor: dotColor },
-                    !claimed && { borderWidth: 1.5, borderColor: "rgba(167,139,250,0.25)" },
+                    streakStyles.stampCell,
+                    done ? streakStyles.stampGoldCellDone
+                      : isNext ? streakStyles.stampGoldCellNext
+                      : streakStyles.stampCellFuture,
                   ]}>
-                    {claimed ? (
-                      <MaterialCommunityIcons name="check" size={11} color="#fff" />
-                    ) : prize.type === "both" ? (
-                      <MaterialCommunityIcons name="star" size={11} color="rgba(167,139,250,0.5)" />
-                    ) : isLea ? (
-                      <LeaIcon size={16} />
-                    ) : (
-                      <XpIcon size={16} />
+                    {done && (
+                      prize.type === "both" ? <Text style={{ fontSize: 14 }}>⭐</Text>
+                      : prize.type === "lea" ? <LeaIcon size={16} />
+                      : <XpIcon size={16} />
                     )}
+                    {isNext && <Text style={streakStyles.stampCellNextNum}>{i + 1}</Text>}
                   </View>
-                  <Text style={[streakStyles.bpLabel, { color: claimed ? (isLea && !isDrops ? "#FACC15" : "#A78BFA") : theme.textSecondary }]}>
-                    {prize.label}
-                  </Text>
+                  <Text style={[
+                    streakStyles.stampLabel,
+                    { color: done ? "#FFD700" : isNext ? "rgba(255,215,0,0.65)" : "rgba(255,255,255,0.18)" },
+                  ]}>G{i + 1}</Text>
                 </View>
               );
             })}
           </View>
-          <Text style={[streakStyles.cardHint, { color: theme.textSecondary }]}>
-            {bpStreakCompleted
-              ? "Ottimo lavoro! Il ciclo si azzera il 1° del mese."
-              : bpStreakClaimed === 0
-              ? "Fai check-in ogni giorno per sbloccare i premi"
-              : `Streak attuale: ${bpStreakDay} ${bpStreakDay === 1 ? "giorno" : "giorni"} consecutivi`}
-          </Text>
+
+          <View style={streakStyles.stampDivider} />
+
+          {/* Footer */}
+          <View style={streakStyles.stampFooter}>
+            <Text style={streakStyles.stampFooterDay}>
+              {bpStreakCompleted ? "Completata ✓" : `Premio ${bpStreakClaimed}/7`}
+            </Text>
+            {!bpStreakCompleted && (
+              <View style={streakStyles.stampFooterReward}>
+                <Text style={streakStyles.stampGoldFooterRewardText}>
+                  +{BP_PRIZES_DISPLAY[bpStreakClaimed]?.label ?? ""}
+                </Text>
+                {(BP_PRIZES_DISPLAY[bpStreakClaimed]?.type === "drops" || BP_PRIZES_DISPLAY[bpStreakClaimed]?.type === "both") && <XpIcon size={15} />}
+                {(BP_PRIZES_DISPLAY[bpStreakClaimed]?.type === "lea" || BP_PRIZES_DISPLAY[bpStreakClaimed]?.type === "both") && <LeaIcon size={15} />}
+              </View>
+            )}
+          </View>
         </Animated.View>
       )}
 
@@ -1916,27 +1922,38 @@ const streakStyles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 15,
   },
-  bpRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 7,
+  stampGoldCard: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    borderRadius: 16,
+    padding: 14,
+    backgroundColor: "#0A1F0D",
+    borderWidth: 1,
+    borderColor: "rgba(255,215,0,0.35)",
+    shadowColor: "#FFD700",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 4,
   },
-  bpSlot: {
-    alignItems: "center",
-    gap: 3,
-    flex: 1,
+  stampGoldTitle: {
+    fontFamily: "DMSans_700Bold",
+    fontSize: 13,
+    color: "#FFD700",
+    letterSpacing: 1.5,
   },
-  bpDot: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    alignItems: "center",
-    justifyContent: "center",
+  stampGoldCellDone: {
+    backgroundColor: "#FFD700",
   },
-  bpLabel: {
-    fontFamily: "Inter_400Regular",
-    fontSize: 8,
-    textAlign: "center",
+  stampGoldCellNext: {
+    backgroundColor: "transparent",
+    borderWidth: 1.5,
+    borderColor: "#FFD700",
+  },
+  stampGoldFooterRewardText: {
+    fontFamily: "DMSans_700Bold",
+    fontSize: 16,
+    color: "#FFD700",
   },
 });
 
