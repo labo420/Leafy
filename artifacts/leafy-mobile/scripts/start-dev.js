@@ -17,9 +17,13 @@ function ensureSingleInstance() {
       if (oldPid && oldPid !== process.pid) {
         try {
           process.kill(oldPid, 0);
-          console.log(`Killing previous start-dev.js instance (PID ${oldPid})...`);
-          process.kill(oldPid, "SIGTERM");
-          try { execSync(`pkill -P ${oldPid} || true`, { stdio: "ignore" }); } catch {}
+          let cmdline = "";
+          try { cmdline = fs.readFileSync(`/proc/${oldPid}/cmdline`, "utf8"); } catch {}
+          if (cmdline.includes("start-dev")) {
+            console.log(`Killing previous start-dev.js instance (PID ${oldPid})...`);
+            process.kill(oldPid, "SIGTERM");
+            try { execSync(`pkill -P ${oldPid} || true`, { stdio: "ignore" }); } catch {}
+          }
         } catch {}
       }
     }
