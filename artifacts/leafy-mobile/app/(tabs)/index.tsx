@@ -1924,7 +1924,7 @@ const streakStyles = StyleSheet.create({
   stampFooterRewardText: {
     fontFamily: "DMSans_700Bold",
     fontSize: 14,
-    color: "#F97316",
+    color: "#ffffff",
   },
   cardHint: {
     fontFamily: "Inter_400Regular",
