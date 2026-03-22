@@ -393,12 +393,18 @@ function LevelProgressRing({
         </View>
 
         {/* Watering can overlay */}
-        <Animated.View style={[ringStyles.wateringCan, canAnimStyle]}>
-          <MaterialCommunityIcons name="watering-can" size={34} color={iconColor} />
-        </Animated.View>
+        <Animated.Image
+          source={require("@/assets/images/watering-can-icon.png")}
+          style={[ringStyles.wateringCan, canAnimStyle, { width: 52, height: 52 }]}
+          resizeMode="contain"
+        />
 
         {/* Droplet */}
-        <Animated.View style={[ringStyles.droplet, dropAnimStyle]} />
+        <Animated.Image
+          source={require("@/assets/images/drop-anim.png")}
+          style={[ringStyles.droplet, dropAnimStyle]}
+          resizeMode="contain"
+        />
       </View>
 
       <Text style={[ringStyles.nextLevelText, { color: nextLvlColor }]} numberOfLines={3}>
@@ -458,11 +464,9 @@ const ringStyles = StyleSheet.create({
   droplet: {
     position: "absolute",
     top: DROP_TOP,
-    left: DROP_LEFT,
-    width: 8,
-    height: 13,
-    borderRadius: 4,
-    backgroundColor: "#81D4FA",
+    left: DROP_LEFT - 7,
+    width: 18,
+    height: 24,
     zIndex: 10,
   },
 });
