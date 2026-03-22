@@ -122,9 +122,9 @@ const BP_PRIZES_DISPLAY = [
   { type: "both" as const, label: "150+15" },
 ];
 
-const ICON_BASE_SIZE = 44;
-const ICON_MIN_SCALE = 0.52;
-const ICON_MAX_SCALE = 1.4;
+const ICON_BASE_SIZE = 90;
+const ICON_MIN_SCALE = 0.75;
+const ICON_MAX_SCALE = 1.0;
 const CAN_TOP = 32;
 const CAN_LEFT = RING_SIZE / 2 + 12;
 const CAN_PIVOT = 17;
