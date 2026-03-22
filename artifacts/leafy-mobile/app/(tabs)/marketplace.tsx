@@ -25,8 +25,6 @@ import { useTheme } from "@/context/theme";
 import LeafyGoldModal from "@/components/LeafyGoldModal";
 import { apiFetch } from "@/lib/api";
 
-const LEA_TO_EUR = 0.01;
-
 type Withdrawal = {
   id: number;
   leaAmount: string;
@@ -70,7 +68,7 @@ function PayPalHeroRing({ leaBalance }: { leaBalance: number }) {
           cy={RING_SIZE / 2}
           r={RADIUS}
           fill="none"
-          stroke="rgba(0,112,224,0.15)"
+          stroke="rgba(0,112,224,0.12)"
           strokeWidth={STROKE_WIDTH}
         />
         <Circle
@@ -120,7 +118,6 @@ export default function WalletScreen() {
   const bottomPad = Platform.OS === "web" ? 34 + 84 : 100 + insets.bottom;
 
   const leaAmount = Math.floor(parseFloat(leaInput.replace(",", ".")) || 0);
-  const euroAmount = leaAmount * LEA_TO_EUR;
   const minLea = hasLeafyGold ? 500 : 1000;
 
   let validationError: string | null = null;
