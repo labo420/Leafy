@@ -14,4 +14,5 @@ export const ProfileLevel = {
   Arbusto: "Arbusto",
   Albero: "Albero",
   Foresta: "Foresta",
+  Giungla: "Giungla",
 } as const;
