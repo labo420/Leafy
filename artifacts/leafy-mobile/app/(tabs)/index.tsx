@@ -928,11 +928,11 @@ export default function HomeScreen() {
       }
     >
       {/* ── HERO SECTION ── */}
-      <LinearGradient
-        colors={mode === "dark" ? ["#142A20", "#0D1F16"] : ["#F2F9F5", "#E3F2EA"]}
-        start={{ x: 0.2, y: 0 }}
-        end={{ x: 0.8, y: 1 }}
-        style={styles.heroSection}
+      <View
+        style={[
+          styles.heroSection,
+          { backgroundColor: mode === "dark" ? "#142A20" : "#F2F9F5" }
+        ]}
       >
         <View style={[styles.decoCircle1, { backgroundColor: mode === "dark" ? "rgba(255,255,255,0.06)" : "rgba(46,107,80,0.07)" }]} />
         <View style={[styles.decoCircle2, { backgroundColor: mode === "dark" ? "rgba(255,255,255,0.04)" : "rgba(46,107,80,0.05)" }]} />
