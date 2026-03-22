@@ -6,8 +6,28 @@ const net = require("net");
 const path = require("path");
 
 const TUNNEL_FILE = "/tmp/expo-tunnel-url.txt";
+const LOCK_FILE = "/tmp/expo-start-dev.pid";
 const NGROK_API = "http://127.0.0.1:4040/api/tunnels";
 const NGROK_AUTH_TOKEN = process.env.NGROK_AUTH_TOKEN || "";
+
+function ensureSingleInstance() {
+  try {
+    if (fs.existsSync(LOCK_FILE)) {
+      const oldPid = Number(fs.readFileSync(LOCK_FILE, "utf8").trim());
+      if (oldPid && oldPid !== process.pid) {
+        try {
+          process.kill(oldPid, 0);
+          console.log(`Killing previous start-dev.js instance (PID ${oldPid})...`);
+          process.kill(oldPid, "SIGTERM");
+          try { execSync(`pkill -P ${oldPid} || true`, { stdio: "ignore" }); } catch {}
+        } catch {}
+      }
+    }
+  } catch {}
+  fs.writeFileSync(LOCK_FILE, String(process.pid), "utf8");
+}
+
+ensureSingleInstance();
 
 // Workaround: The system-managed .replit workflow file may specify a different PORT
 // than artifact.toml's localPort. The canvas health check uses the artifact port,
@@ -170,8 +190,13 @@ let intentionalExit = false;
 let restartAttempts = 0;
 const MAX_RESTARTS = 8;
 
-process.on("SIGTERM", () => { intentionalExit = true; process.exit(0); });
-process.on("SIGINT", () => { intentionalExit = true; process.exit(0); });
+function cleanupAndExit(code) {
+  intentionalExit = true;
+  try { fs.unlinkSync(LOCK_FILE); } catch {}
+  process.exit(code ?? 0);
+}
+process.on("SIGTERM", () => cleanupAndExit(0));
+process.on("SIGINT", () => cleanupAndExit(0));
 
 function startExpo() {
   killStaleProcesses();

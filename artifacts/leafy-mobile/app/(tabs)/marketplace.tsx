@@ -16,7 +16,7 @@ import {
   View,
 } from "react-native";
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
-import Svg, { Circle, Path } from "react-native-svg";
+import Svg, { Circle } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -91,26 +91,6 @@ function PayPalHeroRing({ leaBalance }: { leaBalance: number }) {
   );
 }
 
-function PayPalLogo({ size = 28 }: { size?: number }) {
-  const h = size;
-  const w = h * (26 / 40);
-  return (
-    <Svg width={w} height={h} viewBox="0 0 26 40">
-      {/* Back P — dark navy: stem (width 6) + circular bowl (r=10 outer, r=7 inner), center (6,13) */}
-      <Path
-        d="M0,0 L6,0 L6,3 A 10 10 0 1 1 6,23 L6,36 L0,36 Z M6,6 A 7 7 0 1 1 6,20 Z"
-        fill="#003087"
-        fillRule="evenodd"
-      />
-      {/* Front P — sky blue: same shape, offset +4 right +4 down */}
-      <Path
-        d="M4,4 L10,4 L10,7 A 10 10 0 1 1 10,27 L10,40 L4,40 Z M10,10 A 7 7 0 1 1 10,24 Z"
-        fill="#009CDE"
-        fillRule="evenodd"
-      />
-    </Svg>
-  );
-}
 
 export default function WalletScreen() {
   const insets = useSafeAreaInsets();
@@ -292,14 +272,11 @@ export default function WalletScreen() {
                 style={({ pressed }) => [styles.paypalBtn, { opacity: pressed ? 0.88 : 1 }]}
                 onPress={handlePayPalPress}
               >
-                <PayPalLogo size={30} />
-                <View style={{ marginLeft: 10, alignItems: "flex-start" }}>
-                  <Text style={styles.paypalBtnSub}>Preleva con</Text>
-                  <View style={{ flexDirection: "row" }}>
-                    <Text style={styles.paypalBtnPay}>Pay</Text>
-                    <Text style={styles.paypalBtnPal}>Pal</Text>
-                  </View>
-                </View>
+                <Image
+                  source={require("@/assets/images/paypal-button.png")}
+                  style={styles.paypalBtnImage}
+                  resizeMode="contain"
+                />
               </Pressable>
             </Animated.View>
 
@@ -520,32 +497,12 @@ const styles = StyleSheet.create({
   },
 
   paypalBtn: {
-    backgroundColor: "#FFC439",
-    borderRadius: 30,
-    paddingVertical: 16,
-    paddingHorizontal: 28,
-    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
   },
-  paypalBtnSub: {
-    fontSize: 10,
-    fontFamily: "Inter_400Regular",
-    color: "rgba(0,48,135,0.55)",
-    letterSpacing: 0.3,
-    marginBottom: 1,
-  },
-  paypalBtnPay: {
-    fontSize: 19,
-    fontFamily: "DMSans_700Bold",
-    color: "#003087",
-    lineHeight: 22,
-  },
-  paypalBtnPal: {
-    fontSize: 19,
-    fontFamily: "DMSans_700Bold",
-    color: "#009CDE",
-    lineHeight: 22,
+  paypalBtnImage: {
+    width: 280,
+    height: 103,
   },
 
   withdrawCard: {
