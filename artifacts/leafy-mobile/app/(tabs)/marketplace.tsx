@@ -293,7 +293,6 @@ export default function WalletScreen() {
               >
                 <PayPalLogo size={28} />
                 <Text style={[styles.paypalBtnAction, { marginLeft: 10 }]}>Preleva su PayPal</Text>
-                <Feather name="arrow-up-right" size={18} color="#fff" style={{ marginLeft: 4 }} />
               </Pressable>
             </Animated.View>
 
@@ -514,9 +513,10 @@ const styles = StyleSheet.create({
   },
 
   paypalBtn: {
-    backgroundColor: PAYPAL_BLUE,
-    borderRadius: 16,
+    backgroundColor: "#FFC439",
+    borderRadius: 30,
     paddingVertical: 16,
+    paddingHorizontal: 28,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -524,7 +524,7 @@ const styles = StyleSheet.create({
   paypalBtnAction: {
     fontSize: 16,
     fontFamily: "Inter_600SemiBold",
-    color: "#fff",
+    color: "#003087",
   },
 
   withdrawCard: {
