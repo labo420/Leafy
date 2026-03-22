@@ -1073,49 +1073,59 @@ export default function HomeScreen() {
         <Animated.View entering={FadeInDown.delay(260).springify()} style={styles.bpCtaOuter}>
           <Pressable
             onPress={() => setShowLeafyGoldModal(true)}
-            style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }]}
+            style={({ pressed }) => [{ opacity: pressed ? 0.92 : 1 }]}
           >
             <LinearGradient
-              colors={["#0a1f15", "#0f2a1e", "#1a3a28"]}
+              colors={["#2E1800", "#1A2E10", "#0A2010"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.bpCtaCard}
             >
-              {/* Gold accent top bar */}
+              {/* Cerchio shimmer decorativo */}
+              <View style={styles.bpCtaShimmer} />
+
+              {/* Header: badge pill + icona foglia */}
+              <View style={styles.bpCtaHeader}>
+                <View style={styles.bpCtaBadgePill}>
+                  <Text style={styles.bpCtaBadge}>✦  LEAFY GOLD</Text>
+                </View>
+                <View style={styles.bpCtaIconWrap}>
+                  <Image
+                    source={require("@/assets/images/leafy-gold-icon.png")}
+                    style={{ width: 36, height: 36 }}
+                    resizeMode="contain"
+                  />
+                </View>
+              </View>
+
+              {/* Titolo principale */}
+              <Text style={styles.bpCtaTitle}>Sblocca il lato premium</Text>
+
+              {/* Feature pills */}
+              <View style={styles.bpCtaFeatures}>
+                <View style={styles.bpCtaFeaturePill}>
+                  <Text style={styles.bpCtaFeatureText}>⚡ 2× $LEA</Text>
+                </View>
+                <View style={styles.bpCtaFeaturePill}>
+                  <Text style={styles.bpCtaFeatureText}>🛡️ Streak protetta</Text>
+                </View>
+                <View style={styles.bpCtaFeaturePill}>
+                  <Text style={styles.bpCtaFeatureText}>🏅 Badge esclusivi</Text>
+                </View>
+              </View>
+
+              {/* Prezzo */}
+              <Text style={styles.bpCtaSub}>Solo 0,89€/mese · Cancella quando vuoi</Text>
+
+              {/* CTA full-width */}
               <LinearGradient
-                colors={["#FFD700", "#FFA500", "#FFD700"]}
+                colors={["#FFD700", "#FFA500"]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
-                style={styles.bpCtaAccentBar}
-              />
-
-              <View style={styles.bpCtaBody}>
-                {/* Icon + texts */}
-                <View style={styles.bpCtaLeft}>
-                  <View style={styles.bpCtaIconWrap}>
-                    <Image
-                      source={require("@/assets/images/leafy-gold-icon.png")}
-                      style={{ width: 48, height: 48 }}
-                      resizeMode="contain"
-                    />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.bpCtaBadge}>BATTLE PASS</Text>
-                    <Text style={styles.bpCtaTitle}>Passa a Premium</Text>
-                    <Text style={styles.bpCtaSub}>Raddoppia i $LEA · 0,89€/mese</Text>
-                  </View>
-                </View>
-
-                {/* CTA pill */}
-                <LinearGradient
-                  colors={["#FFD700", "#FFA500"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.bpCtaPill}
-                >
-                  <Text style={styles.bpCtaPillText}>Attiva{"\n"}ora</Text>
-                </LinearGradient>
-              </View>
+                style={styles.bpCtaBtn}
+              >
+                <Text style={styles.bpCtaBtnText}>Attiva Leafy Gold</Text>
+              </LinearGradient>
             </LinearGradient>
           </Pressable>
         </Animated.View>
@@ -2112,77 +2122,94 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 0,
     shadowColor: "#FFD700",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 14,
-    elevation: 8,
-    borderRadius: 18,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 18,
+    elevation: 10,
+    borderRadius: 20,
   },
   bpCtaCard: {
-    borderRadius: 18,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255,215,0,0.4)",
+    overflow: "hidden",
+    padding: 18,
+  },
+  bpCtaShimmer: {
+    position: "absolute",
+    top: -50,
+    right: -50,
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: "rgba(255,215,0,0.07)",
+  },
+  bpCtaHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 14,
+  },
+  bpCtaBadgePill: {
+    backgroundColor: "rgba(255,215,0,0.15)",
     borderWidth: 1,
     borderColor: "rgba(255,215,0,0.35)",
-    overflow: "hidden",
-  },
-  bpCtaAccentBar: {
-    height: 3,
-    opacity: 0.9,
-  },
-  bpCtaBody: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 12,
-  },
-  bpCtaLeft: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  bpCtaIconWrap: {
-    borderRadius: 22,
-    shadowColor: "#FFD700",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 6,
-    elevation: 4,
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
   bpCtaBadge: {
-    fontSize: 9,
+    fontSize: 10,
     fontFamily: "Inter_700Bold",
     color: "#FFD700",
-    letterSpacing: 2.5,
-    marginBottom: 2,
-    opacity: 0.85,
+    letterSpacing: 1.5,
+  },
+  bpCtaIconWrap: {
+    shadowColor: "#FFD700",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+    elevation: 5,
   },
   bpCtaTitle: {
-    fontSize: 15,
+    fontSize: 20,
     fontFamily: "DMSans_700Bold",
     color: "#fff",
-    marginBottom: 2,
+    marginBottom: 12,
+  },
+  bpCtaFeatures: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 14,
+  },
+  bpCtaFeaturePill: {
+    backgroundColor: "rgba(255,255,255,0.09)",
+    borderRadius: 20,
+    paddingHorizontal: 11,
+    paddingVertical: 6,
+  },
+  bpCtaFeatureText: {
+    fontSize: 12,
+    fontFamily: "Inter_500Medium",
+    color: "rgba(255,255,255,0.85)",
   },
   bpCtaSub: {
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: "Inter_400Regular",
-    color: "rgba(255,255,255,0.5)",
-    lineHeight: 16,
+    color: "rgba(255,255,255,0.45)",
+    marginBottom: 16,
   },
-  bpCtaPill: {
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+  bpCtaBtn: {
+    borderRadius: 14,
+    paddingVertical: 14,
     alignItems: "center",
     justifyContent: "center",
-    minWidth: 56,
   },
-  bpCtaPillText: {
-    fontSize: 12,
+  bpCtaBtnText: {
+    fontSize: 15,
     fontFamily: "DMSans_700Bold",
-    color: "#1a3a28",
-    textAlign: "center",
-    lineHeight: 16,
+    color: "#1a2800",
   },
   ctaSection: {
     paddingHorizontal: 20,
