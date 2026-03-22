@@ -176,6 +176,11 @@ function startExpo() {
 
   const spawnEnv = Object.assign({}, process.env);
   delete spawnEnv.CI;
+  // Force a subdomain without underscores to avoid Android DNS STD 3 ASCII errors
+  if (!spawnEnv.EXPO_TUNNEL_SUBDOMAIN) {
+    const replId = (spawnEnv.REPL_ID || "leafymobile").replace(/[^a-z0-9]/gi, "").toLowerCase().slice(0, 20);
+    spawnEnv.EXPO_TUNNEL_SUBDOMAIN = `leafy${replId}`;
+  }
 
   const hasTunnelFlag = args.includes("--tunnel");
   const startArgs = hasTunnelFlag && restartAttempts >= 2

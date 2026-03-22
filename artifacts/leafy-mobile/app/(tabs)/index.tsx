@@ -970,7 +970,7 @@ export default function HomeScreen() {
             nextLevelPoints={nextLevelPoints}
           />
         </Animated.View>
-      </LinearGradient>
+      </View>
 
       {/* ── STREAK CLASSICA ── */}
       <Animated.View entering={FadeInDown.delay(180).springify()} style={[streakStyles.card, { backgroundColor: "rgba(249,115,22,0.07)", borderLeftWidth: 4, borderLeftColor: "#F97316" }]}>
