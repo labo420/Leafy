@@ -59,7 +59,7 @@ const LEAF_GREEN = "#4DB847";
 
 function PayPalHeroRing({ leaBalance }: { leaBalance: number }) {
   return (
-    <View style={styles.heroContainer}>
+    <View style={[styles.heroContainer, { backgroundColor: "rgba(77,184,71,0.08)" }]}>
       <Svg
         width={RING_SIZE}
         height={RING_SIZE}
