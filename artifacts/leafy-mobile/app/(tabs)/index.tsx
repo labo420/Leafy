@@ -295,7 +295,11 @@ function LevelProgressRing({
         withDelay(60, withSpring(1, { damping: 9, stiffness: 130 })),
       ));
       iconScale.value = withDelay(2980, withSpring(newIconScale, { damping: 10, stiffness: 90 }));
-      return;
+      return () => {
+        if (progTimeoutRef.current) clearTimeout(progTimeoutRef.current);
+        if (hapticTimeoutRef.current) clearTimeout(hapticTimeoutRef.current);
+        if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      };
     }
 
     // ── Branch B: livello cambiato senza nuovi drops (es. ripristino app) ──
