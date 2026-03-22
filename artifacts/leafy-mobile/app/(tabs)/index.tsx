@@ -1927,7 +1927,7 @@ const streakStyles = StyleSheet.create({
     marginTop: 8,
     borderRadius: 16,
     padding: 14,
-    backgroundColor: "#0A1F0D",
+    backgroundColor: "#2C1A00",
     borderWidth: 1,
     borderColor: "rgba(255,215,0,0.35)",
     shadowColor: "#FFD700",
@@ -1953,7 +1953,7 @@ const streakStyles = StyleSheet.create({
   stampGoldFooterRewardText: {
     fontFamily: "DMSans_700Bold",
     fontSize: 16,
-    color: "#FFD700",
+    color: "#ffffff",
   },
 });
 
