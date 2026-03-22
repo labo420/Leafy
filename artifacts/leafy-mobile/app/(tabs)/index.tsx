@@ -1940,7 +1940,7 @@ const streakStyles = StyleSheet.create({
     marginTop: 8,
     borderRadius: 16,
     padding: 14,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#FFFBF0",
     borderWidth: 1.5,
     borderColor: "rgba(255,215,0,0.60)",
     shadowColor: "#FFD700",
