@@ -3,6 +3,7 @@ import { eq, and } from "drizzle-orm";
 import { db, badgesTable, userBadgesTable } from "@workspace/db";
 import { GetMyBadgesResponse } from "@workspace/api-zod";
 import { requireUser } from "./profile";
+import { LEVEL_THRESHOLDS } from "../lib/scanner";
 
 const router: IRouter = Router();
 
@@ -35,18 +36,14 @@ router.get("/badges/my", async (req, res): Promise<void> => {
   const lifetimeBadges = allBadges.filter(b => b.badgeType === "lifetime");
   const temporalBadges = allBadges.filter(b => b.badgeType !== "lifetime");
 
-  const LEVEL_THRESHOLDS: Record<string, number> = {
-    Germoglio: 0,
-    Ramoscello: 500,
-    Arbusto: 2000,
-    Albero: 5000,
-    Foresta: 10000,
-  };
+  const levelThresholdMap: Record<string, number> = Object.fromEntries(
+    LEVEL_THRESHOLDS.map(l => [l.name, l.minPoints]),
+  );
 
   const lifetime = lifetimeBadges.map(badge => {
     const ub = userBadges.find(u => u.badgeId === badge.id);
-    const isLevelBadge = badge.category === "Livello" && badge.name in LEVEL_THRESHOLDS;
-    const autoUnlocked = isLevelBadge && user.totalPoints >= LEVEL_THRESHOLDS[badge.name];
+    const isLevelBadge = badge.category === "Livello" && badge.name in levelThresholdMap;
+    const autoUnlocked = isLevelBadge && user.totalPoints >= levelThresholdMap[badge.name];
     return {
       id: badge.id,
       name: badge.name,
