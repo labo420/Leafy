@@ -244,7 +244,7 @@ export default function WalletScreen() {
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
         <ScrollView
-          style={[styles.container, { backgroundColor: theme.background }]}
+          style={[styles.container, { backgroundColor: "rgba(77,184,71,0.08)" }]}
           contentContainerStyle={{ paddingTop: topPadding + 20, paddingBottom: bottomPad }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -258,7 +258,7 @@ export default function WalletScreen() {
           }
         >
           <View style={styles.content}>
-            <Animated.View entering={FadeInDown.delay(60).springify()} style={[styles.heroSection, { backgroundColor: "rgba(77,184,71,0.08)" }]}>
+            <Animated.View entering={FadeInDown.delay(60).springify()} style={styles.heroSection}>
               <PayPalHeroRing leaBalance={leaBalance} />
 
               {hasLeafyGold && (
