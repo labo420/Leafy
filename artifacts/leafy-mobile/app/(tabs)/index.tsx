@@ -1,4 +1,5 @@
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import BadgeIcon3D from "@/components/BadgeIcon3D";
 import { XpIcon } from "../../components/XpIcon";
 import { LeaIcon } from "../../components/LeaIcon";
 import { GoogleIcon } from "../../components/GoogleIcon";
@@ -379,7 +380,7 @@ function LevelProgressRing({
         <View style={ringStyles.innerContent}>
           <Animated.View style={badgeAnimStyle}>
             <Animated.View style={iconAnimStyle}>
-              <MaterialCommunityIcons name={levelIcon} size={ICON_BASE_SIZE} color={iconColor} />
+              <BadgeIcon3D name={level} category="Livello" emoji="" isUnlocked={true} size={ICON_BASE_SIZE} />
             </Animated.View>
           </Animated.View>
           <Text style={[ringStyles.levelName, { color: nameColor }]}>{LEVEL_LABELS[level] ?? level}</Text>
