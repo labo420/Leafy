@@ -87,8 +87,10 @@ function PayPalHeroRing({ leaBalance }: { leaBalance: number }) {
       </Svg>
       <View style={styles.heroCenter}>
         <Text style={styles.heroAmount}>{formatLea(leaBalance)}</Text>
-        <Text style={styles.heroLabel}>$LEA</Text>
-        <Image source={require("@/assets/badges/badge-leaf.png")} style={styles.heroLeafIcon} resizeMode="contain" />
+        <View style={styles.heroLeafBadge}>
+          <Image source={require("@/assets/badges/badge-leaf.png")} style={styles.heroLeafIcon} resizeMode="contain" />
+          <Text style={styles.heroLeafText}>LEA</Text>
+        </View>
       </View>
     </View>
   );
@@ -477,16 +479,20 @@ const styles = StyleSheet.create({
     color: "#fff",
     lineHeight: 46,
   },
-  heroLabel: {
-    fontSize: 14,
-    fontFamily: "Inter_600SemiBold",
-    color: "rgba(255,255,255,0.55)",
-    marginTop: 2,
+  heroLeafBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 8,
   },
   heroLeafIcon: {
-    width: 18,
-    height: 18,
-    marginTop: 8,
+    width: 14,
+    height: 14,
+  },
+  heroLeafText: {
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+    color: LEAF_GREEN,
   },
 
   goldBadge: {
