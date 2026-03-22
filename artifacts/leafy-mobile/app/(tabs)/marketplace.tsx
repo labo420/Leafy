@@ -92,18 +92,19 @@ function PayPalHeroRing({ leaBalance }: { leaBalance: number }) {
 }
 
 function PayPalLogo({ size = 28 }: { size?: number }) {
-  const aspect = 0.72;
-  const w = size * aspect;
   const h = size;
+  const w = h * (24 / 36);
   return (
-    <Svg width={w * 1.55} height={h} viewBox="0 0 26 20">
+    <Svg width={w} height={h} viewBox="0 0 24 36">
+      {/* Back P — dark navy */}
       <Path
-        d="M2 0 C2 0 10 0 10 6 C10 10.5 6.5 12 3 12 L1.5 12 L0.5 18 L-2 18 L2 0 Z M3.5 2.5 L2.8 9.5 C5 9.5 7.5 8.5 7.5 6 C7.5 3 3.5 2.5 3.5 2.5 Z"
+        d="M0,0 L0,30 L4,30 L4,16 Q20,16 20,8 Q20,0 4,0 Z M4,3.5 Q16.5,3.5 16.5,8 Q16.5,12.5 4,12.5 Z"
         fill="#003087"
         fillRule="evenodd"
       />
+      {/* Front P — sky blue, offset +4 right +5 down */}
       <Path
-        d="M7 3 C7 3 15 3 15 9 C15 13.5 11.5 15 8 15 L6.5 15 L5.5 21 L3 21 L7 3 Z M8.5 5.5 L7.8 12.5 C10 12.5 12.5 11.5 12.5 9 C12.5 6 8.5 5.5 8.5 5.5 Z"
+        d="M4,5 L4,36 L8,36 L8,21 Q24,21 24,13 Q24,5 8,5 Z M8,8.5 Q20.5,8.5 20.5,13 Q20.5,17.5 8,17.5 Z"
         fill="#009CDE"
         fillRule="evenodd"
       />
@@ -291,8 +292,14 @@ export default function WalletScreen() {
                 style={({ pressed }) => [styles.paypalBtn, { opacity: pressed ? 0.88 : 1 }]}
                 onPress={handlePayPalPress}
               >
-                <PayPalLogo size={28} />
-                <Text style={[styles.paypalBtnAction, { marginLeft: 10 }]}>Preleva su PayPal</Text>
+                <PayPalLogo size={30} />
+                <View style={{ marginLeft: 10, alignItems: "flex-start" }}>
+                  <Text style={styles.paypalBtnSub}>Preleva con</Text>
+                  <View style={{ flexDirection: "row" }}>
+                    <Text style={styles.paypalBtnPay}>Pay</Text>
+                    <Text style={styles.paypalBtnPal}>Pal</Text>
+                  </View>
+                </View>
               </Pressable>
             </Animated.View>
 
@@ -521,10 +528,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  paypalBtnAction: {
-    fontSize: 16,
-    fontFamily: "Inter_600SemiBold",
+  paypalBtnSub: {
+    fontSize: 10,
+    fontFamily: "Inter_400Regular",
+    color: "rgba(0,48,135,0.55)",
+    letterSpacing: 0.3,
+    marginBottom: 1,
+  },
+  paypalBtnPay: {
+    fontSize: 19,
+    fontFamily: "DMSans_700Bold",
     color: "#003087",
+    lineHeight: 22,
+  },
+  paypalBtnPal: {
+    fontSize: 19,
+    fontFamily: "DMSans_700Bold",
+    color: "#009CDE",
+    lineHeight: 22,
   },
 
   withdrawCard: {
