@@ -1781,9 +1781,6 @@ const inStoreStyles = StyleSheet.create({
   },
 });
 
-const CHECKIN_DOT_SIZE = 30;
-const CHECKIN_SECTION_W = Dimensions.get("window").width - 60;
-
 const streakStyles = StyleSheet.create({
   toast: {
     position: "absolute",
@@ -1838,56 +1835,6 @@ const streakStyles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     fontSize: 11,
   },
-  dotsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 7,
-  },
-  dot: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  accentBorder: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 4,
-    backgroundColor: "#F97316",
-    borderTopLeftRadius: 14,
-    borderBottomLeftRadius: 14,
-  },
-  dayBadge: {
-    backgroundColor: "rgba(249,115,22,0.12)",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "rgba(249,115,22,0.25)",
-  },
-  dotGlow: {
-    position: "absolute",
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(249,115,22,0.18)",
-  },
-  rewardBadge: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    paddingHorizontal: 18,
-    paddingVertical: 8,
-    borderRadius: 22,
-    gap: 8,
-    shadowColor: "#F97316",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 5,
-  },
   stampCard: {
     marginHorizontal: 16,
     marginTop: 8,
@@ -1941,7 +1888,7 @@ const streakStyles = StyleSheet.create({
     backgroundColor: "#F97316",
   },
   stampCellNext: {
-    backgroundColor: "rgba(249,115,22,0.1)",
+    backgroundColor: "transparent",
     borderWidth: 1.5,
     borderColor: "#F97316",
   },
