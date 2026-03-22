@@ -524,7 +524,7 @@ components:
           description: EUR equivalent of leaBalance (1:1 ratio)
         level:
           type: string
-          enum: [Germoglio, Ramoscello, Arbusto, Albero, Foresta]
+          enum: [Germoglio, Ramoscello, Arbusto, Albero, Foresta, Giungla]
         levelProgress:
           type: integer
           description: Progress percentage to next level (0-100)

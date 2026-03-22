@@ -25,7 +25,7 @@ export const GetProfileResponse = zod.object({
   drops: zod.number(),
   leaBalance: zod.number(),
   leaToEur: zod.number(),
-  level: zod.enum(["Germoglio", "Ramoscello", "Arbusto", "Albero", "Foresta"]),
+  level: zod.enum(["Germoglio", "Ramoscello", "Arbusto", "Albero", "Foresta", "Giungla"]),
   levelProgress: zod
     .number()
     .describe("Progress percentage to next level (0-100)"),
