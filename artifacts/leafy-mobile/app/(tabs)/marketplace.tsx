@@ -78,7 +78,7 @@ function PayPalHeroRing({ leaBalance }: { leaBalance: number }) {
           cy={RING_SIZE / 2}
           r={RADIUS}
           fill="none"
-          stroke={LEAF_GREEN}
+          stroke="rgba(77,184,71,0.6)"
           strokeWidth={STROKE_WIDTH}
           strokeDasharray={`${CIRCUMFERENCE}`}
           strokeDashoffset={0}
