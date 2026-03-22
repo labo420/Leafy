@@ -16,7 +16,7 @@ import {
   View,
 } from "react-native";
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
-import Svg, { Circle } from "react-native-svg";
+import Svg, { Circle, Path } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -88,6 +88,24 @@ function PayPalHeroRing({ leaBalance }: { leaBalance: number }) {
         <Text style={styles.heroLabel}>$LEA</Text>
       </View>
     </View>
+  );
+}
+
+function PayPalLogo({ size = 28 }: { size?: number }) {
+  const w = size * (17 / 21);
+  return (
+    <Svg width={w} height={size} viewBox="0 0 17 21">
+      <Path
+        fillRule="evenodd"
+        d="M0 0 L0 18 L3 18 L3 11 L7 11 Q12 11 12 5.5 Q12 0 7 0 Z M3 2.5 L7 2.5 Q9.5 2.5 9.5 5.5 Q9.5 8.5 7 8.5 L3 8.5 Z"
+        fill="#003087"
+      />
+      <Path
+        fillRule="evenodd"
+        d="M5 3 L5 21 L8 21 L8 14 L12 14 Q17 14 17 8.5 Q17 3 12 3 Z M8 5.5 L12 5.5 Q14.5 5.5 14.5 8.5 Q14.5 11.5 12 11.5 L8 11.5 Z"
+        fill="#009CDE"
+      />
+    </Svg>
   );
 }
 
@@ -271,10 +289,8 @@ export default function WalletScreen() {
                 style={({ pressed }) => [styles.paypalBtn, { opacity: pressed ? 0.88 : 1 }]}
                 onPress={handlePayPalPress}
               >
-                <Text style={styles.paypalBtnTextPay}>Pay</Text>
-                <Text style={styles.paypalBtnTextPal}>Pal</Text>
-                <Text style={styles.paypalBtnDivider}> · </Text>
-                <Text style={styles.paypalBtnAction}>Preleva su PayPal</Text>
+                <PayPalLogo size={28} />
+                <Text style={[styles.paypalBtnAction, { marginLeft: 10 }]}>Preleva su PayPal</Text>
                 <Feather name="arrow-up-right" size={18} color="#fff" style={{ marginLeft: 4 }} />
               </Pressable>
             </Animated.View>
@@ -502,23 +518,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 0,
-  },
-  paypalBtnTextPay: {
-    fontSize: 16,
-    fontFamily: "Inter_400Regular",
-    color: "#fff",
-  },
-  paypalBtnTextPal: {
-    fontSize: 16,
-    fontFamily: "Inter_700Bold",
-    color: "#fff",
-  },
-  paypalBtnDivider: {
-    fontSize: 16,
-    fontFamily: "Inter_400Regular",
-    color: "rgba(255,255,255,0.6)",
-    marginHorizontal: 4,
   },
   paypalBtnAction: {
     fontSize: 16,
