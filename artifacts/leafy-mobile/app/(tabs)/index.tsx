@@ -349,24 +349,6 @@ function LevelProgressRing({
     <Animated.View style={[ringStyles.outerContainer, containerAnimStyle]}>
       <View style={ringStyles.container}>
         <Svg width={RING_SIZE} height={RING_SIZE} style={{ transform: [{ rotate: "-90deg" }] }}>
-          {/* Outer border ring */}
-          <Circle
-            cx={RING_CX}
-            cy={RING_CY}
-            r={RING_RADIUS + RING_STROKE / 2 + 1.5}
-            stroke={borderColor}
-            strokeWidth={2}
-            fill="none"
-          />
-          {/* Inner border ring */}
-          <Circle
-            cx={RING_CX}
-            cy={RING_CY}
-            r={RING_RADIUS - RING_STROKE / 2 - 1.5}
-            stroke={borderColor}
-            strokeWidth={2}
-            fill="none"
-          />
           <Circle
             cx={RING_CX}
             cy={RING_CY}
@@ -398,6 +380,24 @@ function LevelProgressRing({
               fill={sweepColor(displayProgress / 100)}
             />
           )}
+          {/* Outer border ring — drawn last to stay on top of progress arcs */}
+          <Circle
+            cx={RING_CX}
+            cy={RING_CY}
+            r={RING_RADIUS + RING_STROKE / 2 + 1.5}
+            stroke={borderColor}
+            strokeWidth={2}
+            fill="none"
+          />
+          {/* Inner border ring — drawn last to stay on top of progress arcs */}
+          <Circle
+            cx={RING_CX}
+            cy={RING_CY}
+            r={RING_RADIUS - RING_STROKE / 2 - 1.5}
+            stroke={borderColor}
+            strokeWidth={2}
+            fill="none"
+          />
         </Svg>
 
         {/* Center: badge icon + text */}
