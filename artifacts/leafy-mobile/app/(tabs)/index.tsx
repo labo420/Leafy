@@ -149,7 +149,7 @@ function LevelProgressRing({
   const { mode } = useTheme();
   const onDark = mode === "dark";
   const trackColor = onDark ? "rgba(255,255,255,0.15)" : "rgba(46,107,80,0.13)";
-  const borderColor = onDark ? "rgba(255,255,255,0.38)" : "rgba(46,107,80,0.45)";
+  const borderColor = onDark ? "rgba(255,255,255,0.20)" : "rgba(46,107,80,0.22)";
   const iconColor = onDark ? "rgba(255,255,255,0.90)" : "#2E6B50";
   const nameColor = onDark ? "rgba(255,255,255,0.85)" : "#1A3028";
   const xpSubColor = onDark ? "rgba(255,255,255,0.55)" : "rgba(26,48,40,0.55)";
