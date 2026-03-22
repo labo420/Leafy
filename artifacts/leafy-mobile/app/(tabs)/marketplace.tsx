@@ -59,7 +59,7 @@ const LEAF_GREEN = "#4DB847";
 
 function PayPalHeroRing({ leaBalance }: { leaBalance: number }) {
   return (
-    <View style={[styles.heroContainer, { backgroundColor: "rgba(77,184,71,0.08)" }]}>
+    <View style={styles.heroContainer}>
       <Svg
         width={RING_SIZE}
         height={RING_SIZE}
@@ -258,7 +258,7 @@ export default function WalletScreen() {
           }
         >
           <View style={styles.content}>
-            <Animated.View entering={FadeInDown.delay(60).springify()} style={styles.heroSection}>
+            <Animated.View entering={FadeInDown.delay(60).springify()} style={[styles.heroSection, { backgroundColor: "rgba(77,184,71,0.08)" }]}>
               <PayPalHeroRing leaBalance={leaBalance} />
 
               {hasLeafyGold && (
