@@ -59,10 +59,10 @@ const LEVEL_LABELS: Record<string, string> = {
 
 const LEVEL_CONFIG = [
   { name: "Germoglio", emoji: "🌱", minPts: 0, color: "#8BC34A", fruitColor: "#8BC34A", nodeSize: 26, imgSize: 26 },
-  { name: "Ramoscello", emoji: "🌿", minPts: 1500, color: "#66BB6A", fruitColor: "#8BC34A", nodeSize: 36, imgSize: 36 },
-  { name: "Arbusto", emoji: "🍃", minPts: 5000, color: "#43A047", fruitColor: "#F4D03F", nodeSize: 48, imgSize: 48 },
-  { name: "Albero", emoji: "🌳", minPts: 10000, color: "#2E7D32", fruitColor: "#FF8C42", nodeSize: 62, imgSize: 62 },
-  { name: "Foresta", emoji: "🌲", minPts: 25000, color: "#1B5E20", fruitColor: "#E74C3C", nodeSize: 78, imgSize: 78 },
+  { name: "Ramoscello", emoji: "🌿", minPts: 500, color: "#66BB6A", fruitColor: "#8BC34A", nodeSize: 36, imgSize: 36 },
+  { name: "Arbusto", emoji: "🍃", minPts: 2000, color: "#43A047", fruitColor: "#F4D03F", nodeSize: 48, imgSize: 48 },
+  { name: "Albero", emoji: "🌳", minPts: 5000, color: "#2E7D32", fruitColor: "#FF8C42", nodeSize: 62, imgSize: 62 },
+  { name: "Foresta", emoji: "🌲", minPts: 10000, color: "#1B5E20", fruitColor: "#E74C3C", nodeSize: 78, imgSize: 78 },
 ];
 
 
@@ -136,10 +136,12 @@ function LevelProgressRing({
   progress,
   level,
   points,
+  nextLevelPoints: apiNextLevelPoints,
 }: {
   progress: number;
   level: string;
   points: number;
+  nextLevelPoints: number;
 }) {
   const { mode } = useTheme();
   const onDark = mode === "dark";
@@ -329,8 +331,8 @@ function LevelProgressRing({
   const safeIdx = currentIdx >= 0 ? currentIdx : 0;
   const isMaxLevel = safeIdx >= LEVEL_CONFIG.length - 1;
   const nextLevel = isMaxLevel ? null : LEVEL_CONFIG[safeIdx + 1];
-  const pointsRemaining = isMaxLevel ? 0 : Math.max(0, nextLevel!.minPts - points);
-  const targetPts = isMaxLevel ? LEVEL_CONFIG[safeIdx].minPts : nextLevel!.minPts;
+  const pointsRemaining = isMaxLevel ? 0 : Math.max(0, apiNextLevelPoints - points);
+  const targetPts = isMaxLevel ? LEVEL_CONFIG[safeIdx].minPts : apiNextLevelPoints;
 
   const totalAngle = (displayProgress / 100) * 2 * Math.PI;
   const segAngle = N_SEGS > 0 ? totalAngle / N_SEGS : 0;
@@ -942,6 +944,7 @@ export default function HomeScreen() {
             progress={levelProgress}
             level={level}
             points={points}
+            nextLevelPoints={nextLevelPoints}
           />
         </Animated.View>
       </LinearGradient>
