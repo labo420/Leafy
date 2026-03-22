@@ -165,9 +165,10 @@ if (workflowPort && workflowPort !== expoPort) {
 }
 
 let tunnelFound = false;
+let tunnelConnectedOnce = false;
 let intentionalExit = false;
 let restartAttempts = 0;
-const MAX_RESTARTS = 5;
+const MAX_RESTARTS = 8;
 
 process.on("SIGTERM", () => { intentionalExit = true; process.exit(0); });
 process.on("SIGINT", () => { intentionalExit = true; process.exit(0); });
@@ -185,11 +186,12 @@ function startExpo() {
   }
 
   const hasTunnelFlag = args.includes("--tunnel");
-  const startArgs = hasTunnelFlag && restartAttempts >= 2
+  const dropTunnel = hasTunnelFlag && restartAttempts >= 4 && !tunnelConnectedOnce;
+  const startArgs = dropTunnel
     ? args.filter(a => a !== "--tunnel")
     : args;
 
-  if (hasTunnelFlag && restartAttempts >= 2) {
+  if (dropTunnel) {
     console.log("Tunnel failed repeatedly, starting without --tunnel flag...");
   }
 
@@ -211,6 +213,8 @@ function startExpo() {
     }
 
     if ((text.includes("Tunnel connected") || text.includes("Tunnel ready")) && !tunnelFound) {
+      tunnelConnectedOnce = true;
+      restartAttempts = 0;
       setTimeout(() => {
         if (!tunnelFound) {
           pollNgrokAPI();
