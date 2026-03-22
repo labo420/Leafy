@@ -1023,7 +1023,10 @@ export default function HomeScreen() {
         <Animated.View entering={FadeInDown.delay(220).springify()} style={streakStyles.stampGoldCard}>
           {/* Header */}
           <View style={streakStyles.stampHeader}>
-            <Text style={streakStyles.stampGoldTitle}>⭐  CHECK IN GOLD</Text>
+            <View style={streakStyles.stampTitleRow}>
+              <Image source={require("@/assets/images/leafy-gold-icon.png")} style={{ width: 16, height: 16 }} resizeMode="contain" />
+              <Text style={streakStyles.stampGoldTitle}>CHECK IN GOLD</Text>
+            </View>
             <Text style={[streakStyles.stampWeekLabel, { color: "rgba(184,134,11,0.50)" }]}>7 giorni</Text>
           </View>
           <View style={streakStyles.stampDivider} />
