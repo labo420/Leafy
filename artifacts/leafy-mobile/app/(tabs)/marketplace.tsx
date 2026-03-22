@@ -53,6 +53,8 @@ const RING_SIZE = 200;
 const STROKE_WIDTH = 14;
 const RADIUS = (RING_SIZE - STROKE_WIDTH) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+const PAYPAL_BLUE = "#0070E0";
+
 function PayPalHeroRing({ leaBalance }: { leaBalance: number }) {
   const { theme } = useTheme();
   const leafColor = theme.leaf;
