@@ -55,7 +55,7 @@ const RADIUS = (RING_SIZE - STROKE_WIDTH) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 const PAYPAL_BLUE = "#0070E0";
 
-const LEAF_GREEN = "#30A33E";
+const LEAF_GREEN = "#4DB847";
 
 function PayPalHeroRing({ leaBalance }: { leaBalance: number }) {
   return (
@@ -70,7 +70,7 @@ function PayPalHeroRing({ leaBalance }: { leaBalance: number }) {
           cy={RING_SIZE / 2}
           r={RADIUS}
           fill="none"
-          stroke="rgba(48,163,62,0.13)"
+          stroke="rgba(77,184,71,0.13)"
           strokeWidth={STROKE_WIDTH}
         />
         <Circle
