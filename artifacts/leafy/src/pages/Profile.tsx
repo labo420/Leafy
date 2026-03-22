@@ -130,7 +130,7 @@ export default function Profile() {
 
   const p = profile || {
     id: 1, username: "GuestUser", email: "guest@leafy.app", totalPoints: 1250,
-    drops: 1250, leaBalance: 12.50,
+    drops: 1250, leaBalance: 12,
     level: "Ramoscello", levelProgress: 65, nextLevelPoints: 2000, streak: 5, badgesCount: 12,
     badges: [], profileImageUrl: undefined as string | undefined
   };

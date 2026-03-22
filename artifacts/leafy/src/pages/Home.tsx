@@ -19,7 +19,7 @@ export default function Home() {
 
   const p = profile || {
     id: 1, username: "Guest", email: "guest@leafy.app",
-    drops: 1200, leaBalance: 4.50,
+    drops: 1200, leaBalance: 4,
     level: "Ramoscello", levelProgress: 65, nextLevelPoints: 2000, streak: 5, badgesCount: 12, badges: []
   };
 

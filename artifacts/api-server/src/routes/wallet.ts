@@ -16,12 +16,18 @@ router.post("/wallet/withdraw", async (req, res): Promise<void> => {
   const { leaAmount } = req.body;
 
   const amountRaw = typeof leaAmount === "string" ? parseFloat(leaAmount) : leaAmount;
-  const amount = Math.floor(amountRaw);
 
-  if (typeof amount !== "number" || isNaN(amount) || amount <= 0) {
+  if (typeof amountRaw !== "number" || isNaN(amountRaw) || amountRaw <= 0) {
     res.status(400).json({ error: "Importo non valido." });
     return;
   }
+
+  if (!Number.isInteger(amountRaw)) {
+    res.status(400).json({ error: "L'importo deve essere un numero intero di $LEA." });
+    return;
+  }
+
+  const amount = amountRaw;
 
   const minLea = user.hasLeafyGold ? MIN_LEA_BATTLE_PASS : MIN_LEA_STANDARD;
   if (amount < minLea) {
