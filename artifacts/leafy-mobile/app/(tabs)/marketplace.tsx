@@ -444,7 +444,7 @@ export default function WalletScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: "#F0F8FF" },
   centered: {
     flex: 1,
     alignItems: "center",
