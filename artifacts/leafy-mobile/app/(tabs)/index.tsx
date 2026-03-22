@@ -978,7 +978,10 @@ export default function HomeScreen() {
       <Animated.View entering={FadeInDown.delay(180).springify()} style={streakStyles.stampCard}>
         {/* Header */}
         <View style={streakStyles.stampHeader}>
-          <Text style={streakStyles.stampTitle}>🔥  CHECK IN</Text>
+          <View style={streakStyles.stampTitleRow}>
+            <Image source={require("@/assets/images/streak-icon.png")} style={{ width: 16, height: 16 }} resizeMode="contain" />
+            <Text style={streakStyles.stampTitle}>CHECK IN</Text>
+          </View>
           <Text style={streakStyles.stampWeekLabel}>7 giorni</Text>
         </View>
         <View style={streakStyles.stampDivider} />
@@ -993,12 +996,12 @@ export default function HomeScreen() {
                   streakStyles.stampCell,
                   done ? streakStyles.stampCellDone : isNext ? streakStyles.stampCellNext : streakStyles.stampCellFuture,
                 ]}>
-                  {done && <Text style={{ fontSize: 17, lineHeight: 22 }}>🔥</Text>}
+                  {done && <Image source={require("@/assets/images/streak-icon.png")} style={{ width: 18, height: 18 }} resizeMode="contain" />}
                   {isNext && <Text style={streakStyles.stampCellNextNum}>{i + 1}</Text>}
                 </View>
                 <Text style={[
                   streakStyles.stampLabel,
-                  { color: done ? "#F97316" : isNext ? "rgba(249,115,22,0.65)" : "rgba(255,255,255,0.18)" },
+                  { color: done ? "#0369A1" : isNext ? "rgba(3,105,161,0.65)" : "rgba(0,0,0,0.18)" },
                 ]}>G{i + 1}</Text>
               </View>
             );
@@ -1021,7 +1024,7 @@ export default function HomeScreen() {
           {/* Header */}
           <View style={streakStyles.stampHeader}>
             <Text style={streakStyles.stampGoldTitle}>⭐  CHECK IN GOLD</Text>
-            <Text style={streakStyles.stampWeekLabel}>7 giorni</Text>
+            <Text style={[streakStyles.stampWeekLabel, { color: "rgba(184,134,11,0.50)" }]}>7 giorni</Text>
           </View>
           <View style={streakStyles.stampDivider} />
 
@@ -1043,11 +1046,11 @@ export default function HomeScreen() {
                       : prize.type === "lea" ? <LeaIcon size={16} />
                       : <XpIcon size={16} />
                     )}
-                    {isNext && <Text style={streakStyles.stampCellNextNum}>{i + 1}</Text>}
+                    {isNext && <Text style={[streakStyles.stampCellNextNum, { color: "#B8860B" }]}>{i + 1}</Text>}
                   </View>
                   <Text style={[
                     streakStyles.stampLabel,
-                    { color: done ? "#FFD700" : isNext ? "rgba(255,215,0,0.65)" : "rgba(255,255,255,0.18)" },
+                    { color: done ? "#B8860B" : isNext ? "rgba(184,134,11,0.70)" : "rgba(0,0,0,0.18)" },
                   ]}>G{i + 1}</Text>
                 </View>
               );
@@ -1831,32 +1834,39 @@ const streakStyles = StyleSheet.create({
     marginTop: 8,
     borderRadius: 16,
     padding: 14,
-    backgroundColor: "#3A1500",
-    shadowColor: "#000",
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "rgba(56,189,248,0.25)",
+    shadowColor: "#38BDF8",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.18,
     shadowRadius: 10,
-    elevation: 6,
+    elevation: 4,
   },
   stampHeader: {
     flexDirection: "row" as const,
     alignItems: "center" as const,
     justifyContent: "space-between" as const,
   },
+  stampTitleRow: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 6,
+  },
   stampTitle: {
     fontFamily: "DMSans_700Bold",
     fontSize: 13,
-    color: "#ffffff",
+    color: "#0369A1",
     letterSpacing: 1.2,
   },
   stampWeekLabel: {
     fontFamily: "Inter_400Regular",
     fontSize: 11,
-    color: "rgba(255,255,255,0.35)",
+    color: "rgba(3,105,161,0.45)",
   },
   stampDivider: {
     height: 1,
-    backgroundColor: "rgba(255,255,255,0.07)",
+    backgroundColor: "rgba(0,0,0,0.06)",
     marginVertical: 10,
   },
   stampRow: {
@@ -1876,17 +1886,17 @@ const streakStyles = StyleSheet.create({
     justifyContent: "center" as const,
   },
   stampCellDone: {
-    backgroundColor: "#F97316",
+    backgroundColor: "#0EA5E9",
   },
   stampCellNext: {
     backgroundColor: "transparent",
     borderWidth: 1.5,
-    borderColor: "#F97316",
+    borderColor: "#38BDF8",
   },
   stampCellFuture: {
-    backgroundColor: "rgba(255,255,255,0.04)",
+    backgroundColor: "rgba(0,0,0,0.04)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: "rgba(0,0,0,0.08)",
   },
   stampLabel: {
     fontFamily: "DMSans_700Bold",
@@ -1895,7 +1905,7 @@ const streakStyles = StyleSheet.create({
   stampCellNextNum: {
     fontFamily: "DMSans_700Bold",
     fontSize: 13,
-    color: "#F97316",
+    color: "#0369A1",
   },
   stampFooter: {
     flexDirection: "row" as const,
@@ -1905,7 +1915,7 @@ const streakStyles = StyleSheet.create({
   stampFooterDay: {
     fontFamily: "Inter_400Regular",
     fontSize: 12,
-    color: "rgba(255,255,255,0.4)",
+    color: "rgba(0,0,0,0.40)",
   },
   stampFooterReward: {
     flexDirection: "row" as const,
@@ -1915,7 +1925,7 @@ const streakStyles = StyleSheet.create({
   stampFooterRewardText: {
     fontFamily: "DMSans_700Bold",
     fontSize: 16,
-    color: "#ffffff",
+    color: "#1A1A2E",
   },
   cardHint: {
     fontFamily: "Inter_400Regular",
@@ -1927,33 +1937,33 @@ const streakStyles = StyleSheet.create({
     marginTop: 8,
     borderRadius: 16,
     padding: 14,
-    backgroundColor: "#4A3200",
-    borderWidth: 1,
-    borderColor: "rgba(255,215,0,0.35)",
+    backgroundColor: "#ffffff",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,215,0,0.60)",
     shadowColor: "#FFD700",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.18,
     shadowRadius: 10,
     elevation: 4,
   },
   stampGoldTitle: {
     fontFamily: "DMSans_700Bold",
     fontSize: 13,
-    color: "#FFD700",
+    color: "#B8860B",
     letterSpacing: 1.5,
   },
   stampGoldCellDone: {
-    backgroundColor: "#FFD700",
+    backgroundColor: "#F59E0B",
   },
   stampGoldCellNext: {
     backgroundColor: "transparent",
     borderWidth: 1.5,
-    borderColor: "#FFD700",
+    borderColor: "#F59E0B",
   },
   stampGoldFooterRewardText: {
     fontFamily: "DMSans_700Bold",
     fontSize: 16,
-    color: "#ffffff",
+    color: "#1A1A2E",
   },
 });
 
