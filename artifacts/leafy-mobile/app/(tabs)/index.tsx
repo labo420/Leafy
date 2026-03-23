@@ -1151,7 +1151,7 @@ export default function HomeScreen() {
               <View style={styles.bpCtaIconWrap}>
                 <Image
                   source={require("@/assets/images/leafy-gold-icon.png")}
-                  style={{ width: 32, height: 32 }}
+                  style={{ width: 24, height: 24 }}
                   resizeMode="contain"
                 />
               </View>
@@ -2138,17 +2138,17 @@ const styles = StyleSheet.create({
     borderRadius: 22,
   },
   bpCtaCard: {
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: "rgba(255,215,0,0.3)",
     backgroundColor: "#0A1F0D",
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 10,
+    paddingHorizontal: 12,
+    paddingTop: 6,
+    paddingBottom: 6,
     alignItems: "center",
   },
   bpCtaIconWrap: {
-    marginBottom: 4,
+    marginBottom: 2,
     shadowColor: "#FFD700",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.55,
@@ -2156,35 +2156,35 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   bpCtaTitle: {
-    fontSize: 14,
+    fontSize: 12,
     fontFamily: "DMSans_700Bold",
     color: "#fff",
-    marginBottom: 1,
+    marginBottom: 0,
     letterSpacing: 0.2,
   },
   bpCtaPrice: {
-    fontSize: 20,
+    fontSize: 16,
     fontFamily: "DMSans_700Bold",
     color: "#FFD700",
-    marginBottom: 2,
+    marginBottom: 1,
     letterSpacing: -0.3,
   },
   bpCtaPriceSub: {
-    fontSize: 11,
+    fontSize: 9,
     fontFamily: "DMSans_400Regular",
     color: "rgba(255,215,0,0.7)",
   },
   bpCtaSub: {
-    fontSize: 10,
+    fontSize: 9,
     fontFamily: "Inter_400Regular",
     color: "rgba(255,255,255,0.4)",
     textAlign: "center",
-    marginBottom: 8,
-    lineHeight: 14,
+    marginBottom: 4,
+    lineHeight: 12,
   },
   bpCtaBtn: {
-    borderRadius: 10,
-    paddingVertical: 8,
+    borderRadius: 8,
+    paddingVertical: 6,
     alignItems: "center",
     justifyContent: "center",
     width: "100%",
