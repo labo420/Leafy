@@ -56,6 +56,23 @@ Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti 
 
 ---
 
+## Stato Build Corrente (Replit)
+
+✅ **Migrazione completata il 23/03/2026**
+- Tutte le dipendenze installate (1202 packages)
+- Database PostgreSQL creato con schema Drizzle
+- 4 workflow attivi e funzionanti:
+  - `artifacts/api-server: API Server` (porta 8080) — Server Express, badges, kit, location seedati
+  - `artifacts/leafy-mobile: expo` (porta 23546) — Metro Bundler attivo, tunnel ngrok configurato
+  - `artifacts/leafy: web` (porta 24389) — Frontend Vite + Vite attivo
+  - `artifacts/leafy-register: web` (porta 5000) — Admin panel Vite + Vite attivo
+- Seed dati completato:
+  - 18 badge (15 originali + 5 livelli naturali)
+  - 3 kit (Colazione Bio, Pulizia Eco, Verdura di Stagione)
+  - 52 location (supermercati partner italiani)
+
+---
+
 ## Artifacts
 
 | Artifact | Path | Porta | Descrizione |
@@ -71,6 +88,35 @@ Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti 
 > **Nota migrazione Replit**: tutti gli artifact sono ora registrati nel selettore app. L'API server gira tramite il workflow dedicato `artifacts/api-server: API Server` (non più via "Start application").
 
 > **Integrations attive**: Anthropic AI (`AI_INTEGRATIONS_ANTHROPIC_BASE_URL`, `AI_INTEGRATIONS_ANTHROPIC_API_KEY`) e Object Storage (`DEFAULT_OBJECT_STORAGE_BUCKET_ID`, `PRIVATE_OBJECT_DIR`, `PUBLIC_OBJECT_SEARCH_PATHS`) sono ora configurate e operative.
+
+---
+
+## Prossimi Passi / Configurazioni Mancanti
+
+Dopo la migrazione Replit, le seguenti configurazioni **opzionali ma consigliate** non sono ancora impostate:
+
+### 🔴 Obbligatorio per Dev Mobile
+- [ ] **NGROK_AUTH_TOKEN** — Necessario per il tunnel Expo in dev. Registrati su [ngrok.com](https://ngrok.com) → Dashboard → Your Authtoken. Senza: l'app mobile non riesce a connettersi al backend fuori dalla rete locale.
+
+### 🟡 Consigliato (Auth)
+- [ ] **Google OAuth** — GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET da [Google Cloud Console](https://console.cloud.google.com)
+  - Aggiungi il tuo email come Test User in OAuth Consent Screen
+  - Redirect URI: `https://<your-replit-domain>/api/auth/google/callback`
+- [ ] **Facebook OAuth** — FACEBOOK_APP_ID + FACEBOOK_APP_SECRET da [Facebook Developers](https://developers.facebook.com)
+  - Redirect URI: `https://<your-replit-domain>/api/auth/facebook/callback`
+
+### 🟡 Consigliato (AI & Data)
+- [ ] **Google Cloud Vision API** — GOOGLE_CLOUD_VISION_API_KEY per OCR accurato degli scontrini (fallback: keyword matching)
+- [ ] **Nutritionix API** — NUTRITIONIX_APP_ID + NUTRITIONIX_API_KEY (500 lookups/giorno gratis)
+- [ ] **USDA FoodData API** — USDA_API_KEY (default: DEMO_KEY pubblico ma throttled)
+
+### 🟢 Già Configurato
+- [x] **DATABASE_URL** — PostgreSQL Replit database (auto-fornito)
+- [x] **SESSION_SECRET** — Cookie session signing (da generare con `openssl rand -base64 32` e impostare)
+- [x] **Anthropic AI** — AI Integrations proxy di Replit (auto-configurato)
+- [x] **Object Storage** — GCS sidecar per foto scontrini (auto-fornito da Replit)
+
+**Per impostare i secrets**: Tools → Secrets (su Replit)
 
 ---
 
