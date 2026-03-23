@@ -274,7 +274,7 @@ export default function WalletScreen() {
 
             <Animated.View entering={FadeInDown.delay(120).springify()}>
               <Pressable
-                style={({ pressed }) => [styles.paypalBtn, { opacity: pressed ? 0.88 : 1, backgroundColor: theme.background }]}
+                style={({ pressed }) => [styles.paypalBtn, { opacity: pressed ? 0.88 : 1, backgroundColor: "#FFFFFF" }]}
                 onPress={handlePayPalPress}
               >
                 <Image
