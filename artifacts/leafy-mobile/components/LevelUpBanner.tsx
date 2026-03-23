@@ -1,12 +1,12 @@
 import React, { useEffect, useRef } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
-  withDelay,
   withSpring,
   withTiming,
 } from "react-native-reanimated";
+import BadgeIcon3D from "@/components/BadgeIcon3D";
 
 const LEVEL_LABELS: Record<string, string> = {
   Germoglio: "Germoglio",
@@ -25,24 +25,27 @@ interface Props {
 }
 
 export default function LevelUpBanner({ visible, fromLevel, toLevel, onClose }: Props) {
-  const translateY = useSharedValue(120);
+  const bottom = useSharedValue(-100);
   const opacity = useSharedValue(0);
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function dismiss() {
+    if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
+    opacity.value = withTiming(0, { duration: 280 });
+    bottom.value = withTiming(-100, { duration: 320 });
+    dismissTimerRef.current = setTimeout(onClose, 340);
+  }
 
   useEffect(() => {
     if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
 
     if (visible) {
-      translateY.value = withSpring(0, { damping: 16, stiffness: 160 });
+      bottom.value = withSpring(32, { damping: 18, stiffness: 180 });
       opacity.value = withTiming(1, { duration: 280 });
 
-      dismissTimerRef.current = setTimeout(() => {
-        opacity.value = withTiming(0, { duration: 280 });
-        translateY.value = withTiming(120, { duration: 320 });
-        dismissTimerRef.current = setTimeout(onClose, 330);
-      }, 4000);
+      dismissTimerRef.current = setTimeout(dismiss, 4000);
     } else {
-      translateY.value = 120;
+      bottom.value = -100;
       opacity.value = 0;
     }
 
@@ -52,7 +55,7 @@ export default function LevelUpBanner({ visible, fromLevel, toLevel, onClose }: 
   }, [visible]);
 
   const bannerStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
+    bottom: bottom.value,
     opacity: opacity.value,
   }));
 
@@ -62,16 +65,20 @@ export default function LevelUpBanner({ visible, fromLevel, toLevel, onClose }: 
   const toLabel = LEVEL_LABELS[toLevel] ?? toLevel;
 
   return (
-    <Animated.View pointerEvents="none" style={[styles.wrapper, bannerStyle]}>
-      <View style={styles.pill}>
-        <Text style={styles.emoji}>🌿</Text>
-        <Text style={styles.text}>
-          <Text style={styles.from}>{fromLabel}</Text>
-          <Text style={styles.arrow}> → </Text>
-          <Text style={styles.to}>{toLabel}</Text>
-        </Text>
-        <Text style={styles.emoji}>✨</Text>
-      </View>
+    <Animated.View style={[styles.wrapper, bannerStyle]}>
+      <Pressable onPress={dismiss} style={styles.pill}>
+        <View style={styles.badgeWrap}>
+          <BadgeIcon3D name={toLevel} category="Livello" emoji="" isUnlocked={true} size={38} />
+        </View>
+        <View style={styles.textBlock}>
+          <Text style={styles.headline}>Livello sbloccato!</Text>
+          <Text style={styles.levels}>
+            <Text style={styles.from}>{fromLabel}</Text>
+            <Text style={styles.arrow}> → </Text>
+            <Text style={styles.to}>{toLabel}</Text>
+          </Text>
+        </View>
+      </Pressable>
     </Animated.View>
   );
 }
@@ -79,7 +86,6 @@ export default function LevelUpBanner({ visible, fromLevel, toLevel, onClose }: 
 const styles = StyleSheet.create({
   wrapper: {
     position: "absolute",
-    bottom: 110,
     left: 0,
     right: 0,
     alignItems: "center",
@@ -88,32 +94,46 @@ const styles = StyleSheet.create({
   pill: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    backgroundColor: "rgba(20,40,30,0.93)",
-    paddingHorizontal: 22,
-    paddingVertical: 12,
-    borderRadius: 999,
+    gap: 10,
+    backgroundColor: "rgba(14,30,22,0.96)",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 22,
     borderWidth: 1,
-    borderColor: "rgba(56,189,80,0.5)",
+    borderColor: "rgba(56,189,80,0.45)",
     shadowColor: "#38BD50",
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 18,
+    shadowOpacity: 0.55,
+    shadowRadius: 20,
   },
-  text: {
+  badgeWrap: {
+    width: 42,
+    height: 42,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  textBlock: {
+    flexDirection: "column",
+    gap: 1,
+  },
+  headline: {
+    fontFamily: "DMSans_600SemiBold",
+    fontSize: 12,
+    color: "#38BD50",
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
+  },
+  levels: {
     fontFamily: "DMSans_600SemiBold",
     fontSize: 15,
   },
   from: {
-    color: "rgba(255,255,255,0.65)",
+    color: "rgba(255,255,255,0.55)",
   },
   arrow: {
     color: "#38BD50",
   },
   to: {
     color: "#FFFFFF",
-  },
-  emoji: {
-    fontSize: 16,
   },
 });
