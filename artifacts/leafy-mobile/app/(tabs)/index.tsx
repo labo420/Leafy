@@ -1184,31 +1184,6 @@ export default function HomeScreen() {
         }}
       />
 
-      {/* ── CTA ── */}
-      <View style={styles.ctaSection}>
-        <Animated.View style={scanAnimStyle}>
-          <Pressable onPress={handleScanPress}>
-            <LinearGradient
-              colors={[theme.leaf, "#23533e"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.ctaButton}
-            >
-              <Feather name="camera" size={22} color="#fff" />
-              <Text style={styles.ctaText}>Analizza la tua spesa</Text>
-            </LinearGradient>
-          </Pressable>
-        </Animated.View>
-
-        <Pressable
-          style={[styles.challengeButton, { backgroundColor: theme.primaryLight }]}
-          onPress={() => router.push("/(tabs)/profilo?tab=sfide")}
-        >
-          <Feather name="zap" size={17} color={theme.leaf} />
-          <Text style={[styles.challengeButtonText, { color: theme.leaf }]}>Vai alle sfide</Text>
-          <Feather name="chevron-right" size={15} color={theme.leaf} />
-        </Pressable>
-      </View>
 
       {/* ── WALK-IN TOAST ── */}
       {walkinToast && (
@@ -1282,27 +1257,6 @@ export default function HomeScreen() {
         )}
       </Animated.View>
 
-      {/* ── IMPACT CARDS ── */}
-      <Animated.View entering={FadeInDown.delay(340).springify()} style={styles.impactSection}>
-        <Text style={[styles.impactTitle, { color: theme.text }]}>Il tuo impatto</Text>
-        <View style={styles.impactRow}>
-          <View style={[styles.impactCard, { backgroundColor: theme.card }]}>
-            <Feather name="file-text" size={22} color={theme.leaf} />
-            <Text style={[styles.impactCardValue, { color: theme.text }]}>{impact?.receiptsScanned ?? 0}</Text>
-            <Text style={[styles.impactCardLabel, { color: theme.textSecondary }]}>Scontrini</Text>
-          </View>
-          <View style={[styles.impactCard, { backgroundColor: theme.card }]}>
-            <Feather name="feather" size={22} color={theme.leaf} />
-            <Text style={[styles.impactCardValue, { color: theme.text }]}>{impact?.greenProductsCount ?? 0}</Text>
-            <Text style={[styles.impactCardLabel, { color: theme.textSecondary }]}>Prodotti green</Text>
-          </View>
-          <View style={[styles.impactCard, { backgroundColor: theme.card }]}>
-            <Feather name="globe" size={22} color={theme.leaf} />
-            <Text style={[styles.impactCardValue, { color: theme.text }]}>{(impact?.co2SavedKg ?? 0).toFixed(1)}</Text>
-            <Text style={[styles.impactCardLabel, { color: theme.textSecondary }]}>kg CO₂</Text>
-          </View>
-        </View>
-      </Animated.View>
 
     </ScrollView>
     </View>
@@ -1519,15 +1473,6 @@ function InStoreLocationCard({
         </View>
       )}
 
-      {!isStarting && !isDwelling && !isSubmitting && !isRewarded && !isDone && !isError && (
-        <Pressable
-          style={[inStoreStyles.enterBtn, { backgroundColor: isOasi ? "#7C3AED" : theme.leaf }]}
-          onPress={() => walkin.enterStore(location)}
-        >
-          <MaterialCommunityIcons name="store-check" size={16} color="#fff" />
-          <Text style={inStoreStyles.enterBtnText}>Sono qui — inizia rilevamento</Text>
-        </Pressable>
-      )}
 
       {(isStarting || isSubmitting) && (
         <View style={inStoreStyles.submittingRow}>
