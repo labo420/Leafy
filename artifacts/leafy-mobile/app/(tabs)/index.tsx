@@ -921,7 +921,6 @@ export default function HomeScreen() {
   const streak = profile?.streak ?? 0;
   const loginStreak = profile?.loginStreak ?? 0;
   const hasLeafyGold = profile?.hasLeafyGold ?? false;
-  const isGoldLocked = !hasLeafyGold;
   const bpStreakDay = profile?.bpStreakDay ?? 0;
   const bpStreakClaimed = profile?.bpStreakClaimed ?? 0;
   const bpStreakCompleted = profile?.bpStreakCompleted ?? false;
@@ -1078,9 +1077,9 @@ export default function HomeScreen() {
         </View>
       </Animated.View>
 
-      {/* ── STREAK BATTLE PASS (sempre visibile, locked se !hasLeafyGold) ── */}
-      <Animated.View entering={FadeInDown.delay(220).springify()}>
-        <View style={streakStyles.stampGoldCard}>
+      {/* ── STREAK BATTLE PASS ── */}
+      {hasLeafyGold && (
+        <Animated.View entering={FadeInDown.delay(220).springify()} style={streakStyles.stampGoldCard}>
           {/* Header */}
           <View style={streakStyles.stampHeader}>
             <View style={streakStyles.stampTitleRow}>
@@ -1094,8 +1093,8 @@ export default function HomeScreen() {
           {/* 7 celle timbro */}
           <View style={streakStyles.stampRow}>
             {BP_PRIZES_DISPLAY.map((prize, i) => {
-              const done = !isGoldLocked && i < bpStreakClaimed;
-              const isNext = !isGoldLocked && i === bpStreakClaimed && !bpStreakCompleted;
+              const done = i < bpStreakClaimed;
+              const isNext = i === bpStreakClaimed && !bpStreakCompleted;
               return (
                 <View key={i} style={streakStyles.stampSlot}>
                   <View style={[
@@ -1125,9 +1124,9 @@ export default function HomeScreen() {
           {/* Footer */}
           <View style={streakStyles.stampFooter}>
             <Text style={streakStyles.stampFooterDay}>
-              {isGoldLocked ? "Premio 0/7" : bpStreakCompleted ? "Completata ✓" : `Premio ${bpStreakClaimed}/7`}
+              {bpStreakCompleted ? "Completata ✓" : `Premio ${bpStreakClaimed}/7`}
             </Text>
-            {!isGoldLocked && !bpStreakCompleted && (
+            {!bpStreakCompleted && (
               <View style={streakStyles.stampFooterReward}>
                 <Text style={streakStyles.stampGoldFooterRewardText}>
                   +{BP_PRIZES_DISPLAY[bpStreakClaimed]?.label ?? ""}
@@ -1137,29 +1136,46 @@ export default function HomeScreen() {
               </View>
             )}
           </View>
+        </Animated.View>
+      )}
 
-          {/* Overlay lock — visibile solo se !hasLeafyGold */}
-          {isGoldLocked && (
-            <Pressable
-              style={({ pressed }) => [streakStyles.goldLockOverlay, { opacity: pressed ? 0.88 : 1 }]}
-              onPress={() => setShowLeafyGoldModal(true)}
-            >
+      {/* ── BATTLE PASS CTA ── */}
+      {!hasLeafyGold && (
+        <Animated.View entering={FadeInDown.delay(260).springify()} style={styles.bpCtaOuter}>
+          <Pressable
+            onPress={() => setShowLeafyGoldModal(true)}
+            style={({ pressed }) => [{ opacity: pressed ? 0.88 : 1 }]}
+          >
+            <View style={styles.bpCtaCard}>
+              {/* Foglia gold centrata */}
+              <View style={styles.bpCtaIconWrap}>
+                <Image
+                  source={require("@/assets/images/leafy-gold-icon.png")}
+                  style={{ width: 24, height: 24 }}
+                  resizeMode="contain"
+                />
+              </View>
+
+              {/* Titolo + prezzo */}
+              <Text style={styles.bpCtaTitle}>Leafy Gold</Text>
+              <Text style={styles.bpCtaPrice}>0,89€<Text style={styles.bpCtaPriceSub}>/mese</Text></Text>
+
+              {/* Sottotitolo */}
+              <Text style={styles.bpCtaSub}>2× $LEA · Streak protetta · Badge esclusivi</Text>
+
+              {/* CTA full-width */}
               <LinearGradient
-                colors={["transparent", "rgba(10,31,13,0.94)"]}
+                colors={["#FFD700", "#FFA500"]}
                 start={{ x: 0, y: 0 }}
-                end={{ x: 0, y: 1 }}
-                style={streakStyles.goldLockGradient}
+                end={{ x: 1, y: 0 }}
+                style={styles.bpCtaBtn}
               >
-                <Feather name="lock" size={18} color="#FFD700" />
-                <Text style={streakStyles.goldLockTitle}>Leafy Gold</Text>
-                <View style={streakStyles.goldLockBtn}>
-                  <Text style={streakStyles.goldLockBtnText}>Attiva ora</Text>
-                </View>
+                <Text style={styles.bpCtaBtnText}>Attiva ora</Text>
               </LinearGradient>
-            </Pressable>
-          )}
-        </View>
-      </Animated.View>
+            </View>
+          </Pressable>
+        </Animated.View>
+      )}
       <LeafyGoldModal
         visible={showLeafyGoldModal}
         onClose={() => {
@@ -1935,7 +1951,6 @@ const streakStyles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.18,
     shadowRadius: 10,
-    overflow: "hidden",
     elevation: 4,
   },
   stampGoldTitle: {
@@ -1956,39 +1971,6 @@ const streakStyles = StyleSheet.create({
     fontFamily: "DMSans_700Bold",
     fontSize: 16,
     color: "#1A1A2E",
-  },
-  goldLockOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderRadius: 16,
-    overflow: "hidden",
-  },
-  goldLockGradient: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-  },
-  goldLockTitle: {
-    fontSize: 13,
-    fontFamily: "DMSans_700Bold",
-    color: "#FFD700",
-    letterSpacing: 0.5,
-  },
-  goldLockBtn: {
-    marginTop: 2,
-    paddingHorizontal: 20,
-    paddingVertical: 7,
-    borderRadius: 20,
-    backgroundColor: "#FFD700",
-  },
-  goldLockBtnText: {
-    fontSize: 12,
-    fontFamily: "DMSans_700Bold",
-    color: "#1a1a00",
   },
 });
 
@@ -2143,6 +2125,74 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     color: Colors.textSecondary,
     textAlign: "center",
+  },
+  bpCtaOuter: {
+    marginHorizontal: 20,
+    marginTop: 8,
+    marginBottom: 0,
+    shadowColor: "#FFD700",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.22,
+    shadowRadius: 20,
+    elevation: 10,
+    borderRadius: 22,
+  },
+  bpCtaCard: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,215,0,0.3)",
+    backgroundColor: "#0A1F0D",
+    paddingHorizontal: 12,
+    paddingTop: 6,
+    paddingBottom: 6,
+    alignItems: "center",
+  },
+  bpCtaIconWrap: {
+    marginBottom: 2,
+    shadowColor: "#FFD700",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.55,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  bpCtaTitle: {
+    fontSize: 12,
+    fontFamily: "DMSans_700Bold",
+    color: "#fff",
+    marginBottom: 0,
+    letterSpacing: 0.2,
+  },
+  bpCtaPrice: {
+    fontSize: 16,
+    fontFamily: "DMSans_700Bold",
+    color: "#FFD700",
+    marginBottom: 1,
+    letterSpacing: -0.3,
+  },
+  bpCtaPriceSub: {
+    fontSize: 9,
+    fontFamily: "DMSans_400Regular",
+    color: "rgba(255,215,0,0.7)",
+  },
+  bpCtaSub: {
+    fontSize: 9,
+    fontFamily: "Inter_400Regular",
+    color: "rgba(255,255,255,0.4)",
+    textAlign: "center",
+    marginBottom: 4,
+    lineHeight: 12,
+  },
+  bpCtaBtn: {
+    borderRadius: 8,
+    paddingVertical: 6,
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+  },
+  bpCtaBtnText: {
+    fontSize: 14,
+    fontFamily: "DMSans_700Bold",
+    color: "#1a1a00",
   },
   ctaSection: {
     paddingHorizontal: 20,
