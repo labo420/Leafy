@@ -31,8 +31,8 @@ export default function LevelUpBanner({ visible, fromLevel, toLevel, onClose }: 
 
   function dismiss() {
     if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
-    opacity.value = withTiming(0, { duration: 280 });
-    bottom.value = withTiming(-100, { duration: 320 });
+    opacity.value = withTiming(0, { duration: 260 });
+    bottom.value = withSpring(-100, { damping: 20, stiffness: 200 });
     dismissTimerRef.current = setTimeout(onClose, 340);
   }
 

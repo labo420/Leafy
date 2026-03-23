@@ -534,7 +534,7 @@ function LevelProgressRing({
     };
   }, [points, progress, level]);
 
-  const currentIdx = LEVEL_CONFIG.findIndex(l => l.name === level);
+  const currentIdx = LEVEL_CONFIG.findIndex(l => l.name === displayLevel);
   const safeIdx = currentIdx >= 0 ? currentIdx : 0;
   const isMaxLevel = safeIdx >= LEVEL_CONFIG.length - 1;
   const nextLevel = isMaxLevel ? null : LEVEL_CONFIG[safeIdx + 1];
