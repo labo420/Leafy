@@ -7,7 +7,7 @@ const path = require("path");
 
 const LOCK_FILE = "/tmp/expo-start-dev.pid";
 const NGROK_AUTH_TOKEN = process.env.NGROK_AUTH_TOKEN || "";
-const REPLIT_EXPO_DOMAIN = process.env.REPLIT_EXPO_DEV_DOMAIN || "";
+const REPLIT_EXPO_DOMAIN = process.env.REACT_NATIVE_PACKAGER_HOSTNAME || process.env.REPLIT_EXPO_DEV_DOMAIN || "";
 
 function ensureSingleInstance() {
   try {
