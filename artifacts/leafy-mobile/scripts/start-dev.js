@@ -7,7 +7,7 @@ const path = require("path");
 
 const LOCK_FILE = "/tmp/expo-start-dev.pid";
 const NGROK_AUTH_TOKEN = process.env.NGROK_AUTH_TOKEN || "";
-const REPLIT_EXPO_DOMAIN = process.env.REACT_NATIVE_PACKAGER_HOSTNAME || "";
+const REPLIT_EXPO_DOMAIN = process.env.REPLIT_EXPO_DEV_DOMAIN || "";
 
 function ensureSingleInstance() {
   try {
@@ -104,11 +104,20 @@ if (ngrokBin && NGROK_AUTH_TOKEN) {
 
 function rewriteManifest(body) {
   if (!REPLIT_EXPO_DOMAIN) return body;
-  const portedDomain = `${REPLIT_EXPO_DOMAIN}:${METRO_PORT}`;
-  const escaped = portedDomain.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return body
-    .replace(new RegExp(`http://${escaped}/`, "g"), `http://${REPLIT_EXPO_DOMAIN}/`)
-    .replace(new RegExp(`"${escaped}"`, "g"), `"${REPLIT_EXPO_DOMAIN}"`);
+  const port = String(METRO_PORT);
+  const sources = [
+    `localhost:${port}`,
+    `127\\.0\\.0\\.1:${port}`,
+    `172\\.31\\.[0-9]+\\.[0-9]+:${port}`,
+  ];
+  let result = body;
+  for (const src of sources) {
+    result = result
+      .replace(new RegExp(`https://${src}/`, "g"), `https://${REPLIT_EXPO_DOMAIN}/`)
+      .replace(new RegExp(`http://${src}/`, "g"), `http://${REPLIT_EXPO_DOMAIN}/`)
+      .replace(new RegExp(`"${src}"`, "g"), `"${REPLIT_EXPO_DOMAIN}"`);
+  }
+  return result;
 }
 
 function isManifestRequest(req) {
