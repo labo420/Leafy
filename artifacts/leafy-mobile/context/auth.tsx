@@ -205,28 +205,63 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const initAuth = async () => {
+      let savedUser: AuthUser | null = null;
+      let savedToken: string | null = null;
+
       try {
-        const [savedUser, savedToken] = await Promise.all([
+        const [userStr, tokenStr] = await Promise.all([
           AsyncStorage.getItem(STORAGE_KEYS.user),
           AsyncStorage.getItem(STORAGE_KEYS.token),
           loadBalancesLocally(),
         ]);
 
-        if (savedToken) {
-          sessionTokenRef.current = savedToken;
+        if (tokenStr) {
+          sessionTokenRef.current = tokenStr;
+          savedToken = tokenStr;
         }
 
-        if (savedUser) {
-          setUser(JSON.parse(savedUser));
+        if (userStr) {
+          savedUser = JSON.parse(userStr);
+          setUser(savedUser);
         }
       } catch (e) {
         console.error("Failed to load saved auth:", e);
       }
 
-      await fetchUser();
+      // Try to validate token with server, but keep local session as fallback
+      try {
+        const base = getBase();
+        const res = await apiFetch(`${base}/api/auth/user`);
+        if (res.ok) {
+          const data = await res.json();
+          const userData = data.user ?? null;
+          setUser(userData);
+          await saveUserLocally(userData);
+          if (userData) {
+            await fetchAndSaveToken();
+            fetchBalances();
+          }
+        } else if (res.status === 401) {
+          // Token is invalid, clear session
+          setUser(null);
+          await saveUserLocally(null);
+          await saveToken(null);
+        }
+        // If other errors (5xx, network, etc), keep the local session
+      } catch (e) {
+        // Network error or fetch failed - keep local session if available
+        console.error("Failed to validate with server, keeping local session:", e);
+        if (!savedUser) {
+          // No local session to fall back to
+          setIsLoading(false);
+          return;
+        }
+      } finally {
+        setIsLoading(false);
+      }
     };
     initAuth();
-  }, []);
+  }, [apiFetch, fetchAndSaveToken, fetchBalances]);
 
   return (
     <AuthContext.Provider
