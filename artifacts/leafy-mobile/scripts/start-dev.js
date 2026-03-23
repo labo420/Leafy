@@ -105,10 +105,12 @@ if (ngrokBin && NGROK_AUTH_TOKEN) {
 function rewriteManifest(body) {
   if (!REPLIT_EXPO_DOMAIN) return body;
   const port = String(METRO_PORT);
+  const escapedDomain = REPLIT_EXPO_DOMAIN.replace(/\./g, "\\.");
   const sources = [
     `localhost:${port}`,
     `127\\.0\\.0\\.1:${port}`,
     `172\\.31\\.[0-9]+\\.[0-9]+:${port}`,
+    `${escapedDomain}:${port}`,
   ];
   let result = body;
   for (const src of sources) {
@@ -132,7 +134,7 @@ function startManifestProxy() {
       port: METRO_PORT,
       path: clientReq.url,
       method: clientReq.method,
-      headers: { ...clientReq.headers, host: `localhost:${METRO_PORT}` },
+      headers: { ...clientReq.headers },
     };
 
     const proxyReq = http.request(options, (proxyRes) => {
@@ -168,9 +170,7 @@ function startManifestProxy() {
     const target = net.connect(METRO_PORT, "127.0.0.1", () => {
       target.write(
         `${req.method} ${req.url} HTTP/1.1\r\n` +
-        `Host: localhost:${METRO_PORT}\r\n` +
         Object.entries(req.headers)
-          .filter(([k]) => k !== "host")
           .map(([k, v]) => `${k}: ${v}`)
           .join("\r\n") +
         "\r\n\r\n"
