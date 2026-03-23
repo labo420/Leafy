@@ -13,7 +13,4 @@ config.resolver.nodeModulesPaths = [
   path.resolve(workspaceRoot, "node_modules"),
 ];
 
-config.server = config.server || {};
-config.server.host = "127.0.0.1";
-
 module.exports = config;

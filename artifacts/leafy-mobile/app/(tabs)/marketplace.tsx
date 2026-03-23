@@ -1,6 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -15,18 +15,10 @@ import {
   TextInput,
   View,
 } from "react-native";
-import Animated, {
-  FadeIn,
-  FadeInDown,
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-} from "react-native-reanimated";
-import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from "react-native-svg";
+import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
+import Svg, { Circle } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import PayPalLogo from "@/components/PayPalLogo";
-import { LeaIcon } from "@/components/LeaIcon";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { useAuth } from "@/context/auth";
@@ -58,52 +50,28 @@ function formatLea(n: number): string {
   return Math.floor(n).toLocaleString("it-IT", { maximumFractionDigits: 0 });
 }
 
-const PAYPAL_BLUE = "#0070E0";
-const LEA_COLOR = "#AADF2A";
-
-const RING_SIZE = 300;
-const STROKE_WIDTH = 18;
+const RING_SIZE = 200;
+const STROKE_WIDTH = 14;
 const RADIUS = (RING_SIZE - STROKE_WIDTH) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
-const ARC_SWEEP = 0.78;
+const PAYPAL_BLUE = "#0070E0";
 
-function LeaHeroRing({ leaBalance }: { leaBalance: number }) {
-  const scale = useSharedValue(0.72);
-  const opacity = useSharedValue(0);
+const LEAF_GREEN = "#4DB847";
 
-  useEffect(() => {
-    scale.value = withSpring(1, { damping: 14, stiffness: 90 });
-    opacity.value = withTiming(1, { duration: 420 });
-  }, []);
-
-  const containerStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: opacity.value,
-  }));
-
-  const activeArcLength = CIRCUMFERENCE * ARC_SWEEP;
-  const rotationDeg = -90 - (1 - ARC_SWEEP) * 180;
-
+function PayPalHeroRing({ leaBalance }: { leaBalance: number }) {
   return (
-    <Animated.View style={[styles.heroContainer, containerStyle]}>
+    <View style={styles.heroContainer}>
       <Svg
         width={RING_SIZE}
         height={RING_SIZE}
-        style={{ transform: [{ rotate: `${rotationDeg}deg` }] }}
+        style={{ transform: [{ rotate: "-90deg" }] }}
       >
-        <Defs>
-          <SvgLinearGradient id="leaArcGrad" x1="0" y1="0" x2="1" y2="0">
-            <Stop offset="0" stopColor="#38D47A" stopOpacity="1" />
-            <Stop offset="0.5" stopColor={LEA_COLOR} stopOpacity="1" />
-            <Stop offset="1" stopColor="#38D47A" stopOpacity="1" />
-          </SvgLinearGradient>
-        </Defs>
         <Circle
           cx={RING_SIZE / 2}
           cy={RING_SIZE / 2}
           r={RADIUS}
           fill="none"
-          stroke="rgba(170,223,42,0.12)"
+          stroke="rgba(77,184,71,0.13)"
           strokeWidth={STROKE_WIDTH}
         />
         <Circle
@@ -111,19 +79,21 @@ function LeaHeroRing({ leaBalance }: { leaBalance: number }) {
           cy={RING_SIZE / 2}
           r={RADIUS}
           fill="none"
-          stroke="url(#leaArcGrad)"
+          stroke="rgba(77,184,71,0.6)"
           strokeWidth={STROKE_WIDTH}
-          strokeDasharray={`${activeArcLength} ${CIRCUMFERENCE - activeArcLength}`}
+          strokeDasharray={`${CIRCUMFERENCE}`}
           strokeDashoffset={0}
           strokeLinecap="round"
         />
       </Svg>
       <View style={styles.heroCenter}>
-        <LeaIcon size={36} />
         <Text style={styles.heroAmount}>{formatLea(leaBalance)}</Text>
-        <Text style={styles.heroLeaLabel}>LEA</Text>
+        <View style={styles.heroLeafBadge}>
+          <Image source={require("@/assets/badges/badge-leaf.png")} style={styles.heroLeafIcon} resizeMode="contain" />
+          <Text style={styles.heroLeafText}>LEA</Text>
+        </View>
       </View>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -292,8 +262,8 @@ export default function WalletScreen() {
           }
         >
           <View style={styles.content}>
-            <Animated.View entering={FadeInDown.delay(0).springify()} style={styles.heroSection}>
-              <LeaHeroRing leaBalance={leaBalance} />
+            <Animated.View entering={FadeInDown.delay(60).springify()} style={styles.heroSection}>
+              <PayPalHeroRing leaBalance={leaBalance} />
 
               {hasLeafyGold && (
                 <View style={styles.goldBadge}>
@@ -486,7 +456,7 @@ const styles = StyleSheet.create({
 
   heroSection: {
     alignItems: "center",
-    paddingVertical: 8,
+    paddingVertical: 12,
     gap: 12,
   },
   heroContainer: {
@@ -499,20 +469,27 @@ const styles = StyleSheet.create({
     position: "absolute",
     alignItems: "center",
     justifyContent: "center",
-    gap: 4,
   },
   heroAmount: {
-    fontSize: 52,
+    fontSize: 40,
     fontFamily: "DMSans_700Bold",
-    color: "#ffffff",
-    lineHeight: 58,
-    letterSpacing: -0.5,
+    color: "#fff",
+    lineHeight: 46,
   },
-  heroLeaLabel: {
+  heroLeafBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 8,
+  },
+  heroLeafIcon: {
+    width: 14,
+    height: 14,
+  },
+  heroLeafText: {
     fontSize: 13,
-    fontFamily: "Inter_700Bold",
-    color: "#AADF2A",
-    letterSpacing: 0.5,
+    fontFamily: "Inter_600SemiBold",
+    color: LEAF_GREEN,
   },
 
   goldBadge: {

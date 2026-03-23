@@ -63,13 +63,13 @@ function BalanceBar() {
       <View style={styles.balanceInner}>
         <View style={styles.balanceChip}>
           <XpIcon size={16} />
-          <Text style={styles.balanceChipValue}>{drops.toLocaleString("it-IT")}</Text>
+          <Text style={[styles.balanceChipValue, { fontSize: 32 }]}>{drops.toLocaleString("it-IT")}</Text>
         </View>
         <View style={styles.balanceDot} />
         <View style={styles.balanceChip}>
           <LeaIcon size={16} />
-          <Text style={styles.balanceChipLeaLabel}>LEA</Text>
-          <Text style={styles.balanceChipValue}>{Math.floor(leaBalance)}</Text>
+          <Text style={[styles.balanceChipLeaLabel, { fontSize: 12 }]}>LEA</Text>
+          <Text style={[styles.balanceChipValue, { fontSize: 32 }]}>{Math.floor(leaBalance)}</Text>
         </View>
       </View>
     </View>
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   balanceChipValue: {
-    fontSize: 32,
+    fontSize: 44,
     fontFamily: Fonts.bodyBold,
     color: "#ffffff",
   },
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   balanceChipLeaLabel: {
-    fontSize: 12,
+    fontSize: 10,
     fontFamily: Fonts.bodyBold,
     color: "#AADF2A",
     letterSpacing: 0.5,
