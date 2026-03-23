@@ -1079,7 +1079,7 @@ export default function HomeScreen() {
       </Animated.View>
 
       {/* ── STREAK BATTLE PASS (sempre visibile, locked se !hasLeafyGold) ── */}
-      <Animated.View entering={FadeInDown.delay(220).springify()} style={{ position: "relative" }}>
+      <Animated.View entering={FadeInDown.delay(220).springify()}>
         <View style={streakStyles.stampGoldCard}>
           {/* Header */}
           <View style={streakStyles.stampHeader}>
@@ -1137,28 +1137,28 @@ export default function HomeScreen() {
               </View>
             )}
           </View>
-        </View>
 
-        {/* Overlay lock — visibile solo se !hasLeafyGold */}
-        {isGoldLocked && (
-          <Pressable
-            style={({ pressed }) => [streakStyles.goldLockOverlay, { opacity: pressed ? 0.88 : 1 }]}
-            onPress={() => setShowLeafyGoldModal(true)}
-          >
-            <LinearGradient
-              colors={["transparent", "rgba(10,31,13,0.94)"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
-              style={streakStyles.goldLockGradient}
+          {/* Overlay lock — visibile solo se !hasLeafyGold */}
+          {isGoldLocked && (
+            <Pressable
+              style={({ pressed }) => [streakStyles.goldLockOverlay, { opacity: pressed ? 0.88 : 1 }]}
+              onPress={() => setShowLeafyGoldModal(true)}
             >
-              <Feather name="lock" size={18} color="#FFD700" />
-              <Text style={streakStyles.goldLockTitle}>Leafy Gold</Text>
-              <View style={streakStyles.goldLockBtn}>
-                <Text style={streakStyles.goldLockBtnText}>Attiva ora</Text>
-              </View>
-            </LinearGradient>
-          </Pressable>
-        )}
+              <LinearGradient
+                colors={["transparent", "rgba(10,31,13,0.94)"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={streakStyles.goldLockGradient}
+              >
+                <Feather name="lock" size={18} color="#FFD700" />
+                <Text style={streakStyles.goldLockTitle}>Leafy Gold</Text>
+                <View style={streakStyles.goldLockBtn}>
+                  <Text style={streakStyles.goldLockBtnText}>Attiva ora</Text>
+                </View>
+              </LinearGradient>
+            </Pressable>
+          )}
+        </View>
       </Animated.View>
       <LeafyGoldModal
         visible={showLeafyGoldModal}
@@ -1935,6 +1935,7 @@ const streakStyles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.18,
     shadowRadius: 10,
+    overflow: "hidden",
     elevation: 4,
   },
   stampGoldTitle: {
@@ -1968,9 +1969,8 @@ const streakStyles = StyleSheet.create({
   goldLockGradient: {
     flex: 1,
     alignItems: "center",
-    justifyContent: "flex-end",
-    paddingBottom: 14,
-    gap: 4,
+    justifyContent: "center",
+    gap: 6,
   },
   goldLockTitle: {
     fontSize: 13,
