@@ -111,7 +111,7 @@ function LeaHeroRing({ leaBalance }: { leaBalance: number }) {
           cy={RING_SIZE / 2}
           r={RADIUS}
           fill="none"
-          stroke={LEA_COLOR}
+          stroke="url(#leaArcGrad)"
           strokeWidth={STROKE_WIDTH}
           strokeDasharray={`${activeArcLength} ${CIRCUMFERENCE - activeArcLength}`}
           strokeDashoffset={0}
@@ -510,7 +510,7 @@ const styles = StyleSheet.create({
   },
   heroLeaLabel: {
     fontSize: 13,
-    fontFamily: "DMSans_700Bold",
+    fontFamily: "Inter_700Bold",
     color: "#AADF2A",
     letterSpacing: 0.5,
   },
