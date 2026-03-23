@@ -273,14 +273,13 @@ export default function WalletScreen() {
               )}
             </Animated.View>
 
-            <Animated.View entering={FadeInDown.delay(120).springify()} style={{ alignItems: "center", gap: 8 }}>
+            <Animated.View entering={FadeInDown.delay(120).springify()}>
               <Pressable
                 style={({ pressed }) => [styles.paypalBtn, { opacity: pressed ? 0.88 : 1 }]}
                 onPress={handlePayPalPress}
               >
                 <PayPalLogo width={160} height={38} />
               </Pressable>
-              <Text style={styles.paypalBtnSubtext}>Ritira i tuoi $LEA</Text>
             </Animated.View>
 
             {showWithdrawForm && (
@@ -509,20 +508,15 @@ const styles = StyleSheet.create({
   },
 
   paypalBtn: {
-    width: 280,
+    width: "100%",
     backgroundColor: "#FFFFFF",
     paddingVertical: 14,
     paddingHorizontal: 24,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 6,
+    borderRadius: 50,
     borderWidth: 1,
     borderColor: "#CCCCCC",
-  },
-  paypalBtnSubtext: {
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
-    color: "#555555",
   },
 
   withdrawCard: {
