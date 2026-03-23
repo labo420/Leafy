@@ -18,6 +18,7 @@ import {
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import Svg, { Circle } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import PayPalLogo from "@/components/PayPalLogo";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { useAuth } from "@/context/auth";
@@ -277,11 +278,7 @@ export default function WalletScreen() {
                 style={({ pressed }) => [styles.paypalBtn, { opacity: pressed ? 0.88 : 1 }]}
                 onPress={handlePayPalPress}
               >
-                <View style={styles.paypalBtnRow}>
-                  <Text style={styles.paypalLogoP1}>P</Text>
-                  <Text style={styles.paypalLogoP2}>P</Text>
-                  <Text style={styles.paypalBtnText}>PayPal</Text>
-                </View>
+                <PayPalLogo width={160} height={38} />
                 <Text style={styles.paypalBtnSubtext}>Ritira i tuoi $LEA</Text>
               </Pressable>
             </Animated.View>
@@ -513,45 +510,25 @@ const styles = StyleSheet.create({
 
   paypalBtn: {
     width: 280,
-    borderRadius: 10,
-    backgroundColor: "#0070E0",
-    paddingVertical: 16,
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 14,
     paddingHorizontal: 24,
     alignItems: "center",
     justifyContent: "center",
-    gap: 4,
-  },
-  paypalBtnRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 2,
-  },
-  paypalLogoP1: {
-    fontSize: 22,
-    fontWeight: "900",
-    fontStyle: "italic",
-    color: "rgba(255,255,255,0.55)",
-    marginRight: -5,
-    lineHeight: 28,
-  },
-  paypalLogoP2: {
-    fontSize: 22,
-    fontWeight: "900",
-    fontStyle: "italic",
-    color: "#FFFFFF",
-    marginRight: 8,
-    lineHeight: 28,
-  },
-  paypalBtnText: {
-    fontSize: 22,
-    fontFamily: "Inter_700Bold",
-    fontStyle: "italic",
-    color: "#FFFFFF",
+    gap: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 2,
   },
   paypalBtnSubtext: {
     fontSize: 12,
     fontFamily: "Inter_400Regular",
-    color: "rgba(255,255,255,0.8)",
+    color: "#555555",
   },
 
   withdrawCard: {
