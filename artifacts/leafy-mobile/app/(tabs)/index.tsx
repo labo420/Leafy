@@ -31,8 +31,10 @@ import Animated, {
   withTiming,
   withSequence,
   withDelay,
+  withRepeat,
   Easing,
   FadeInDown,
+  type SharedValue,
 } from "react-native-reanimated";
 import Svg, { Circle, Path } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -129,6 +131,45 @@ const ICON_BASE_SIZE = 90;
 const ICON_MIN_SCALE = 0.75;
 const ICON_MAX_SCALE = 1.0;
 const CAN_TOP = 32;
+
+const EVO_ANGLES = Array.from({ length: 8 }, (_, i) => (i / 8) * 2 * Math.PI);
+const EVO_PARTICLE_DISTANCE = 72;
+
+function EvoParticle({
+  angle,
+  partProgress,
+  partOpacity,
+}: {
+  angle: number;
+  partProgress: SharedValue<number>;
+  partOpacity: SharedValue<number>;
+}) {
+  const particleStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: Math.cos(angle) * EVO_PARTICLE_DISTANCE * partProgress.value },
+      { translateY: Math.sin(angle) * EVO_PARTICLE_DISTANCE * partProgress.value },
+      { scale: Math.max(0, 1 - partProgress.value * 0.7) },
+    ],
+    opacity: partOpacity.value,
+  }));
+  const isGold = angle < Math.PI;
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        {
+          position: "absolute",
+          width: 10,
+          height: 10,
+          borderRadius: 5,
+          backgroundColor: isGold ? "#FFD700" : "#4CAF50",
+        },
+        particleStyle,
+      ]}
+    />
+  );
+}
+
 const CAN_LEFT = RING_SIZE / 2 + 12;
 const CAN_PIVOT = 17;
 const DROP_TOP = 62;
@@ -154,6 +195,9 @@ function LevelProgressRing({
   const nameColor = onDark ? "rgba(255,255,255,0.85)" : "#1A3028";
   const xpSubColor = onDark ? "rgba(255,255,255,0.55)" : "rgba(26,48,40,0.55)";
   const nextLvlColor = onDark ? "rgba(255,255,255,0.70)" : "rgba(26,48,40,0.60)";
+
+  // ── Display level (switches to new level only at burst moment during evolution) ──
+  const [displayLevel, setDisplayLevel] = useState(level);
 
   // ── Ring entry spring ──
   const ringScale = useSharedValue(0.82);
@@ -190,6 +234,7 @@ function LevelProgressRing({
   const rafRef = useRef<number | null>(null);
   const progTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hapticTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const evolveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const animateProgress = React.useCallback((from: number, to: number) => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -228,6 +273,27 @@ function LevelProgressRing({
     transform: [{ translateY: dropY.value }],
   }));
 
+  // ── Evolution animation shared values ──
+  const evoGlowOpacity = useSharedValue(0);
+  const evoGlowScale = useSharedValue(1);
+  const shockScale = useSharedValue(0);
+  const shockOpacity = useSharedValue(0);
+  const evoPartProgress = useSharedValue(0);
+  const evoPartOpacity = useSharedValue(0);
+  const goldGlowOpacity = useSharedValue(0);
+
+  const evoGlowStyle = useAnimatedStyle(() => ({
+    opacity: evoGlowOpacity.value,
+    transform: [{ scale: evoGlowScale.value }],
+  }));
+  const shockwaveStyle = useAnimatedStyle(() => ({
+    opacity: shockOpacity.value,
+    transform: [{ scale: shockScale.value }],
+  }));
+  const goldGlowStyle = useAnimatedStyle(() => ({
+    opacity: goldGlowOpacity.value,
+  }));
+
   useEffect(() => {
     if (!mountedRef.current) {
       mountedRef.current = true;
@@ -243,30 +309,40 @@ function LevelProgressRing({
 
     const newIconScale = ICON_MIN_SCALE + (progress / 100) * (ICON_MAX_SCALE - ICON_MIN_SCALE);
 
-    // ── Branch A: livello cambiato E nuovi drops ──
-    // Mostra prima l'annafiatoio, poi anima il badge livello dopo 2700ms
+    // ── Branch A: livello cambiato E nuovi drops — sequenza cinematica "evolution" ──
     if (prevLev !== level && points > prev && prev > 0) {
       if (progTimeoutRef.current) clearTimeout(progTimeoutRef.current);
       if (hapticTimeoutRef.current) clearTimeout(hapticTimeoutRef.current);
+      if (evolveTimeoutRef.current) clearTimeout(evolveTimeoutRef.current);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
 
       const oldP = displayProgressRef.current;
       const newP = progress;
+      const newLevel = level;
 
-      // Watering can: fade in (450ms), hold (1750ms), fade out (500ms) → 2700ms totali
+      // Reset evolution values
+      evoGlowOpacity.value = 0;
+      evoGlowScale.value = 1;
+      shockScale.value = 0;
+      shockOpacity.value = 0;
+      evoPartProgress.value = 0;
+      evoPartOpacity.value = 0;
+      goldGlowOpacity.value = 0;
+      badgeOpacity.value = 1;
+      badgeVScale.value = 1;
+
+      // ── Annaffiatoio (invariato, 0–2700ms) ──
       canOpacity.value = withSequence(
         withTiming(1, { duration: 450 }),
         withTiming(1, { duration: 1750 }),
         withTiming(0, { duration: 500 }),
       );
-      // Can inclina 35° per versare poi ritorna → 2200ms totali
       canRotate.value = withSequence(
         withTiming(0, { duration: 100 }),
         withTiming(35, { duration: 750, easing: Easing.out(Easing.quad) }),
         withTiming(35, { duration: 700 }),
         withTiming(0, { duration: 650, easing: Easing.inOut(Easing.quad) }),
       );
-      // Goccia: attesa 950ms, appare 120ms, cade 900ms, svanisce 300ms → 2270ms
       dropOpacity.value = withSequence(
         withTiming(0, { duration: 950 }),
         withTiming(1, { duration: 120 }),
@@ -279,25 +355,92 @@ function LevelProgressRing({
         withTiming(0, { duration: 0 }),
       );
 
-      // Haptic e progress bar all'atterraggio goccia (1970ms)
+      // Haptic leggero + progress bar all'atterraggio goccia (1970ms)
       hapticTimeoutRef.current = setTimeout(() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }, 1970);
       progTimeoutRef.current = setTimeout(() => animateProgress(oldP, newP), 1970);
 
-      // Badge level-change animation DOPO annafiatoio (2700ms)
-      badgeOpacity.value = withDelay(2700, withSequence(
-        withTiming(0, { duration: 220, easing: Easing.out(Easing.quad) }),
-        withDelay(60, withTiming(1, { duration: 380, easing: Easing.out(Easing.quad) })),
-      ));
+      // ── Fase 1: Swell (2700ms, durata 600ms) ──
+      // Badge scala da 1.0 → 1.35 con glow verde che appare
       badgeVScale.value = withDelay(2700, withSequence(
-        withTiming(0.45, { duration: 220, easing: Easing.out(Easing.quad) }),
-        withDelay(60, withSpring(1, { damping: 9, stiffness: 130 })),
+        withTiming(1.35, { duration: 600, easing: Easing.out(Easing.quad) }),
+        // Fase 2: Heartbeat × 3 (750ms totali)
+        withRepeat(withSequence(
+          withTiming(1.20, { duration: 125, easing: Easing.inOut(Easing.ease) }),
+          withTiming(1.35, { duration: 125, easing: Easing.inOut(Easing.ease) }),
+        ), 3, false),
+        // Fase 3: Burst — scala a 0 (150ms)
+        withTiming(0, { duration: 150, easing: Easing.in(Easing.quad) }),
+        // Hold durante aggiornamento stato (250ms)
+        withTiming(0, { duration: 250 }),
+        // Fase 4: Reveal nuovo badge — spring-in elastico
+        withSpring(1, { damping: 8, stiffness: 120, mass: 0.8 }),
       ));
-      iconScale.value = withDelay(2980, withSpring(newIconScale, { damping: 10, stiffness: 90 }));
+
+      // Glow verde: fades in durante swell, pulsa durante heartbeat, sparisce al burst
+      evoGlowOpacity.value = withDelay(2700, withSequence(
+        withTiming(0.7, { duration: 600 }),
+        withRepeat(withSequence(
+          withTiming(0.35, { duration: 125 }),
+          withTiming(0.85, { duration: 125 }),
+        ), 3, false),
+        withTiming(0, { duration: 100 }),
+      ));
+      evoGlowScale.value = withDelay(2700, withSequence(
+        withTiming(1.55, { duration: 600 }),
+        withRepeat(withSequence(
+          withTiming(1.35, { duration: 125 }),
+          withTiming(1.60, { duration: 125 }),
+        ), 3, false),
+        withTiming(0.5, { duration: 100 }),
+      ));
+
+      // badgeOpacity: visibile durante swell+heartbeat, nascosta al burst, riappare al reveal
+      badgeOpacity.value = withDelay(4050, withSequence(
+        withTiming(0, { duration: 100 }),
+        withTiming(0, { duration: 250 }),
+        withTiming(1, { duration: 200 }),
+      ));
+
+      // Shockwave + particelle al burst (4050ms)
+      shockScale.value = withDelay(4050, withSequence(
+        withTiming(0.5, { duration: 0 }),
+        withTiming(3.5, { duration: 650, easing: Easing.out(Easing.cubic) }),
+      ));
+      shockOpacity.value = withDelay(4050, withSequence(
+        withTiming(1, { duration: 0 }),
+        withTiming(0, { duration: 650 }),
+      ));
+      evoPartProgress.value = withDelay(4050,
+        withTiming(1, { duration: 500, easing: Easing.out(Easing.cubic) }),
+      );
+      evoPartOpacity.value = withDelay(4050, withSequence(
+        withTiming(1, { duration: 50 }),
+        withDelay(250, withTiming(0, { duration: 200 })),
+      ));
+
+      // Glow dorato post-reveal (4350ms = 4050 + 300)
+      goldGlowOpacity.value = withDelay(4350, withSequence(
+        withTiming(1, { duration: 200 }),
+        withTiming(0, { duration: 1500 }),
+      ));
+
+      // iconScale: spring al nuovo valore al reveal
+      iconScale.value = withDelay(4350,
+        withSpring(newIconScale, { damping: 10, stiffness: 90 }),
+      );
+
+      // Al burst: haptic SUCCESS + switch del badge al nuovo livello
+      evolveTimeoutRef.current = setTimeout(() => {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setDisplayLevel(newLevel);
+      }, 4050);
+
       return () => {
         if (progTimeoutRef.current) clearTimeout(progTimeoutRef.current);
         if (hapticTimeoutRef.current) clearTimeout(hapticTimeoutRef.current);
+        if (evolveTimeoutRef.current) clearTimeout(evolveTimeoutRef.current);
         if (rafRef.current) cancelAnimationFrame(rafRef.current);
       };
     }
@@ -305,6 +448,7 @@ function LevelProgressRing({
     // ── Branch B: livello cambiato senza nuovi drops (es. ripristino app) ──
     // Animazione badge immediata, nessun annafiatoio
     if (prevLev !== level) {
+      setDisplayLevel(level);
       displayProgressRef.current = progress;
       setDisplayProgress(progress);
       badgeOpacity.value = withSequence(
@@ -446,14 +590,19 @@ function LevelProgressRing({
         {/* Inner border ring — native View, always continuous on Android */}
         <View style={[ringStyles.innerBorder, { borderColor }]} />
 
+        {/* Evolution: green glow (behind badge) */}
+        <Animated.View pointerEvents="none" style={[ringStyles.evoGlowRing, evoGlowStyle]} />
+        {/* Evolution: gold glow after reveal (behind badge) */}
+        <Animated.View pointerEvents="none" style={[ringStyles.goldGlowRing, goldGlowStyle]} />
+
         {/* Center: badge icon + text */}
         <View style={ringStyles.innerContent}>
           <Animated.View style={badgeAnimStyle}>
             <Animated.View style={iconAnimStyle}>
-              <BadgeIcon3D name={level} category="Livello" emoji="" isUnlocked={true} size={ICON_BASE_SIZE} />
+              <BadgeIcon3D name={displayLevel} category="Livello" emoji="" isUnlocked={true} size={ICON_BASE_SIZE} />
             </Animated.View>
           </Animated.View>
-          <Text style={[ringStyles.levelName, { color: nameColor }]}>{LEVEL_LABELS[level] ?? level}</Text>
+          <Text style={[ringStyles.levelName, { color: nameColor }]}>{LEVEL_LABELS[displayLevel] ?? displayLevel}</Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
             <Text style={[ringStyles.xpProgress, { color: "#38BDF8" }]}>
               {new Intl.NumberFormat("it-IT").format(points)} / {new Intl.NumberFormat("it-IT").format(targetPts)}
@@ -475,6 +624,14 @@ function LevelProgressRing({
           style={[ringStyles.droplet, dropAnimStyle]}
           resizeMode="contain"
         />
+
+        {/* Evolution: shockwave ring */}
+        <Animated.View pointerEvents="none" style={[ringStyles.shockwaveRing, shockwaveStyle]} />
+
+        {/* Evolution: burst particles */}
+        {EVO_ANGLES.map((angle, i) => (
+          <EvoParticle key={i} angle={angle} partProgress={evoPartProgress} partOpacity={evoPartOpacity} />
+        ))}
       </View>
 
       <Text style={[ringStyles.nextLevelText, { color: nextLvlColor }]} numberOfLines={3}>
@@ -557,6 +714,36 @@ const ringStyles = StyleSheet.create({
     borderWidth: 2,
     top: 17.5,
     left: 17.5,
+  },
+  evoGlowRing: {
+    position: "absolute",
+    width: RING_SIZE,
+    height: RING_SIZE,
+    borderRadius: RING_SIZE / 2,
+    backgroundColor: "rgba(56,189,48,0.28)",
+    shadowColor: "#38BD30",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 22,
+  },
+  shockwaveRing: {
+    position: "absolute",
+    width: RING_SIZE,
+    height: RING_SIZE,
+    borderRadius: RING_SIZE / 2,
+    borderWidth: 3,
+    borderColor: "rgba(255,255,255,0.85)",
+  },
+  goldGlowRing: {
+    position: "absolute",
+    width: RING_SIZE,
+    height: RING_SIZE,
+    borderRadius: RING_SIZE / 2,
+    backgroundColor: "rgba(255,200,50,0.22)",
+    shadowColor: "#FFD700",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 28,
   },
 });
 

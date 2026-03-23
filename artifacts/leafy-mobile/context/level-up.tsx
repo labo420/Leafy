@@ -5,10 +5,10 @@ import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/context/auth";
 import type { Profile } from "@workspace/api-client-react";
-import LevelUpModal from "@/components/LevelUpModal";
+import LevelUpBanner from "@/components/LevelUpBanner";
 
 const PREV_LEVEL_KEY_PREFIX = "leafy_prev_level:";
-const WATERING_CAN_DURATION_MS = 3200;
+const EVOLUTION_BANNER_DELAY_MS = 5500;
 
 interface LevelUpContextValue {
   checkForLevelUp: () => void;
@@ -62,7 +62,7 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
         setToLevel(currentLevel);
         setVisible(true);
         levelUpTimeoutRef.current = null;
-      }, WATERING_CAN_DURATION_MS);
+      }, EVOLUTION_BANNER_DELAY_MS);
     }
 
     prevLevelRef.current = currentLevel;
@@ -90,7 +90,7 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
   return (
     <LevelUpContext.Provider value={{ checkForLevelUp }}>
       {children}
-      <LevelUpModal
+      <LevelUpBanner
         visible={visible}
         fromLevel={fromLevel}
         toLevel={toLevel}
