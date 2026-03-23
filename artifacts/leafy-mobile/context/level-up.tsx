@@ -2,13 +2,18 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 import { AppState } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQuery } from "@tanstack/react-query";
+import { useSegments } from "expo-router";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/context/auth";
 import type { Profile } from "@workspace/api-client-react";
 import LevelUpBanner from "@/components/LevelUpBanner";
 
 const PREV_LEVEL_KEY_PREFIX = "leafy_prev_level:";
-const EVOLUTION_BANNER_DELAY_MS = 5500;
+
+// When user is on Home, the ring cinematic runs for ~5s before the banner appears.
+// When on any other tab, skip the ring and show the banner almost immediately.
+const HOME_TAB_DELAY_MS = 5500;
+const OTHER_TAB_DELAY_MS = 600;
 
 interface LevelUpContextValue {
   checkForLevelUp: () => void;
@@ -28,6 +33,10 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
   const prevLevelRef = useRef<string | null>(null);
   const [storageReady, setStorageReady] = useState(false);
   const levelUpTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // segments[0] = "(tabs)", segments[1] = tab name; Home tab has no segments[1]
+  const segments = useSegments();
+  const isOnHome = segments[0] === "(tabs)" && segments[1] === undefined;
 
   const storageKey = user?.id ? `${PREV_LEVEL_KEY_PREFIX}${user.id}` : null;
 
@@ -56,18 +65,19 @@ export function LevelUpProvider({ children }: { children: React.ReactNode }) {
 
     if (prevLevelRef.current && prevLevelRef.current !== currentLevel && !visible) {
       const from = prevLevelRef.current;
+      const delay = isOnHome ? HOME_TAB_DELAY_MS : OTHER_TAB_DELAY_MS;
       if (levelUpTimeoutRef.current) clearTimeout(levelUpTimeoutRef.current);
       levelUpTimeoutRef.current = setTimeout(() => {
         setFromLevel(from);
         setToLevel(currentLevel);
         setVisible(true);
         levelUpTimeoutRef.current = null;
-      }, EVOLUTION_BANNER_DELAY_MS);
+      }, delay);
     }
 
     prevLevelRef.current = currentLevel;
     AsyncStorage.setItem(storageKey, currentLevel);
-  }, [profile?.level, visible, storageKey, storageReady]);
+  }, [profile?.level, visible, storageKey, storageReady, isOnHome]);
 
   useEffect(() => {
     return () => {
