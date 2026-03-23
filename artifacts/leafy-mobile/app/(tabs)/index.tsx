@@ -431,10 +431,13 @@ function LevelProgressRing({
         withSpring(newIconScale, { damping: 10, stiffness: 90 }),
       );
 
-      // Al burst: haptic SUCCESS + switch del badge al nuovo livello
+      // Haptic SUCCESS al burst (4050ms), poi switch badge post-fade (4200ms)
       evolveTimeoutRef.current = setTimeout(() => {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        setDisplayLevel(newLevel);
+        evolveTimeoutRef.current = setTimeout(() => {
+          setDisplayLevel(newLevel);
+          evolveTimeoutRef.current = null;
+        }, 150);
       }, 4050);
 
       return () => {
