@@ -274,14 +274,15 @@ export default function WalletScreen() {
 
             <Animated.View entering={FadeInDown.delay(120).springify()}>
               <Pressable
-                style={({ pressed }) => [styles.paypalBtn, { opacity: pressed ? 0.88 : 1, backgroundColor: "#FFFFFF" }]}
+                style={({ pressed }) => [styles.paypalBtn, { opacity: pressed ? 0.88 : 1 }]}
                 onPress={handlePayPalPress}
               >
-                <Image
-                  source={require("@/assets/images/paypal-button.png")}
-                  style={styles.paypalBtnImage}
-                  resizeMode="contain"
-                />
+                <View style={styles.paypalBtnRow}>
+                  <Text style={styles.paypalLogoP1}>P</Text>
+                  <Text style={styles.paypalLogoP2}>P</Text>
+                  <Text style={styles.paypalBtnText}>PayPal</Text>
+                </View>
+                <Text style={styles.paypalBtnSubtext}>Ritira i tuoi $LEA</Text>
               </Pressable>
             </Animated.View>
 
@@ -511,13 +512,46 @@ const styles = StyleSheet.create({
   },
 
   paypalBtn: {
+    width: 280,
+    borderRadius: 10,
+    backgroundColor: "#0070E0",
+    paddingVertical: 16,
+    paddingHorizontal: 24,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "transparent",
+    gap: 4,
   },
-  paypalBtnImage: {
-    width: 280,
-    height: 103,
+  paypalBtnRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+  },
+  paypalLogoP1: {
+    fontSize: 22,
+    fontWeight: "900",
+    fontStyle: "italic",
+    color: "rgba(255,255,255,0.55)",
+    marginRight: -5,
+    lineHeight: 28,
+  },
+  paypalLogoP2: {
+    fontSize: 22,
+    fontWeight: "900",
+    fontStyle: "italic",
+    color: "#FFFFFF",
+    marginRight: 8,
+    lineHeight: 28,
+  },
+  paypalBtnText: {
+    fontSize: 22,
+    fontFamily: "Inter_700Bold",
+    fontStyle: "italic",
+    color: "#FFFFFF",
+  },
+  paypalBtnSubtext: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    color: "rgba(255,255,255,0.8)",
   },
 
   withdrawCard: {
