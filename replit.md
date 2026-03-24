@@ -45,6 +45,13 @@ Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti 
 - **OAuth buttons branded**: "Continua con Google" → sfondo bianco (#FFFFFF), testo grigio scuro (#3C4043), icona "G" blu (#4285F4) — colori ufficiali Google. "Continua con Facebook" → sfondo blu (#1877F2), testo e icona bianchi — colori ufficiali Facebook.
 - **Pagina login (`app/login.tsx`) — layout finale**: sfondo verde `#2E6B50` full-screen. Logo PNG reale (`assets/images/logo-leafy-white.png`, bianco su trasparente, 280×80px) caricato via `require()` con `marginTop: SCREEN_HEIGHT * 0.15` (posizionamento dinamico, ~126px su iPhone standard). Tagline `"La tua spesa di ogni giorno, premiata."` in `rgba(255,255,255,0.82)` subito sotto. Form card (`styles.card`) con `marginTop: 16` appare immediatamente sotto il tagline. `HeroIllustration` rimossa dal flusso per compattare il layout. La pagina non deve scrollare (usa `ScrollView` con `scrollEnabled={false}`). Logo memorizzato anche nella tabella `assets` PostgreSQL (BYTEA); servito via endpoint `GET /api/assets/:name` in `artifacts/api-server/src/routes/assets.ts`.
 - **Endpoint assets** (`GET /api/assets/:name`): serve file binari dalla tabella `assets` (colonne: `name`, `data BYTEA`, `mime_type`). Risponde con `Content-Type` corretto + header `Cache-Control: public, max-age=86400`. Utile per servire il logo e altri asset statici all'app nativa su dispositivo fisico.
+- **Logo PayPal SVG ufficiale** (`components/PayPalLogo.tsx`): Componente SVG self-contained con path ufficiali scaricati da `paypalobjects.com/webstatic/i/logo/rebrand/ppcom-white.svg`. Wordmark P-a-y-P-a-l: 6 path, `fill="#253B80"`. Simbolo PP (due P sovrapposte): back P `fill="#012169"` (blu scuro PayPal), front P `fill="#009CDE"` (azzurro PayPal, 2 path). viewBox `0 0 404.655 98.179`. Bottone nel Wallet: sfondo bianco #FFFFFF, `borderRadius: 50` (pill-shaped), `width: "100%"` (allineata alle card), nessun testo interno.
+- **Home screen semplificata**: Rimossi i blocchi "Analizza la tua spesa" (CTA gradiente camera), "Vai alle sfide" (Pressable link profilo), "Il tuo impatto" (sezione CO₂/prodotti green/scontrini), e il bottone "Sono qui — inizia rilevamento" nella InStore card. La home è ora più minimalista e focalizzata su ring XP, check-in e negozi vicini.
+- **Locked Gold Check-in (Task #4)** (`app/(tabs)/index.tsx`): La card promo Leafy Gold statica è sostituita con il vero CHECK IN GOLD "locked" — pattern "locked feature preview". La card è **sempre visibile**: per chi non ha Gold, tutti e 7 gli slot appaiono grigi/bloccati con un overlay `LinearGradient` scuro-dorato e CTA "Attiva Leafy Gold" integrata (icona lucchetto Feather + bottone → `setShowLeafyGoldModal(true)`). Per chi ha Gold, funziona normalmente mostrando premi `BP_PRIZES_DISPLAY` e stato reale. La vecchia `bpCtaCard` promo (icona + titolo + prezzo + "Attiva ora") è rimossa completamente insieme ai suoi stili.
+- **Level-Up Evolution Animation (Task #5)**: Animazione di evoluzione al level-up potenziata — mostra la progressione visiva tra il livello precedente e quello nuovo quando l'utente sale di livello.
+- **Wallet Hero Ring Redesign (Task #6)**: Redesign del ring/hero nella schermata Wallet — nuova presentazione visiva del saldo $LEA e progressione.
+- **Fix icon & font rendering in Expo Go (Task #7)**: Risolti problemi di rendering per icone vettoriali e font custom su Expo Go (dispositivi fisici iOS/Android).
+- **Fix Metro CORS / PACKAGER_HOSTNAME (Task #8)**: Ripristinato `PACKAGER_HOSTNAME` nel bundler Metro per risolvere errori CORS con l'app su dispositivi fisici connessi via ngrok.
 
 ---
 
@@ -58,14 +65,23 @@ Leafy è una piattaforma loyalty mobile-first per la sostenibilità. Gli utenti 
 
 ## Stato Build Corrente (Replit)
 
+✅ **Ultima sessione: 24/03/2026** — Task #3–#8 tutti MERGED
+- Task #3: Logo PayPal SVG ufficiale nel bottone Wallet
+- Task #4: Locked Gold Check-in nella Home
+- Task #5: Level-Up Evolution Animation
+- Task #6: Wallet Hero Ring Redesign
+- Task #7: Fix icon & font rendering in Expo Go
+- Task #8: Fix Metro CORS - ripristina PACKAGER_HOSTNAME
+
 ✅ **Migrazione completata il 23/03/2026**
 - Tutte le dipendenze installate (1202 packages)
 - Database PostgreSQL creato con schema Drizzle
-- 4 workflow attivi e funzionanti:
+- 5 workflow attivi e funzionanti:
   - `artifacts/api-server: API Server` (porta 8080) — Server Express, badges, kit, location seedati
   - `artifacts/leafy-mobile: expo` (porta 23546) — Metro Bundler attivo, tunnel ngrok configurato
   - `artifacts/leafy: web` (porta 24389) — Frontend Vite + Vite attivo
   - `artifacts/leafy-register: web` (porta 5000) — Admin panel Vite + Vite attivo
+  - `artifacts/mockup-sandbox: Component Preview Server` (porta 8081) — Sandbox canvas componenti
 - Seed dati completato:
   - 18 badge (15 originali + 5 livelli naturali)
   - 3 kit (Colazione Bio, Pulizia Eco, Verdura di Stagione)
